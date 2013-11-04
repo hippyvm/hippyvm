@@ -56,6 +56,7 @@ import hippy.module.posix.funcs
 import hippy.module.session.funcs
 
 import hippy.module.internal
+import hippy.module.phpstruct
 import hippy.module.regex.interface
 import hippy.module.url
 
