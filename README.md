@@ -24,6 +24,7 @@ Building
 
    * `libpcre-dev` 
    * `php5`
+   * `libffi5-dev`
 
 1. Edit the PHP config (php.ini) 
 
