@@ -39,7 +39,7 @@ Building
 1. Building goes like this (in **hippyvm** main directory):
 
    ```
-   <path to pypy>/rpython/bin/rpython -Ojit targethippy.py
+   python <path to pypy>/rpython/bin/rpython -Ojit targethippy.py
    ```
    
    This will create a hippy-c binary that works mostly like a php cli without readling support.
