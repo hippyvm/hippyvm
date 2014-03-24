@@ -11,7 +11,7 @@ ARMv6 and ARMv7 on windows, os x and linux).
 Building
 ========
 
-1. You will need this reposity, so please make yourself a "clone" :)
+1. You will need this repository, so please make yourself a "clone" :)
 1. Install Python dependecies from `requirements.txt` file. The usual way is to create a [virtualenv](http://www.virtualenv.org/en/latest/) and then inside, but installing system wide (with sudo) is possible as well. Then: 
 
     ```
