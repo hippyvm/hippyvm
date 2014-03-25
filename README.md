@@ -42,7 +42,7 @@ Building
    python <path to pypy>/rpython/bin/rpython -Ojit targethippy.py
    ```
    
-   This will create a hippy-c binary that works mostly like a php cli without readling support.
+   This will create a hippy-c binary that works mostly like a php cli without readline support.
 
 
 
