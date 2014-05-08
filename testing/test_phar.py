@@ -60,9 +60,26 @@ class TestPhar(BaseTestInterpreter):
 
     def test_api_version(self):
         output = self.run('''
-            echo Phar::apiVersion();
-            ''')
+        echo Phar::apiVersion();
+        ''')
         assert self.space.str_w(output[0]) == '1.1.1'       # TODO: Will this be true always?
 
-#    def test_build_from_directory(self):
-
+    def test_build_from_directory(self):
+        tempdir = py.path.local(tempfile.mkdtemp())
+        f = tempdir.join('foo.txt')
+        f.write('test file 1')
+        f = tempdir.join('bar.txt')
+        f.write('test file 2')
+        output = self.run('''
+        $p = new Phar('newphar4.tar.phar', 0, 'newphar4.tar.phar');
+        $p->buildFromDirectory(dirname('%s'));
+        foreach (new RecursiveIteratorIterator($p) as $file) {
+            echo $file->getFileName();
+            echo file_get_contents($file->getPathName());
+            }
+       ''' % f)
+        assert len(output) == 4
+        assert self.space.newstr('foo.txt') in output
+        assert self.space.newstr('test file 1') in output
+        assert self.space.newstr('bar.txt') in output
+        assert self.space.newstr('test file 2') in output
