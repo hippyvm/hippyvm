@@ -49,3 +49,12 @@ class TestPhar(BaseTestInterpreter):
             echo $p['%s']->getContent();
             ''' % (f, f))
         assert self.space.str_w(output[0]) == 'Foo'
+
+    def test_add_from_string(self):
+        output = self.run('''
+            $p = new Phar('newphar3.tar.phar', 0, 'newphar3.tar.phar');
+            $p->addFromString('test/path/foo.txt', 'Bar');
+            echo $p['test/path/foo.txt']->getContent();
+            ''')
+        assert self.space.str_w(output[0]) == 'Bar'
+
