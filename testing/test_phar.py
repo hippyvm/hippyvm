@@ -17,5 +17,6 @@ class TestPhar(BaseTestInterpreter):
                 echo file_get_contents($file->getPathName());
             }
         ''')
+        assert len(output) == 2
         assert self.space.str_w(output[0]) == 'file1.txt'
         assert self.space.str_w(output[1]) == 'Information'
