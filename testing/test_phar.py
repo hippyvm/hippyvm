@@ -58,3 +58,8 @@ class TestPhar(BaseTestInterpreter):
             ''')
         assert self.space.str_w(output[0]) == 'Bar'
 
+    def test_api_version(self):
+        output = self.run('''
+            echo Phar::apiVersion();
+            ''')
+        assert self.space.str_w(output[0]) == ''
