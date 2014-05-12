@@ -8,7 +8,7 @@ class TestPhar(BaseTestInterpreter):
     def test_create_phar(self):
         output = self.run('''
         if (Phar::canWrite()) {
-        $p = new Phar('/tmp/newphar0.tar.phar', 0, 'newphar0.tar.phar');
+        $p = new Phar('/tmp/newphar.tar.phar', 0, 'newphar.tar.phar');
         $p->startBuffering();
         $p['file1.txt'] = 'Information';
         $p->stopBuffering();
@@ -19,6 +19,9 @@ class TestPhar(BaseTestInterpreter):
             echo $file->getFileName();
             echo file_get_contents($file->getPathName());
             }
+        unset($p);
+        unset($p2);
+        Phar::unlinkArchive('/tmp/newphar.tar.phar');
         ''')
         assert len(output) == 2
         assert self.space.str_w(output[0]) == 'file1.txt'
@@ -196,4 +199,43 @@ class TestPhar(BaseTestInterpreter):
             assert output[i+2] == self.space.w_True
             i = i + 3
 
+    def test_compress_gz(self):
+        output = self.run('''
+        $p = new Phar('/tmp/newphar12.phar', 0, 'newphar12.phar');
+        $p['myfile1.txt'] = 'Foo';
+        $p['myfile2.txt'] = 'Bar';
+        $p1 = $p->compress(Phar::GZ);
+        echo get_class($p1);
+        echo $p1->isCompressed();
+        unset($p1);
+        Phar::unlinkArchive('/tmp/newphar12.phar.gz');
+        ''')
+        assert self.space.str_w(output[0]) == 'Phar'
+        assert self.space.int_w(output[1]) == 4096
 
+    def test_compress_bz2(self):
+        output = self.run('''
+        $p = new Phar('/tmp/newphar13.phar', 0, 'newphar13.phar');
+        $p['myfile1.txt'] = 'Foo';
+        $p['myfile2.txt'] = 'Bar';
+        $p1 = $p->compress(Phar::BZ2);
+        echo get_class($p1);
+        echo $p1->isCompressed();
+        unset($p1);
+        Phar::unlinkArchive('/tmp/newphar13.phar.bz2');
+        ''')
+        assert self.space.str_w(output[0]) == 'Phar'
+        assert self.space.int_w(output[1]) == 8192
+
+    def test_compress_none(self):
+        output = self.run('''
+        $p = new Phar('/tmp/newphar14.phar', 0, 'newphar14.phar');
+        $p['myfile1.txt'] = 'Foo';
+        $p['myfile2.txt'] = 'Bar';
+        try{
+            $p1 = $p->compress(Phar::NONE); // copies to /path/to/my.phar.bzz
+        } catch (BadMethodCallException $e) {
+            echo $e->getMessage();
+        }
+        ''')
+        assert self.space.str_w(output[0]) == 'Unable to add newly converted phar "/tmp/newphar14.phar" to the list of phars, a phar with that name already exists'
