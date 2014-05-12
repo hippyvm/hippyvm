@@ -113,7 +113,7 @@ class TestPhar(BaseTestInterpreter):
 
     def test_offset_unset(self):
         output = self.run('''
-        $p = new Phar('/tmp/newphar6.tar.phar', 0, 'newphar6.tar.phar');
+        $p = new Phar('/tmp/newphar7.tar.phar', 0, 'newphar7.tar.phar');
         $p['foo.txt'] = "File exists";
         try {
             echo $p['foo.txt']->getContent();
@@ -125,3 +125,75 @@ class TestPhar(BaseTestInterpreter):
         ''')
         assert self.space.str_w(output[0]) == 'File exists'
         assert self.space.str_w(output[1]) == 'Entry foo.txt does not exist'
+
+    def test_is_buffering(self):
+        output = self.run('''
+        $p1 = new Phar('/tmp/newphar8.tar.phar', 0, 'newphar8.tar.phar');
+        $p1['foo.txt'] = "Foo";
+        $p2 = new Phar('/tmp/newphar9.tar.phar', 0, 'newphar9.tar.phar');
+        $p2['bar.txt'] = "Bar";
+        $p1->startBuffering();
+        echo $p1->isBuffering();
+        echo $p2->isBuffering();
+        $p1->stopBuffering();
+        echo $p1->isBuffering();
+        ''')
+        assert output[0] == self.space.w_True
+        assert output[1] == self.space.w_False
+        assert output[2] == self.space.w_False
+
+    def test_compress_files_gz(self):
+        output = self.run('''
+        $p = new Phar('/tmp/newphar10.phar', 0, 'newphar10.phar');
+        $p['myfile1.txt'] = 'Foo.';
+        $p['myfile2.txt'] = 'Bar.';
+        foreach ($p as $file) {
+            echo $file->isCompressed();
+            echo $file->isCompressed(Phar::GZ);
+            echo $file->isCompressed(Phar::BZ2);
+        }
+        $p->compressFiles(Phar::GZ);
+        foreach ($p as $file) {
+            echo $file->isCompressed();
+            echo $file->isCompressed(Phar::GZ);
+            echo $file->isCompressed(Phar::BZ2);
+        }
+        ''')
+        assert len(output) == 12
+        for i in range(6):
+            assert output[i] == self.space.w_False
+        i = 6
+        while i < 12:
+            assert output[i] == self.space.w_True
+            assert output[i+1] == self.space.w_True
+            assert output[i+2] == self.space.w_False
+            i = i + 3
+
+    def test_compress_files_bz2(self):
+        output = self.run('''
+        $p = new Phar('/tmp/newphar11.phar', 0, 'newphar11.phar');
+        $p['myfile1.txt'] = 'Foo.';
+        $p['myfile2.txt'] = 'Bar.';
+        foreach ($p as $file) {
+            echo $file->isCompressed();
+            echo $file->isCompressed(Phar::GZ);
+            echo $file->isCompressed(Phar::BZ2);
+        }
+        $p->compressFiles(Phar::BZ2);
+        foreach ($p as $file) {
+            echo $file->isCompressed();
+            echo $file->isCompressed(Phar::GZ);
+            echo $file->isCompressed(Phar::BZ2);
+        }
+        ''')
+        assert len(output) == 12
+        for i in range(6):
+            assert output[i] == self.space.w_False
+        i = 6
+        while i < 12:
+            assert output[i] == self.space.w_True
+            assert output[i+1] == self.space.w_False
+            assert output[i+2] == self.space.w_True
+            i = i + 3
+
+
