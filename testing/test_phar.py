@@ -84,3 +84,44 @@ class TestPhar(BaseTestInterpreter):
         assert self.space.newstr('bar.txt') in output
         assert self.space.newstr('test file 2') in output
 
+    def test_offset_exists(self):
+        output = self.run('''
+        $p = new Phar('/tmp/newphar5.tar.phar', 0, 'newphar5.tar.phar');
+        $p['foo.txt'] = 'Foo.';
+        echo isset($p['foo.txt']);
+        echo isset($p['bar.txt']);
+        ''')
+        assert output[0] == self.space.w_True
+        assert output[1] == self.space.w_False
+
+    def test_offset_get(self):
+        output = self.run('''
+        $p = new Phar('/tmp/newphar6.tar.phar', 0, 'newphar6.tar.phar');
+        $p['foo.txt'] = "File exists";
+        try {
+            $res = $p['foo.txt'];
+            echo get_class($res);
+            echo $res->getContent();
+            echo $p['bar.txt'];
+        } catch (BadMethodCallException $e) {
+            echo $e->getMessage();
+        }
+        ''')
+        assert self.space.str_w(output[0]) == 'PharFileInfo'
+        assert self.space.str_w(output[1]) == 'File exists'
+        assert self.space.str_w(output[2]) == 'Entry bar.txt does not exist'
+
+    def test_offset_unset(self):
+        output = self.run('''
+        $p = new Phar('/tmp/newphar6.tar.phar', 0, 'newphar6.tar.phar');
+        $p['foo.txt'] = "File exists";
+        try {
+            echo $p['foo.txt']->getContent();
+            unset($p['foo.txt']);
+            echo $p['foo.txt']->getContent();
+        } catch (BadMethodCallException $e) {
+            echo $e->getMessage();
+        }
+        ''')
+        assert self.space.str_w(output[0]) == 'File exists'
+        assert self.space.str_w(output[1]) == 'Entry foo.txt does not exist'
