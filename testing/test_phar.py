@@ -8,7 +8,7 @@ class TestPhar(BaseTestInterpreter):
     def test_create_phar(self):
         output = self.run('''
         if (Phar::canWrite()) {
-        $p = new Phar('newphar0.tar.phar', 0, 'newphar0.tar.phar');
+        $p = new Phar('/tmp/newphar0.tar.phar', 0, 'newphar0.tar.phar');
         $p->startBuffering();
         $p['file1.txt'] = 'Information';
         $p->stopBuffering();
@@ -28,7 +28,7 @@ class TestPhar(BaseTestInterpreter):
         tempdir = tempfile.mkdtemp()
         output = self.run('''
         if (Phar::canWrite()) {
-        $p = new Phar('newphar1.tar.phar', 0, 'newphar1.tar.phar');
+        $p = new Phar('/tmp/newphar1.tar.phar', 0, 'newphar1.tar.phar');
         $p->startBuffering();
         $p['file1.txt'] = 'Information';
         $p->stopBuffering();
@@ -44,7 +44,7 @@ class TestPhar(BaseTestInterpreter):
         f = py.path.local(tempfile.mkstemp()[1])
         f.write('Foo')
         output = self.run('''
-        $p = new Phar('newphar2.tar.phar', 0, 'newphar2.tar.phar');
+        $p = new Phar('/tmp/newphar2.tar.phar', 0, 'newphar2.tar.phar');
         $p->addFile('%s');
         echo $p['%s']->getContent();
         ''' % (f, f))
@@ -52,7 +52,7 @@ class TestPhar(BaseTestInterpreter):
 
     def test_add_from_string(self):
         output = self.run('''
-        $p = new Phar('newphar3.tar.phar', 0, 'newphar3.tar.phar');
+        $p = new Phar('/tmp/newphar3.tar.phar', 0, 'newphar3.tar.phar');
         $p->addFromString('test/path/foo.txt', 'Bar');
         echo $p['test/path/foo.txt']->getContent();
         ''')
@@ -71,7 +71,7 @@ class TestPhar(BaseTestInterpreter):
         f = tempdir.join('bar.txt')
         f.write('test file 2')
         output = self.run('''
-        $p = new Phar('newphar4.tar.phar', 0, 'newphar4.tar.phar');
+        $p = new Phar('/tmp/newphar4.tar.phar', 0, 'newphar4.tar.phar');
         $p->buildFromDirectory(dirname('%s'));
         foreach (new RecursiveIteratorIterator($p) as $file) {
             echo $file->getFileName();
@@ -83,3 +83,4 @@ class TestPhar(BaseTestInterpreter):
         assert self.space.newstr('test file 1') in output
         assert self.space.newstr('bar.txt') in output
         assert self.space.newstr('test file 2') in output
+
