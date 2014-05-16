@@ -336,7 +336,6 @@ class TestPhar(BaseTestInterpreter):
         $p['foo.php'] = '<?php echo Phar::running(); echo Phar::running(false); ?>';
         include 'phar:///tmp/newphar.phar/foo.php';
         echo Phar::running();
-//        echo Phar::running(false);
         unset($p);
         Phar::unlinkArchive('/tmp/newphar.phar');
         ''')
@@ -349,11 +348,24 @@ class TestPhar(BaseTestInterpreter):
     def test_intercept_file_funcs(self):
         output = self.run('''
         $p = new Phar('/tmp/newphar.phar', 0, 'newphar.phar');
-        $p['file2.txt'] = 'Test file.';
-        $p['file.php'] = "<?php echo file_get_contents('file2.txt'); ?>";
+        $p['foo.txt'] = 'Test file.';
+        $p['file.php'] = "<?php echo file_get_contents('foo.txt'); ?>";
         Phar::interceptFileFuncs();
         include 'phar:///tmp/newphar.phar/file.php';
         unset($p);
         Phar::unlinkArchive('/tmp/newphar.phar');
         ''')
         assert self.space.str_w(output[0]) == 'Test file.'
+
+    def test_modified(self):
+        output = self.run('''
+        $p = new Phar('/tmp/newphar.phar', 0, 'newphar.phar');
+        echo $p->getModified();
+        $p['a'] = 'foo';
+        $p->compressFiles(Phar::GZ);
+        echo $p->getModified();
+        unset($p);
+        Phar::unlinkArchive('/tmp/newphar.phar');
+        ''')
+        assert output[0] == self.space.w_False
+        assert output[1] == self.space.w_True
