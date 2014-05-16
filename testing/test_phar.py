@@ -275,12 +275,13 @@ class TestPhar(BaseTestInterpreter):
         output = self.run('''
         $p = new Phar('/tmp/newphar.phar', 0, 'newphar.phar');
         $p['a'] = 'foo';
-        $p->copy('a', 'b');
+        echo $p->copy('a', 'b');
         echo $p['b']->getContent();
         unset($p);
         Phar::unlinkArchive('/tmp/newphar.phar');
         ''')
-        assert self.space.str_w(output[0]) == 'foo'
+        assert output[0] == self.space.w_True
+        assert self.space.str_w(output[1]) == 'foo'
 
     def test_count(self):
         output = self.run('''
