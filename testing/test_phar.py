@@ -346,3 +346,14 @@ class TestPhar(BaseTestInterpreter):
         assert self.space.str_w(output[2]) == '/tmp/newphar.phar'
         assert self.space.str_w(output[3]) == ''
 
+    def test_intercept_file_funcs(self):
+        output = self.run('''
+        $p = new Phar('/tmp/newphar.phar', 0, 'newphar.phar');
+        $p['file2.txt'] = 'Test file.';
+        $p['file.php'] = "<?php echo file_get_contents('file2.txt'); ?>";
+        Phar::interceptFileFuncs();
+        include 'phar:///tmp/newphar.phar/file.php';
+        unset($p);
+        Phar::unlinkArchive('/tmp/newphar.phar');
+        ''')
+        assert self.space.str_w(output[0]) == 'Test file.'
