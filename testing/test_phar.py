@@ -304,6 +304,8 @@ class TestPhar(BaseTestInterpreter):
         $p->setMetadata(array('bootstrap' => 'file.php'));
         echo $p->hasMetadata();
         echo $p->getMetadata();
+        echo $p->delMetadata();
+        echo $p->hasMetadata();
         unset($p);
         Phar::unlinkArchive('/tmp/newphar.phar');
         ''')
@@ -314,3 +316,5 @@ class TestPhar(BaseTestInterpreter):
         for key, w_value in output[2].dct_w.iteritems():
             assert key == 'bootstrap'
             assert self.space.str_w(w_value) == 'file.php'
+        assert output[3] == self.space.w_True
+        assert output[4] == self.space.w_False
