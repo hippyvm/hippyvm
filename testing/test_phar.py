@@ -318,3 +318,21 @@ class TestPhar(BaseTestInterpreter):
             assert self.space.str_w(w_value) == 'file.php'
         assert output[3] == self.space.w_True
         assert output[4] == self.space.w_False
+
+    def test_running(self):
+        output = self.run('''
+        echo Phar::running();
+        $p = new Phar('/tmp/newphar.phar', 0, 'newphar.phar');
+        $p['foo.php'] = '<?php echo Phar::running(); echo Phar::running(false); ?>';
+        include 'phar:///tmp/newphar.phar/foo.php';
+        echo Phar::running();
+//        echo Phar::running(false);
+        unset($p);
+        Phar::unlinkArchive('/tmp/newphar.phar');
+        ''')
+        assert len(output) == 4
+        assert self.space.str_w(output[0]) == ''
+        assert self.space.str_w(output[1]) == 'phar:///tmp/newphar.phar'
+        assert self.space.str_w(output[2]) == '/tmp/newphar.phar'
+        assert self.space.str_w(output[3]) == ''
+
