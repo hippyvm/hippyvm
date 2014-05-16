@@ -295,3 +295,22 @@ class TestPhar(BaseTestInterpreter):
         ''')
         assert self.space.int_w(output[0]) == 1
         assert self.space.int_w(output[1]) == 2
+
+    def test_metadata(self):
+        output = self.run('''
+        $p = new Phar('/tmp/newphar.phar', 0, 'newphar.phar');
+        $p['file.php'] = '<?php echo "hello";';
+        echo $p->hasMetadata();
+        $p->setMetadata(array('bootstrap' => 'file.php'));
+        echo $p->hasMetadata();
+        echo $p->getMetadata();
+        unset($p);
+        Phar::unlinkArchive('/tmp/newphar.phar');
+        ''')
+        assert output[0] == self.space.w_False
+        assert output[1] == self.space.w_True
+        from hippy.objects.arrayobject import W_RDictArrayObject
+        assert isinstance(output[2], W_RDictArrayObject)
+        for key, w_value in output[2].dct_w.iteritems():
+            assert key == 'bootstrap'
+            assert self.space.str_w(w_value) == 'file.php'
