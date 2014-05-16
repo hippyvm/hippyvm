@@ -369,3 +369,17 @@ class TestPhar(BaseTestInterpreter):
         ''')
         assert output[0] == self.space.w_False
         assert output[1] == self.space.w_True
+
+    def test_signature(self):
+        output = self.run('''
+        $p = new Phar('/tmp/newphar.phar', 0, 'newphar.phar');
+        $p['a'] = 'foo';
+        echo $p->getSignature();
+        unset($p);
+        Phar::unlinkArchive('/tmp/newphar.phar');
+        ''')
+#        assert output[0] == ''
+        from hippy.objects.arrayobject import W_RDictArrayObject
+        assert isinstance(output[0], W_RDictArrayObject)
+        for key, w_value in output[0].dct_w.iteritems():
+            assert key in ['hash', 'hash_type']
