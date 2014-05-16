@@ -74,6 +74,16 @@ class TestPhar(BaseTestInterpreter):
         ''')
         assert self.space.str_w(output[0]) == '1.1.1'       # TODO: Will this be true always?
 
+    def test_get_version(self):
+        output = self.run('''
+        $p = new Phar('/tmp/newphar.tar.phar', 0, 'newphar.tar.phar');
+        $p['foo.txt'] = 'Foo.';
+        echo $p->getVersion();
+        unset($p);
+        Phar::unlinkArchive('/tmp/newphar.tar.phar');
+        ''')
+        assert self.space.str_w(output[0]) == '1.1.1'       # TODO: Will this be true always?
+
     def test_build_from_directory(self):            # XXX: Doesn't work on first run
         tempdir = py.path.local(tempfile.mkdtemp())
         f = tempdir.join('foo.txt')
