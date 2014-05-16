@@ -281,3 +281,16 @@ class TestPhar(BaseTestInterpreter):
         Phar::unlinkArchive('/tmp/newphar.phar');
         ''')
         assert self.space.str_w(output[0]) == 'foo'
+
+    def test_count(self):
+        output = self.run('''
+        $p = new Phar('/tmp/newphar.phar', 0, 'newphar.phar');
+        $p['a'] = 'foo';
+        echo $p->count();
+        $p['b'] = 'bar';
+        echo $p->count();
+        unset($p);
+        Phar::unlinkArchive('/tmp/newphar.phar');
+        ''')
+        assert self.space.int_w(output[0]) == 1
+        assert self.space.int_w(output[1]) == 2
