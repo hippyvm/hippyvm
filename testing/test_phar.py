@@ -384,7 +384,7 @@ class TestPhar(BaseTestInterpreter):
             assert key in ['hash', 'hash_type']
 
     def test_load_phar(self):
-        output=self.run('''
+        output = self.run('''
         $p = new Phar('/tmp/newphar.phar');
         $p['foo.txt'] = 'Foo';
         Phar::loadPhar('/tmp/newphar.phar', 'test.phar');
@@ -394,4 +394,14 @@ class TestPhar(BaseTestInterpreter):
         ''')
         assert self.space.str_w(output[0]) == 'Foo'
 
+    def test_set_alias(self):
+        output = self.run('''
+        $p = new Phar('/tmp/newphar.phar');
+        $p['foo.txt'] = 'Foo';
+        $p->setAlias('test.phar');
+        echo file_get_contents('phar://test.phar/foo.txt');
+        unset($p);
+        Phar::unlinkArchive('/tmp/newphar.phar');
+        ''')
+        assert self.space.str_w(output[0]) == 'Foo'
 
