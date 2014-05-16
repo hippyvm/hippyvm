@@ -378,8 +378,20 @@ class TestPhar(BaseTestInterpreter):
         unset($p);
         Phar::unlinkArchive('/tmp/newphar.phar');
         ''')
-#        assert output[0] == ''
         from hippy.objects.arrayobject import W_RDictArrayObject
         assert isinstance(output[0], W_RDictArrayObject)
         for key, w_value in output[0].dct_w.iteritems():
             assert key in ['hash', 'hash_type']
+
+    def test_load_phar(self):
+        output=self.run('''
+        $p = new Phar('/tmp/newphar.phar');
+        $p['foo.txt'] = 'Foo';
+        Phar::loadPhar('/tmp/newphar.phar', 'test.phar');
+        echo file_get_contents('phar://test.phar/foo.txt');
+        unset($p);
+        Phar::unlinkArchive('/tmp/newphar.phar');
+        ''')
+        assert self.space.str_w(output[0]) == 'Foo'
+
+
