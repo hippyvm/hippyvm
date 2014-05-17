@@ -426,11 +426,12 @@ class TestPhar(BaseTestInterpreter):
 //        Phar::unlinkArchive('/tmp/decomp_phar1.phar');
         ''')
         assert len(output) == 12
-        for i in range(6):
+        i = 0
+        while i < 6:
             assert output[i] == self.space.w_True
             assert output[i+1] == self.space.w_True
             assert output[i+2] == self.space.w_False
-            i = i + 3
-        i = 6
+            i += 3
         while i < 12:
             assert output[i] == self.space.w_False
+            i += 1
