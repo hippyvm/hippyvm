@@ -405,3 +405,17 @@ class TestPhar(BaseTestInterpreter):
         ''')
         assert self.space.str_w(output[0]) == 'Foo'
 
+    def test_web_phar(self):
+        output = self.run('''
+        try {
+            $phar = new Phar('/tmp/newphar.phar');
+            $phar['index.php'] = '<?php echo "Hello World"; ?>';
+            $phar['index.phps'] = '<?php echo "Hello World"; ?>';
+            $phar->setStub('<?php Phar::webPhar(); __HALT_COMPILER(); ?>');
+            unset($phar);
+            Phar::unlinkArchive('/tmp/newphar.phar');
+        } catch (Exception $e) {
+            echo 'Error!';
+        }
+        ''')
+        assert len(output) == 0
