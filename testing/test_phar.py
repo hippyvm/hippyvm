@@ -405,17 +405,32 @@ class TestPhar(BaseTestInterpreter):
         ''')
         assert self.space.str_w(output[0]) == 'Foo'
 
-    def test_web_phar(self):
+    def test_uncompressallfiles(self):       # XXX: Doesn't pass on first runs
         output = self.run('''
-        try {
-            $phar = new Phar('/tmp/newphar.phar');
-            $phar['index.php'] = '<?php echo "Hello World"; ?>';
-            $phar['index.phps'] = '<?php echo "Hello World"; ?>';
-            $phar->setStub('<?php Phar::webPhar(); __HALT_COMPILER(); ?>');
-            unset($phar);
-            Phar::unlinkArchive('/tmp/newphar.phar');
-        } catch (Exception $e) {
-            echo 'Error!';
+        $p = new Phar('/tmp/decomp_phar1.phar', 0, 'decomp_phar1.phar');
+        $p['myfile1.txt'] = 'Foo.';
+        $p['myfile2.txt'] = 'Bar.';
+        $p->compressFiles(Phar::GZ);
+        foreach ($p as $file) {
+            echo $file->isCompressed();
+            echo $file->isCompressed(Phar::GZ);
+            echo $file->isCompressed(Phar::BZ2);
         }
+        $p->decompressFiles();
+        foreach ($p as $file) {
+            echo $file->isCompressed();
+            echo $file->isCompressed(Phar::GZ);
+            echo $file->isCompressed(Phar::BZ2);
+        }
+//        unset($p);
+//        Phar::unlinkArchive('/tmp/decomp_phar1.phar');
         ''')
-        assert len(output) == 0
+        assert len(output) == 12
+        for i in range(6):
+            assert output[i] == self.space.w_True
+            assert output[i+1] == self.space.w_True
+            assert output[i+2] == self.space.w_False
+            i = i + 3
+        i = 6
+        while i < 12:
+            assert output[i] == self.space.w_False
