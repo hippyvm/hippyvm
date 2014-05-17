@@ -435,3 +435,26 @@ class TestPhar(BaseTestInterpreter):
         while i < 12:
             assert output[i] == self.space.w_False
             i += 1
+
+    def test_decompress(self):
+        output = self.run('''
+        $p = new Phar('/tmp/newphar.phar', 0, 'newphar.phar');
+        $p['myfile1.txt'] = 'Foo';
+        $p['myfile2.txt'] = 'Bar';
+        $p1 = $p->compress(Phar::GZ);
+        echo $p1->isCompressed();
+        unset($p);
+        Phar::unlinkArchive('/tmp/newphar.phar');
+
+        $p2 = $p1->decompress();
+        echo get_class($p2);
+        echo $p2->isCompressed();
+
+        unset($p1);
+        unset($p2);
+        Phar::unlinkArchive('/tmp/newphar.phar');
+        Phar::unlinkArchive('/tmp/newphar.phar.gz');
+        ''')
+        assert self.space.int_w(output[0]) == 4096
+        assert self.space.str_w(output[1]) == 'Phar'
+        assert output[2] == self.space.w_False
