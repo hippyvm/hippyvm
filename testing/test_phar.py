@@ -497,4 +497,16 @@ class TestPhar(BaseTestInterpreter):
         assert output[1] == self.space.w_False
         assert output[2] == self.space.w_False
 
-
+    def test_is_valid_phar_filename(self):
+        output = self.run('''
+        echo Phar::isValidPharFilename('anyNameWillDo.phar');
+        echo Phar::isValidPharFilename('anyNameWill.Do');
+        echo Phar::isValidPharFilename('anyNameWillDo');
+        echo Phar::isValidPharFilename('anyNameWillDo', false);
+        echo Phar::isValidPharFilename('anyNameWill.Do', false);
+        ''')
+        assert output[0] == self.space.w_True
+        assert output[1] == self.space.w_False
+        assert output[2] == self.space.w_False
+        assert output[3] == self.space.w_False
+        assert output[4] == self.space.w_True
