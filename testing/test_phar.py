@@ -458,3 +458,27 @@ class TestPhar(BaseTestInterpreter):
         assert self.space.int_w(output[0]) == 4096
         assert self.space.str_w(output[1]) == 'Phar'
         assert output[2] == self.space.w_False
+
+    def test_stub(self):
+        output = self.run('''
+        try {
+            $p = new Phar('/tmp/brandnewphar.phar', 0, 'brandnewphar.phar');
+            $p['a.php'] = '<?php echo "Hello";';
+            $p->setStub('<?php var_dump("First"); Phar::mapPhar("brandnewphar.phar"); __HALT_COMPILER(); ?>');
+            include 'phar://brandnewphar.phar/a.php';
+            echo $p->getStub();
+            $p['b.php'] = '<?php echo "World";';
+            $p->setStub('<?php var_dump("Second"); Phar::mapPhar("brandnewphar.phar"); __HALT_COMPILER(); ?>');
+            include 'phar://brandnewphar.phar/b.php';
+            echo $p->getStub();
+            unset($p);
+            Phar::unlinkArchive('/tmp/brandnewphar.phar');
+        } catch (Exception $e) {
+            echo 'Write operations failed on brandnewphar.phar: ', $e;
+        }
+        ''')
+        assert len(output) == 4
+        assert self.space.str_w(output[0]) == 'Hello'
+        assert self.space.str_w(output[1]) == '<?php var_dump("First"); Phar::mapPhar("brandnewphar.phar"); __HALT_COMPILER(); ?>\r\n'
+        assert self.space.str_w(output[2]) == 'World'
+        assert self.space.str_w(output[3]) == '<?php var_dump("Second"); Phar::mapPhar("brandnewphar.phar"); __HALT_COMPILER(); ?>\r\n'
