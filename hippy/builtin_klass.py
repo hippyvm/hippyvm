@@ -133,6 +133,7 @@ k_Exception = def_class('Exception',
 def_class('OutOfBoundsException', [], extends=k_Exception)
 k_stdClass = def_class('stdClass', [])
 k_incomplete = def_class('__PHP_Incomplete_Class', [])
+k_PharException = def_class('PharException', [], extends=k_Exception)
 
 
 def new_abstract_method(args, **kwds):
