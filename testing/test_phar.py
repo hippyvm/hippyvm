@@ -520,3 +520,18 @@ class TestPhar(BaseTestInterpreter):
         Phar::unlinkArchive('/tmp/newphar.phar');
         ''')
         assert output[0] == self.space.w_True
+
+    def test_delete(self):
+        output = self.run('''
+        $p = new Phar('/tmp/newphar.phar', 0, 'newphar.phar');
+        $p['foo.txt'] = 'Foo';
+        $p['bar.txt'] = 'Bar';
+        echo $p->count();
+        echo $p->delete('foo.txt');
+        echo $p->count();
+        unset($p);
+        Phar::unlinkArchive('/tmp/newphar.phar');
+        ''')
+        assert self.space.int_w(output[0]) == 2
+        assert output[1] == self.space.w_True
+        assert self.space.int_w(output[2]) == 1
