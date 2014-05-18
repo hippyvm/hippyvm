@@ -510,3 +510,13 @@ class TestPhar(BaseTestInterpreter):
         assert output[2] == self.space.w_False
         assert output[3] == self.space.w_False
         assert output[4] == self.space.w_True
+
+    def test_is_writablet(self):
+        output = self.run('''
+        $p = new Phar('/tmp/newphar.phar', 0, 'newphar.phar');
+        $p['myfile1.txt'] = 'Foo';
+        echo $p->isWritable();
+        unset($p);
+        Phar::unlinkArchive('/tmp/newphar.phar');
+        ''')
+        assert output[0] == self.space.w_True
