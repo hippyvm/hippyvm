@@ -482,3 +482,19 @@ class TestPhar(BaseTestInterpreter):
         assert self.space.str_w(output[1]) == '<?php var_dump("First"); Phar::mapPhar("brandnewphar.phar"); __HALT_COMPILER(); ?>\r\n'
         assert self.space.str_w(output[2]) == 'World'
         assert self.space.str_w(output[3]) == '<?php var_dump("Second"); Phar::mapPhar("brandnewphar.phar"); __HALT_COMPILER(); ?>\r\n'
+
+    def test_is_file_format(self):
+        output = self.run('''
+        $p = new Phar('/tmp/newphar.phar', 0, 'newphar.phar');
+        $p['myfile1.txt'] = 'Foo';
+        echo $p->isFileFormat(Phar::PHAR);
+        echo $p->isFileFormat(Phar::TAR);
+        echo $p->isFileFormat(Phar::ZIP);
+        unset($p);
+        Phar::unlinkArchive('/tmp/newphar.phar');
+        ''')
+        assert output[0] == self.space.w_True
+        assert output[1] == self.space.w_False
+        assert output[2] == self.space.w_False
+
+
