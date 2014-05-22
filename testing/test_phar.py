@@ -567,3 +567,20 @@ class TestPharFileInfo(BaseTestInterpreter):
         assert output[0] == self.space.w_False
         assert output[1] == self.space.w_True
         assert output[2] == self.space.w_True
+
+    def test_compress(self):
+        output = self.run('''
+        $p = new Phar('/tmp/newphar.phar', 0, 'newphar.phar');
+        $p['myfile.txt'] = 'hi';
+        $file = $p['myfile.txt'];
+        $file->compress(Phar::BZ2);
+        echo $file->isCompressed(Phar::BZ2);
+        echo $file->decompress();
+        echo $file->isCompressed();
+        unset($p);
+        Phar::unlinkArchive('/tmp/newphar.phar');
+        ''')
+        assert output[0] == self.space.w_True
+        assert output[1] == self.space.w_True
+        assert output[2] == self.space.w_False
+
