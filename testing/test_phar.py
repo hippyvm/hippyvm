@@ -583,3 +583,20 @@ class TestPharFileInfo(BaseTestInterpreter):
         assert output[0] == self.space.w_True
         assert output[1] == self.space.w_True
         assert output[2] == self.space.w_False
+
+    def test_metadata(self):
+        output = self.run('''
+        $p = new Phar('/tmp/newphar.phar', 0, 'newphar.phar');
+        $p['foo'] = 'Foo.';
+        $p['foo']->setMetadata('Bar');
+        echo $p['foo']->getMetadata();
+        echo $p['foo']->delMetadata();
+        echo $p['foo']->getMetadata();
+        echo $p['foo']->delMetadata();
+        unset($p);
+        Phar::unlinkArchive('/tmp/newphar.phar');
+        ''')
+        assert self.space.str_w(output[0]) == 'Bar'
+        assert output[1] == self.space.w_True
+        assert output[2] == self.space.w_Null
+        assert output[3] == self.space.w_True      # XXX: Always returns true. Sadness.
