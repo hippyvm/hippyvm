@@ -568,7 +568,7 @@ class TestPharFileInfo(BaseTestInterpreter):
         assert output[1] == self.space.w_True
         assert output[2] == self.space.w_True
 
-    def test_compress(self):
+    def test_decompress(self):
         output = self.run('''
         $p = new Phar('/tmp/newphar.phar', 0, 'newphar.phar');
         $p['myfile.txt'] = 'hi';
@@ -583,4 +583,3 @@ class TestPharFileInfo(BaseTestInterpreter):
         assert output[0] == self.space.w_True
         assert output[1] == self.space.w_True
         assert output[2] == self.space.w_False
-
