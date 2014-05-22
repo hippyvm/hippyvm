@@ -248,6 +248,10 @@ ctype_test_dir = 'ext/ctype'
 pcre_test_dir = 'ext/pcre'
 hash_test_dir = 'ext/hash'
 spl_test_dir = 'ext/spl'
+phar_test_dir = 'ext/phar'
+phar_zip_test_dir = 'ext/phar/zip'
+phar_tar_test_dir = 'ext/phar/tar'
+phar_cache_list_test_dir = 'ext/phar/cache_list'
 Zend_test_dir = 'Zend'
 mcrypt_test_dir = 'ext/mcrypt'
 
@@ -2825,6 +2829,11 @@ markers['Zend/tests/constants'] = {}
 markers['Zend/multibyte'] = SkipAll()
 markers['Zend/traits'] = SkipAll()
 markers['Zend/traits/bugs'] = SkipAll()
+
+markers[phar_test_dir] = SkipAll()
+markers[phar_zip_test_dir] = SkipAll()
+markers[phar_tar_test_dir] = SkipAll()
+markers[phar_cache_list_test_dir] = SkipAll()
 
 markers[ctype_test_dir] = {}
 markers[hash_test_dir] = {
