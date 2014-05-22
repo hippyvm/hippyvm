@@ -10,17 +10,18 @@ class W_Phar(W_RecursiveDirectoryIterator):
 
 def _phar_detect_phar_fname_ext():
     """
-    if executable is 1, only returns SUCCESS if the extension is one of the tar/zip .phar extensions
-    if executable is 0, it returns SUCCESS only if the filename does *not* contain ".phar" anywhere, and treats
-    the first extension as the filename extension
+    if executable is 1, only returns SUCCESS if the extension is one of the
+    tar/zip .phar extensions if executable is 0, it returns SUCCESS only if the
+    filename does *not* contain ".phar" anywhere, and treats the first
+    extension as the filename extension
 
-    if an extension is found, it sets ext_str to the location of the file extension in filename,
-    and ext_len to the length of the extension.
-    for urls like "phar://alias/oops" it instead sets ext_len to -1 and returns FAILURE, which tells
-    the calling function to use "alias" as the phar alias
+    if an extension is found, it sets ext_str to the location of the file
+    extension in filename, and ext_len to the length of the extension.
+    for urls like "phar://alias/oops" it instead sets ext_len to -1 and returns
+    FAILURE, which tells the calling function to use "alias" as the phar alias
 
-    the last parameter should be set to tell the thing to assume that filename is the full path, and only to check the
-    extension rules, not to iterate.
+    the last parameter should be set to tell the thing to assume that filename
+    is the full path, and only to check the extension rules, not to iterate.
 
     see: https://github.com/php/php-src/blob/af6c11c5f060870d052a2b765dc634d9e47d0f18/ext/phar/phar.c#L1893
     """

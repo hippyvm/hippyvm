@@ -535,3 +535,21 @@ class TestPhar(BaseTestInterpreter):
         assert self.space.int_w(output[0]) == 2
         assert output[1] == self.space.w_True
         assert self.space.int_w(output[2]) == 1
+
+
+class TestPharFileInfo(BaseTestInterpreter):
+
+    def test_chmod(self):
+        output = self.run('''
+        @unlink('/tmp/newphar.phar');
+        $p = new Phar('/tmp/newphar.phar', 0, 'newphar.phar');
+        $p['foo.sh'] = '#!/usr/local/lib/php <?php echo "Testing!"; ?>';
+        echo $p['foo.sh']->isExecutable();
+        $p['foo.sh']->chmod(0555);
+        echo $p['foo.sh']->isExecutable();
+        unset($p);
+        Phar::unlinkArchive('/tmp/newphar.phar');
+        ''')
+        assert output[0] == self.space.w_False
+        assert output[1] == self.space.w_True
+
