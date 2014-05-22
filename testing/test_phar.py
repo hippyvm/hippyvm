@@ -589,14 +589,18 @@ class TestPharFileInfo(BaseTestInterpreter):
         $p = new Phar('/tmp/newphar.phar', 0, 'newphar.phar');
         $p['foo'] = 'Foo.';
         $p['foo']->setMetadata('Bar');
+        echo $p['foo']->hasMetadata();
         echo $p['foo']->getMetadata();
         echo $p['foo']->delMetadata();
+        echo $p['foo']->hasMetadata();
         echo $p['foo']->getMetadata();
         echo $p['foo']->delMetadata();
         unset($p);
         Phar::unlinkArchive('/tmp/newphar.phar');
         ''')
-        assert self.space.str_w(output[0]) == 'Bar'
-        assert output[1] == self.space.w_True
-        assert output[2] == self.space.w_Null
-        assert output[3] == self.space.w_True      # XXX: Always returns true. Sadness.
+        assert output[0] == self.space.w_True
+        assert self.space.str_w(output[1]) == 'Bar'
+        assert output[2] == self.space.w_True
+        assert output[3] == self.space.w_False
+        assert output[4] == self.space.w_Null
+        assert output[5] == self.space.w_True      # XXX: Always returns true. Sadness.
