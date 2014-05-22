@@ -604,3 +604,13 @@ class TestPharFileInfo(BaseTestInterpreter):
         assert output[3] == self.space.w_False
         assert output[4] == self.space.w_Null
         assert output[5] == self.space.w_True      # XXX: Always returns true. Sadness.
+
+    def test_get_phar_flags(self):
+        output = self.run('''
+        $p = new Phar('/tmp/newphar.phar', 0, 'newphar.phar');
+        $p['foo'] = 'Foo.';
+        echo $p['foo']->getPharFlags();
+        unset($p);
+        Phar::unlinkArchive('/tmp/newphar.phar');
+        ''')
+        assert self.space.int_w(output[0]) == 0
