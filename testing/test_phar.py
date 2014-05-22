@@ -614,3 +614,13 @@ class TestPharFileInfo(BaseTestInterpreter):
         Phar::unlinkArchive('/tmp/newphar.phar');
         ''')
         assert self.space.int_w(output[0]) == 0
+
+    def test_get_compressed_size(self):
+        output = self.run('''
+        $p = new Phar('/tmp/newphar.phar', 0, 'newphar.phar');
+        $p['foo.txt'] = 'Foo';
+        echo $p['foo.txt']->getCompressedSize();
+        unset($p);
+        Phar::unlinkArchive('/tmp/newphar.phar');
+        ''')
+        assert self.space.int_w(output[0]) == 3
