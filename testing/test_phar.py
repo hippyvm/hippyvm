@@ -624,3 +624,13 @@ class TestPharFileInfo(BaseTestInterpreter):
         Phar::unlinkArchive('/tmp/newphar.phar');
         ''')
         assert self.space.int_w(output[0]) == 3
+
+    def test_is_crc_checked(self):
+        output = self.run('''
+        $p = new Phar('/tmp/newphar.phar', 0, 'newphar.phar');
+        $p['foo.txt'] = 'Foo';
+        echo $p['foo.txt']->isCRCChecked();
+        unset($p);
+        Phar::unlinkArchive('/tmp/newphar.phar');
+        ''')
+        assert output[0] == self.space.w_True
