@@ -298,7 +298,31 @@ def get_stub(web, index):
     stub_len = len(template) + len(web) + len(index) + 5;
     return template % (web, index, stub_len)
 
-def read_manifest(interp, data):
+def read_global_manifest(interp, data):
+    """
+    4 bytes: Length of manifest in bytes (1 MB limit)
+    4 bytes: Number of files in the Phar
+    2 bytes: API version of the Phar manifest (currently 1.0.0)
+    4 bytes: Global Phar bitmapped flags
+    4 bytes: Length of Phar alias
+    ?? : Phar alias (length based on previous)
+    4 bytes: Length of Phar metadata (0 for none)
+    at least 24 * number of entries bytes: entries for each file
+    """
+    alias_len = phpstruct.Unpack(interp.space, "N2ignore1/nignore2/Nignore3/Nalias_len", data).build()[-1][-1].unwrap()
+    input_format = "Nmanifest_len/Nno_of_files/napi_version/Nflags/\
+Nalias_length/a%dalias/Nmetadata_len" % alias_len
+    # TODO: read entries for each file
+    item_list = phpstruct.Unpack(interp.space,
+                                 input_format,
+                                 data).build()
+    result = {}
+    for k, w_v in item_list:
+        result[k[1:]] = w_v.unwrap()
+    return result
+
+
+def read_manifest_file_entry(interp, data):
     """
     4 bytes: Filename length in bytes
     ?? :  Filename (length specified in previous)
@@ -316,7 +340,6 @@ def read_manifest(interp, data):
     item_list = phpstruct.Unpack(interp.space,
                                  input_format,
                                  data).build()
-    # N or V?
     # TODO: Read serialized file metadata
     result = {}
     for k, w_v in item_list:
