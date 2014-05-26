@@ -1,5 +1,9 @@
 from hippy.module import phpstruct
 
+def get_stub(web, index):
+    stub_len = len(template) + len(web) + len(index) + 5;
+    return template % (web, index, stub_len)
+
 template = """<?php
 
 $web = '%s';
@@ -297,6 +301,7 @@ __HALT_COMPILER(); ?>"""
 def get_stub(web, index):
     stub_len = len(template) + len(web) + len(index) + 5;
     return template % (web, index, stub_len)
+
 
 def read_global_manifest(interp, data):
     """
