@@ -340,8 +340,9 @@ def read_manifest_file_entry(interp, data):
     ?? :  Serialized File Meta-data, stored in serialize() format
     """
     filename_len = phpstruct.Unpack(interp.space, "N", data).build()[0][-1].unwrap()
+    metadata_len = phpstruct.Unpack(interp.space, "Nignore1/a%dignore2/N5ignore3/Nmetadata_len" % filename_len, data).build()[-1][-1].unwrap()
     input_format = "Nfilename_len/a%dfilename/Nuncompressed_filesize/Ntimestamp\
-/Ncompressed_filesize/Ncrc32/Nflags/Nmetadata_len" % filename_len
+/Ncompressed_filesize/Ncrc32/Nflags/Nmetadata_len/a%dmetadata" % (filename_len, metadata_len)
     item_list = phpstruct.Unpack(interp.space,
                                  input_format,
                                  data).build()
