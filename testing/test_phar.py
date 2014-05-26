@@ -2,6 +2,8 @@ import py
 import tempfile
 from testing.test_interpreter import BaseTestInterpreter
 
+from hippy.module.phar import utils
+
 
 class TestPhar(BaseTestInterpreter):
 
@@ -634,3 +636,10 @@ class TestPharFileInfo(BaseTestInterpreter):
         Phar::unlinkArchive('/tmp/newphar.phar');
         ''')
         assert output[0] == self.space.w_True
+
+
+class TestPharUtis(BaseTestInterpreter):
+
+    def test_make_stub(self):
+        stub = utils.get_stub('index.php', 'index.php')
+        assert len(stub) == 6676
