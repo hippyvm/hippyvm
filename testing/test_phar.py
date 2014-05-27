@@ -640,6 +640,6 @@ class TestPharFileInfo(BaseTestInterpreter):
 
 class TestPharUtis(BaseTestInterpreter):
 
-    def test_make_stub(self):
-        stub = utils.get_stub('index.php', 'index.php')
+    def test_generate_stub(self):
+        stub = utils.generate_stub('index.php', 'index.php')
         assert len(stub) == 6676

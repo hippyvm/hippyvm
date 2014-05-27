@@ -298,9 +298,11 @@ Extract_Phar::go();
 __HALT_COMPILER(); ?>"""
 
 
-def get_stub(web, index):
+def generate_stub(web, index):
     stub_len = len(template) + len(web) + len(index) + 5;
     return template % (web, index, stub_len)
+
+
 
 
 def read_global_manifest(interp, data):
