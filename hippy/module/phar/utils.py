@@ -1,5 +1,6 @@
 from hippy.module import phpstruct
 from hippy.lexer import Lexer
+from hippy.objects.intobject import W_IntObject
 
 def get_stub(web, index):
     stub_len = len(template) + len(web) + len(index) + 5;
@@ -320,7 +321,7 @@ def fetch_phar_data(content):
     return ''
 
 
-def read_global_manifest(interp, data):
+def read_global_manifest(space, data):
     """
     4 bytes: Length of manifest in bytes (1 MB limit)
     4 bytes: Number of files in the Phar
@@ -331,20 +332,23 @@ def read_global_manifest(interp, data):
     4 bytes: Length of Phar metadata (0 for none)
     at least 24 * number of entries bytes: entries for each file
     """
-    alias_len = phpstruct.Unpack(interp.space, "N2ignore1/nignore2/Nignore3/Nalias_len", data).build()[-1][-1].unwrap()
+    alias_len = space.int_w(phpstruct.Unpack(space, "N2ignore1/nignore2/Nignore3/Nalias_len", data).build()[-1][-1])
     input_format = "Nmanifest_len/Nno_of_files/napi_version/Nflags/\
 Nalias_length/a%dalias/Nmetadata_len" % alias_len
     # TODO: read entries for each file
-    item_list = phpstruct.Unpack(interp.space,
+    item_list = phpstruct.Unpack(space,
                                  input_format,
                                  data).build()
     result = {}
     for k, w_v in item_list:
-        result[k[1:]] = w_v.unwrap()
+        if isinstance(w_v, W_IntObject):
+            result[k[1:]] = space.str_w(w_v)
+        else:
+            result[k[1:]] = w_v.unwrap()
     return result
 
 
-def read_manifest_file_entry(interp, data):
+def read_manifest_file_entry(space, data):
     """
     4 bytes: Filename length in bytes
     ?? :  Filename (length specified in previous)
@@ -356,16 +360,18 @@ def read_manifest_file_entry(interp, data):
     4 bytes: Serialized File Meta-data length (0 for none)
     ?? :  Serialized File Meta-data, stored in serialize() format
     """
-    filename_len = phpstruct.Unpack(interp.space, "N", data).build()[0][-1].unwrap()
-    metadata_len = phpstruct.Unpack(interp.space, "Nignore1/a%dignore2/N5ignore3/Nmetadata_len"
-                                    % filename_len, data).build()[-1][-1].unwrap()
+    filename_len = space.int_w(phpstruct.Unpack(space, "N", data).build()[0][-1])
+    metadata_len = space.int_w(phpstruct.Unpack(space, "Nignore1/a%dignore2/N5ignore3/Nmetadata_len"
+                                    % filename_len, data).build()[-1][-1])
     input_format = "Nfilename_len/a%dfilename/Nuncompressed_filesize/Ntimestamp\
 /Ncompressed_filesize/Ncrc32/Nflags/Nmetadata_len/a%dmetadata" % (filename_len, metadata_len)
-    item_list = phpstruct.Unpack(interp.space,
+    item_list = phpstruct.Unpack(space,
                                  input_format,
                                  data).build()
-    # TODO: Read serialized file metadata
     result = {}
     for k, w_v in item_list:
-        result[k[1:]] = w_v.unwrap()
+        if isinstance(w_v, W_IntObject):
+            result[k[1:]] = space.str_w(w_v)
+        else:
+            result[k[1:]] = w_v.unwrap()
     return result
