@@ -1,4 +1,5 @@
 from hippy.module import phpstruct
+from hippy.lexer import Lexer
 
 def get_stub(web, index):
     stub_len = len(template) + len(web) + len(index) + 5;
@@ -303,6 +304,20 @@ def generate_stub(web, index):
     return template % (web, index, stub_len)
 
 
+def fetch_phar_data(content):
+
+    lexer = Lexer()
+    lexer.input(content, 0, 0)
+
+    halt_compiler = False
+
+    for token in lexer.token():
+        if token.name == "T_HALT_COMPILER":
+            halt_compiler = True
+        elif halt_compiler and token.name == "B_END_OF_CODE_BLOCK":
+            return lexer.buf[token.source_pos.idx + len(token.source):]
+
+    return ''
 
 
 def read_global_manifest(interp, data):

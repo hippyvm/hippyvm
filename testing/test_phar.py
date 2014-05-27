@@ -1,4 +1,5 @@
 import py
+import os
 import tempfile
 from testing.test_interpreter import BaseTestInterpreter
 
@@ -643,3 +644,12 @@ class TestPharUtis(BaseTestInterpreter):
     def test_generate_stub(self):
         stub = utils.generate_stub('index.php', 'index.php')
         assert len(stub) == 6676
+
+    def test_fetch_phar_data(self):
+        phar_file = os.path.join(os.path.dirname(__file__), 'phar_files/phar.phar')
+        phar_content = open(phar_file, 'r').read()
+
+        phar_data = utils.fetch_phar_data(phar_content)
+
+        import pdb; pdb.set_trace()
+
