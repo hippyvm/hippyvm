@@ -650,12 +650,6 @@ class TestPharUtis(BaseTestInterpreter):
         phar_content = open(phar_file, 'r').read()
 
         phar_data = utils.fetch_phar_data(phar_content)
+        phar = utils.read_global_manifest(self.space, phar_data)
 
-    def test_manifest(self):
-        phar_file = os.path.join(os.path.dirname(__file__), 'phar_files/phar.phar')
-        phar_content = open(phar_file, 'r').read()
-
-        phar_data = utils.fetch_phar_data(phar_content)
-        manifest = phar_data.rsplit("<?php")[0]
-        manifest_data = utils.read_manifest_file_entry(self.space, manifest)
-        import pdb; pdb.set_trace()
+        assert phar['files_count'] == 1

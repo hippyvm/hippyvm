@@ -332,20 +332,34 @@ def read_global_manifest(space, data):
     4 bytes: Length of Phar metadata (0 for none)
     at least 24 * number of entries bytes: entries for each file
     """
-    alias_len = space.int_w(phpstruct.Unpack(space, "N2ignore1/nignore2/Nignore3/Nalias_len", data).build()[-1][-1])
-    input_format = "Nmanifest_len/Nno_of_files/napi_version/Nflags/\
-Nalias_length/a%dalias/Nmetadata_len" % alias_len
-    # TODO: read entries for each file
-    item_list = phpstruct.Unpack(space,
-                                 input_format,
-                                 data).build()
-    result = {}
-    for k, w_v in item_list:
-        if isinstance(w_v, W_IntObject):
-            result[k[1:]] = space.str_w(w_v)
-        else:
-            result[k[1:]] = w_v.unwrap()
-    return result
+
+    cursor = 0
+    shift = 4+4+2+4+4
+
+    manifest_data = phpstruct.Unpack(space, "V/V/v/V/V", data[cursor:shift]).build()
+
+    manifest = {
+        "length": space.int_w(manifest_data[0][1]),
+        "files_count": space.int_w(manifest_data[1][1]),
+        "api_version": space.int_w(manifest_data[2][1]),
+        "flags": space.int_w(manifest_data[3][1]),
+        "alias_length": space.int_w(manifest_data[4][1])
+    }
+
+    cursor = shift
+
+    if manifest["alias_length"]:
+        shift = manifest["alias_length"]
+        # we should handle alias as well, for now I don't care
+
+    shift = cursor+4
+    manifest_metadata = space.int_w(phpstruct.Unpack(space, "V", data[cursor:shift]).build()[0][1])
+
+    if manifest_metadata:
+        shift = manifest_metadata
+        # we should handle metadata as well, for now I don't care
+
+    return manifest
 
 
 def read_manifest_file_entry(space, data):
