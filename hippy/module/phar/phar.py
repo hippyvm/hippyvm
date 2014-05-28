@@ -111,6 +111,41 @@ def phar_compress(interp, this, compression, extension=''):
     raise NotImplementedError()
 
 
+@wrap_method(['interp', ThisUnwrapper(W_Phar), int],
+             name='Phar::compressFiles', error_handler=handle_as_exception)
+def phar_compress_files(interp, this, compression):
+    raise NotImplementedError()
+
+
+@wrap_method(['interp', ThisUnwrapper(W_Phar), Optional(int), Optional(int),
+              Optional(str)], name='Phar::convertToData',
+             error_handler=handle_as_exception)
+def phar_convert_to_data(interp, this, format=9021976, compression=9021976,
+                         extension=''):
+    raise NotImplementedError
+
+
+@wrap_method(['interp', ThisUnwrapper(W_Phar), Optional(int), Optional(int),
+              Optional(str)], name='Phar::convertToExecutable',
+             error_handler=handle_as_exception)
+def phar_convert_to_executable(interp, this, format=9021976,
+                               compression=9021976, extension=''):
+    raise NotImplementedError
+
+
+@wrap_method(['interp', ThisUnwrapper(W_Phar), str, str],
+             name='Phar::copy', error_handler=handle_as_exception)
+def phar_copy(interp, this, oldfile, newfile):
+    raise NotImplementedError()
+
+
+@wrap_method(['interp', ThisUnwrapper(W_Phar)],
+             name='Phar::count')
+def phar_count(interp, this):
+    raise NotImplementedError()
+
+
+
 PharClass = def_class(
     'Phar',
     [phar_construct,
@@ -123,6 +158,11 @@ PharClass = def_class(
      phar_can_compress,
      phar_can_write,
      phar_compress,
+     phar_compress_files,
+     phar_convert_to_data,
+     phar_convert_to_executable,
+     phar_copy,
+     phar_count,
      ],
     implements=['Countable', 'ArrayAccess'],
     instance_class=W_Phar,
