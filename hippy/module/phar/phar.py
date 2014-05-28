@@ -2,6 +2,7 @@ from hippy.module.spl.spl import W_RecursiveDirectoryIterator
 from hippy.builtin import (wrap_method, ThisUnwrapper, Optional,
                            handle_as_exception)
 from hippy.builtin_klass import def_class
+from hippy.objects.iterator import W_InstanceIterator
 
 
 class W_Phar(W_RecursiveDirectoryIterator):
@@ -48,17 +49,81 @@ def _phar_open_or_create_filename():
 
 
 @wrap_method(['interp', ThisUnwrapper(W_Phar), str, Optional(int),
-              Optional(str)], name='Phar::__construct',                 # TODO: Perhaps use Nullable here
+              Optional(str)], name='Phar::__construct',
              error_handler=handle_as_exception)
 def phar_construct(interp, this, filename, flags=None, alias=None):
-    # Throw BadMethodCallException:"Cannot call constructor twice", if called
-    # twice
+    raise NotImplementedError()
+
+
+@wrap_method(['interp', ThisUnwrapper(W_Phar), str], name='Phar::addEmptyDir',
+             error_handler=handle_as_exception)
+def phar_add_empty_dir(interp, this, dirname):
+    raise NotImplementedError()
+
+
+@wrap_method(['interp', ThisUnwrapper(W_Phar), str, Optional(str)],
+             name='Phar::addFile', error_handler=handle_as_exception)
+def phar_add_file(interp, this, filepath, localname=''):
+    raise NotImplementedError()
+
+
+@wrap_method(['interp', ThisUnwrapper(W_Phar), str, str],
+             name='Phar::addFromString', error_handler=handle_as_exception)
+def phar_add_from_str(interp, this, localname, contents):
+    raise NotImplementedError()
+
+
+@wrap_method(['interp'], name='Phar::apiVersion')        # XXX: final public static -> no need for this(?)
+def phar_api_version(interp):
+    raise NotImplementedError()
+
+
+@wrap_method(['interp', ThisUnwrapper(W_Phar), str, Optional(str)],
+             name='Phar::buildFromDirectory',
+             error_handler=handle_as_exception)
+def phar_build_from_dir(interp, this, base_dir, regex=''):
+    raise NotImplementedError()
+
+
+@wrap_method(['interp', ThisUnwrapper(W_Phar), W_InstanceIterator,
+              Optional(str)], name='Phar::buildFromIterator',
+             error_handler=handle_as_exception)
+def phar_build_from_iterator(interp, this, iter, base_dir=''):
+    raise NotImplementedError()
+
+
+@wrap_method(['interp', ThisUnwrapper(W_Phar), Optional(int)],
+             name='Phar::canCompress')
+def phar_can_compress(interp, this, comp_type=0):
+    # XXX: final public static
+    raise NotImplementedError()
+
+
+@wrap_method(['interp', ThisUnwrapper(W_Phar)], name='Phar::canWrite')
+def phar_can_write(interp, this):
+    # XXX: final public static
+    raise NotImplementedError()
+
+
+@wrap_method(['interp', ThisUnwrapper(W_Phar), int, Optional(str)],
+             name='Phar::compress', error_handler=handle_as_exception)
+def phar_compress(interp, this, compression, extension=''):
+    raise NotImplementedError()
 
 
 PharClass = def_class(
     'Phar',
     [phar_construct,
-     ],     # Methods
+     phar_add_empty_dir,
+     phar_add_file,
+     phar_add_from_str,
+     phar_api_version,
+     phar_build_from_dir,
+     phar_build_from_iterator,
+     phar_can_compress,
+     phar_can_write,
+     phar_compress,
+     ],
     implements=['Countable', 'ArrayAccess'],
     instance_class=W_Phar,
     extends='RecursiveDirectoryIterator',)
