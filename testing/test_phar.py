@@ -653,4 +653,15 @@ class TestPharUtis(BaseTestInterpreter):
         phar = utils.read_phar(phar_data)
 
         assert phar['files_count'] == 1
+        assert len(phar['files']) == 1
+
+        name = 'home/seba/things/hippyvm/test.php'
+        assert phar['files'].keys()[0] == name
+        assert phar['files'][name]['name_lenght'] == 33
+        assert phar['files'][name]['size_compressed'] == 19
+        assert phar['files'][name]['size_crc_uncompressed'] == 3759876459
+        assert phar['files'][name]['timestamp'] == 1400767599
+
+
+
 

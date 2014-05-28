@@ -346,33 +346,39 @@ def read_phar(data):
     if manifest_metadata:
         raise NotImplementedError()
 
+    files = {}
+    for _ in range(int(manifest["files_count"])):
+        cursor = shift
+        shift = cursor+4
+        file_name_lenght = phpstruct.Unpack("V", data[cursor:shift]).build()[0][1]
+
+        cursor = shift
+        shift = cursor+file_name_lenght
+        file_name = phpstruct.Unpack("a*", data[cursor:shift]).build()[0][1]
+
+        cursor = shift
+        shift = cursor+4+4+4+4+4+4
+        file_data = phpstruct.Unpack("V/V/V/V/V/V", data[cursor:shift]).build()
+
+        file_size_uncompressed = file_data[0][1]
+        file_timestamp = file_data[1][1]
+        file_size_compressed = file_data[2][1]
+        file_size_crc_uncompressed = file_data[3][1]
+        file_flags = file_data[4][1]
+        file_metadata = file_data[5][1]
+
+        if file_metadata:
+            raise NotImplementedError()
+
+        files[file_name] = {
+            "name_lenght": file_name_lenght,
+            "size_uncompressed": file_size_uncompressed,
+            "size_compressed": file_size_compressed,
+            "timestamp": file_timestamp,
+            "size_crc_uncompressed": file_size_crc_uncompressed,
+            "flags": file_flags,
+            "metadata": file_metadata
+        }
+
+    manifest['files'] = files
     return manifest
-
-
-def read_manifest_file_entry(space, data):
-    """
-    4 bytes: Filename length in bytes
-    ?? :  Filename (length specified in previous)
-    4 bytes: Un-compressed file size in bytes
-    4 bytes: Unix timestamp of file
-    4 bytes: Compressed file size in bytes
-    4 bytes: CRC32 checksum of un-compressed file contents
-    4 bytes: Bit-mapped File-specific flags
-    4 bytes: Serialized File Meta-data length (0 for none)
-    ?? :  Serialized File Meta-data, stored in serialize() format
-    """
-    filename_len = space.int_w(phpstruct.Unpack(space, "N", data).build()[0][-1])
-    metadata_len = space.int_w(phpstruct.Unpack(space, "Nignore1/a%dignore2/N5ignore3/Nmetadata_len"
-                                    % filename_len, data).build()[-1][-1])
-    input_format = "Nfilename_len/a%dfilename/Nuncompressed_filesize/Ntimestamp\
-/Ncompressed_filesize/Ncrc32/Nflags/Nmetadata_len/a%dmetadata" % (filename_len, metadata_len)
-    item_list = phpstruct.Unpack(space,
-                                 input_format,
-                                 data).build()
-    result = {}
-    for k, w_v in item_list:
-        if isinstance(w_v, W_IntObject):
-            result[k[1:]] = space.str_w(w_v)
-        else:
-            result[k[1:]] = w_v.unwrap()
-    return result
