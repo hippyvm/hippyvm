@@ -650,6 +650,7 @@ class TestPharUtis(BaseTestInterpreter):
         phar_content = open(phar_file, 'r').read()
 
         phar_data = utils.fetch_phar_data(phar_content)
-        phar = utils.read_global_manifest(self.space, phar_data)
+        phar = utils.read_phar(phar_data)
 
         assert phar['files_count'] == 1
+

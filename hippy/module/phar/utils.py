@@ -321,43 +321,30 @@ def fetch_phar_data(content):
     return ''
 
 
-def read_global_manifest(space, data):
-    """
-    4 bytes: Length of manifest in bytes (1 MB limit)
-    4 bytes: Number of files in the Phar
-    2 bytes: API version of the Phar manifest (currently 1.0.0)
-    4 bytes: Global Phar bitmapped flags
-    4 bytes: Length of Phar alias
-    ?? : Phar alias (length based on previous)
-    4 bytes: Length of Phar metadata (0 for none)
-    at least 24 * number of entries bytes: entries for each file
-    """
-
+def read_phar(data):
     cursor = 0
     shift = 4+4+2+4+4
 
-    manifest_data = phpstruct.Unpack(space, "V/V/v/V/V", data[cursor:shift]).build()
+    manifest_data = phpstruct.Unpack("V/V/v/V/V", data[cursor:shift]).build()
 
     manifest = {
-        "length": space.int_w(manifest_data[0][1]),
-        "files_count": space.int_w(manifest_data[1][1]),
-        "api_version": space.int_w(manifest_data[2][1]),
-        "flags": space.int_w(manifest_data[3][1]),
-        "alias_length": space.int_w(manifest_data[4][1])
+        "length": manifest_data[0][1],
+        "files_count": manifest_data[1][1],
+        "api_version": manifest_data[2][1],
+        "flags": manifest_data[3][1],
+        "alias_length": manifest_data[4][1]
     }
 
-    cursor = shift
 
     if manifest["alias_length"]:
-        shift = manifest["alias_length"]
-        # we should handle alias as well, for now I don't care
+        raise NotImplementedError()
 
+    cursor = shift
     shift = cursor+4
-    manifest_metadata = space.int_w(phpstruct.Unpack(space, "V", data[cursor:shift]).build()[0][1])
+    manifest_metadata = phpstruct.Unpack("V", data[cursor:shift]).build()[0][1]
 
     if manifest_metadata:
-        shift = manifest_metadata
-        # we should handle metadata as well, for now I don't care
+        raise NotImplementedError()
 
     return manifest
 
