@@ -4,6 +4,7 @@ from hippy.builtin import (wrap_method, ThisUnwrapper, Optional,
 from hippy.builtin_klass import def_class
 from hippy.objects.iterator import W_InstanceIterator
 from hippy.objects.arrayobject import W_ArrayObject
+from hippy.module.phar import utils
 
 
 class W_Phar(W_RecursiveDirectoryIterator):
@@ -53,13 +54,10 @@ def _phar_open_or_create_filename():
               Optional(str)], name='Phar::__construct',
              error_handler=handle_as_exception)
 def phar_construct(interp, this, filename, flags=None, alias=None):
-    """
-    phar_file = os.path.join(os.path.dirname(__file__), 'phar_files/phar.phar')
-    phar_content = open(phar_file, 'r').read()
+    content = open(filename, 'r').read()
+    phar_data = utils.fetch_phar_data(content)
 
-    phar_data = utils.fetch_phar_data(phar_content)
     this.phar = utils.read_phar(phar_data)
-    """
 
 
 @wrap_method(['interp', ThisUnwrapper(W_Phar), str], name='Phar::addEmptyDir',

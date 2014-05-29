@@ -13,7 +13,21 @@ class TestPhar(BaseTestInterpreter):
             $p = new Phar('/tmp/newphar.tar.phar', 0, 'newphar.tar.phar');
             echo get_class($p);
         ''')
+
         assert self.space.str_w(output[0]) == 'Phar'
+
+    def test_count(self):
+        phar_file = os.path.join(os.path.dirname(__file__), 'phar_files/phar.phar')
+
+        output = self.run('''
+
+            $p = new Phar('%s');
+            echo $p->count();
+
+        ''' % phar_file)
+
+        assert self.space.int_w(output[0]) == 2
+
 
     def test_create_phar(self):
         output = self.run('''
@@ -302,19 +316,6 @@ class TestPhar(BaseTestInterpreter):
         ''')
         assert output[0] == self.space.w_True
         assert self.space.str_w(output[1]) == 'foo'
-
-    def test_count(self):
-        output = self.run('''
-        $p = new Phar('/tmp/newphar.phar', 0, 'newphar.phar');
-        $p['a'] = 'foo';
-        echo $p->count();
-        $p['b'] = 'bar';
-        echo $p->count();
-        unset($p);
-        Phar::unlinkArchive('/tmp/newphar.phar');
-        ''')
-        assert self.space.int_w(output[0]) == 1
-        assert self.space.int_w(output[1]) == 2
 
     def test_metadata(self):
         output = self.run('''
