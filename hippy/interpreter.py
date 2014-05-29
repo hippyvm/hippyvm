@@ -70,6 +70,7 @@ import hippy.module.ctype
 import hippy.module.general.funcs
 import hippy.module.zlib.funcs
 import hippy.module.bzip2.funcs
+import hippy.module.phar
 import hippy.module.reflections
 import hippy.module.mail
 import hippy.localemodule
