@@ -10,16 +10,10 @@ class TestPhar(BaseTestInterpreter):
 
     def test_phar_object(self):
         output = self.run('''
-        $p = new Phar('/tmp/newphar.tar.phar', 0, 'newphar.tar.phar');
-        echo get_class($p);
-        $p['file1.txt'] = 'Information';
-        $entry = $p['file1.txt'];
-        echo get_class($entry);
-        unset($p);
-        Phar::unlinkArchive('/tmp/newphar.tar.phar');
+            $p = new Phar('/tmp/newphar.tar.phar', 0, 'newphar.tar.phar');
+            echo get_class($p);
         ''')
         assert self.space.str_w(output[0]) == 'Phar'
-        assert self.space.str_w(output[1]) == 'PharFileInfo'
 
     def test_create_phar(self):
         output = self.run('''
