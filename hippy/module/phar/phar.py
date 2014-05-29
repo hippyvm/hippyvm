@@ -185,7 +185,8 @@ def phar_get_supported_compression(interp, this):
 
 @wrap_method(['interp', ThisUnwrapper(W_Phar)], name='Phar::getVersion')
 def phar_get_version(interp, this):
-    raise NotImplementedError
+    import pdb; pdb.set_trace()
+    return interp.space.newstr(this.phar['api_version'])
 
 
 @wrap_method(['interp', ThisUnwrapper(W_Phar)],

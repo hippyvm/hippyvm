@@ -326,7 +326,7 @@ def read_phar(data):
     cursor = 0
     shift = 4+4+2+4+4
 
-    manifest_data = phpstruct.Unpack("V/V/v/V/V", data[cursor:shift]).build()
+    manifest_data = phpstruct.Unpack("V/V/H/V/V", data[cursor:shift]).build()
 
     manifest = {
         "length": manifest_data[0][1],

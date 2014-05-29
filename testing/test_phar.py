@@ -99,13 +99,14 @@ class TestPhar(BaseTestInterpreter):
         assert self.space.str_w(output[0]) == '1.1.1'       # TODO: Will this be true always?
 
     def test_get_version(self):
+        phar_file = os.path.join(os.path.dirname(__file__), 'phar_files/phar.phar')
+
         output = self.run('''
-        $p = new Phar('/tmp/newphar.tar.phar', 0, 'newphar.tar.phar');
-        $p['foo.txt'] = 'Foo.';
-        echo $p->getVersion();
-        unset($p);
-        Phar::unlinkArchive('/tmp/newphar.tar.phar');
-        ''')
+
+            $p = new Phar('%s');
+            echo $p->getVersion();
+
+        ''' % phar_file)
         assert self.space.str_w(output[0]) == '1.1.1'       # TODO: Will this be true always?
 
     def test_build_from_directory(self):            # XXX: Doesn't work on first run
