@@ -58,7 +58,7 @@ def phar_construct(interp, this, filename, flags=None, alias=None):
     phar_content = open(phar_file, 'r').read()
 
     phar_data = utils.fetch_phar_data(phar_content)
-    self.phar = utils.read_phar(phar_data)
+    this.phar = utils.read_phar(phar_data)
     """
 
 
