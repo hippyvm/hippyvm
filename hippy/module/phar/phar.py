@@ -53,7 +53,13 @@ def _phar_open_or_create_filename():
               Optional(str)], name='Phar::__construct',
              error_handler=handle_as_exception)
 def phar_construct(interp, this, filename, flags=None, alias=None):
-    raise NotImplementedError()
+    """
+    phar_file = os.path.join(os.path.dirname(__file__), 'phar_files/phar.phar')
+    phar_content = open(phar_file, 'r').read()
+
+    phar_data = utils.fetch_phar_data(phar_content)
+    self.phar = utils.read_phar(phar_data)
+    """
 
 
 @wrap_method(['interp', ThisUnwrapper(W_Phar), str], name='Phar::addEmptyDir',
@@ -144,7 +150,7 @@ def phar_copy(interp, this, oldfile, newfile):
 @wrap_method(['interp', ThisUnwrapper(W_Phar)],
              name='Phar::count')
 def phar_count(interp, this):
-    raise NotImplementedError()
+    return interp.space.newint(this.phar['files_count'])
 
 
 @wrap_method(['interp', ThisUnwrapper(W_Phar), Optional(str), Optional(str)],
