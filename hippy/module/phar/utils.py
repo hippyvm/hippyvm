@@ -1,6 +1,7 @@
+from collections import OrderedDict
+
 from hippy.module import phpstruct
 from hippy.lexer import Lexer
-from hippy.objects.intobject import W_IntObject
 
 def get_stub(web, index):
     stub_len = len(template) + len(web) + len(index) + 5;
@@ -346,19 +347,21 @@ def read_phar(data):
     if manifest_metadata:
         raise NotImplementedError()
 
-    files = {}
+    files = OrderedDict()
     for _ in range(int(manifest["files_count"])):
         cursor = shift
         shift = cursor+4
-        file_name_lenght = phpstruct.Unpack("V", data[cursor:shift]).build()[0][1]
+        file_name_length = phpstruct.Unpack("V", data[cursor:shift]).build()[0][1]
 
         cursor = shift
-        shift = cursor+file_name_lenght
+        shift = cursor+file_name_length
         file_name = phpstruct.Unpack("a*", data[cursor:shift]).build()[0][1]
 
         cursor = shift
         shift = cursor+4+4+4+4+4+4
         file_data = phpstruct.Unpack("V/V/V/V/V/V", data[cursor:shift]).build()
+
+        cursor = shift
 
         file_size_uncompressed = file_data[0][1]
         file_timestamp = file_data[1][1]
@@ -371,7 +374,7 @@ def read_phar(data):
             raise NotImplementedError()
 
         files[file_name] = {
-            "name_lenght": file_name_lenght,
+            "name_length": file_name_length,
             "size_uncompressed": file_size_uncompressed,
             "size_compressed": file_size_compressed,
             "timestamp": file_timestamp,
@@ -381,4 +384,11 @@ def read_phar(data):
         }
 
     manifest['files'] = files
+
+    # right now only plain phar files are supported
+    for file_name, file_data in files.items():
+        shift = cursor+file_data['size_uncompressed']
+        files[file_name]['content'] = data[cursor:shift]
+        cursor = shift
+
     return manifest

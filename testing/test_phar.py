@@ -652,16 +652,23 @@ class TestPharUtis(BaseTestInterpreter):
         phar_data = utils.fetch_phar_data(phar_content)
         phar = utils.read_phar(phar_data)
 
-        assert phar['files_count'] == 1
-        assert len(phar['files']) == 1
+        assert phar['files_count'] == 2
+        assert len(phar['files']) == 2
 
-        name = 'home/seba/things/hippyvm/test.php'
-        assert phar['files'].keys()[0] == name
-        assert phar['files'][name]['name_lenght'] == 33
-        assert phar['files'][name]['size_compressed'] == 19
-        assert phar['files'][name]['size_crc_uncompressed'] == 3759876459
-        assert phar['files'][name]['timestamp'] == 1400767599
+        assert 'test.php' in phar['files'].keys()
+        assert 'test2.php' in phar['files'].keys()
+
+        assert phar['files']['test.php']['name_length'] == 8
+        assert phar['files']['test.php']['size_uncompressed'] == 18
+        assert phar['files']['test.php']['timestamp'] == 1401356104
+        assert phar['files']['test.php']['content'] == '<?php echo "seba";'
+        assert len(phar['files']['test.php']['content']) == 18
 
 
+        assert phar['files']['test2.php']['name_length'] == 9
+        assert phar['files']['test2.php']['size_uncompressed'] == 18
+        assert phar['files']['test2.php']['timestamp'] == 1401356104
+        assert phar['files']['test2.php']['content'] == '<?php echo "ALA";\n'
+        assert len(phar['files']['test2.php']['content']) == 18
 
 
