@@ -93,10 +93,10 @@ def phar_build_from_dir(interp, this, base_dir, regex=''):
     raise NotImplementedError()
 
 
-@wrap_method(['interp', ThisUnwrapper(W_Phar), W_InstanceIterator,
-              Optional(str)], name='Phar::buildFromIterator',
+@wrap_method(['interp', ThisUnwrapper(W_Phar)], name='Phar::buildFromIterator',
              error_handler=handle_as_exception)
-def phar_build_from_iterator(interp, this, iter, base_dir=''):
+def phar_build_from_iterator(interp, this):
+    # XXX: Check inputs
     raise NotImplementedError()
 
 
@@ -291,10 +291,11 @@ def phar_mount(interp, this, pharpath, externalpath):
     raise NotImplementedError
 
 
-@wrap_method(['interp', ThisUnwrapper(W_Phar), W_ArrayObject],
+@wrap_method(['interp', ThisUnwrapper(W_Phar)],
              name='Phar::mungServer', error_handler=handle_as_exception)
-def phar_mung_server(interp, this, munglist):
+def phar_mung_server(interp, this):
     # XXX: final public static
+    # XXX: Check input
     raise NotImplementedError
 
 
@@ -377,10 +378,11 @@ def phar_unlink_archive(interp, this, archive):
 
 
 @wrap_method(['interp', ThisUnwrapper(W_Phar), Optional(str), Optional(str),
-              Optional(str), Optional(W_ArrayObject), 'callable'],
+              Optional(str)],
              name='Phar::webPhar', error_handler=handle_as_exception)
 def phar_web_phar(interp, this, alias='', index='index.php', f404='',
                   mimetypes=[], rewrites=None):
+    # XXX: Check inputs
     raise NotImplementedError
 
 
