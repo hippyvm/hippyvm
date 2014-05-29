@@ -66,6 +66,8 @@ import hippy.module.standard.exec_
 import hippy.module.spl
 import hippy.module.ctype
 import hippy.module.general.funcs
+import hippy.module.zlib.funcs
+import hippy.module.bzip2.funcs
 import hippy.module.reflections
 import hippy.module.mail
 import hippy.localemodule
