@@ -311,13 +311,11 @@ def fetch_phar_data(content):
     lexer = Lexer()
     lexer.input(content, 0, 0)
 
-    halt_compiler = False
-
     for token in lexer.token():
         if token.name == "T_HALT_COMPILER":
-            halt_compiler = True
-        elif halt_compiler and token.name == "B_END_OF_CODE_BLOCK":
-            return lexer.buf[token.source_pos.idx + len(token.source):]
+            ending_tag = content[token.source_pos.idx:].find("?>")
+            if ending_tag != 1:
+                return content[token.source_pos.idx + ending_tag + 2:]
 
     return ''
 
