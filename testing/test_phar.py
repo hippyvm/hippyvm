@@ -648,7 +648,7 @@ class TestPharFileInfo(BaseTestInterpreter):
         assert output[0] == self.space.w_True
 
 
-class TestPharUtis(BaseTestInterpreter):
+class TestPharUtils(BaseTestInterpreter):
 
     def test_generate_stub(self):
         stub = utils.generate_stub('index.php', 'index.php')
