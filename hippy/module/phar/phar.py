@@ -157,7 +157,10 @@ def phar_get_metadata(interp, this):
 
 @wrap_method(['interp', ThisUnwrapper(W_Phar)], name='Phar::hasMetadata')
 def phar_has_metadata(interp, this):
-    raise NotImplementedError
+    if this.phar['global_metadata']:
+        return interp.space.w_True
+    else:
+        return interp.space.w_False
 
 
 @wrap_method(['interp', ThisUnwrapper(W_Phar)], name='Phar::getModified')
@@ -185,7 +188,6 @@ def phar_get_supported_compression(interp, this):
 
 @wrap_method(['interp', ThisUnwrapper(W_Phar)], name='Phar::getVersion')
 def phar_get_version(interp, this):
-    import pdb; pdb.set_trace()
     return interp.space.newstr(this.phar['api_version'])
 
 

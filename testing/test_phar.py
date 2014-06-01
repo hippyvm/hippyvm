@@ -318,7 +318,7 @@ class TestPhar(BaseTestInterpreter):
         assert output[0] == self.space.w_True
         assert self.space.str_w(output[1]) == 'foo'
 
-    def test_metadata(self):
+    def test_metadata(self):    # XXX: Implemented
         output = self.run('''
         $p = new Phar('/tmp/newphar.phar', 0, 'newphar.phar');
         $p['file.php'] = '<?php echo "hello";';
@@ -523,7 +523,7 @@ class TestPhar(BaseTestInterpreter):
         assert output[3] == self.space.w_False
         assert output[4] == self.space.w_True
 
-    def test_is_writablet(self):
+    def test_is_writable(self):
         output = self.run('''
         $p = new Phar('/tmp/newphar.phar', 0, 'newphar.phar');
         $p['myfile1.txt'] = 'Foo';

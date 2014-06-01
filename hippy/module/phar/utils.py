@@ -341,6 +341,8 @@ def read_phar(data):
     cursor = shift
     shift = cursor+4
     manifest_metadata = phpstruct.Unpack("V", data[cursor:shift]).build()[0][1]
+    # XXX: Still not implemented, hack for Phar::hasMetadata()
+    manifest["global_metadata"] = manifest_metadata
 
     if manifest_metadata:
         raise NotImplementedError()
