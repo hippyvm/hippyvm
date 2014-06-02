@@ -9,6 +9,7 @@ from hippy.module.spl.interface import k_Countable
 from hippy.module.spl.spl import k_RecursiveDirectoryIterator, k_SplFileInfo
 from hippy.objects.base import W_Root
 from hippy.module.phar import utils
+from hippy.module.bzip2.funcs import _bzdecompress
 
 
 class W_Phar(W_RecursiveDirectoryIterator):
@@ -38,7 +39,7 @@ def phar_map_phar(interp, alias='', dataoffset=0):
              error_handler=handle_as_exception)
 def phar_construct(interp, this, filename, flags=None, alias=None):
     content = open(filename, 'r').read()
-    phar_data = utils.fetch_phar_data(content)
+    this.phar_data = utils.fetch_phar_data(content)
     this.phar = utils.read_phar(phar_data)
 
 
@@ -143,8 +144,9 @@ def phar_create_default_stub(interp, this, indexfile='', webindexfile=''):
 @wrap_method(['interp', ThisUnwrapper(W_Phar), Optional(str)],
              name='Phar::decompress', error_handler=handle_as_exception)
 def phar_decompress(interp, this, extension):
-    raise NotImplementedError
-
+    res = _bzdecompress(this.phar_data)
+    import pdb; pdb.set_trace()
+    return res
 
 @wrap_method(['interp', ThisUnwrapper(W_Phar)], name='Phar::decompressFiles',
              error_handler=handle_as_exception)
