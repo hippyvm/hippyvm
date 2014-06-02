@@ -10,6 +10,7 @@ from hippy.module.spl.spl import k_RecursiveDirectoryIterator, k_SplFileInfo
 from hippy.objects.base import W_Root
 from hippy.module.phar import utils
 from hippy.module.bzip2.funcs import _bzdecompress
+from hippy.lexer import LexerError
 
 
 class W_Phar(W_RecursiveDirectoryIterator):
@@ -45,7 +46,7 @@ def phar_construct(interp, this, filename, flags=None, alias=None):
         this.phar_data = utils.fetch_phar_data(this.content)
         this.phar = utils.read_phar(this.phar_data)
         this.is_compressed = False
-    except:
+    except LexerError:
         this.is_compressed = True
 
 
