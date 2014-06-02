@@ -12,6 +12,7 @@ from hippy.module.phar import utils
 from hippy.module.bzip2.funcs import _bzdecompress
 from hippy.lexer import LexerError
 from hippy.objects.intobject import W_IntObject
+from hippy.module.spl.spl import FI_SKIP_DOTS, FI_UNIX_PATHS
 
 
 class W_Phar(W_RecursiveDirectoryIterator):
@@ -58,16 +59,17 @@ def phar_map_phar(interp, alias='', dataoffset=0):
 @wrap_method(['interp', ThisUnwrapper(W_Phar), str, Optional(int),
               Optional(str)], name='Phar::__construct',
              error_handler=handle_as_exception)
-def phar_construct(interp, this, filename, flags=None, alias=None):
+def phar_construct(interp, this, filename, flags=FI_SKIP_DOTS | FI_UNIX_PATHS,
+                   alias=None):
     this.content = open(filename, 'r').read()
     this.filename = filename
     import pdb; pdb.set_trace()
     try:
         this.phar_data = utils.fetch_phar_data(this.content)
         this.phar = utils.read_phar(this.phar_data)
-        this.is_compressed = False
+        this.flags = flags
     except LexerError:
-        this.is_compressed = True
+        this.flags = flags | PHAR_COMPRESSED
 
 
 @wrap_method(['interp', ThisUnwrapper(W_Phar), str], name='Phar::addEmptyDir',
@@ -268,7 +270,8 @@ def phar_is_buffering(interp, this):
 @wrap_method(['interp', ThisUnwrapper(W_Phar)], name='Phar::isCompressed',
              error_handler=handle_as_exception)
 def phar_is_compressed(interp, this):
-    return interp.space.newbool(this.is_compressed)
+    import pdb; pdb.set_trace()
+    return interp.space.newbool(this.flags & PHAR_COMPRESSED)
 
 
 @wrap_method(['interp', ThisUnwrapper(W_Phar), int], name='Phar::isFileFormat',
