@@ -321,10 +321,12 @@ def fetch_phar_data(content):
 
 
 def read_phar(data):
+    data = data.lstrip()
+
     cursor = 0
     shift = 4+4+2+4+4
 
-    manifest_data = phpstruct.Unpack("V/V/H/V/V", data[cursor:shift]).build()
+    manifest_data = phpstruct.Unpack("V/V/A2/V/V", data[cursor:shift]).build()
 
     manifest = {
         "length": manifest_data[0][1],
@@ -334,9 +336,10 @@ def read_phar(data):
         "alias_length": manifest_data[4][1]
     }
 
-
     if manifest["alias_length"]:
-        raise NotImplementedError()
+        cursor = shift
+        shift = cursor+manifest["alias_length"]
+        manifest["alias"] = data[cursor:shift]
 
     cursor = shift
     shift = cursor+4
@@ -390,5 +393,35 @@ def read_phar(data):
         shift = cursor+file_data['size_uncompressed']
         files[file_name]['content'] = data[cursor:shift]
         cursor = shift
+
+    gbmb = data.find("GBMB")
+    if gbmb == -1:
+        # raise something, but for now
+        raise NotImplementedError
+
+    signature_type = data[gbmb-4:gbmb]
+
+    if signature_type == '\x01\x00\x00\x00':
+        signature_length = 16
+        signature_name = 'md5'
+
+    elif signature_type == '\x02\x00\x00\x00':
+        signature_length = 20
+        signature_name = 'sha1'
+
+    elif signature_type == '\x04\x00\x00\x00':
+        signature_length = 32
+        signature_name = 'sha256'
+
+    elif signature_type == '\x08\x00\x00\x00':
+        signature_length = 64
+        signature_name = 'sha512'
+
+    else:
+        # raise something, but for now
+        raise NotImplementedError
+
+    manifest['signature'] = data[gbmb-signature_length-4:gbmb-4]
+    manifest['signature_name'] = signature_name
 
     return manifest

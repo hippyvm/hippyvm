@@ -15,7 +15,7 @@ class W_Phar(W_RecursiveDirectoryIterator):
     pass
 
 
-all_phar = OrderedDict()
+all_phars = OrderedDict()
 
 
 @wrap_method(['interp', Optional(str), Optional(int)],
@@ -28,7 +28,7 @@ def phar_map_phar(interp, alias='', dataoffset=0):
 
     content = open(filename, 'r').read()
     phar_data = utils.fetch_phar_data(content)
-    all_phar[alias] = utils.read_phar(phar_data)
+    all_phars[alias] = utils.read_phar(phar_data)
 
     return interp.space.w_True
 
