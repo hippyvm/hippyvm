@@ -11,6 +11,7 @@ from hippy.objects.base import W_Root
 from hippy.module.phar import utils
 from hippy.module.bzip2.funcs import _bzdecompress
 from hippy.lexer import LexerError
+from hippy.objects.intobject import W_IntObject
 
 
 class W_Phar(W_RecursiveDirectoryIterator):
@@ -18,6 +19,25 @@ class W_Phar(W_RecursiveDirectoryIterator):
 
 
 all_phars = OrderedDict()
+
+PHAR_NONE = 0
+PHAR_COMPRESSED = 61440
+PHAR_GZ = 4096
+PHAR_BZ2 = 8192
+
+PHAR_SAME = 0
+PHAR_PHAR = 1
+PHAR_TAR = 2
+PHAR_ZIP = 3
+
+PHAR_MD5 = 1
+PHAR_SHA1 = 2
+PHAR_SHA256 = 3
+PHAR_SHA512 = 4
+PHAR_OPENSSL = 16
+
+PHAR_PHP = 1
+PHAR_PHPS = 2
 
 
 @wrap_method(['interp', Optional(str), Optional(int)],
@@ -431,6 +451,22 @@ PharClass = def_class(
      phar_unlink_archive,
      phar_web_phar,
      ],
+    constants=[
+        ('NONE', W_IntObject(PHAR_NONE)),
+        ('COMPRESSED', W_IntObject(PHAR_COMPRESSED)),
+        ('GZ', W_IntObject(PHAR_GZ)),
+        ('BZ2', W_IntObject(PHAR_BZ2)),
+        ('SAME', W_IntObject(PHAR_SAME)),
+        ('PHAR', W_IntObject(PHAR_PHAR)),
+        ('TAR', W_IntObject(PHAR_TAR)),
+        ('ZIP', W_IntObject(PHAR_ZIP)),
+        ('MD5', W_IntObject(PHAR_MD5)),
+        ('SHA1', W_IntObject(PHAR_SHA1)),
+        ('SHA256', W_IntObject(PHAR_SHA256)),
+        ('SHA512', W_IntObject(PHAR_SHA512)),
+        ('OPENSSL', W_IntObject(PHAR_OPENSSL)),
+        ('PHP', W_IntObject(PHAR_PHP)),
+        ('PHPS', W_IntObject(PHAR_PHPS)),],
     implements=[k_Countable, k_ArrayAccess],
     instance_class=W_Phar,
     extends=k_RecursiveDirectoryIterator,)
