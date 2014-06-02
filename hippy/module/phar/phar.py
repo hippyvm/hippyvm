@@ -1,3 +1,6 @@
+from collections import OrderedDict
+
+from hippy import consts
 from hippy.module.spl.spl import W_RecursiveDirectoryIterator
 from hippy.builtin import (wrap_method, ThisUnwrapper, Optional,
                            handle_as_exception)
@@ -10,6 +13,24 @@ from hippy.module.phar import utils
 
 class W_Phar(W_RecursiveDirectoryIterator):
     pass
+
+
+all_phar = OrderedDict()
+
+
+@wrap_method(['interp', Optional(str), Optional(int)],
+             name='Phar::mapPhar', error_handler=handle_as_exception,
+             flags=consts.ACC_FINAL | consts.ACC_STATIC)
+def phar_map_phar(interp, alias='', dataoffset=0):
+    filename, _ , _ = interp.get_frame().get_position()
+
+    alias = alias or filename
+
+    content = open(filename, 'r').read()
+    phar_data = utils.fetch_phar_data(content)
+    all_phar[alias] = utils.read_phar(phar_data)
+
+    return interp.space.w_True
 
 
 @wrap_method(['interp', ThisUnwrapper(W_Phar), str, Optional(int),
@@ -233,14 +254,6 @@ def phar_is_valid_phar_filename(interp, this, filename, executable=True):
 def phar_load_phar(interp, this, filename, alias=''):
     # XXX: final public static
     raise NotImplementedError
-
-
-@wrap_method(['interp', ThisUnwrapper(W_Phar), Optional(str), Optional(int)],
-             name='Phar::mapPhar', error_handler=handle_as_exception)
-def phar_map_phar(interp, this, alias='', dataoffset=0):
-    # XXX: final public static
-    raise NotImplementedError
-
 
 @wrap_method(['interp', ThisUnwrapper(W_Phar)], name='Phar::isWritable')
 def phar_is_writable(interp, this):
