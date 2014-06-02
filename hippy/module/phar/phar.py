@@ -39,9 +39,11 @@ def phar_map_phar(interp, alias='', dataoffset=0):
              error_handler=handle_as_exception)
 def phar_construct(interp, this, filename, flags=None, alias=None):
     this.content = open(filename, 'r').read()
+    this.filename = filename
+    import pdb; pdb.set_trace()
     try:
-        this.phar_data = utils.fetch_phar_data(content)
-        this.phar = utils.read_phar(phar_data)
+        this.phar_data = utils.fetch_phar_data(this.content)
+        this.phar = utils.read_phar(this.phar_data)
         this.is_compressed = False
     except:
         this.is_compressed = True
@@ -148,9 +150,14 @@ def phar_create_default_stub(interp, this, indexfile='', webindexfile=''):
 @wrap_method(['interp', ThisUnwrapper(W_Phar), Optional(str)],
              name='Phar::decompress', error_handler=handle_as_exception)
 def phar_decompress(interp, this, extension=''):
-    res = _bzdecompress(this.content)
     import pdb; pdb.set_trace()
+    file_data = _bzdecompress(this.content)
+    new_filename = this.filename.rsplit('.', 1)[0]
+    decompressed_phar = open(new_filename, "wb")
+    decompressed_phar.write(file_data)
+    res = PharClass.call_args(interp, [interp.space.wrap(new_filename)])
     return res
+
 
 @wrap_method(['interp', ThisUnwrapper(W_Phar)], name='Phar::decompressFiles',
              error_handler=handle_as_exception)
