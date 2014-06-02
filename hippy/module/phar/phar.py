@@ -38,9 +38,13 @@ def phar_map_phar(interp, alias='', dataoffset=0):
               Optional(str)], name='Phar::__construct',
              error_handler=handle_as_exception)
 def phar_construct(interp, this, filename, flags=None, alias=None):
-    content = open(filename, 'r').read()
-    this.phar_data = utils.fetch_phar_data(content)
-    this.phar = utils.read_phar(phar_data)
+    this.content = open(filename, 'r').read()
+    try:
+        this.phar_data = utils.fetch_phar_data(content)
+        this.phar = utils.read_phar(phar_data)
+        this.is_compressed = False
+    except:
+        this.is_compressed = True
 
 
 @wrap_method(['interp', ThisUnwrapper(W_Phar), str], name='Phar::addEmptyDir',
@@ -143,8 +147,8 @@ def phar_create_default_stub(interp, this, indexfile='', webindexfile=''):
 
 @wrap_method(['interp', ThisUnwrapper(W_Phar), Optional(str)],
              name='Phar::decompress', error_handler=handle_as_exception)
-def phar_decompress(interp, this, extension):
-    res = _bzdecompress(this.phar_data)
+def phar_decompress(interp, this, extension=''):
+    res = _bzdecompress(this.content)
     import pdb; pdb.set_trace()
     return res
 
@@ -236,7 +240,7 @@ def phar_is_buffering(interp, this):
 @wrap_method(['interp', ThisUnwrapper(W_Phar)], name='Phar::isCompressed',
              error_handler=handle_as_exception)
 def phar_is_compressed(interp, this):
-    raise NotImplementedError
+    return interp.space.newbool(this.is_compressed)
 
 
 @wrap_method(['interp', ThisUnwrapper(W_Phar), int], name='Phar::isFileFormat',

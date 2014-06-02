@@ -449,7 +449,8 @@ class TestPhar(BaseTestInterpreter):
             i += 1
 
     def test_decompress(self):
-        phar_file = os.path.join(os.path.dirname(__file__), 'phar_files/testbz2.phar.bz2')
+        phar_file = os.path.join(os.path.dirname(__file__),
+                                 'phar_files/testbz2.phar.bz2')
 
         output = self.run('''
         $p = new Phar('%s');
@@ -458,6 +459,7 @@ class TestPhar(BaseTestInterpreter):
         echo get_class($p1);
         echo $p1->isCompressed();
         ''' % phar_file)
+
         assert self.space.int_w(output[0]) == 8192
         assert self.space.str_w(output[1]) == 'Phar'
         assert output[2] == self.space.w_False
