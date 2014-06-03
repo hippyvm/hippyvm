@@ -14,6 +14,8 @@ from hippy.lexer import LexerError
 from hippy.objects.intobject import W_IntObject
 from hippy.module.spl.spl import FI_SKIP_DOTS, FI_UNIX_PATHS
 
+import py
+
 
 class W_Phar(W_RecursiveDirectoryIterator):
     pass
@@ -61,15 +63,19 @@ def phar_map_phar(interp, alias='', dataoffset=0):
              error_handler=handle_as_exception)
 def phar_construct(interp, this, filename, flags=FI_SKIP_DOTS | FI_UNIX_PATHS,
                    alias=None):
-    this.content = open(filename, 'r').read()
-    this.filename = filename
-    import pdb; pdb.set_trace()
-    try:
-        this.phar_data = utils.fetch_phar_data(this.content)
-        this.phar = utils.read_phar(this.phar_data)
-        this.flags = flags
-    except LexerError:
-        this.flags = flags | PHAR_COMPRESSED
+
+    filename = py.path.local(filename)
+    content = filename.read()
+
+    ### We need to handle gzip as well
+    if filename.ext == ".bz2":
+        content = _bzdecompress(content)
+
+    this.filename = filename.purebasename
+    this.content = content
+    this.phar_data = utils.fetch_phar_data(this.content)
+    this.phar = utils.read_phar(this.phar_data)
+    this.flags = flags
 
 
 @wrap_method(['interp', ThisUnwrapper(W_Phar), str], name='Phar::addEmptyDir',
@@ -173,12 +179,8 @@ def phar_create_default_stub(interp, this, indexfile='', webindexfile=''):
 @wrap_method(['interp', ThisUnwrapper(W_Phar), Optional(str)],
              name='Phar::decompress', error_handler=handle_as_exception)
 def phar_decompress(interp, this, extension=''):
-    import pdb; pdb.set_trace()
-    file_data = _bzdecompress(this.content)
-    new_filename = this.filename.rsplit('.', 1)[0]
-    decompressed_phar = open(new_filename, "wb")
-    decompressed_phar.write(file_data)
-    res = PharClass.call_args(interp, [interp.space.wrap(new_filename)])
+    open(this.filename, "wb").write(this.content)
+    res = PharClass.call_args(interp, [interp.space.wrap(this.filename)])
     return res
 
 
