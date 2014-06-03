@@ -1,4 +1,5 @@
 import os
+import sys
 from collections import OrderedDict
 
 from hippy.hippyoption import is_optional_extension_enabled
@@ -1841,6 +1842,22 @@ class Interpreter(object):
 
     def _include(self, frame, func_name, require=False, once=False):
         name = self.space.str_w(frame.pop())
+        if name.startswith("phar://"):
+            from hippy.module.phar import all_phars
+
+            name = name[7:]
+            split = name.find('/')
+
+            phar_name = name[:split]
+            phar_filename = name[split+1:]
+
+            data = all_phars[phar_name]['files'][phar_filename]['content']
+
+            bc = compile_php(name, data, self.space)
+
+            w_result = self.run_include(bc, frame)
+            frame.push(w_result)
+            return
         use_path = not (name.startswith('/') or name.startswith('./') or
                         name.startswith('../'))
         if use_path:
