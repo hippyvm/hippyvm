@@ -11,9 +11,7 @@ from hippy.objects.base import W_Root
 from hippy.module.phar import utils
 from hippy.module.bzip2.funcs import _bzdecompress
 from hippy.module.zlib.funcs import _decode, ZLIB_ENCODING_GZIP
-from hippy.lexer import LexerError
 from hippy.objects.intobject import W_IntObject
-from hippy.module.spl.spl import FI_SKIP_DOTS, FI_UNIX_PATHS
 from rpython.rlib import rpath
 
 import py
@@ -188,7 +186,8 @@ def phar_create_default_stub(interp, this, indexfile='', webindexfile=''):
 def phar_decompress(interp, this, extension=''):
     decompressed_filename = rpath.dirname(this.filename) + '/' + this.basename
     open(decompressed_filename, "wb").write(this.content)
-    res = PharClass.call_args(interp, [interp.space.wrap(decompressed_filename)])
+    res = PharClass.call_args(interp, [interp.space.wrap(
+        decompressed_filename)])
     return res
 
 
