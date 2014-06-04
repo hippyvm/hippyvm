@@ -10,7 +10,7 @@ from hippy.module.spl.spl import k_RecursiveDirectoryIterator, k_SplFileInfo
 from hippy.objects.base import W_Root
 from hippy.module.phar import utils
 from hippy.module.bzip2.funcs import _bzdecompress
-from hippy.module.zlib.funcs import _decode, ZLIB_ENCODING_DEFLATE
+from hippy.module.zlib.funcs import _decode, ZLIB_ENCODING_GZIP
 from hippy.lexer import LexerError
 from hippy.objects.intobject import W_IntObject
 from hippy.module.spl.spl import FI_SKIP_DOTS, FI_UNIX_PATHS
@@ -75,10 +75,9 @@ def phar_construct(interp, this, filename, flags=PHAR_NONE,
     if filename.ext == ".bz2":
         this.flags = this.flags | PHAR_BZ2
         content = _bzdecompress(content)
-
     if filename.ext == ".gz":
         this.flags = this.flags | PHAR_GZ
-        content = _decode(content, ZLIB_ENCODING_DEFLATE)
+        content = _decode(content, ZLIB_ENCODING_GZIP)
 
     this.basename = filename.purebasename
     this.content = content
