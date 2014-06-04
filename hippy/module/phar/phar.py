@@ -61,21 +61,22 @@ def phar_map_phar(interp, alias='', dataoffset=0):
 @wrap_method(['interp', ThisUnwrapper(W_Phar), str, Optional(int),
               Optional(str)], name='Phar::__construct',
              error_handler=handle_as_exception)
-def phar_construct(interp, this, filename, flags=FI_SKIP_DOTS | FI_UNIX_PATHS,
+def phar_construct(interp, this, filename, flags=PHAR_NONE,
                    alias=None):
 
     filename = py.path.local(filename)
     content = filename.read()
+    this.flags = flags
 
     ### We need to handle gzip as well
     if filename.ext == ".bz2":
+        this.flags = this.flags | PHAR_BZ2
         content = _bzdecompress(content)
 
     this.filename = filename.purebasename
     this.content = content
     this.phar_data = utils.fetch_phar_data(this.content)
     this.phar = utils.read_phar(this.phar_data)
-    this.flags = flags
 
 
 @wrap_method(['interp', ThisUnwrapper(W_Phar), str], name='Phar::addEmptyDir',
@@ -272,7 +273,6 @@ def phar_is_buffering(interp, this):
 @wrap_method(['interp', ThisUnwrapper(W_Phar)], name='Phar::isCompressed',
              error_handler=handle_as_exception)
 def phar_is_compressed(interp, this):
-    import pdb; pdb.set_trace()
     return interp.space.newbool(this.flags & PHAR_COMPRESSED)
 
 

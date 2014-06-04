@@ -460,9 +460,13 @@ class TestPhar(BaseTestInterpreter):
             echo $p->isCompressed();
 
             $p1 = $p->decompress();
+            echo get_class($p1);
             echo $p1->isCompressed();
 
         ''' % phar_file)
+        assert output[0] == self.space.w_True
+        assert self.space.str_w(output[1]) == 'Phar'
+        assert output[2] == self.space.w_False
 
 
     def test_stub(self):
