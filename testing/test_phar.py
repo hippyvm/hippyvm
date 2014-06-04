@@ -468,6 +468,25 @@ class TestPhar(BaseTestInterpreter):
         assert self.space.str_w(output[1]) == 'Phar'
         assert output[2] == self.space.w_False
 
+    def test_decompress_gz_phar(self):
+        phar_file = os.path.join(
+            os.path.dirname(__file__),
+            'phar_files/testgz.phar.gz'
+        )
+
+        output = self.run('''
+
+            $p = new Phar('%s');
+            echo $p->isCompressed();
+
+            $p1 = $p->decompress();
+            echo get_class($p1);
+            echo $p1->isCompressed();
+
+        ''' % phar_file)
+        assert self.space.int_w(output[0]) == 4096
+        assert self.space.str_w(output[1]) == 'Phar'
+        assert output[2] == self.space.w_False
 
     def test_stub(self):
         output = self.run('''
