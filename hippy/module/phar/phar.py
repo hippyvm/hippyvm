@@ -276,7 +276,11 @@ def phar_is_buffering(interp, this):
 @wrap_method(['interp', ThisUnwrapper(W_Phar)], name='Phar::isCompressed',
              error_handler=handle_as_exception)
 def phar_is_compressed(interp, this):
-    return interp.space.newbool(this.flags & PHAR_COMPRESSED)
+    comp_type = this.flags & PHAR_COMPRESSED
+    if comp_type:
+        return interp.space.newint(this.flags & PHAR_COMPRESSED)
+    else:
+        return interp.space.w_False
 
 
 @wrap_method(['interp', ThisUnwrapper(W_Phar), int], name='Phar::isFileFormat',

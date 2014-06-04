@@ -448,7 +448,7 @@ class TestPhar(BaseTestInterpreter):
             assert output[i] == self.space.w_False
             i += 1
 
-    def test_decompress_phar(self):
+    def test_decompress_bz2_phar(self):
         phar_file = os.path.join(
             os.path.dirname(__file__),
             'phar_files/testbz2.phar.bz2'
@@ -464,7 +464,7 @@ class TestPhar(BaseTestInterpreter):
             echo $p1->isCompressed();
 
         ''' % phar_file)
-        assert output[0] == self.space.w_True
+        assert self.space.int_w(output[0]) == 8192
         assert self.space.str_w(output[1]) == 'Phar'
         assert output[2] == self.space.w_False
 
