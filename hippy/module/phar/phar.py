@@ -10,9 +10,11 @@ from hippy.module.spl.spl import k_RecursiveDirectoryIterator, k_SplFileInfo
 from hippy.objects.base import W_Root
 from hippy.module.phar import utils
 from hippy.module.bzip2.funcs import _bzdecompress
+from hippy.module.zlib.funcs import _decode
 from hippy.lexer import LexerError
 from hippy.objects.intobject import W_IntObject
 from hippy.module.spl.spl import FI_SKIP_DOTS, FI_UNIX_PATHS
+from rpython.rlib import rpath
 
 import py
 
@@ -64,6 +66,7 @@ def phar_map_phar(interp, alias='', dataoffset=0):
 def phar_construct(interp, this, filename, flags=PHAR_NONE,
                    alias=None):
 
+    this.filename = filename
     filename = py.path.local(filename)
     content = filename.read()
     this.flags = flags
@@ -72,8 +75,7 @@ def phar_construct(interp, this, filename, flags=PHAR_NONE,
     if filename.ext == ".bz2":
         this.flags = this.flags | PHAR_BZ2
         content = _bzdecompress(content)
-
-    this.filename = filename.purebasename
+    this.basename = filename.purebasename
     this.content = content
     this.phar_data = utils.fetch_phar_data(this.content)
     this.phar = utils.read_phar(this.phar_data)
@@ -180,8 +182,9 @@ def phar_create_default_stub(interp, this, indexfile='', webindexfile=''):
 @wrap_method(['interp', ThisUnwrapper(W_Phar), Optional(str)],
              name='Phar::decompress', error_handler=handle_as_exception)
 def phar_decompress(interp, this, extension=''):
-    open(this.filename, "wb").write(this.content)
-    res = PharClass.call_args(interp, [interp.space.wrap(this.filename)])
+    decompressed_filename = rpath.dirname(this.filename) + '/' + this.basename
+    open(decompressed_filename, "wb").write(this.content)
+    res = PharClass.call_args(interp, [interp.space.wrap(decompressed_filename)])
     return res
 
 
