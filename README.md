@@ -68,3 +68,14 @@ to run PHP's test on the top of the **hippyvm** interpreter:
    
     py.test test_phpt/
 
+
+Contact 
+=======
+
+**irc:** #hippyvm at freenode
+
+**email:** contact@hippyvm.com
+
+**twitter:** [@HippyVM](https://twitter.com/HippyVM)
+
+
