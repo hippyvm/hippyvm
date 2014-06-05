@@ -81,6 +81,8 @@ def phar_construct(interp, this, filename, flags=PHAR_NONE,
     this.content = content
     this.phar_data = utils.fetch_phar_data(this.content)
     this.phar = utils.read_phar(this.phar_data)
+    xxx = utils.write_phar(interp.space, this)
+    import pdb; pdb.set_trace()
 
 
 @wrap_method(['interp', ThisUnwrapper(W_Phar), str], name='Phar::addEmptyDir',

@@ -320,13 +320,63 @@ def fetch_phar_data(content):
     return ''
 
 
+def write_phar(space, phar):
+    # sig = { 'sha1': [('V', ), ()]}
+    phar_data = phar.phar
+    from hippy.module.hash.funcs import _get_hash_algo
+    signature_type = {
+        'md5': '\x01\x00\x00\x00',
+        'sha1': '\x02\x00\x00\x00',
+        'sha256': '\x04\x00\x00\x00',
+        'sha512': '\x08\x00\x00\x00'
+    }
+    to_pack = [
+        ('V', phar_data['length']),
+        ('V', phar_data['files_count']),
+        ('v', phar_data['api_version']),
+        ('V', phar_data['flags']),
+        ('V', phar_data['alias_length']),
+        ('V', phar_data['global_metadata']),
+    ]
+    for fname, fdata in phar_data["files"].items():
+        to_pack.append(('V', len(fname)))
+        to_pack.append(('a*', fname))
+
+        to_pack.append(('V', fdata['size_uncompressed']))
+        to_pack.append(('V', fdata['timestamp']))
+        to_pack.append(('V', fdata['size_compressed']))
+        to_pack.append(('V', fdata['size_crc_uncompressed']))
+        to_pack.append(('V', fdata['flags']))
+        to_pack.append(('V', fdata['metadata']))
+
+    algo = phar_data['signature_name']
+    h = _get_hash_algo(algo)
+
+    for _, fdata in phar_data["files"].items():
+        to_pack.append(('a*', fdata['content']))
+
+    format = ""
+    args = []
+    for fmt, val in to_pack:
+        format += fmt
+        args.append(space.wrap(val))
+    new_phar = phpstruct.Pack(space, format, args).build()
+
+    h.update(new_phar)
+    signature = phpstruct.Pack(space, 'h', [space.wrap(h.hexdigest())]).build()
+
+    new_phar += signature
+    new_phar += signature_type[algo] + 'GBMB'
+    return new_phar
+
+
 def read_phar(data):
     data = data.lstrip()
 
     cursor = 0
     shift = 4+4+2+4+4
 
-    manifest_data = phpstruct.Unpack("V/V/A2/V/V", data[cursor:shift]).build()
+    manifest_data = phpstruct.Unpack("V/V/v/V/V", data[cursor:shift]).build()
 
     manifest = {
         "length": manifest_data[0][1],
