@@ -312,6 +312,7 @@ def phar_load_phar(interp, this, filename, alias=''):
     # XXX: final public static
     raise NotImplementedError
 
+
 @wrap_method(['interp', ThisUnwrapper(W_Phar)], name='Phar::isWritable')
 def phar_is_writable(interp, this):
     raise NotImplementedError
@@ -503,8 +504,103 @@ class W_PharFileInfo(W_SplFileInfo):
         return w_res
 
 
+@wrap_method(['interp', ThisUnwrapper(W_PharFileInfo), int],
+             name='PharFileInfo::chmod')
+def pfi_chmod(interp, this, permissions):
+    raise NotImplementedError
+
+
+@wrap_method(['interp', ThisUnwrapper(W_PharFileInfo), int],
+             name='PharFileInfo::compress', error_handler=handle_as_exception)
+def pfi_compress(interp, this, compression):
+    raise NotImplementedError
+
+
+@wrap_method(['interp', ThisUnwrapper(W_PharFileInfo), str],
+             name='PharFileInfo::__construct',
+             error_handler=handle_as_exception)
+def pfi_construct(interp, this, entry):
+    raise NotImplementedError
+
+
+@wrap_method(['interp', ThisUnwrapper(W_PharFileInfo)],
+             name='PharFileInfo::decompress',
+             error_handler=handle_as_exception)
+def pfi_decompress(interp, this):
+    raise NotImplementedError
+
+
+@wrap_method(['interp', ThisUnwrapper(W_PharFileInfo)],
+             name='PharFileInfo::delMetadata',
+             error_handler=handle_as_exception)
+def pfi_del_metadata(interp, this):
+    raise NotImplementedError
+
+
+@wrap_method(['interp', ThisUnwrapper(W_PharFileInfo)],
+             name='PharFileInfo::getCRC32',
+             error_handler=handle_as_exception)
+def pfi_get_crc32(interp, this):
+    raise NotImplementedError
+
+
+@wrap_method(['interp', ThisUnwrapper(W_PharFileInfo)],
+             name='PharFileInfo::getCompressedSize')
+def pfi_get_compressed_size(interp, this):
+    raise NotImplementedError
+
+
+@wrap_method(['interp', ThisUnwrapper(W_PharFileInfo)],
+             name='PharFileInfo::getMetadata')
+def pfi_get_metadata(interp, this):
+    raise NotImplementedError
+
+
+@wrap_method(['interp', ThisUnwrapper(W_PharFileInfo)],
+             name='PharFileInfo::getPharFlags')
+def pfi_get_phar_flags(interp, this):
+    return interp.space.newint(0)
+
+
+@wrap_method(['interp', ThisUnwrapper(W_PharFileInfo)],
+             name='PharFileInfo::hasMetadata')
+def pfi_has_metadata(interp, this):
+    raise NotImplementedError
+
+
+@wrap_method(['interp', ThisUnwrapper(W_PharFileInfo)],
+             name='PharFileInfo::isCRCChecked')
+def pfi_is_crc(interp, this):
+    raise NotImplementedError
+
+
+@wrap_method(['interp', ThisUnwrapper(W_PharFileInfo), Optional(int)],
+             name='PharFileInfo::isCompressed')
+def pfi_is_compressed(interp, this, compression_type=9021976):
+    raise NotImplementedError
+
+
+@wrap_method(['interp', ThisUnwrapper(W_PharFileInfo)],
+             name='PharFileInfo::setMetadata')
+def pfi_set_metadata(interp, this):
+    raise NotImplementedError
+
+
 PharFileInfoClass = def_class(
     'PharFileInfo',
-    [],
+    [pfi_chmod,
+     pfi_compress,
+     pfi_construct,
+     pfi_decompress,
+     pfi_del_metadata,
+     pfi_get_crc32,
+     pfi_get_compressed_size,
+     pfi_get_metadata,
+     pfi_get_phar_flags,
+     pfi_has_metadata,
+     pfi_is_crc,
+     pfi_is_compressed,
+     pfi_set_metadata,
+     ],
     instance_class=W_PharFileInfo,
     extends=k_SplFileInfo,)

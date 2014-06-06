@@ -17,7 +17,7 @@ class TestPhar(BaseTestInterpreter):
         assert self.space.str_w(output[0]) == 'Phar'
 
     def test_count(self):
-        phar_file = os.path.join(os.path.dirname(__file__), 'phar_files/phar.phar')
+        phar_file = os.path.join(os.path.dirname(__file__), 'phar_files/testfilesbz2.phar')
 
         output = self.run('''
 
@@ -418,11 +418,12 @@ class TestPhar(BaseTestInterpreter):
         assert self.space.str_w(output[0]) == 'Foo'
 
     def test_uncompressallfiles(self):       # XXX: Doesn't pass on first runs
+        phar_file = os.path.join(
+            os.path.dirname(__file__),
+            'phar_files/testfilesbz2.phar')
+
         output = self.run('''
-        $p = new Phar('/tmp/decomp_phar1.phar', 0, 'decomp_phar1.phar');
-        $p['myfile1.txt'] = 'Foo.';
-        $p['myfile2.txt'] = 'Bar.';
-        $p->compressFiles(Phar::GZ);
+        $p = new Phar('%s');
         foreach ($p as $file) {
             echo $file->isCompressed();
             echo $file->isCompressed(Phar::GZ);
