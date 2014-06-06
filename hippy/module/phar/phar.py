@@ -546,7 +546,16 @@ def pfi_construct(interp, this, entry):
              name='PharFileInfo::decompress',
              error_handler=handle_as_exception)
 def pfi_decompress(interp, this):
-    raise NotImplementedError
+    try:
+        if this.manifest_data['flags'] & PHAR_BZ2:
+            this.manifest_data['content'] = _bzdecompress(this.manifest_data['content'])
+            this.manifest_data['flags'] = this.manifest_data['flags'] - PHAR_BZ2
+        elif this.manifest_data['flags'] & PHAR_GZ:
+            this.manifest_data['content'] = _decode(this.manifest_data['content'], ZLIB_ENCODING_GZIP)
+            this.manifest_data['flags'] = this.manifest_data['flags'] - PHAR_GZ
+        return interp.space.w_True
+    except:
+        return interp.space.w_False
 
 
 @wrap_method(['interp', ThisUnwrapper(W_PharFileInfo)],
