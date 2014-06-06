@@ -177,7 +177,6 @@ def phar_copy(interp, this, oldfile, newfile):
 @wrap_method(['interp', ThisUnwrapper(W_Phar)],
              name='Phar::count')
 def phar_count(interp, this):
-    import pdb; pdb.set_trace()
     return interp.space.newint(this.phar['files_count'])
 
 
@@ -557,7 +556,7 @@ def pfi_del_metadata(interp, this):
              name='PharFileInfo::getCRC32',
              error_handler=handle_as_exception)
 def pfi_get_crc32(interp, this):
-    raise NotImplementedError
+    return interp.space.newint(this.manifest_data['size_crc_uncompressed'])
 
 
 @wrap_method(['interp', ThisUnwrapper(W_PharFileInfo)],
@@ -569,7 +568,7 @@ def pfi_get_compressed_size(interp, this):
 @wrap_method(['interp', ThisUnwrapper(W_PharFileInfo)],
              name='PharFileInfo::getMetadata')
 def pfi_get_metadata(interp, this):
-    raise NotImplementedError
+    return interp.space.newint(this.manifest_data['metadata'])
 
 
 @wrap_method(['interp', ThisUnwrapper(W_PharFileInfo)],
@@ -581,19 +580,27 @@ def pfi_get_phar_flags(interp, this):
 @wrap_method(['interp', ThisUnwrapper(W_PharFileInfo)],
              name='PharFileInfo::hasMetadata')
 def pfi_has_metadata(interp, this):
-    raise NotImplementedError
+    if this.manifest_data['metadata'] == 0:
+        return interp.space.w_False
+    else:
+        return interp.space.w_True
 
 
 @wrap_method(['interp', ThisUnwrapper(W_PharFileInfo)],
              name='PharFileInfo::isCRCChecked')
 def pfi_is_crc(interp, this):
-    raise NotImplementedError
+    # will always be crc verified in the current implementation
+    # or so say php docs.
+    return interp.space.w_True
 
 
 @wrap_method(['interp', ThisUnwrapper(W_PharFileInfo), Optional(int)],
              name='PharFileInfo::isCompressed')
 def pfi_is_compressed(interp, this, compression_type=9021976):
-    raise NotImplementedError
+    if this.manifest_data['size_uncompressed'] == this.manifest_data['size_compressed']:
+        return interp.space.w_False
+    else:
+        return (this.manifest_data['flags'] & compression_type)
 
 
 @wrap_method(['interp', ThisUnwrapper(W_PharFileInfo)],

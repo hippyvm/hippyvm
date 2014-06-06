@@ -17,7 +17,7 @@ class TestPhar(BaseTestInterpreter):
         assert self.space.str_w(output[0]) == 'Phar'
 
     def test_count(self):
-        phar_file = os.path.join(os.path.dirname(__file__), 'phar_files/testfilesbz2.phar')
+        phar_file = os.path.join(os.path.dirname(__file__), 'phar_files/phar.phar')
 
         output = self.run('''
 
