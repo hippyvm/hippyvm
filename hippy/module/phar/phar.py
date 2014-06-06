@@ -201,9 +201,13 @@ def phar_decompress(interp, this, extension=''):
              error_handler=handle_as_exception)
 def phar_decompress_files(interp, this):
     try:
-        # XXX only bz2 for now:
-        for f in this.phar['files'].items():
-            f[1]['content'] = _bzdecompress(f[1]['content'])
+        for k, v in this.phar['files'].items():
+            if v['flags'] & PHAR_BZ2:
+                v['content'] = _bzdecompress(v['content'])
+                v['flags'] = v['flags'] - PHAR_BZ2
+            elif v['flags'] & PHAR_GZ:
+                v['content'] = _decode(v['content'], ZLIB_ENCODING_GZIP)
+                v['flags'] = v['flags'] - PHAR_GZ
         return interp.space.w_True
     except:
         return interp.space.w_False
