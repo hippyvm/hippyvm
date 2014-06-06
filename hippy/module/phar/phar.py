@@ -4,7 +4,9 @@ from hippy import consts
 from hippy.module.spl.spl import W_RecursiveDirectoryIterator, W_SplFileInfo
 from hippy.builtin import (wrap_method, ThisUnwrapper, Optional,
                            handle_as_exception)
+from hippy.error import PHPException
 from hippy.builtin_klass import def_class, k_ArrayAccess
+from hippy.module.spl.exception import k_BadMethodCallException
 from hippy.module.spl.interface import k_Countable
 from hippy.module.spl.spl import k_RecursiveDirectoryIterator, k_SplFileInfo
 from hippy.objects.base import W_Root
@@ -81,8 +83,10 @@ def phar_construct(interp, this, filename, flags=PHAR_NONE,
     this.content = content
     this.phar_data = utils.fetch_phar_data(this.content)
     this.phar = utils.read_phar(this.phar_data)
-    xxx = utils.write_phar(interp.space, this)
-    import pdb; pdb.set_trace()
+    this.files = []
+
+    for k, v in this.phar['files'].items():
+        this.files.append(k)
 
 
 @wrap_method(['interp', ThisUnwrapper(W_Phar), str], name='Phar::addEmptyDir',
@@ -340,7 +344,15 @@ def phar_offset_exists(interp, this, offset):
 @wrap_method(['interp', ThisUnwrapper(W_Phar), str], name='Phar::offsetGet',
              error_handler=handle_as_exception)
 def phar_offset_get(interp, this, offset):
-    raise NotImplementedError
+    entry = this.filename + '/' + offset
+    if offset not in this.files():
+        raise PHPException(k_BadMethodCallException.call_args(
+            interp, [interp.space.wrap(
+                "Phar::offsetGet(): File does not exist in the Phar archive")]))
+
+    w_pfi = PharFileInfoClass.call_args(interp, [interp.space.wrap(entry)])
+    w_pfi.manifest_data = this.phar['files'][offset]
+    return w_pfi
 
 
 @wrap_method(['interp', ThisUnwrapper(W_Phar), str, str],
@@ -520,8 +532,7 @@ def pfi_compress(interp, this, compression):
              name='PharFileInfo::__construct',
              error_handler=handle_as_exception)
 def pfi_construct(interp, this, entry):
-    raise NotImplementedError
-
+    this.entry = entry
 
 @wrap_method(['interp', ThisUnwrapper(W_PharFileInfo)],
              name='PharFileInfo::decompress',
