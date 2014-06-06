@@ -1,7 +1,7 @@
 from collections import OrderedDict
 
 from hippy import consts
-from hippy.module.spl.spl import W_RecursiveDirectoryIterator
+from hippy.module.spl.spl import W_RecursiveDirectoryIterator, W_SplFileInfo
 from hippy.builtin import (wrap_method, ThisUnwrapper, Optional,
                            handle_as_exception)
 from hippy.builtin_klass import def_class, k_ArrayAccess
@@ -12,6 +12,7 @@ from hippy.module.phar import utils
 from hippy.module.bzip2.funcs import _bzdecompress
 from hippy.module.zlib.funcs import _decode, ZLIB_ENCODING_GZIP
 from hippy.objects.intobject import W_IntObject
+from hippy.objects.instanceobject import W_InstanceObject
 from rpython.rlib import rpath
 
 import py
@@ -487,3 +488,18 @@ PharClass = def_class(
     implements=[k_Countable, k_ArrayAccess],
     instance_class=W_Phar,
     extends=k_RecursiveDirectoryIterator,)
+
+
+class W_PharFileInfo(W_SplFileInfo):
+
+    def clone(self, interp, contextclass):
+        w_res = W_InstanceObject.clone(self, interp, contextclass)
+        assert isinstance(w_res, W_PharFileInfo)
+        return w_res
+
+
+PharFileInfoClass = def_class(
+    'PharFileInfo',
+    [],
+    instance_class=W_PharFileInfo,
+    extends=k_SplFileInfo,)
