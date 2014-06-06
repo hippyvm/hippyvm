@@ -177,6 +177,7 @@ def phar_copy(interp, this, oldfile, newfile):
 @wrap_method(['interp', ThisUnwrapper(W_Phar)],
              name='Phar::count')
 def phar_count(interp, this):
+    import pdb; pdb.set_trace()
     return interp.space.newint(this.phar['files_count'])
 
 
@@ -344,7 +345,7 @@ def phar_offset_exists(interp, this, offset):
 @wrap_method(['interp', ThisUnwrapper(W_Phar), str], name='Phar::offsetGet',
              error_handler=handle_as_exception)
 def phar_offset_get(interp, this, offset):
-    entry = this.filename + '/' + offset
+    entry = 'phar://' + this.filename + '/' + offset
     if offset not in this.files():
         raise PHPException(k_BadMethodCallException.call_args(
             interp, [interp.space.wrap(
@@ -562,7 +563,7 @@ def pfi_get_crc32(interp, this):
 @wrap_method(['interp', ThisUnwrapper(W_PharFileInfo)],
              name='PharFileInfo::getCompressedSize')
 def pfi_get_compressed_size(interp, this):
-    raise NotImplementedError
+    return interp.space.newint(this.manifest_data['size_uncompressed'])
 
 
 @wrap_method(['interp', ThisUnwrapper(W_PharFileInfo)],
