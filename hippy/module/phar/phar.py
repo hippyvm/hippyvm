@@ -70,7 +70,6 @@ def phar_construct(interp, this, filename, flags=PHAR_NONE,
     content = filename.read()
     this.flags = flags
 
-    ### We need to handle gzip as well
     if filename.ext == ".bz2":
         this.flags = this.flags | PHAR_BZ2
         content = _bzdecompress(content)
@@ -197,7 +196,13 @@ def phar_decompress(interp, this, extension=''):
 @wrap_method(['interp', ThisUnwrapper(W_Phar)], name='Phar::decompressFiles',
              error_handler=handle_as_exception)
 def phar_decompress_files(interp, this):
-    raise NotImplementedError
+    try:
+        # XXX only bz2 for now:
+        for f in this.phar['files'].items():
+            f[1]['content'] = _bzdecompress(f[1]['content'])
+        return interp.space.w_True
+    except:
+        return interp.space.w_False
 
 
 @wrap_method(['interp', ThisUnwrapper(W_Phar)], name='Phar::delMetadata',
