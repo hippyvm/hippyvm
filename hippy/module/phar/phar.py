@@ -513,6 +513,8 @@ class W_PharFileInfo(W_SplFileInfo):
     def clone(self, interp, contextclass):
         w_res = W_InstanceObject.clone(self, interp, contextclass)
         assert isinstance(w_res, W_PharFileInfo)
+        w_res.entry = self.entry
+        w_res.manifest_data = self.manifest_data
         return w_res
 
 
@@ -533,6 +535,8 @@ def pfi_compress(interp, this, compression):
              error_handler=handle_as_exception)
 def pfi_construct(interp, this, entry):
     this.entry = entry
+    this.manifest_data = None
+
 
 @wrap_method(['interp', ThisUnwrapper(W_PharFileInfo)],
              name='PharFileInfo::decompress',
