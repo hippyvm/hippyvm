@@ -12,13 +12,13 @@ Building
 ========
 
 1. You will need this repository, so please make yourself a "clone" :)
-1. Install Python dependecies from `requirements.txt` file. The usual way is to create a [virtualenv](http://www.virtualenv.org/en/latest/) and then inside, but installing system wide (with sudo) is possible as well. Then: 
+1. Install Python dependencies from `requirements.txt` file. The usual way is to create a [virtualenv](http://www.virtualenv.org/en/latest/) and then inside, but installing system wide (with sudo) is possible as well. Then: 
 
     ```
     pip install -r requirements.txt
     ```  
     
-    If pip is not aviliable, please check [this](http://www.pip-installer.org/en/latest/installing.html).
+    If pip is not available, please check [this](http://www.pip-installer.org/en/latest/installing.html).
     
 1. Install system packages: 
 
