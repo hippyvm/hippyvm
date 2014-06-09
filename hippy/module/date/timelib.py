@@ -5,6 +5,7 @@
 import py
 import time
 import subprocess
+import os, sys
 
 from rpython.rlib.rarithmetic import intmask
 from rpython.translator.tool.cbuild import ExternalCompilationInfo
@@ -18,7 +19,15 @@ ZONETYPE_OFFSET = 1
 
 
 LIBDIR = py.path.local(__file__).join('..', 'lib/')
-subprocess.check_call(['make', '-C', str(LIBDIR)])
+try:
+    GMAKE = os.environ["MAKE"]
+except KeyError:
+    if "bsd" in sys.platform:
+        GMAKE = "gmake"
+    else:
+        GMAKE = "make"
+
+subprocess.check_call([GMAKE, '-C', str(LIBDIR)])
 
 eci = ExternalCompilationInfo(includes=['timelib.h', 'sys/time.h', 'time.h'],
     include_dirs=[LIBDIR],
