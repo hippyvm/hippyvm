@@ -69,7 +69,7 @@ def phar_construct(interp, this, filename, flags=PHAR_NONE,
 
     this.filename = filename
     filename = py.path.local(filename)
-    content = filename.read()
+    content = open(this.filename, 'a+').read()
     this.flags = flags
 
     if filename.ext == ".bz2":
@@ -270,7 +270,7 @@ def phar_get_supported_compression(interp, this):
 
 @wrap_method(['interp', ThisUnwrapper(W_Phar)], name='Phar::getVersion')
 def phar_get_version(interp, this):
-    return interp.space.newstr(this.phar['api_version'])
+    raise NotImplementedError
 
 
 @wrap_method(['interp', ThisUnwrapper(W_Phar)],

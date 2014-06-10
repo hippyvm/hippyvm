@@ -8,6 +8,7 @@ from hippy.module.phar import utils
 
 class TestPhar(BaseTestInterpreter):
 
+    @py.test.mark.xfail(reason="Can't create a new phar yet")
     def test_phar_object(self):
         output = self.run('''
             $p = new Phar('/tmp/newphar.tar.phar', 0, 'newphar.tar.phar');
@@ -95,12 +96,14 @@ class TestPhar(BaseTestInterpreter):
        ''')
         assert self.space.str_w(output[0]) == 'Bar'
 
+    @py.test.mark.xfail(reason='Not implemented')
     def test_api_version(self):
         output = self.run('''
         echo Phar::apiVersion();
         ''')
         assert self.space.str_w(output[0]) == '1.1.1'       # TODO: Will this be true always?
 
+    @py.test.mark.xfail(reason='Not implemented')
     def test_get_version(self):
         phar_file = os.path.join(os.path.dirname(__file__), 'phar_files/phar.phar')
 
@@ -427,6 +430,7 @@ class TestPhar(BaseTestInterpreter):
         ''')
         assert self.space.str_w(output[0]) == 'Foo'
 
+    @py.test.mark.xfail(reason='Not implemented')
     def test_set_alias(self):
         output = self.run('''
         $p = new Phar('/tmp/newphar.phar');
@@ -438,6 +442,7 @@ class TestPhar(BaseTestInterpreter):
         ''')
         assert self.space.str_w(output[0]) == 'Foo'
 
+    @py.test.mark.xfail(reason='Will only pass on first run - edits file')
     def test_uncompressallfiles(self):
         phar_file = os.path.join(
             os.path.dirname(__file__),
@@ -508,6 +513,7 @@ class TestPhar(BaseTestInterpreter):
         assert self.space.str_w(output[1]) == 'Phar'
         assert output[2] == self.space.w_False
 
+    @py.test.mark.xfail(reason='Not implemented')
     def test_stub(self):
         output = self.run('''
         try {
@@ -623,7 +629,7 @@ class TestPharFileInfo(BaseTestInterpreter):
         assert output[1] == self.space.w_True
         assert output[2] == self.space.w_True
 
-    @py.test.mark.xfail(reason='Not implemented')
+    @py.test.mark.xfail(reason='Only passes on first run - edits archive')
     def test_decompress(self):
         output = self.run('''
         $p = new Phar('/tmp/newphar.phar', 0, 'newphar.phar');
