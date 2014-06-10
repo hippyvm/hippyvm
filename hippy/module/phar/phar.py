@@ -342,17 +342,19 @@ def phar_mung_server(interp, this):
 
 @wrap_method(['interp', ThisUnwrapper(W_Phar), str], name='Phar::offsetExists')
 def phar_offset_exists(interp, this, offset):
-    raise NotImplementedError
-
+    if offset not in this.files:
+        return interp.space.w_False
+    else:
+        return interp.space.w_True
 
 @wrap_method(['interp', ThisUnwrapper(W_Phar), str], name='Phar::offsetGet',
              error_handler=handle_as_exception)
 def phar_offset_get(interp, this, offset):
     entry = 'phar://' + this.filename + '/' + offset
-    if offset not in this.files():
+    if offset not in this.files:
         raise PHPException(k_BadMethodCallException.call_args(
             interp, [interp.space.wrap(
-                "Phar::offsetGet(): File does not exist in the Phar archive")]))
+                "Entry %s does not exist" % offset)]))
 
     w_pfi = PharFileInfoClass.call_args(interp, [interp.space.wrap(entry)])
     w_pfi.manifest_data = this.phar['files'][offset]
@@ -566,6 +568,12 @@ def pfi_del_metadata(interp, this):
 
 
 @wrap_method(['interp', ThisUnwrapper(W_PharFileInfo)],
+             name='PharFileInfo::getContent')
+def pfi_get_content(interp, this):
+    return interp.space.wrap(this.manifest_data['content'])
+
+
+@wrap_method(['interp', ThisUnwrapper(W_PharFileInfo)],
              name='PharFileInfo::getCRC32',
              error_handler=handle_as_exception)
 def pfi_get_crc32(interp, this):
@@ -631,6 +639,7 @@ PharFileInfoClass = def_class(
      pfi_del_metadata,
      pfi_get_crc32,
      pfi_get_compressed_size,
+     pfi_get_content,
      pfi_get_metadata,
      pfi_get_phar_flags,
      pfi_has_metadata,

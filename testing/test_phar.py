@@ -28,7 +28,7 @@ class TestPhar(BaseTestInterpreter):
 
         assert self.space.int_w(output[0]) == 2
 
-
+    @py.test.mark.xfail(reason='Not implemented')
     def test_create_phar(self):
         output = self.run('''
         if (Phar::canWrite()) {
@@ -51,6 +51,7 @@ class TestPhar(BaseTestInterpreter):
         assert self.space.str_w(output[0]) == 'file1.txt'
         assert self.space.str_w(output[1]) == 'Information'
 
+    @py.test.mark.xfail(reason='Not implemented')
     def test_add_empty_dir(self):
         tempdir = tempfile.mkdtemp()
         output = self.run('''
@@ -70,6 +71,7 @@ class TestPhar(BaseTestInterpreter):
         ''' % (tempdir, tempdir))
         assert output[0] == self.space.w_True
 
+    @py.test.mark.xfail(reason='Not implemented')
     def test_add_file(self):
         f = py.path.local(tempfile.mkstemp()[1])
         f.write('Foo')
@@ -82,6 +84,7 @@ class TestPhar(BaseTestInterpreter):
         ''' % (f, f))
         assert self.space.str_w(output[0]) == 'Foo'
 
+    @py.test.mark.xfail(reason='Not implemented')
     def test_add_from_string(self):
         output = self.run('''
         $p = new Phar('/tmp/newphar.tar.phar', 0, 'newphar.tar.phar');
@@ -109,6 +112,7 @@ class TestPhar(BaseTestInterpreter):
         ''' % phar_file)
         assert self.space.str_w(output[0]) == '1.1.1'       # TODO: Will this be true always?
 
+    @py.test.mark.xfail(reason='Not implemented')
     def test_build_from_directory(self):            # XXX: Doesn't work on first run
         tempdir = py.path.local(tempfile.mkdtemp())
         f = tempdir.join('foo.txt')
@@ -133,21 +137,26 @@ class TestPhar(BaseTestInterpreter):
         assert self.space.newstr('test file 2') in output
 
     def test_offset_exists(self):
+        phar_file = os.path.join(
+            os.path.dirname(__file__),
+            'phar_files/onefilein.phar'
+        )
+
         output = self.run('''
-        $p = new Phar('/tmp/newphar.tar.phar', 0, 'newphar.tar.phar');
-        $p['foo.txt'] = 'Foo.';
+        $p = new Phar('%s');
         echo isset($p['foo.txt']);
         echo isset($p['bar.txt']);
-        unset($p);
-        Phar::unlinkArchive('/tmp/newphar.tar.phar');
-        ''')
+        ''' % phar_file)
         assert output[0] == self.space.w_True
         assert output[1] == self.space.w_False
 
     def test_offset_get(self):
+        phar_file = os.path.join(
+            os.path.dirname(__file__),
+            'phar_files/onefilein.phar'
+        )
         output = self.run('''
-        $p = new Phar('/tmp/newphar.tar.phar', 0, 'newphar.tar.phar');
-        $p['foo.txt'] = "File exists";
+        $p = new Phar('%s');
         try {
             $res = $p['foo.txt'];
             echo get_class($res);
@@ -156,13 +165,12 @@ class TestPhar(BaseTestInterpreter):
         } catch (BadMethodCallException $e) {
             echo $e->getMessage();
         }
-        unset($p);
-        Phar::unlinkArchive('/tmp/newphar.tar.phar');
-        ''')
+        ''' % phar_file)
         assert self.space.str_w(output[0]) == 'PharFileInfo'
-        assert self.space.str_w(output[1]) == 'File exists'
+        assert self.space.str_w(output[1]) == 'Foo'
         assert self.space.str_w(output[2]) == 'Entry bar.txt does not exist'
 
+    @py.test.mark.xfail(reason='Not implemented')
     def test_offset_unset(self):
         output = self.run('''
         $p = new Phar('/tmp/newphar.tar.phar', 0, 'newphar.tar.phar');
@@ -180,6 +188,7 @@ class TestPhar(BaseTestInterpreter):
         assert self.space.str_w(output[0]) == 'File exists'
         assert self.space.str_w(output[1]) == 'Entry foo.txt does not exist'
 
+    @py.test.mark.xfail(reason='Not implemented')
     def test_is_buffering(self):
         output = self.run('''
         $p1 = new Phar('/tmp/newphar1.tar.phar', 0, 'newphar1.tar.phar');
@@ -200,6 +209,7 @@ class TestPhar(BaseTestInterpreter):
         assert output[1] == self.space.w_False
         assert output[2] == self.space.w_False
 
+    @py.test.mark.xfail(reason='Not implemented')
     def test_compress_files_gz(self):       # XXX: Doesn't pass on first runs
         output = self.run('''
         $p = new Phar('/tmp/newphar000.phar', 0, 'newphar000.phar');
@@ -229,6 +239,7 @@ class TestPhar(BaseTestInterpreter):
             assert output[i+2] == self.space.w_False
             i = i + 3
 
+    @py.test.mark.xfail(reason='Not implemented')
     def test_compress_files_bz2(self):      # XXX: Doesn't pass on first runs
 
         output = self.run('''
@@ -259,6 +270,7 @@ class TestPhar(BaseTestInterpreter):
             assert output[i+2] == self.space.w_True
             i = i + 3
 
+    @py.test.mark.xfail(reason='Not implemented')
     def test_compress_gz(self):
         output = self.run('''
         $p = new Phar('/tmp/newphar.phar', 0, 'newphar.phar');
@@ -275,6 +287,7 @@ class TestPhar(BaseTestInterpreter):
         assert self.space.str_w(output[0]) == 'Phar'
         assert self.space.int_w(output[1]) == 4096
 
+    @py.test.mark.xfail(reason='Not implemented')
     def test_compress_bz2(self):
         output = self.run('''
         $p = new Phar('/tmp/newphar.phar', 0, 'newphar.phar');
@@ -291,6 +304,7 @@ class TestPhar(BaseTestInterpreter):
         assert self.space.str_w(output[0]) == 'Phar'
         assert self.space.int_w(output[1]) == 8192
 
+    @py.test.mark.xfail(reason='Not implemented')
     def test_compress_none(self):
         output = self.run('''
         $p = new Phar('/tmp/newphar.phar', 0, 'newphar.phar');
@@ -306,6 +320,7 @@ class TestPhar(BaseTestInterpreter):
         ''')
         assert self.space.str_w(output[0]) == 'Unable to add newly converted phar "/tmp/newphar.phar" to the list of phars, a phar with that name already exists'
 
+    @py.test.mark.xfail(reason='Not implemented')
     def test_copy(self):
         output = self.run('''
         $p = new Phar('/tmp/newphar.phar', 0, 'newphar.phar');
@@ -318,6 +333,7 @@ class TestPhar(BaseTestInterpreter):
         assert output[0] == self.space.w_True
         assert self.space.str_w(output[1]) == 'foo'
 
+    @py.test.mark.xfail(reason='Not implemented')
     def test_metadata(self):    # XXX: Implemented hasMetadata()
         output = self.run('''
         $p = new Phar('/tmp/newphar.phar', 0, 'newphar.phar');
@@ -341,6 +357,7 @@ class TestPhar(BaseTestInterpreter):
         assert output[3] == self.space.w_True
         assert output[4] == self.space.w_False
 
+    @py.test.mark.xfail(reason='Not implemented')
     def test_running(self):
         output = self.run('''
         echo Phar::running();
@@ -357,6 +374,7 @@ class TestPhar(BaseTestInterpreter):
         assert self.space.str_w(output[2]) == '/tmp/newphar.phar'
         assert self.space.str_w(output[3]) == ''
 
+    @py.test.mark.xfail(reason='Not implemented')
     def test_intercept_file_funcs(self):
         output = self.run('''
         $p = new Phar('/tmp/newphar.phar', 0, 'newphar.phar');
@@ -369,6 +387,7 @@ class TestPhar(BaseTestInterpreter):
         ''')
         assert self.space.str_w(output[0]) == 'Test file.'
 
+    @py.test.mark.xfail(reason='Not implemented')
     def test_modified(self):
         output = self.run('''
         $p = new Phar('/tmp/newphar.phar', 0, 'newphar.phar');
@@ -382,6 +401,7 @@ class TestPhar(BaseTestInterpreter):
         assert output[0] == self.space.w_False
         assert output[1] == self.space.w_True
 
+    @py.test.mark.xfail(reason='Not implemented')
     def test_signature(self):
         output = self.run('''
         $p = new Phar('/tmp/newphar.phar', 0, 'newphar.phar');
@@ -395,6 +415,7 @@ class TestPhar(BaseTestInterpreter):
         for key, w_value in output[0].dct_w.iteritems():
             assert key in ['hash', 'hash_type']
 
+    @py.test.mark.xfail(reason='Not implemented')
     def test_load_phar(self):
         output = self.run('''
         $p = new Phar('/tmp/newphar.phar');
@@ -417,7 +438,7 @@ class TestPhar(BaseTestInterpreter):
         ''')
         assert self.space.str_w(output[0]) == 'Foo'
 
-    def test_uncompressallfiles(self):       # XXX: Doesn't pass on first runs
+    def test_uncompressallfiles(self):
         phar_file = os.path.join(
             os.path.dirname(__file__),
             'phar_files/testfilesbz2.phar')
@@ -435,9 +456,7 @@ class TestPhar(BaseTestInterpreter):
             echo $file->isCompressed(Phar::GZ);
             echo $file->isCompressed(Phar::BZ2);
         }
-//        unset($p);
-//        Phar::unlinkArchive('/tmp/decomp_phar1.phar');
-        ''')
+        ''' % phar_file)
         assert len(output) == 12
         i = 0
         while i < 6:
@@ -513,6 +532,7 @@ class TestPhar(BaseTestInterpreter):
         assert self.space.str_w(output[2]) == 'World'
         assert self.space.str_w(output[3]) == '<?php var_dump("Second"); Phar::mapPhar("brandnewphar.phar"); __HALT_COMPILER(); ?>\r\n'
 
+    @py.test.mark.xfail(reason='Not implemented')
     def test_is_file_format(self):
         output = self.run('''
         $p = new Phar('/tmp/newphar.phar', 0, 'newphar.phar');
@@ -527,6 +547,7 @@ class TestPhar(BaseTestInterpreter):
         assert output[1] == self.space.w_False
         assert output[2] == self.space.w_False
 
+    @py.test.mark.xfail(reason='Not implemented')
     def test_is_valid_phar_filename(self):
         output = self.run('''
         echo Phar::isValidPharFilename('anyNameWillDo.phar');
@@ -541,6 +562,7 @@ class TestPhar(BaseTestInterpreter):
         assert output[3] == self.space.w_False
         assert output[4] == self.space.w_True
 
+    @py.test.mark.xfail(reason='Not implemented')
     def test_is_writable(self):
         output = self.run('''
         $p = new Phar('/tmp/newphar.phar', 0, 'newphar.phar');
@@ -551,6 +573,7 @@ class TestPhar(BaseTestInterpreter):
         ''')
         assert output[0] == self.space.w_True
 
+    @py.test.mark.xfail(reason='Not implemented')
     def test_delete(self):
         output = self.run('''
         $p = new Phar('/tmp/newphar.phar', 0, 'newphar.phar');
@@ -569,6 +592,7 @@ class TestPhar(BaseTestInterpreter):
 
 class TestPharFileInfo(BaseTestInterpreter):
 
+    @py.test.mark.xfail(reason='Not implemented')
     def test_chmod(self):
         output = self.run('''
         @unlink('/tmp/newphar.phar');
@@ -583,6 +607,7 @@ class TestPharFileInfo(BaseTestInterpreter):
         assert output[0] == self.space.w_False
         assert output[1] == self.space.w_True
 
+    @py.test.mark.xfail(reason='Not implemented')
     def test_compress(self):
         output = self.run('''
         $p = new Phar('/tmp/newphar.phar', 0, 'newphar.phar');
@@ -598,6 +623,7 @@ class TestPharFileInfo(BaseTestInterpreter):
         assert output[1] == self.space.w_True
         assert output[2] == self.space.w_True
 
+    @py.test.mark.xfail(reason='Not implemented')
     def test_decompress(self):
         output = self.run('''
         $p = new Phar('/tmp/newphar.phar', 0, 'newphar.phar');
@@ -614,6 +640,21 @@ class TestPharFileInfo(BaseTestInterpreter):
         assert output[1] == self.space.w_True
         assert output[2] == self.space.w_False
 
+    def test_is_compressed(self):
+
+        phar_file = os.path.join(
+            os.path.dirname(__file__),
+            'phar_files/onefilein.phar'
+        )
+
+        output = self.run('''
+            $p = new Phar('%s');
+            $file_info = $p['foo.txt'];
+            echo $file_info->isCompressed();
+        ''' % phar_file)
+        assert output[0] == self.space.w_False
+
+    @py.test.mark.xfail(reason='Not implemented')
     def test_metadata(self):
         output = self.run('''
         $p = new Phar('/tmp/newphar.phar', 0, 'newphar.phar');
@@ -636,33 +677,36 @@ class TestPharFileInfo(BaseTestInterpreter):
         assert output[5] == self.space.w_True      # XXX: Always returns true. Sadness.
 
     def test_get_phar_flags(self):
+        phar_file = os.path.join(
+            os.path.dirname(__file__),
+            'phar_files/onefilein.phar'
+        )
         output = self.run('''
-        $p = new Phar('/tmp/newphar.phar', 0, 'newphar.phar');
-        $p['foo'] = 'Foo.';
-        echo $p['foo']->getPharFlags();
-        unset($p);
-        Phar::unlinkArchive('/tmp/newphar.phar');
-        ''')
+        $p = new Phar('%s');
+        echo $p['foo.txt']->getPharFlags();
+        ''' % phar_file)
         assert self.space.int_w(output[0]) == 0
 
     def test_get_compressed_size(self):
+        phar_file = os.path.join(
+            os.path.dirname(__file__),
+            'phar_files/onefilein.phar'
+        )
         output = self.run('''
-        $p = new Phar('/tmp/newphar.phar', 0, 'newphar.phar');
-        $p['foo.txt'] = 'Foo';
+        $p = new Phar('%s');
         echo $p['foo.txt']->getCompressedSize();
-        unset($p);
-        Phar::unlinkArchive('/tmp/newphar.phar');
-        ''')
+        ''' % phar_file)
         assert self.space.int_w(output[0]) == 3
 
     def test_is_crc_checked(self):
+        phar_file = os.path.join(
+            os.path.dirname(__file__),
+            'phar_files/onefilein.phar'
+        )
         output = self.run('''
-        $p = new Phar('/tmp/newphar.phar', 0, 'newphar.phar');
-        $p['foo.txt'] = 'Foo';
+        $p = new Phar('%s');
         echo $p['foo.txt']->isCRCChecked();
-        unset($p);
-        Phar::unlinkArchive('/tmp/newphar.phar');
-        ''')
+        ''' % phar_file)
         assert output[0] == self.space.w_True
 
 
