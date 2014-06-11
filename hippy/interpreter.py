@@ -341,6 +341,7 @@ class Interpreter(object):
 
     def setup(self, cgi=constants.CGI_NONE, cgi_params=None, argv=None,
               post_data=None):
+
         if self._setup:
             return
         space = self.space
@@ -431,6 +432,7 @@ class Interpreter(object):
             self.globals.set_var('argv', W_Reference(w_argv))
             server_dict['argc'] = w_argc
             server_dict['argv'] = w_argv
+            server_dict['SCRIPT_NAME'] = space.wrap(argv[0])
         self.r_server = W_Reference(
             self.space.new_array_from_rdict(server_dict))
         self.globals.set_var('_SERVER', self.r_server)

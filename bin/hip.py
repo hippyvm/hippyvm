@@ -16,9 +16,8 @@ from hippy.objspace import getspace
 from hippy.error import ExplicitExitException
 
 
-def run(args):
-    assert len(args) == 1, "XXX only supports one argument, a php file"
-    filename = args[0]
+def run(argv):
+    filename = argv[0]
     f = open(filename, 'r')
     source = f.read(-1)
     f.close()
@@ -26,7 +25,7 @@ def run(args):
     bc = compile_php(filename, source, space)
     print '-=- %s -=-' % (filename,)
     interp = Interpreter(space)
-    interp.setup(False, args)
+    interp.setup(False, argv=argv)
     try:
         interp.run_main(space, bc)
         interp.shutdown()
