@@ -720,7 +720,7 @@ class TestPharUtils(BaseTestInterpreter):
 
     def test_generate_stub(self):
         stub = utils.generate_stub('index.php', 'index.php')
-        assert len(stub) == 6676
+        assert len(stub) == 6683
 
     def test_fetch_phar_data(self):
         phar_file = os.path.join(os.path.dirname(__file__), 'phar_files/phar.phar')

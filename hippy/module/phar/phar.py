@@ -16,13 +16,79 @@ from hippy.module.zlib.funcs import _decode, ZLIB_ENCODING_GZIP
 from hippy.objects.intobject import W_IntObject
 from hippy.objects.instanceobject import W_InstanceObject
 from rpython.rlib import rpath
-
+from hippy.rpath import exists
+import time as pytime
+from hippy.module.hash.funcs import _get_hash_algo
 import py
+
+PHAR_ENT_PERM_DEF_FILE = 0x000001B6
+
+
+class PharManifest(object):
+    length = 0
+    files_count = 0
+    api_version = 17
+    flags = 65536  # ???
+    global_metadata = 0
+    alias_length = 0
+    alias = ""
+    signature_algo = "sha1"
+    signature_length = 20
+    files = OrderedDict()
+
+    def __init__(self):
+        pass
+
+    def update(self):
+        self.length = 60
+
+
+class PharFile(object):
+    realname = None
+    localname = None
+    content = None
+    name_length = 0
+    size_uncompressed = 0
+    size_compressed = 0
+    timestamp = 0
+    crc_uncompressed = 0
+    flags = PHAR_ENT_PERM_DEF_FILE
+    metadata = 0
+
+    def __init__(self):
+        pass
 
 
 class W_Phar(W_RecursiveDirectoryIterator):
-    pass
 
+    def write_to_disc(self, space):
+        content = open(self.filename, 'w+')
+        content.write(self.stub)
+        content.write(utils.write_phar(space, self.manifest, self.stub))
+
+    def add_file(self, interp, realname, localname):
+        if not exists(realname):
+            msg = "phar error: unable to open "
+            "file \"%s\" to add to phar archive" % realname
+            raise PHPException(k_RuntimeException.call_args(
+                interp, [interp.space.wrap(msg)]))
+
+        pf = PharFile()
+        pf.realname = realname
+        pf.name_length = len(localname or realname)
+        pf.localname = localname
+        pf.content = open(realname, 'r').read()
+        pf.timestamp = int(pytime.time())
+        pf.size_uncompressed = len(pf.content)
+        pf.size_compressed = pf.size_uncompressed
+        h = _get_hash_algo('crc32b')
+        h.update(pf.content)
+        pf.crc_uncompressed = int(h.hexdigest(), 16)
+        pf.metadata = 0
+        self.manifest.files[localname or realname] = pf
+        self.manifest.files_count += 1
+        self.manifest.update()
+        self.write_to_disc(interp.space)
 
 all_phars = OrderedDict()
 
@@ -50,7 +116,7 @@ PHAR_PHPS = 2
              name='Phar::mapPhar', error_handler=handle_as_exception,
              flags=consts.ACC_FINAL | consts.ACC_STATIC)
 def phar_map_phar(interp, alias='', dataoffset=0):
-    filename, _ , _ = interp.get_frame().get_position()
+    filename, _, _ = interp.get_frame().get_position()
 
     alias = alias or filename
 
@@ -68,25 +134,25 @@ def phar_construct(interp, this, filename, flags=PHAR_NONE,
                    alias=None):
 
     this.filename = filename
-    filename = py.path.local(filename)
-    content = open(this.filename, 'a+').read()
     this.flags = flags
+    if not exists(filename):
+        this.manifest = PharManifest()
+        this.stub = utils.generate_stub('index.php', 'index.php')
+        this.basename = py.path.local(filename)
+    else:
+        filename = py.path.local(filename)
+        content = open(this.filename, 'r').read()
 
-    if filename.ext == ".bz2":
-        this.flags = this.flags | PHAR_BZ2
-        content = _bzdecompress(content)
-    if filename.ext == ".gz":
-        this.flags = this.flags | PHAR_GZ
-        content = _decode(content, ZLIB_ENCODING_GZIP)
+        if filename.ext == ".bz2":
+            this.flags = this.flags | PHAR_BZ2
+            content = _bzdecompress(content)
+        if filename.ext == ".gz":
+            this.flags = this.flags | PHAR_GZ
+            content = _decode(content, ZLIB_ENCODING_GZIP)
 
-    this.basename = filename.purebasename
-    this.content = content
-    this.stub, this.phar_data = utils.fetch_phar_data(this.content)
-    this.phar = utils.read_phar(this.phar_data)
-    this.files = []
-    for k, v in this.phar['files'].items():
-        this.files.append(k)
-    print this.phar
+        this.basename = filename.purebasename
+        this.stub, phar_data = utils.fetch_phar_data(content)
+        this.manifest = utils.read_phar(phar_data)
 
 
 @wrap_method(['interp', ThisUnwrapper(W_Phar), str], name='Phar::addEmptyDir',
@@ -98,7 +164,7 @@ def phar_add_empty_dir(interp, this, dirname):
 @wrap_method(['interp', ThisUnwrapper(W_Phar), str, Optional(str)],
              name='Phar::addFile', error_handler=handle_as_exception)
 def phar_add_file(interp, this, filepath, localname=''):
-    raise NotImplementedError()
+    this.add_file(interp, filepath, localname)
 
 
 @wrap_method(['interp', ThisUnwrapper(W_Phar), str, str],

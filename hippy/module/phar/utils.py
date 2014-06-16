@@ -84,7 +84,7 @@ exit;
 $a = realpath(Extract_Phar::$temp . DIRECTORY_SEPARATOR . $pt);
 if (!$a || strlen(dirname($a)) < strlen(Extract_Phar::$temp)) {
 header('HTTP/1.0 404 Not Found');
-echo "<html>\n <head>\n  <title>File Not Found<title>\n </head>\n <body>\n  <h1>404 - File ", $pt, " Not Found</h1>\n </body>\n</html>";
+echo "<html>\\n <head>\\n  <title>File Not Found<title>\\n </head>\\n <body>\\n  <h1>404 - File ", $pt, " Not Found</h1>\\n </body>\\n</html>";
 exit;
 }
 $b = pathinfo($a);
@@ -303,7 +303,8 @@ __HALT_COMPILER(); ?>"""
 
 
 def generate_stub(web, index):
-    stub_len = len(template) + len(web) + len(index) + 5;
+    # + 5 - 7????
+    stub_len = len(template) + len(web) + len(index) + 5 - 7
     return template % (web, index, stub_len)
 
 
@@ -316,15 +317,14 @@ def fetch_phar_data(content):
         if token.name == "T_HALT_COMPILER":
             ending_tag = content[token.source_pos.idx:].find("?>")
             if ending_tag != 1:
-                data = content[token.source_pos.idx + ending_tag + 2:]
-                stub = content[:token.source_pos.idx + ending_tag + 2]
+                pos = token.source_pos.idx + ending_tag + 2
+                data = content[pos:]
+                stub = content[:pos]
                 return stub, data
     return '', ''
 
 
-def write_phar(space, phar, stub):
-    # sig = { 'sha1': [('V', ), ()]}
-    phar_data = phar.phar
+def write_phar(space, manifest, stub):
     signature_type = {
         'md5': '\x01\x00\x00\x00',
         'sha1': '\x02\x00\x00\x00',
@@ -332,29 +332,28 @@ def write_phar(space, phar, stub):
         'sha512': '\x08\x00\x00\x00'
     }
     to_pack = [
-        ('V', phar_data['length']),
-        ('V', phar_data['files_count']),
-        ('v', phar_data['api_version']),
-        ('V', phar_data['flags']),
-        ('V', phar_data['alias_length']),
-        ('V', phar_data['global_metadata']),
+        ('V', manifest.length),
+        ('V', manifest.files_count),
+        ('v', manifest.api_version),
+        ('V', manifest.flags),
+        ('V', manifest.alias_length),
+        ('V', manifest.global_metadata),
     ]
-    for fname, fdata in phar_data["files"].items():
-        to_pack.append(('V', len(fname)))
+    for fname, fdata in manifest.files.items():
+        to_pack.append(('V', fdata.name_length))
         to_pack.append(('a*', fname))
+        to_pack.append(('V', fdata.size_uncompressed))
+        to_pack.append(('V', fdata.timestamp))
+        to_pack.append(('V', fdata.size_compressed))
+        to_pack.append(('V', fdata.crc_uncompressed))
+        to_pack.append(('V', fdata.flags))
+        to_pack.append(('V', fdata.metadata))
 
-        to_pack.append(('V', fdata['size_uncompressed']))
-        to_pack.append(('V', fdata['timestamp']))
-        to_pack.append(('V', fdata['size_compressed']))
-        to_pack.append(('V', fdata['size_crc_uncompressed']))
-        to_pack.append(('V', fdata['flags']))
-        to_pack.append(('V', fdata['metadata']))
-
-    algo = phar_data['signature_name']
+    algo = manifest.signature_algo
     h = _get_hash_algo(algo)
 
-    for _, fdata in phar_data["files"].items():
-        to_pack.append(('a*', fdata['content']))
+    for _, fdata in manifest.files.items():
+        to_pack.append(('a*', fdata.content))
 
     format = ""
     args = []
@@ -364,14 +363,12 @@ def write_phar(space, phar, stub):
     new_phar = phpstruct.Pack(space, format, args).build()
 
     h.update(stub + new_phar)
-    signature = phpstruct.Pack(space, 'h', [space.wrap(h.hexdigest())]).build()
-
-    new_phar += signature
-    new_phar += signature_type[algo] + 'GBMB'
-    return new_phar
+    signature = h.digest()
+    return new_phar + signature + signature_type[algo] + 'GBMB'
 
 
 def read_phar(data):
+    from hippy.module.phar.phar import PharManifest, PharFile
     data = data.lstrip()
 
     cursor = 0
@@ -379,70 +376,61 @@ def read_phar(data):
 
     manifest_data = phpstruct.Unpack("V/V/v/V/V", data[cursor:shift]).build()
 
-    manifest = {
-        "length": manifest_data[0][1],
-        "files_count": manifest_data[1][1],
-        "api_version": manifest_data[2][1],
-        "flags": manifest_data[3][1],
-        "alias_length": manifest_data[4][1]
-    }
+    pm = PharManifest()
 
-    if manifest["alias_length"]:
+    pm.length = manifest_data[0][1]
+    pm.files_count = manifest_data[1][1]
+    pm.api_version = manifest_data[2][1]
+    pm.flags = manifest_data[3][1]
+    pm.alias_length = manifest_data[4][1]
+
+    if pm.alias_length:
         cursor = shift
-        shift = cursor+manifest["alias_length"]
-        manifest["alias"] = data[cursor:shift]
+        shift = cursor + pm.alias_length
+        pm.alias = data[cursor:shift]
 
     cursor = shift
     shift = cursor+4
     manifest_metadata = phpstruct.Unpack("V", data[cursor:shift]).build()[0][1]
     # XXX: Still not implemented, hack for Phar::hasMetadata()
-    manifest["global_metadata"] = manifest_metadata
-
+    pm.global_metadata = manifest_metadata
     if manifest_metadata:
         raise NotImplementedError()
 
-    files = OrderedDict()
-    for _ in range(int(manifest["files_count"])):
+    for _ in range(pm.files_count):
         cursor = shift
         shift = cursor+4
-        file_name_length = phpstruct.Unpack("V", data[cursor:shift]).build()[0][1]
+        pf = PharFile()
+
+        pf.name_length = phpstruct.Unpack("V",
+                                          data[cursor:shift]).build()[0][1]
 
         cursor = shift
-        shift = cursor+file_name_length
-        file_name = phpstruct.Unpack("a*", data[cursor:shift]).build()[0][1]
+        shift = cursor + pf.name_length
+
+        pf.localname = phpstruct.Unpack("a*",
+                                        data[cursor:shift]).build()[0][1]
 
         cursor = shift
         shift = cursor+4+4+4+4+4+4
         file_data = phpstruct.Unpack("V/V/V/V/V/V", data[cursor:shift]).build()
 
         cursor = shift
+        pf.size_uncompressed = file_data[0][1]
+        pf.timestamp = file_data[1][1]
+        pf.size_compressed = file_data[2][1]
+        pf.crc_uncompressed = file_data[3][1]
+        pf.flags = file_data[4][1]
+        pf.metadata = file_data[5][1]
 
-        file_size_uncompressed = file_data[0][1]
-        file_timestamp = file_data[1][1]
-        file_size_compressed = file_data[2][1]
-        file_size_crc_uncompressed = file_data[3][1]
-        file_flags = file_data[4][1]
-        file_metadata = file_data[5][1]
-
-        if file_metadata:
+        if pf.metadata:
             raise NotImplementedError()
-
-        files[file_name] = {
-            "name_length": file_name_length,
-            "size_uncompressed": file_size_uncompressed,
-            "size_compressed": file_size_compressed,
-            "timestamp": file_timestamp,
-            "size_crc_uncompressed": file_size_crc_uncompressed,
-            "flags": file_flags,
-            "metadata": file_metadata
-        }
-
-    manifest['files'] = files
+        pm.files[pf.localname] = pf
 
     # right now only plain phar files are supported
-    for file_name, file_data in files.items():
-        shift = cursor+file_data['size_uncompressed']
-        files[file_name]['content'] = data[cursor:shift]
+    for file_name, file_data in pm.files.items():
+        shift = cursor + file_data.size_uncompressed
+        file_data.content = data[cursor:shift]
         cursor = shift
 
     gbmb = data.find("GBMB")
@@ -467,12 +455,9 @@ def read_phar(data):
     elif signature_type == '\x08\x00\x00\x00':
         signature_length = 64
         signature_name = 'sha512'
-
     else:
         # raise something, but for now
         raise NotImplementedError
-
-    manifest['signature'] = data[gbmb-signature_length-4:gbmb-4]
-    manifest['signature_name'] = signature_name
-
-    return manifest
+    pm.signature_algo = signature_name
+    pm.signature_length = signature_length
+    return pm
