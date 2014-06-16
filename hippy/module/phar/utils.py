@@ -2,6 +2,8 @@ from collections import OrderedDict
 
 from hippy.module import phpstruct
 from hippy.lexer import Lexer
+from rpython.rlib.rstring import StringBuilder
+from hippy.module.hash.funcs import _get_hash_algo
 
 def get_stub(web, index):
     stub_len = len(template) + len(web) + len(index) + 5;
@@ -315,9 +317,53 @@ def fetch_phar_data(content):
         if token.name == "T_HALT_COMPILER":
             ending_tag = content[token.source_pos.idx:].find("?>")
             if ending_tag != 1:
-                return content[token.source_pos.idx + ending_tag + 2:]
+                data = content[token.source_pos.idx + ending_tag + 2:]
+                stub = content[:token.source_pos.idx + ending_tag + 2]
+                return stub, data
+    return '', ''
 
-    return ''
+
+def _pack_str(space, fmt, data):
+    return phpstruct.Pack(space, fmt, [space.newstr(data)]).build()
+
+
+def _pack_int(space, fmt, data):
+    return phpstruct.Pack(space, fmt, [space.newint(data)]).build()
+
+
+signature_mark = {
+    'md5': '\x01\x00\x00\x00',
+    'sha1': '\x02\x00\x00\x00',
+    'sha256': '\x04\x00\x00\x00',
+    'sha512': '\x08\x00\x00\x00',
+}
+
+
+def write_phar(space, phar, stub):
+    x = StringBuilder()
+    x.append(_pack_int(space, "V", phar['length']))
+    x.append(_pack_int(space, "V", phar['files_count']))
+    x.append(_pack_int(space, "v", phar['api_version']))
+    x.append(_pack_int(space, "V", phar['flags']))
+    x.append(_pack_int(space, "V", phar['alias_length']))
+    x.append(_pack_int(space, "V", phar['global_metadata']))
+    for f, data in phar['files'].items():
+        x.append(_pack_int(space, "V", data['name_length']))
+        x.append(_pack_str(space, "a*", f))
+        x.append(_pack_int(space, "V", data['size_uncompressed']))
+        x.append(_pack_int(space, "V", data['timestamp']))
+        x.append(_pack_int(space, "V", data['size_compressed']))
+        x.append(_pack_int(space, "V", data['size_crc_uncompressed']))
+        x.append(_pack_int(space, "V", data['flags']))
+        x.append(_pack_int(space, "V", data['metadata']))
+    for _, data in phar['files'].items():
+        x.append(_pack_str(space, "a*", data['content']))
+    data = x.build()
+    algo = phar['signature_name']
+    h = _get_hash_algo(algo)
+    h.update(stub + data)
+
+    return data + h.digest() + signature_mark[algo] + 'GBMB'
 
 
 def write_phar(space, phar):

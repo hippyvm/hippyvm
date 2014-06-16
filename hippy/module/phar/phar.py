@@ -55,7 +55,7 @@ def phar_map_phar(interp, alias='', dataoffset=0):
     alias = alias or filename
 
     content = open(filename, 'r').read()
-    phar_data = utils.fetch_phar_data(content)
+    _, phar_data = utils.fetch_phar_data(content)
     all_phars[alias] = utils.read_phar(phar_data)
 
     return interp.space.w_True
@@ -81,12 +81,12 @@ def phar_construct(interp, this, filename, flags=PHAR_NONE,
 
     this.basename = filename.purebasename
     this.content = content
-    this.phar_data = utils.fetch_phar_data(this.content)
+    this.stub, this.phar_data = utils.fetch_phar_data(this.content)
     this.phar = utils.read_phar(this.phar_data)
     this.files = []
-
     for k, v in this.phar['files'].items():
         this.files.append(k)
+    print this.phar
 
 
 @wrap_method(['interp', ThisUnwrapper(W_Phar), str], name='Phar::addEmptyDir',
@@ -346,6 +346,7 @@ def phar_offset_exists(interp, this, offset):
         return interp.space.w_False
     else:
         return interp.space.w_True
+
 
 @wrap_method(['interp', ThisUnwrapper(W_Phar), str], name='Phar::offsetGet',
              error_handler=handle_as_exception)

@@ -726,9 +726,10 @@ class TestPharUtils(BaseTestInterpreter):
         phar_file = os.path.join(os.path.dirname(__file__), 'phar_files/phar.phar')
         phar_content = open(phar_file, 'r').read()
 
-        phar_data = utils.fetch_phar_data(phar_content)
+        stub, phar_data = utils.fetch_phar_data(phar_content)
         phar = utils.read_phar(phar_data)
-
+        new_phar_data = utils.write_phar(self.space, phar, stub)
+        assert new_phar_data == phar_data
         assert phar['files_count'] == 2
         assert len(phar['files']) == 2
 
@@ -747,5 +748,3 @@ class TestPharUtils(BaseTestInterpreter):
         assert phar['files']['test2.php']['timestamp'] == 1401356104
         assert phar['files']['test2.php']['content'] == '<?php echo "ALA";\n'
         assert len(phar['files']['test2.php']['content']) == 18
-
-
