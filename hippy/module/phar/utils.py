@@ -331,7 +331,10 @@ def pack_manifest(space, manifest):
         ('n', manifest.api_version),
         ('V', manifest.flags),
         ('V', manifest.alias_length),
-        ('V', manifest.global_metadata),
+        ('a*', manifest.alias),
+        ('V', manifest.metadata_length),
+        ('a*', manifest.metadata),
+
     ]
     for fname, fdata in manifest.files.items():
         to_pack.append(('V', fdata.name_length))
@@ -361,36 +364,9 @@ def write_phar(space, manifest, stub):
         'sha256': '\x04\x00\x00\x00',
         'sha512': '\x08\x00\x00\x00'
     }
-    to_pack = [
-        ('V', manifest.length),
-        ('V', manifest.files_count),
-        ('v', manifest.api_version),
-        ('V', manifest.flags),
-        ('V', manifest.alias_length),
-        ('V', manifest.global_metadata),
-    ]
-    for fname, fdata in manifest.files.items():
-        to_pack.append(('V', fdata.name_length))
-        to_pack.append(('a*', fname))
-        to_pack.append(('V', fdata.size_uncompressed))
-        to_pack.append(('V', fdata.timestamp))
-        to_pack.append(('V', fdata.size_compressed))
-        to_pack.append(('V', fdata.crc_uncompressed))
-        to_pack.append(('V', fdata.flags))
-        to_pack.append(('V', fdata.metadata))
-
     algo = manifest.signature_algo
-
-    for _, fdata in manifest.files.items():
-        to_pack.append(('a*', fdata.content))
-
-    format = ""
-    args = []
-    for fmt, val in to_pack:
-        format += fmt
-        args.append(space.wrap(val))
     packed_manifest = pack_manifest(space, manifest)
-    signature = get_signature(stub, packed_manifest, manifest.signature_algo)
+    signature = get_signature(stub, packed_manifest, algo)
     return packed_manifest + signature.digest() + signature_type[algo] + 'GBMB'
 
 
