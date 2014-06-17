@@ -22,6 +22,7 @@ from hippy.module.hash.funcs import _get_hash_algo
 import py
 
 PHAR_ENT_PERM_DEF_FILE = 0x000001B6
+PHAR_ENT_PERM_DEF_DIR = 0x000001FF
 
 
 class PharManifest(object):
@@ -29,7 +30,8 @@ class PharManifest(object):
     files_count = 0
     api_version = 17
     flags = 65536  # ???
-    global_metadata = 0
+    metadata = ""
+    metadata_length = 0
     alias_length = 0
     alias = ""
     signature_algo = "sha1"
@@ -39,8 +41,25 @@ class PharManifest(object):
     def __init__(self):
         pass
 
-    def update(self):
-        self.length = 60
+    def update(self, space):
+        packed = utils.pack_manifest(space, self)
+        self.length = len(packed)
+
+    def __repr__(self):
+        return """PharManifest(length:%d, files_count:%d,
+        api:%d, flags:%d, meta:%s,
+        meta_len:%d,
+        alias:%s, alias_len:%d,
+        signature_algo:%s, signature_len:%d)""" % (self.length,
+                                                   self.files_count,
+                                                   self.api_version,
+                                                   self.flags,
+                                                   self.metadata,
+                                                   self.metadata_length,
+                                                   self.alias,
+                                                   self.alias_length,
+                                                   self.signature_algo,
+                                                   self.signature_length)
 
 
 class PharFile(object):
@@ -57,6 +76,21 @@ class PharFile(object):
 
     def __init__(self):
         pass
+
+    def __repr__(self):
+        return """PharFile(real:%s, local:%s, name_len:%d,
+        size_u:%d, size_c:%d, timestamp:%d,
+        crc:%d, flags:%d, metadata:%d,
+        content:%s)""" % (self.realname,
+                          self.localname,
+                          self.name_length,
+                          self.size_uncompressed,
+                          self.size_compressed,
+                          self.timestamp,
+                          self.crc_uncompressed,
+                          self.flags,
+                          self.metadata,
+                          self.content)
 
 
 class W_Phar(W_RecursiveDirectoryIterator):
@@ -87,8 +121,26 @@ class W_Phar(W_RecursiveDirectoryIterator):
         pf.metadata = 0
         self.manifest.files[localname or realname] = pf
         self.manifest.files_count += 1
-        self.manifest.update()
+        self.manifest.update(interp.space)
         self.write_to_disc(interp.space)
+
+    def add_dir(self, interp, dirname):
+        pf = PharFile()
+        pf.realname = dirname
+        pf.name_length = len(dirname)
+        pf.localname = dirname
+        pf.content = None
+        pf.timestamp = int(pytime.time())
+        pf.size_uncompressed = 0
+        pf.size_compressed = 0
+        pf.crc_uncompressed = 0
+        pf.metadata = 0
+        pf.flags = PHAR_ENT_PERM_DEF_DIR
+        self.manifest.files[dirname] = pf
+        self.manifest.files_count += 1
+        self.manifest.update(interp.space)
+        self.write_to_disc(interp.space)
+
 
 all_phars = OrderedDict()
 
@@ -153,12 +205,13 @@ def phar_construct(interp, this, filename, flags=PHAR_NONE,
         this.basename = filename.purebasename
         this.stub, phar_data = utils.fetch_phar_data(content)
         this.manifest = utils.read_phar(phar_data)
+        #import pdb; pdb.set_trace()
 
 
 @wrap_method(['interp', ThisUnwrapper(W_Phar), str], name='Phar::addEmptyDir',
              error_handler=handle_as_exception)
 def phar_add_empty_dir(interp, this, dirname):
-    raise NotImplementedError()
+    this.add_dir(interp, dirname)
 
 
 @wrap_method(['interp', ThisUnwrapper(W_Phar), str, Optional(str)],
@@ -176,7 +229,7 @@ def phar_add_from_str(interp, this, localname, contents):
 @wrap_method(['interp', ThisUnwrapper(W_Phar)], name='Phar::apiVersion')
 def phar_api_version(interp):
     # XXX: final public static -> no need for this(?)
-    raise NotImplementedError()
+    return interp.space.newstr("1.1.1")
 
 
 @wrap_method(['interp', ThisUnwrapper(W_Phar), str, Optional(str)],
@@ -243,7 +296,7 @@ def phar_copy(interp, this, oldfile, newfile):
 @wrap_method(['interp', ThisUnwrapper(W_Phar)],
              name='Phar::count')
 def phar_count(interp, this):
-    return interp.space.newint(this.phar['files_count'])
+    return interp.space.newint(this.manifest.files_count)
 
 
 @wrap_method(['interp', ThisUnwrapper(W_Phar), Optional(str), Optional(str)],
@@ -267,13 +320,13 @@ def phar_decompress(interp, this, extension=''):
              error_handler=handle_as_exception)
 def phar_decompress_files(interp, this):
     try:
-        for k, v in this.phar['files'].items():
-            if v['flags'] & PHAR_BZ2:
-                v['content'] = _bzdecompress(v['content'])
-                v['flags'] = v['flags'] - PHAR_BZ2
-            elif v['flags'] & PHAR_GZ:
-                v['content'] = _decode(v['content'], ZLIB_ENCODING_GZIP)
-                v['flags'] = v['flags'] - PHAR_GZ
+        for k, v in this.manifest.files.items():
+            if v.flags & PHAR_BZ2:
+                v.content = _bzdecompress(v['content'])
+                v.flags = v.flags - PHAR_BZ2
+            elif v.flags & PHAR_GZ:
+                v.content = _decode(v.content, ZLIB_ENCODING_GZIP)
+                v.flags = v.flags - PHAR_GZ
         return interp.space.w_True
     except:
         return interp.space.w_False
@@ -318,7 +371,20 @@ def phar_get_modified(interp, this):
 
 @wrap_method(['interp', ThisUnwrapper(W_Phar)], name='Phar::getSignature')
 def phar_get_signature(interp, this):
-    raise NotImplementedError
+    hash_type = {
+        'sha1': 'SHA-1',
+        'sha256': 'SHA-256',
+        'sha512': 'SHA-512',
+        'md5': 'MD5'
+    }
+    space = interp.space
+    packed_manifest = utils.pack_manifest(space, this.manifest)
+    algo = this.manifest.signature_algo
+    sig = utils.get_signature(this.stub, packed_manifest, algo)
+    rdict_w = OrderedDict()
+    rdict_w['hash'] = space.newstr(sig.hexdigest().upper())
+    rdict_w['hash_type'] = space.newstr(hash_type[algo])
+    return space.new_array_from_rdict(rdict_w)
 
 
 @wrap_method(['interp', ThisUnwrapper(W_Phar)], name='Phar::getStub',

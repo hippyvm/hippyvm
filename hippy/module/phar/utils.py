@@ -324,6 +324,36 @@ def fetch_phar_data(content):
     return '', ''
 
 
+def pack_manifest(space, manifest):
+    to_pack = [
+        ('V', manifest.length),
+        ('V', manifest.files_count),
+        ('n', manifest.api_version),
+        ('V', manifest.flags),
+        ('V', manifest.alias_length),
+        ('V', manifest.global_metadata),
+    ]
+    for fname, fdata in manifest.files.items():
+        to_pack.append(('V', fdata.name_length))
+        to_pack.append(('a*', fname))
+        to_pack.append(('V', fdata.size_uncompressed))
+        to_pack.append(('V', fdata.timestamp))
+        to_pack.append(('V', fdata.size_compressed))
+        to_pack.append(('V', fdata.crc_uncompressed))
+        to_pack.append(('V', fdata.flags))
+        to_pack.append(('V', fdata.metadata))
+
+    for _, fdata in manifest.files.items():
+        to_pack.append(('a*', fdata.content))
+
+    format = ""
+    args = []
+    for fmt, val in to_pack:
+        format += fmt
+        args.append(space.wrap(val))
+    return phpstruct.Pack(space, format, args).build()
+
+
 def write_phar(space, manifest, stub):
     signature_type = {
         'md5': '\x01\x00\x00\x00',
@@ -350,7 +380,6 @@ def write_phar(space, manifest, stub):
         to_pack.append(('V', fdata.metadata))
 
     algo = manifest.signature_algo
-    h = _get_hash_algo(algo)
 
     for _, fdata in manifest.files.items():
         to_pack.append(('a*', fdata.content))
@@ -360,11 +389,15 @@ def write_phar(space, manifest, stub):
     for fmt, val in to_pack:
         format += fmt
         args.append(space.wrap(val))
-    new_phar = phpstruct.Pack(space, format, args).build()
+    packed_manifest = pack_manifest(space, manifest)
+    signature = get_signature(stub, packed_manifest, manifest.signature_algo)
+    return packed_manifest + signature.digest() + signature_type[algo] + 'GBMB'
 
-    h.update(stub + new_phar)
-    signature = h.digest()
-    return new_phar + signature + signature_type[algo] + 'GBMB'
+
+def get_signature(stub, packed_manifest, algo):
+    h = _get_hash_algo(algo)
+    h.update(stub + packed_manifest)
+    return h
 
 
 def read_phar(data):
@@ -374,7 +407,7 @@ def read_phar(data):
     cursor = 0
     shift = 4+4+2+4+4
 
-    manifest_data = phpstruct.Unpack("V/V/v/V/V", data[cursor:shift]).build()
+    manifest_data = phpstruct.Unpack("V/V/n/V/V", data[cursor:shift]).build()
 
     pm = PharManifest()
 
@@ -391,11 +424,14 @@ def read_phar(data):
 
     cursor = shift
     shift = cursor+4
-    manifest_metadata = phpstruct.Unpack("V", data[cursor:shift]).build()[0][1]
-    # XXX: Still not implemented, hack for Phar::hasMetadata()
-    pm.global_metadata = manifest_metadata
-    if manifest_metadata:
-        raise NotImplementedError()
+
+    metadata_length = phpstruct.Unpack("V", data[cursor:shift]).build()[0][1]
+    pm.metadata_length = metadata_length
+
+    if metadata_length:
+        cursor = shift
+        shift = cursor + pm.metadata_length
+        pm.metadata = data[cursor:shift]  # serialized meta
 
     for _ in range(pm.files_count):
         cursor = shift
