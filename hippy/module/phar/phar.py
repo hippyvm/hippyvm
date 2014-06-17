@@ -23,12 +23,14 @@ import py
 
 PHAR_ENT_PERM_DEF_FILE = 0x000001B6
 PHAR_ENT_PERM_DEF_DIR = 0x000001FF
+PHAR_API_VERSION = 0x1110
+PHAR_API_VERSION_NODIR = 0x1100
 
 
 class PharManifest(object):
     length = 0
     files_count = 0
-    api_version = 17
+    api_version = PHAR_API_VERSION_NODIR
     flags = 65536  # ???
     metadata = ""
     metadata_length = 0
@@ -125,6 +127,8 @@ class W_Phar(W_RecursiveDirectoryIterator):
         self.write_to_disc(interp.space)
 
     def add_dir(self, interp, dirname):
+        if not dirname[-1] == '/':
+            dirname += '/'
         pf = PharFile()
         pf.realname = dirname
         pf.name_length = len(dirname)
@@ -138,6 +142,7 @@ class W_Phar(W_RecursiveDirectoryIterator):
         pf.flags = PHAR_ENT_PERM_DEF_DIR
         self.manifest.files[dirname] = pf
         self.manifest.files_count += 1
+        self.manifest.api_version = PHAR_API_VERSION
         self.manifest.update(interp.space)
         self.write_to_disc(interp.space)
 
@@ -205,7 +210,7 @@ def phar_construct(interp, this, filename, flags=PHAR_NONE,
         this.basename = filename.purebasename
         this.stub, phar_data = utils.fetch_phar_data(content)
         this.manifest = utils.read_phar(phar_data)
-        #import pdb; pdb.set_trace()
+        import pdb; pdb.set_trace()
 
 
 @wrap_method(['interp', ThisUnwrapper(W_Phar), str], name='Phar::addEmptyDir',
