@@ -109,11 +109,15 @@ class W_Phar(W_RecursiveDirectoryIterator):
             raise PHPException(k_RuntimeException.call_args(
                 interp, [interp.space.wrap(msg)]))
 
+        content = open(realname, 'r').read()
+        self.add_file_from_string(interp, realname, localname, content)
+
+    def add_file_from_string(self, interp, realname, localname, content):
         pf = PharFile()
         pf.realname = realname
         pf.name_length = len(localname or realname)
         pf.localname = localname
-        pf.content = open(realname, 'r').read()
+        pf.content = content
         pf.timestamp = int(pytime.time())
         pf.size_uncompressed = len(pf.content)
         pf.size_compressed = pf.size_uncompressed
@@ -210,7 +214,6 @@ def phar_construct(interp, this, filename, flags=PHAR_NONE,
         this.basename = filename.purebasename
         this.stub, phar_data = utils.fetch_phar_data(content)
         this.manifest = utils.read_phar(phar_data)
-        import pdb; pdb.set_trace()
 
 
 @wrap_method(['interp', ThisUnwrapper(W_Phar), str], name='Phar::addEmptyDir',
@@ -228,7 +231,7 @@ def phar_add_file(interp, this, filepath, localname=''):
 @wrap_method(['interp', ThisUnwrapper(W_Phar), str, str],
              name='Phar::addFromString', error_handler=handle_as_exception)
 def phar_add_from_str(interp, this, localname, contents):
-    raise NotImplementedError()
+    this.add_file_from_string(interp, None, localname, contents)
 
 
 @wrap_method(['interp', ThisUnwrapper(W_Phar)], name='Phar::apiVersion')
