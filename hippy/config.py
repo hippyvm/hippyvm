@@ -44,7 +44,8 @@ class Config(object):
             'session.save_handler': space.wrap("files"),
             'register_argc_argv': space.wrap(1),
             'error_reporting': space.wrap(E_ALL),
-            'default_socket_timeout': space.wrap(60)
+            'default_socket_timeout': space.wrap(60),
+            'phar.readonly': space.wrap(0),
             }
 
     def set_precision(self, prec):
