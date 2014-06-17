@@ -1853,7 +1853,7 @@ class Interpreter(object):
             phar_name = name[:split]
             phar_filename = name[split+1:]
 
-            data = all_phars[phar_name]['files'][phar_filename]['content']
+            data = all_phars[phar_name].files[phar_filename].content
 
             bc = compile_php(name, data, self.space)
 
