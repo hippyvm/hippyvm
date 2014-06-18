@@ -121,6 +121,7 @@ class WarningChecker(object):
             matching_errors(self.engine.err_stream, expected)
         self.engine.warn_ctx = None
 
+
 class MockEngine(object):
     warn_ctx = None
 
@@ -142,19 +143,22 @@ class MockEngine(object):
         del self.err_stream[:]
         if self.warn_ctx is None:
             with self.warnings(expected_warnings):
+                kwds['argv'] = 'custom_code'
                 return self._run(source, extra_func=extra_func,
-                    inp_stream=inp_stream,
-                    expected_warnings=self.warn_ctx.expected_warnings, **kwds)
+                                 inp_stream=inp_stream,
+                                 expected_warnings=self.warn_ctx.expected_warnings,
+                                 **kwds)
         else:
             return self._run(source, extra_func=extra_func,
-                inp_stream=inp_stream,
-                expected_warnings=self.warn_ctx.expected_warnings, **kwds)
+                             inp_stream=inp_stream,
+                             expected_warnings=self.warn_ctx.expected_warnings,
+                             **kwds)
 
     def _run(self, source, extra_func=None, inp_stream=None,
-            expected_warnings=None, **kwds):
+             expected_warnings=None, **kwds):
         source = preparse(source)
         self.interp = self.new_interp(inp_stream=inp_stream,
-                extra_func=extra_func, **kwds)
+                                      extra_func=extra_func, **kwds)
         bc = self.interp.compile(source)
         if bc is None:
             return self.interp.output

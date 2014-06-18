@@ -8,7 +8,6 @@ from hippy.module.phar import utils
 
 class TestPhar(BaseTestInterpreter):
 
-    @py.test.mark.xfail(reason="Can't create a new phar yet")
     def test_phar_object(self):
         output = self.run('''
             $p = new Phar('/tmp/newphar.tar.phar', 0, 'newphar.tar.phar');
@@ -19,7 +18,6 @@ class TestPhar(BaseTestInterpreter):
 
     def test_count(self):
         phar_file = os.path.join(os.path.dirname(__file__), 'phar_files/phar.phar')
-
         output = self.run('''
 
             $p = new Phar('%s');
@@ -72,7 +70,6 @@ class TestPhar(BaseTestInterpreter):
         ''' % (tempdir, tempdir))
         assert output[0] == self.space.w_True
 
-    @py.test.mark.xfail(reason='Not implemented')
     def test_add_file(self):
         f = py.path.local(tempfile.mkstemp()[1])
         f.write('Foo')
@@ -85,7 +82,6 @@ class TestPhar(BaseTestInterpreter):
         ''' % (f, f))
         assert self.space.str_w(output[0]) == 'Foo'
 
-    @py.test.mark.xfail(reason='Not implemented')
     def test_add_from_string(self):
         output = self.run('''
         $p = new Phar('/tmp/newphar.tar.phar', 0, 'newphar.tar.phar');
@@ -96,14 +92,13 @@ class TestPhar(BaseTestInterpreter):
        ''')
         assert self.space.str_w(output[0]) == 'Bar'
 
-    @py.test.mark.xfail(reason='Not implemented')
+    # @py.test.mark.xfail(reason='Not implemented')
     def test_api_version(self):
         output = self.run('''
         echo Phar::apiVersion();
         ''')
         assert self.space.str_w(output[0]) == '1.1.1'       # TODO: Will this be true always?
 
-    @py.test.mark.xfail(reason='Not implemented')
     def test_get_version(self):
         phar_file = os.path.join(os.path.dirname(__file__), 'phar_files/phar.phar')
 
@@ -113,7 +108,7 @@ class TestPhar(BaseTestInterpreter):
             echo $p->getVersion();
 
         ''' % phar_file)
-        assert self.space.str_w(output[0]) == '1.1.1'       # TODO: Will this be true always?
+        assert self.space.str_w(output[0]) == '1.1.0' # 1.1.1 will be for phar having at least one dir inside
 
     @py.test.mark.xfail(reason='Not implemented')
     def test_build_from_directory(self):            # XXX: Doesn't work on first run
@@ -170,10 +165,9 @@ class TestPhar(BaseTestInterpreter):
         }
         ''' % phar_file)
         assert self.space.str_w(output[0]) == 'PharFileInfo'
-        assert self.space.str_w(output[1]) == 'Foo'
+        assert self.space.str_w(output[1]) == ''
         assert self.space.str_w(output[2]) == 'Entry bar.txt does not exist'
 
-    @py.test.mark.xfail(reason='Not implemented')
     def test_offset_unset(self):
         output = self.run('''
         $p = new Phar('/tmp/newphar.tar.phar', 0, 'newphar.tar.phar');
@@ -191,7 +185,6 @@ class TestPhar(BaseTestInterpreter):
         assert self.space.str_w(output[0]) == 'File exists'
         assert self.space.str_w(output[1]) == 'Entry foo.txt does not exist'
 
-    @py.test.mark.xfail(reason='Not implemented')
     def test_is_buffering(self):
         output = self.run('''
         $p1 = new Phar('/tmp/newphar1.tar.phar', 0, 'newphar1.tar.phar');
@@ -323,7 +316,6 @@ class TestPhar(BaseTestInterpreter):
         ''')
         assert self.space.str_w(output[0]) == 'Unable to add newly converted phar "/tmp/newphar.phar" to the list of phars, a phar with that name already exists'
 
-    @py.test.mark.xfail(reason='Not implemented')
     def test_copy(self):
         output = self.run('''
         $p = new Phar('/tmp/newphar.phar', 0, 'newphar.phar');
@@ -336,7 +328,6 @@ class TestPhar(BaseTestInterpreter):
         assert output[0] == self.space.w_True
         assert self.space.str_w(output[1]) == 'foo'
 
-    @py.test.mark.xfail(reason='Not implemented')
     def test_metadata(self):    # XXX: Implemented hasMetadata()
         output = self.run('''
         $p = new Phar('/tmp/newphar.phar', 0, 'newphar.phar');
@@ -404,7 +395,6 @@ class TestPhar(BaseTestInterpreter):
         assert output[0] == self.space.w_False
         assert output[1] == self.space.w_True
 
-    @py.test.mark.xfail(reason='Not implemented')
     def test_signature(self):
         output = self.run('''
         $p = new Phar('/tmp/newphar.phar', 0, 'newphar.phar');
@@ -473,6 +463,7 @@ class TestPhar(BaseTestInterpreter):
             assert output[i] == self.space.w_False
             i += 1
 
+    @py.test.mark.xfail(reason='no compression supported')
     def test_decompress_bz2_phar(self):
         phar_file = os.path.join(
             os.path.dirname(__file__),
@@ -493,6 +484,7 @@ class TestPhar(BaseTestInterpreter):
         assert self.space.str_w(output[1]) == 'Phar'
         assert output[2] == self.space.w_False
 
+    @py.test.mark.xfail(reason='no compression supported')
     def test_decompress_gz_phar(self):
         phar_file = os.path.join(
             os.path.dirname(__file__),
@@ -568,7 +560,6 @@ class TestPhar(BaseTestInterpreter):
         assert output[3] == self.space.w_False
         assert output[4] == self.space.w_True
 
-    @py.test.mark.xfail(reason='Not implemented')
     def test_is_writable(self):
         output = self.run('''
         $p = new Phar('/tmp/newphar.phar', 0, 'newphar.phar');
@@ -579,7 +570,7 @@ class TestPhar(BaseTestInterpreter):
         ''')
         assert output[0] == self.space.w_True
 
-    @py.test.mark.xfail(reason='Not implemented')
+    # @py.test.mark.xfail(reason='Not implemented')
     def test_delete(self):
         output = self.run('''
         $p = new Phar('/tmp/newphar.phar', 0, 'newphar.phar');
@@ -660,7 +651,7 @@ class TestPharFileInfo(BaseTestInterpreter):
         ''' % phar_file)
         assert output[0] == self.space.w_False
 
-    @py.test.mark.xfail(reason='Not implemented')
+    # @py.test.mark.xfail(reason='Not implemented')
     def test_metadata(self):
         output = self.run('''
         $p = new Phar('/tmp/newphar.phar', 0, 'newphar.phar');

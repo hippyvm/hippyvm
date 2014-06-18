@@ -433,10 +433,13 @@ def read_phar(data):
         pf.size_compressed = file_data[2][1]
         pf.crc_uncompressed = file_data[3][1]
         pf.flags = file_data[4][1]
-        pf.metadata = file_data[5][1]
+        pf.metadata_length = file_data[5][1]
 
-        if pf.metadata:
-            raise NotImplementedError()
+        if pf.metadata_length:
+            cursor = shift
+            shift = cursor + pf.metadata_length
+            pf.metadata = data[cursor:shift]  # serialized meta
+
         pm.files[pf.localname] = pf
 
     # right now only plain phar files are supported

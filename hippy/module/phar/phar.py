@@ -112,10 +112,13 @@ class PharFile(object):
 
 class W_Phar(W_RecursiveDirectoryIterator):
 
+    buffering = False
+
     def write_to_disc(self, space):
-        content = open(self.filename, 'w+')
-        content.write(self.stub)
-        content.write(utils.write_phar(space, self.manifest, self.stub))
+        if not self.buffering:
+            content = open(self.filename, 'w+')
+            content.write(self.stub)
+            content.write(utils.write_phar(space, self.manifest, self.stub))
 
     def add_file(self, interp, realname, localname):
         if not exists(realname):
@@ -248,11 +251,11 @@ def phar_add_from_str(interp, this, localname, contents):
     this.add_file_from_string(interp, None, localname, contents)
 
 
-@wrap_method(['interp', ThisUnwrapper(W_Phar)], name='Phar::apiVersion')
-def phar_api_version(interp, this):
-    if this.manifest.api_version == PHAR_API_VERSION:
-        return interp.space.newstr("1.1.1")
-    return interp.space.newstr("1.1.0")
+@wrap_method(['interp'], name='Phar::apiVersion',
+             flags=consts.ACC_FINAL | consts.ACC_STATIC)
+def phar_api_version(interp):
+    return interp.space.newstr("1.1.1")
+    # return interp.space.newstr("1.1.0")
 
 
 @wrap_method(['interp', ThisUnwrapper(W_Phar), str, Optional(str)],
@@ -276,10 +279,11 @@ def phar_can_compress(interp, this, comp_type=0):
     raise NotImplementedError()
 
 
-@wrap_method(['interp', ThisUnwrapper(W_Phar)], name='Phar::canWrite')
-def phar_can_write(interp, this):
-    # XXX: final public static
-    raise NotImplementedError()
+@wrap_method(['interp'], name='Phar::canWrite')
+def phar_can_write(interp):
+    if _is_phar_ro(interp):
+        return interp.space.w_False
+    return interp.space.w_True
 
 
 @wrap_method(['interp', ThisUnwrapper(W_Phar), int, Optional(str)],
@@ -362,18 +366,18 @@ def phar_decompress_files(interp, this):
 @wrap_method(['interp', ThisUnwrapper(W_Phar)], name='Phar::delMetadata',
              error_handler=handle_as_exception)
 def phar_del_metadata(interp, this):
-    this.metadata_length = 0
-    this.metadata = ""
+    this.manifest.metadata_length = 0
+    this.manifest.metadata = ""
     this.write_to_disc(interp.space)
     return interp.space.w_True
 
 
-@wrap_method(['interp', ThisUnwrapper(W_Phar), str, Optional(str),
-              Optional(bool)], name='Phar::delete',
+@wrap_method(['interp', ThisUnwrapper(W_Phar), str], name='Phar::delete',
              error_handler=handle_as_exception)
 def phar_delete(interp, this, entry):
     try:
         del this.manifest.files[entry]
+        this.manifest.files_count -= 1
     except KeyError:
         raise PHPException(k_BadMethodCallException.call_args(
             interp, [interp.space.wrap(
@@ -393,7 +397,7 @@ def phar_get_metadata(interp, this):
     md = this.manifest.metadata
     if not md:
         return interp.space.w_Null
-    return unserialize(md)
+    return unserialize(interp.space, md)
 
 
 @wrap_method(['interp', ThisUnwrapper(W_Phar)], name='Phar::hasMetadata')
@@ -469,7 +473,7 @@ def phar_intercept_file_funcs(interp, this):
 
 @wrap_method(['interp', ThisUnwrapper(W_Phar)], name='Phar::isBuffering')
 def phar_is_buffering(interp, this):
-    raise NotImplementedError
+    return interp.space.wrap(this.buffering)
 
 
 @wrap_method(['interp', ThisUnwrapper(W_Phar)], name='Phar::isCompressed',
@@ -501,10 +505,14 @@ def phar_load_phar(interp, this, filename, alias=''):
     raise NotImplementedError
 
 
+def _is_phar_ro(interp):
+    ro = interp.config.get_ini_w('phar.readonly')
+    return interp.space.is_true(ro)
+
+
 @wrap_method(['interp', ThisUnwrapper(W_Phar)], name='Phar::isWritable')
 def phar_is_writable(interp, this):
-    ro = interp.config.get_ini_w('phar.readonly')
-    if interp.space.is_true(ro):
+    if _is_phar_ro(interp):
         return interp.space.w_False
     if not os.access(this.filename, os.W_OK):
         return interp.space.w_False
@@ -527,7 +535,7 @@ def phar_mung_server(interp, this):
 
 @wrap_method(['interp', ThisUnwrapper(W_Phar), str], name='Phar::offsetExists')
 def phar_offset_exists(interp, this, offset):
-    if offset not in this.files:
+    if offset not in this.manifest.files:
         return interp.space.w_False
     else:
         return interp.space.w_True
@@ -537,26 +545,38 @@ def phar_offset_exists(interp, this, offset):
              error_handler=handle_as_exception)
 def phar_offset_get(interp, this, offset):
     entry = 'phar://' + this.filename + '/' + offset
-    if offset not in this.files:
+    if offset not in this.manifest.files:
         raise PHPException(k_BadMethodCallException.call_args(
             interp, [interp.space.wrap(
                 "Entry %s does not exist" % offset)]))
 
     w_pfi = PharFileInfoClass.call_args(interp, [interp.space.wrap(entry)])
-    w_pfi.manifest_data = this.manifest.files[offset]
+    w_pfi.data = this.manifest.files[offset]
     return w_pfi
 
 
 @wrap_method(['interp', ThisUnwrapper(W_Phar), str, str],
              name='Phar::offsetSet', error_handler=handle_as_exception)
 def phar_offset_set(interp, this, offset, value):
-    raise NotImplementedError
+    if _is_phar_ro(interp):
+        raise PHPException(k_UnexpectedValueException.call_args(
+            interp, [interp.space.wrap(
+                "Cannot change stub: phar.readonly=1")]))
+    this.add_file_from_string(interp, None, offset, value)
 
 
 @wrap_method(['interp', ThisUnwrapper(W_Phar), str], name='Phar::offsetUnset',
              error_handler=handle_as_exception)
 def phar_offset_unset(interp, this, offset):
-    raise NotImplementedError
+    if _is_phar_ro(interp):
+        raise PHPException(k_UnexpectedValueException.call_args(
+            interp, [interp.space.wrap(
+                "Cannot change stub: phar.readonly=1")]))
+    try:
+        del this.manifest.files[offset]
+        return interp.space.w_True
+    except KeyError:
+        return interp.space.w_False
 
 
 @wrap_method(['interp', ThisUnwrapper(W_Phar), Optional(bool)],
@@ -575,50 +595,88 @@ def phar_set_alias(interp, this, alias):
 @wrap_method(['interp', ThisUnwrapper(W_Phar), Optional(str), Optional(str)],
              name='Phar::setDefaultStub', error_handler=handle_as_exception)
 def phar_set_default_stub(interp, this, index='', webindex=''):
-    ro = interp.config.get_ini_w('phar.readonly')
-    if interp.space.is_true(ro):
-        return interp.space.w_False
+    if _is_phar_ro(interp):
+        raise PHPException(k_UnexpectedValueException.call_args(
+            interp, [interp.space.wrap(
+                "Cannot change stub: phar.readonly=1")]))
     this.stub = utils.generate_stub(index, webindex)
     return interp.space.w_True
 
 
-@wrap_method(['interp', ThisUnwrapper(W_Phar)], name='Phar::setMetadata',
+@wrap_method(['interp', ThisUnwrapper(W_Phar),
+              W_Root], name='Phar::setMetadata',
              error_handler=handle_as_exception)
 def phar_set_metadata(interp, this, metadata):
-    ro = interp.config.get_ini_w('phar.readonly')
-    if interp.space.is_true(ro):
-        return interp.space.w_False
-    this.metadata = interp.space.serialize(metadata)
-    this.metadata_length = len(this.metadata)
+    if _is_phar_ro(interp):
+        raise PHPException(k_UnexpectedValueException.call_args(
+            interp, [interp.space.wrap(
+                "Cannot change stub: phar.readonly=1")]))
+    this.manifest.metadata = interp.space.serialize(metadata)
+    this.manifest.metadata_length = len(this.manifest.metadata)
+
 
 @wrap_method(['interp', ThisUnwrapper(W_Phar), int],
              name='Phar::setSignatureAlgorithm',
              error_handler=handle_as_exception)
 def phar_set_signature_algorithm(interp, this, sigtype):
-    raise NotImplementedError
+    """
+    PHAR_MD5 = 1
+    PHAR_SHA1 = 2
+    PHAR_SHA256 = 3
+    PHAR_SHA512 = 4
+    """
+    if _is_phar_ro(interp):
+        raise PHPException(k_UnexpectedValueException.call_args(
+            interp, [interp.space.wrap(
+                "Cannot change stub: phar.readonly=1")]))
+    if sigtype < 1 or sigtype > 4:
+        raise PHPException(k_UnexpectedValueException.call_args(
+            interp, [interp.space.wrap(
+                "Unknown signature algorithm specified")]))
+    hash_type = {
+        2: ('sha1', 20),
+        3: ('sha256', 32),
+        4: ('sha512', 64),
+        1: ('md5', 16),
+    }
+    algo, length = hash_type[sigtype]
+    this.signature_algo = algo
+    this.signature_length = length
 
 
-@wrap_method(['interp', ThisUnwrapper(W_Phar), str, Optional(int)],
+@wrap_method(['interp', ThisUnwrapper(W_Phar), str],
              name='Phar::setStub', error_handler=handle_as_exception)
-def phar_set_stub(interp, this, stub, len=-1):
-    raise NotImplementedError
+def phar_set_stub(interp, this, stub):
+    if _is_phar_ro(interp):
+        raise PHPException(k_UnexpectedValueException.call_args(
+            interp, [interp.space.wrap(
+                "Cannot change stub: phar.readonly=1")]))
+    this.stub = stub
+    return interp.space.w_True
 
 
 @wrap_method(['interp', ThisUnwrapper(W_Phar)], name='Phar::startBuffering')
 def phar_start_buffering(interp, this):
-    raise NotImplementedError
+    this.buffering = True
 
 
 @wrap_method(['interp', ThisUnwrapper(W_Phar)], name='Phar::stopBuffering',
              error_handler=handle_as_exception)
 def phar_stop_buffering(interp, this):
-    raise NotImplementedError
+    this.buffering = False
+    this.write_to_disc(interp.space)
 
 
-@wrap_method(['interp', ThisUnwrapper(W_Phar), str],
-             name='Phar::unlinkArchive', error_handler=handle_as_exception)
-def phar_unlink_archive(interp, this, archive):
-    raise NotImplementedError
+@wrap_method(['interp', str],
+             name='Phar::unlinkArchive', error_handler=handle_as_exception,
+             flags=consts.ACC_FINAL | consts.ACC_STATIC)
+def phar_unlink_archive(interp, archive):
+    # hm hm hm
+    # we need to check somehow if we can remove this object from memory
+    # we need to track if something refers to this
+    # or maybe we can wait for GC?
+    os.remove(archive)
+    return interp.space.w_True
 
 
 @wrap_method(['interp', ThisUnwrapper(W_Phar), Optional(str), Optional(str),
@@ -713,7 +771,7 @@ class W_PharFileInfo(W_SplFileInfo):
         w_res = W_InstanceObject.clone(self, interp, contextclass)
         assert isinstance(w_res, W_PharFileInfo)
         w_res.entry = self.entry
-        w_res.manifest_data = self.manifest_data
+        w_res.data = self.data
         return w_res
 
 
@@ -734,7 +792,7 @@ def pfi_compress(interp, this, compression):
              error_handler=handle_as_exception)
 def pfi_construct(interp, this, entry):
     this.entry = entry
-    this.manifest_data = None
+    this.data = None
 
 
 @wrap_method(['interp', ThisUnwrapper(W_PharFileInfo)],
@@ -742,12 +800,12 @@ def pfi_construct(interp, this, entry):
              error_handler=handle_as_exception)
 def pfi_decompress(interp, this):
     try:
-        if this.manifest_data['flags'] & PHAR_BZ2:
-            this.manifest_data['content'] = _bzdecompress(this.manifest_data['content'])
-            this.manifest_data['flags'] = this.manifest_data['flags'] - PHAR_BZ2
-        elif this.manifest_data['flags'] & PHAR_GZ:
-            this.manifest_data['content'] = _decode(this.manifest_data['content'], ZLIB_ENCODING_GZIP)
-            this.manifest_data['flags'] = this.manifest_data['flags'] - PHAR_GZ
+        if this.data.flags & PHAR_BZ2:
+            this.data.content = _bzdecompress(this.data.content)
+            this.data.flags = this.data.flags - PHAR_BZ2
+        elif this.data.flags & PHAR_GZ:
+            this.data.content = _decode(this.data.content, ZLIB_ENCODING_GZIP)
+            this.data.flags = this.data.flags - PHAR_GZ
         return interp.space.w_True
     except:
         return interp.space.w_False
@@ -757,32 +815,37 @@ def pfi_decompress(interp, this):
              name='PharFileInfo::delMetadata',
              error_handler=handle_as_exception)
 def pfi_del_metadata(interp, this):
-    raise NotImplementedError
+    this.data.metadata = ""
+    this.data.metadata_length = 0
+    return interp.space.w_True
 
 
 @wrap_method(['interp', ThisUnwrapper(W_PharFileInfo)],
              name='PharFileInfo::getContent')
 def pfi_get_content(interp, this):
-    return interp.space.wrap(this.manifest_data['content'])
+    return interp.space.wrap(this.data.content)
 
 
 @wrap_method(['interp', ThisUnwrapper(W_PharFileInfo)],
              name='PharFileInfo::getCRC32',
              error_handler=handle_as_exception)
 def pfi_get_crc32(interp, this):
-    return interp.space.newint(this.manifest_data['size_crc_uncompressed'])
+    return interp.space.newint(this.data.size_crc_uncompressed)
 
 
 @wrap_method(['interp', ThisUnwrapper(W_PharFileInfo)],
              name='PharFileInfo::getCompressedSize')
 def pfi_get_compressed_size(interp, this):
-    return interp.space.newint(this.manifest_data['size_uncompressed'])
+    return interp.space.newint(this.data.size_uncompressed)
 
 
 @wrap_method(['interp', ThisUnwrapper(W_PharFileInfo)],
              name='PharFileInfo::getMetadata')
 def pfi_get_metadata(interp, this):
-    return interp.space.newint(this.manifest_data['metadata'])
+    md = this.data.metadata
+    if md:
+        return unserialize(interp.space, this.data.metadata)
+    return interp.space.w_Null
 
 
 @wrap_method(['interp', ThisUnwrapper(W_PharFileInfo)],
@@ -794,10 +857,9 @@ def pfi_get_phar_flags(interp, this):
 @wrap_method(['interp', ThisUnwrapper(W_PharFileInfo)],
              name='PharFileInfo::hasMetadata')
 def pfi_has_metadata(interp, this):
-    if this.manifest_data['metadata'] == 0:
-        return interp.space.w_False
-    else:
+    if this.data.metadata:
         return interp.space.w_True
+    return interp.space.w_False
 
 
 @wrap_method(['interp', ThisUnwrapper(W_PharFileInfo)],
@@ -811,16 +873,19 @@ def pfi_is_crc(interp, this):
 @wrap_method(['interp', ThisUnwrapper(W_PharFileInfo), Optional(int)],
              name='PharFileInfo::isCompressed')
 def pfi_is_compressed(interp, this, compression_type=9021976):
-    if this.manifest_data['size_uncompressed'] == this.manifest_data['size_compressed']:
+    if this.data.size_uncompressed == this.data.size_compressed:
         return interp.space.w_False
     else:
-        return (this.manifest_data['flags'] & compression_type)
+        return (this.data.flags & compression_type)
 
 
-@wrap_method(['interp', ThisUnwrapper(W_PharFileInfo)],
+@wrap_method(['interp', ThisUnwrapper(W_PharFileInfo), W_Root],
              name='PharFileInfo::setMetadata')
-def pfi_set_metadata(interp, this):
-    raise NotImplementedError
+def pfi_set_metadata(interp, this, w_obj):
+    this.data.metadata = interp.space.serialize(w_obj)
+    this.data.metadata_length = len(this.data.metadata)
+
+    return interp.space.w_True
 
 
 PharFileInfoClass = def_class(
