@@ -1,0 +1,3 @@
+#!/bin/bash
+HIPPY=`dirname $0`/hippy-c
+exec $HIPPY --cgi "$@"

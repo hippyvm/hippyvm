@@ -1,0 +1,8 @@
+004+ test_time_spring_type3_prev_type2_post: DIFF: 2010-03-15 19:59:59 EDT - 2010-03-13 18:38:28 EST = **P+0Y0M2DT0H21M31S**
+004- test_time_spring_type3_prev_type2_post: DIFF: 2010-03-15 19:59:59 EDT - 2010-03-13 18:38:28 EST = **P+0Y0M2DT1H21M31S**
+013+ test_time_spring_type3_post_type2_prev: DIFF: 2010-03-13 18:38:28 EST - 2010-03-15 19:59:59 EDT = **P-0Y0M2DT0H21M31S**
+013- test_time_spring_type3_post_type2_prev: DIFF: 2010-03-13 18:38:28 EST - 2010-03-15 19:59:59 EDT = **P-0Y0M2DT1H21M31S**
+017+ test_time_spring_type3_stsec_type2_dtsec: DIFF: 2010-03-14 03:00:00 EDT - 2010-03-14 01:59:59 EST = **P+0Y0M0DT0H0M1S**
+018+ test_time_spring_type3_dtsec_type2_stsec: DIFF: 2010-03-14 01:59:59 EST - 2010-03-14 03:00:00 EDT = **P-0Y0M0DT0H0M1S**
+017- test_time_spring_type3_stsec_type2_dtsec: DIFF: 2010-03-15 03:00:00 EDT - 2010-03-13 01:59:59 EST = **P+0Y0M0DT0H0M1S**
+018- test_time_spring_type3_dtsec_type2_stsec: DIFF: 2010-03-15 01:59:59 EST - 2010-03-15 03:00:00 EDT = **P-0Y0M0DT0H0M1S**

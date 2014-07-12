@@ -1,0 +1,104 @@
+[
+    {
+        "color": "green", 
+        "values": [
+            {
+                "value": 1, 
+                "label": "Fannkuch"
+            }, 
+            {
+                "value": 1, 
+                "label": "Heapsort"
+            }, 
+            {
+                "value": 1, 
+                "label": "Binary Trees"
+            }, 
+            {
+                "value": 1, 
+                "label": "Spectral Norm"
+            }, 
+            {
+                "value": 1, 
+                "label": "Richards"
+            }, 
+            {
+                "value": 1, 
+                "label": "Fasta"
+            }, 
+            {
+                "value": 1, 
+                "label": "Nbody"
+            }
+        ], 
+        "key": "PHP"
+    }, 
+    {
+        "color": "red", 
+        "values": [
+            {
+                "value": 0.2088878192247527, 
+                "label": "Fannkuch"
+            }, 
+            {
+                "value": 0.23084240132066614, 
+                "label": "Heapsort"
+            }, 
+            {
+                "value": 0.06879282138883255, 
+                "label": "Binary Trees"
+            }, 
+            {
+                "value": 0.11285235038569069, 
+                "label": "Spectral Norm"
+            }, 
+            {
+                "value": 0.3578704798935794, 
+                "label": "Richards"
+            }, 
+            {
+                "value": 0.15409244182835, 
+                "label": "Fasta"
+            }, 
+            {
+                "value": 0.39305660176390655, 
+                "label": "Nbody"
+            }
+        ], 
+        "key": "HHVM"
+    }, 
+    {
+        "color": "blue", 
+        "values": [
+            {
+                "value": 0.1377814236531126, 
+                "label": "Fannkuch"
+            }, 
+            {
+                "value": 0.18311403475312713, 
+                "label": "Heapsort"
+            }, 
+            {
+                "value": 0.5596416395281664, 
+                "label": "Binary Trees"
+            }, 
+            {
+                "value": 0.031362389251357405, 
+                "label": "Spectral Norm"
+            }, 
+            {
+                "value": 0.05072153669970386, 
+                "label": "Richards"
+            }, 
+            {
+                "value": 0.19588305072414253, 
+                "label": "Fasta"
+            }, 
+            {
+                "value": 0.5089286465190586, 
+                "label": "Nbody"
+            }
+        ], 
+        "key": "HippvVM"
+    }
+]
