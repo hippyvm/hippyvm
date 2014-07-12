@@ -1,4 +1,0 @@
-#!/bin/bash
-HIPPY=`dirname $0`/hippy-c
-HIPPYDEBUG=`dirname $0`/tools/hippydebug.py
-exec $HIPPYDEBUG $HIPPY --cgi "$@"

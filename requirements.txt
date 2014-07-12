@@ -1,3 +1,0 @@
-prettytable
-rply
-
