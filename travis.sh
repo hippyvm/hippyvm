@@ -16,7 +16,7 @@ do
     $var
     if [ $? != 0 ]
     then
-	exit $?
+	exit 1
     fi
 
 done
