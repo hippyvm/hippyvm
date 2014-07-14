@@ -19,11 +19,13 @@ script:
   - export PYTHONPATH=$PYTHONPATH:pypy && python pypy/rpython/bin/rpython targethippy.py
 
 notifications:
+  email:
+    on_success: change
+    on_failure: change
   irc:
     channels: "irc.freenode.org#hippyvm"
     template:
       - "%{repository}@%{branch}: %{message} (%{build_url})"
-    on_success: change
-    on_failure: change
     use_notice: true
-    email: false
+    skip_join: true
+
