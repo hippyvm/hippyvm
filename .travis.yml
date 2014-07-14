@@ -20,7 +20,7 @@ script:
 
 notifications:
   irc:
-    channels: "irc.freenode.org#baroque-dev"
+    channels: "irc.freenode.org#hippyvm"
     template:
       - "%{repository}@%{branch}: %{message} (%{build_url})"
     on_success: change
