@@ -28,5 +28,5 @@ notifications:
     template:
       - "%{repository}@%{branch}: %{message} (%{build_url})"
     use_notice: true
-    skip_join: true
+
 
