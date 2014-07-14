@@ -1,0 +1,21 @@
+language: python
+python:
+  - "2.7"
+
+install:
+  - wget https://bitbucket.org/pypy/pypy/get/default.tar.gz
+  - mkdir pypy && tar xf default.tar.gz -C pypy --strip-components 1
+  - pip install -r requirements.txt
+
+script:
+  - export PYTHONPATH=$PYTHONPATH:pypy && python pypy/rpython/bin/rpython targethippy.py
+
+notifications:
+  irc:
+    channels: "irc.freenode.org#baroque-dev"
+    template:
+      - "%{repository}@%{branch}: %{message} (%{build_url})"
+    on_success: change
+    on_failure: change
+    use_notice: true
+    email: false
