@@ -1,0 +1,14 @@
+*~
+*.pyc
+*.orig
+temp/*
+lib/*.o
+lib/libtimelib.so
+lib/libtimelib1.a
+hippy-c
+*.so
+*.a
+*.o
+*.swp
+__pycache__/
+pypy/
