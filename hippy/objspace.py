@@ -940,8 +940,8 @@ W_StreamContext.tp = ObjSpace.tp_stream_context
 
 from hippy.hippyoption import is_optional_extension_enabled
 if is_optional_extension_enabled("mysql"):
-    from hippy.module.mysql.link_resource import W_MysqlLinkResource
-    from hippy.module.mysql.result_resource import W_MysqlResultResource
+    from ext_module.mysql.link_resource import W_MysqlLinkResource
+    from ext_module.mysql.result_resource import W_MysqlResultResource
     W_MysqlLinkResource.tp = ObjSpace.tp_mysql_link
     W_MysqlResultResource.tp = ObjSpace.tp_mysql_result
 

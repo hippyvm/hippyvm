@@ -669,8 +669,8 @@ class BuiltinFunctionBuilder(object):
 
         from hippy.hippyoption import is_optional_extension_enabled
         if is_optional_extension_enabled("mysql"):
-            from hippy.module.mysql.link_resource import W_MysqlLinkResource
-            from hippy.module.mysql.result_resource import W_MysqlResultResource
+            from ext_module.mysql.link_resource import W_MysqlLinkResource
+            from ext_module.mysql.result_resource import W_MysqlResultResource
             d['W_MysqlLinkResource'] = W_MysqlLinkResource
             d['W_MysqlResultResource'] = W_MysqlResultResource
 

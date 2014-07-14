@@ -54,7 +54,7 @@ import hippy.module.posix.funcs
 import hippy.module.session.funcs
 
 if is_optional_extension_enabled("mysql"):
-    import hippy.module.mysql.funcs
+    import ext_module.mysql.funcs
 
 if is_optional_extension_enabled("hash"):
     import hippy.module.hash.funcs
@@ -303,7 +303,7 @@ class Interpreter(object):
     # Needs to be a separate method so flowspace doesn't say import cannot
     # succeed when there is no mysql module source around.
     def _call_initialize_mysql(self):
-        from hippy.module.mysql.link_resource import initialize_mysql
+        from ext_module.mysql.link_resource import initialize_mysql
         self.mysql_ptr = initialize_mysql()
 
     def _setup_timezone(self):

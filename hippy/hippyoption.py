@@ -37,10 +37,11 @@ def enable_all_optional_extensions():
     for extname in OPTIONAL_EXTS:
         setattr(OPTIONS.optexts, extname, True)
 
+
 @specialize.arg(0)
 def is_optional_extension_enabled(extname):
     try:
-        option = getattr(OPTIONS.optexts, extname)
-    except AttributeError:
-        raise HippyOptionError("No optional extension named '%s'" % extname)
-    return option
+        __import__('ext_module.%s' % extname , None, None)
+        return True
+    except ImportError:
+        return False
