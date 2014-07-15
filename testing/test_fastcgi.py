@@ -6,10 +6,11 @@ import struct
 
 from rpython.rlib.rsocket import RSocket
 from rpython.rtyper.lltypesystem import rffi, lltype
-from hippy.fastcgi.fcgi import run_fcgi_server, FCGI_DEBUG_QUIT,\
+
+from ext_module.fastcgi.fcgi import run_fcgi_server, FCGI_DEBUG_QUIT,\
      FCGI_BEGIN_REQUEST, FCGI_PARAMS, FCGI_STDIN, FCGI_END_REQUEST,\
      FCGI_STDOUT, FCGIServer, Quit
-from hippy.fastcgi.transport import SocketTransport
+from ext_module.fastcgi.transport import SocketTransport
 
 FCGI_HEADER_LEN = 8
 
@@ -111,7 +112,7 @@ def pack_dict(d):
 
 def test_fcgi_missing_document_root():
     import os, StringIO
-    from hippy.fastcgi.fcgi import Request
+    from ext_module.fastcgi.fcgi import Request
     req = Request("some_request_id")
     req.query_params['DOCUMENT_ROOT'] = '/foo/bar/nonexistent'
     old_os_wite = os.write
@@ -125,7 +126,7 @@ def test_fcgi_missing_document_root():
 
 def test_fcgi_bogus_script_filename():
     import os, StringIO
-    from hippy.fastcgi.fcgi import Request
+    from ext_module.fastcgi.fcgi import Request
     req = Request("some_request_id")
     req.query_params['DOCUMENT_ROOT'] = '/tmp'
     req.query_params['SCRIPT_FILENAME'] = '/somewhere/else'

@@ -26,7 +26,7 @@ from rpython.rlib import rpath
 # Needs to be a separate func so flowspace doesn't say import cannot succeed
 # when there is no fastcgi module source around.
 def _run_fastcgi_server(server_port):
-    from hippy.fastcgi.fcgi import run_fcgi_server
+    from ext_module.fastcgi.fcgi import run_fcgi_server
     print "Running fcgi server on port %d" % (server_port,)
     return run_fcgi_server(port=server_port)
 
