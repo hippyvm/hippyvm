@@ -66,7 +66,8 @@ import hippy.module.url
 import hippy.module.mbstring.funcs
 import hippy.module.date.funcs
 if is_optional_extension_enabled("xml"):
-    import hippy.module.xml.interface
+    import ext_module.xml.interface
+
 import hippy.module.standard.exec_
 import hippy.module.spl
 import hippy.module.ctype
