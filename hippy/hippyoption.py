@@ -38,10 +38,10 @@ def enable_all_optional_extensions():
         setattr(OPTIONS.optexts, extname, True)
 
 
-@specialize.arg(0)
+@specialize.memo()
 def is_optional_extension_enabled(extname):
     try:
-        __import__('ext_module.%s' % extname , None, None)
+        __import__('ext_module.%s' % extname)
         return True
     except ImportError:
         return False
