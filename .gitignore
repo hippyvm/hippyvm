@@ -12,3 +12,6 @@ hippy-c
 *.swp
 __pycache__/
 pypy/
+
+ext_module
+testing/ext-module
