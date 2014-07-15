@@ -53,20 +53,12 @@ from hippy.module.standard.directory import php_dir
 import hippy.module.posix.funcs
 import hippy.module.session.funcs
 
-if is_optional_extension_enabled("mysql"):
-    import ext_module.mysql.funcs
-
-if is_optional_extension_enabled("hash"):
-    import ext_module.hash.funcs
-
 import hippy.module.internal
 import hippy.module.regex.interface
 import hippy.module.url
 
 import hippy.module.mbstring.funcs
 import hippy.module.date.funcs
-if is_optional_extension_enabled("xml"):
-    import ext_module.xml.interface
 
 import hippy.module.standard.exec_
 import hippy.module.spl
@@ -85,6 +77,16 @@ import hippy.module.date.datetimezone_klass
 
 from hippy.module.date import default_timezone
 from hippy.buffering import Buffer
+
+if is_optional_extension_enabled("mysql"):
+    import ext_module.mysql.funcs
+
+if is_optional_extension_enabled("hash"):
+    import ext_module.hash.funcs
+
+if is_optional_extension_enabled("xml"):
+    import ext_module.xml.interface
+
 
 
 def get_printable_location(pc, bytecode, contextclass=None):
