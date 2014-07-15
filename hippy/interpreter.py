@@ -57,7 +57,7 @@ if is_optional_extension_enabled("mysql"):
     import ext_module.mysql.funcs
 
 if is_optional_extension_enabled("hash"):
-    import hippy.module.hash.funcs
+    import ext_module.hash.funcs
 
 import hippy.module.internal
 import hippy.module.regex.interface
