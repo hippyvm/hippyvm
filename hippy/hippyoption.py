@@ -42,6 +42,17 @@ def enable_all_optional_extensions():
 def is_optional_extension_enabled(extname):
     try:
         __import__('ext_module.%s' % extname)
-        return True
+        on_import_path = True
     except ImportError:
-        return False
+        on_import_path = False
+
+    try:
+        return getattr(OPTIONS.optexts, extname) and on_import_path
+    except AttributeError:
+        raise HippyOptionError("No optional extension named '%s'" % extname)
+
+
+
+
+
+
