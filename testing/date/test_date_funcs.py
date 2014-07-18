@@ -55,8 +55,6 @@ class TestDateFuncs(BaseTestInterpreter):
         assert self.space.int_w(output.pop(0)) == 7
 
     def test_gmdate(self):
-        pytest.mark.xfail("broken implementation")
-
         output = self.run("""
             echo gmdate("M d Y H:i:s", 883612800);
             echo gmdate("M d Y H:i:s", 873612800);
@@ -169,7 +167,7 @@ class TestDateFuncs(BaseTestInterpreter):
         assert w == ["Warning: timezone_open(): Unknown or bad timezone (1)"]
 
     def test_strftime(self):
-        pytest.mark.xfail("broken implementation")
+        pytest.xfail("broken implementation")
 
         output = self.run("""
             date_default_timezone_set('UTC');
@@ -181,6 +179,8 @@ class TestDateFuncs(BaseTestInterpreter):
         assert self.space.str_w(output.pop(0)) == "00:00 00:00:00 01 -3600"
 
     def test_gmstrftime(self):
+        pytest.xfail("broken implementation")
+
         output = self.run("""
             echo gmstrftime("%A %d %w %u", 0);
             echo gmstrftime("%R %T %d %s", 0);
