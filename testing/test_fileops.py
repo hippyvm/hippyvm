@@ -383,15 +383,14 @@ class TestFileOps(BaseTestInterpreter):
         assert self.space.str_w(output[2]) == ''
 
     def test_file_filter_rot13(self, tmpdir):
-        with tmpdir.as_cwd():
-            output = self.run('''
-            $fp = fopen('test.txt', 'w+');
-            stream_filter_append($fp, "string.rot13", STREAM_FILTER_WRITE);
-            fwrite($fp, "This is a test\n");
-            rewind($fp);
-            echo fread($fp, 1024);
-            fclose($fp);
-            ''')
+        output = self.run('''
+        $fp = fopen('%s/test.txt', 'w+');
+        stream_filter_append($fp, "string.rot13", STREAM_FILTER_WRITE);
+        fwrite($fp, "This is a test\n");
+        rewind($fp);
+        echo fread($fp, 1024);
+        fclose($fp);
+        ''' % tmpdir)
         assert self.space.str_w(output[0]) == 'Guvf vf n grfg\n'
 
     def test_file_filter_rot13_err(self):
@@ -410,19 +409,19 @@ class TestFileOps(BaseTestInterpreter):
         assert self.space.str_w(output[0]) == 'This is a test\n'
 
     def test_file_filter_base64(self, tmpdir):
-        with tmpdir.as_cwd():
-            self.run('''
-            $param = array('line-length' => 8, 'line-break-chars' => "\r\n");
-            $fp = fopen('test.txt', 'w');
-            stream_filter_append($fp, 'convert.base64-encode', STREAM_FILTER_WRITE, $param);
-            fwrite($fp, "This is a test.\n");
-            fclose($fp);
-            ''')
-            with open('test.txt') as fh:
-                content = fh.readlines()
-                assert content[0] == 'VGhpcyBp\r\n'
-                assert content[1] == 'cyBhIHRl\r\n'
-                assert content[2] == 'c3QuCg=='
+        # with tmpdir.as_cwd():
+        self.run('''
+        $param = array('line-length' => 8, 'line-break-chars' => "\r\n");
+        $fp = fopen('%s/test.txt', 'w');
+        stream_filter_append($fp, 'convert.base64-encode', STREAM_FILTER_WRITE, $param);
+        fwrite($fp, "This is a test.\n");
+        fclose($fp);
+        ''' % tmpdir)
+        with open('%s/test.txt' % tmpdir) as fh:
+            content = fh.readlines()
+            assert content[0] == 'VGhpcyBp\r\n'
+            assert content[1] == 'cyBhIHRl\r\n'
+            assert content[2] == 'c3QuCg=='
 
     def test_file_fd_1_open_close_write(self):
         output = self.run('''

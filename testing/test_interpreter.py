@@ -1,6 +1,8 @@
 import py
+import os
 import sys
 import cStringIO
+import pytest
 from collections import OrderedDict
 
 # For tests we enable all optional extensions.
@@ -18,9 +20,13 @@ from testing.directrunner import DirectRunner
 from testing.conftest import option
 
 
+skip_on_travis = pytest.mark.skipif("os.environ.get('TRAVIS', False)")
+
+
 def hippy_fail(*args, **kwargs):
     return py.test.mark.xfail("not config.option.runappdirect",
             *args, **kwargs)
+
 
 
 class BaseTestInterpreter(object):
@@ -4050,6 +4056,7 @@ class TestInterpreter(_TestInterpreter):
             '\x00DB\x00type-mysql', '\x00DB\x00conn-', '\x00DB\x00user-',
             '\x00DB\x00pass-']
 
+    @skip_on_travis
     def test_backtick_expr(self):
         output = self.run("""
         $x = `echo "5*5" | bc`;
@@ -4058,6 +4065,7 @@ class TestInterpreter(_TestInterpreter):
         assert [self.space.str_w(w_v) for w_v in output] == [
             '25\n']
 
+    @skip_on_travis
     def test_backtick_expr_variable(self):
         output = self.run("""
         $op = "5*5";
@@ -4067,6 +4075,7 @@ class TestInterpreter(_TestInterpreter):
         assert [self.space.str_w(w_v) for w_v in output] == [
             '25\n']
 
+    @skip_on_travis
     def test_backtick_expr_variable_2(self):
         output = self.run("""
         $op = "5*5";
@@ -4076,6 +4085,7 @@ class TestInterpreter(_TestInterpreter):
         assert [self.space.str_w(w_v) for w_v in output] == [
             '25\n']
 
+    @skip_on_travis
     def test_backtick_expr_variable_3(self):
         output = self.run("""
         $cmd = "echo";
@@ -4086,6 +4096,7 @@ class TestInterpreter(_TestInterpreter):
         assert [self.space.str_w(w_v) for w_v in output] == [
             '25\n']
 
+    @skip_on_travis
     def test_backtick_expr_singlequote(self):
         output = self.run("""
         $x = `echo '5*5' | bc`;
