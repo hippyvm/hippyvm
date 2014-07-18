@@ -17,7 +17,7 @@ install:
   - pip install -r requirements.txt
 
 script:
-  - PYTHONPATH=$PYTHONPATH:pypy py.test testing/ -v
+  - ./travis.sh
 
 notifications:
   irc:

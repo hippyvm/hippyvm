@@ -6,7 +6,6 @@ export PYTHONPATH=$PYTHONPATH:pypy
 declare -a STEPS=(
     'py.test testing/ -v'
     'python pypy/rpython/bin/rpython targethippy.py'
-    'py.test test_phpt'
 );
 
 
