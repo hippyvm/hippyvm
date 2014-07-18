@@ -5,7 +5,7 @@ from hippy.objects.intobject import W_IntObject as W_Int
 from hippy.objects.strobject import W_ConstStringObject as W_Str
 from hippy.objects.reference import W_Reference
 from hippy.objspace import ObjSpace
-from testing.test_interpreter import BaseTestInterpreter, hippy_fail
+from testing.test_interpreter import BaseTestInterpreter
 
 
 def test_iter_ref():
@@ -1784,8 +1784,9 @@ class TestArray(BaseTestInterpreter):
         assert [self.space.is_true(i) for i in output] == [False, False, False,
                                                            False, False, False]
 
-    @hippy_fail(reason="MemoryError")
     def test_range_mem_error(self):
+        py.test.skip("MemoryError")
+
         self.run('''
         foreach(range(1, 1000000000004, 1) as $k => $v){
            echo $v;
