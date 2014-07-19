@@ -1,4 +1,6 @@
+from hippy.hippyoption import enable_all_optional_extensions
 
+enable_all_optional_extensions()
 
 def pytest_addoption(parser):
     group = parser.getgroup("pypy options")
