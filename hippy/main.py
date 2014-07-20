@@ -9,9 +9,11 @@ and enjoy
 import sys
 import os
 
-if __name__ == '__main__':
+if __name__ == '__main__': # untranslated
     sys.path.insert(0, os.path.dirname(
         os.path.dirname(os.path.abspath(__file__))))
+    from hippy.hippyoption import enable_all_optional_extensions
+    enable_all_optional_extensions()
 
 from hippy.phpcompiler import compile_php
 from hippy.interpreter import Interpreter
