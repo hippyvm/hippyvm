@@ -175,3 +175,74 @@ foreach ($ar as $k => $v) {
         assert phspace.str_w(output[1]) == "z:-1"
         assert phspace.str_w(output[2]) == "999:14"
 
+    # -----------------------------
+    # PHP array to Python list/dict
+    # -----------------------------
+
+    @pytest.mark.xfail
+    def test_php_int_key_array_len_in_php(self):
+        phspace = self.space
+        output = self.run('''
+
+$src = "def f(ary): return len(ary)";
+embed_py_func($src);
+
+$in = array("an", "intkeyed", "array");
+
+echo(f($in));
+
+        ''')
+        assert phspace.int_w(output[0]) == 3
+
+    @pytest.mark.xfail
+    def test_php_nonint_key_array_len_in_php(self):
+        phspace = self.space
+        output = self.run('''
+
+$src = "def f(ary): return len(ary)";
+embed_py_func($src);
+
+$in = array("a" => 1, "b" => "non-intkeyed", "c" => "array");
+
+echo(f($in));
+
+        ''')
+        assert phspace.int_w(output[0]) == 3
+
+    @pytest.mark.xfail
+    def test_php_int_key_array_vals_in_php(self):
+        phspace = self.space
+        output = self.run('''
+
+$src = "def f(ary, idx): return ary[idx]";
+embed_py_func($src);
+
+$in = array("an", "intkeyed", "array");
+
+echo(f($in, 0));
+echo(f($in, 1));
+echo(f($in, 2));
+
+        ''')
+        assert phspace.str_w(output[0]) == "an"
+        assert phspace.str_w(output[1]) == "intkeyed"
+        assert phspace.str_w(output[2]) == "array"
+
+    @pytest.mark.xfail
+    def test_php_non_int_key_array_vals_in_php(self):
+        phspace = self.space
+        output = self.run('''
+
+$src = "def f(ary, idx): return ary[idx]";
+embed_py_func($src);
+
+$in = array("a" => 1, "b" => 22, "c" => 333);
+
+echo(f($in, "a"));
+echo(f($in, "b"));
+echo(f($in, "c"));
+
+        ''')
+        assert phspace.int_w(output[0]) == 1
+        assert phspace.int_w(output[0]) == 22
+        assert phspace.int_w(output[0]) == 333
