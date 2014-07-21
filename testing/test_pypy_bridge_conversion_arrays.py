@@ -37,3 +37,21 @@ for ($i = 0; $i < 3; $i++) {
         ''')
         for i in range(3):
             assert phspace.int_w(output[i]) == 3 - i
+
+    def test_iter_py_list_in_php(self):
+        phspace = self.space
+        output = self.run('''
+
+$src = <<<EOD
+def f(): return [3, 2, 1]
+EOD;
+
+embed_py_func($src);
+$ar = f();
+
+foreach ($ar as $i) {
+    echo($i);
+}
+        ''')
+        for i in range(3):
+            assert phspace.int_w(output[i]) == 3 - i
