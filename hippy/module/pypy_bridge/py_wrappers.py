@@ -142,7 +142,6 @@ class W_PyBridgeListProxy(W_ArrayObject):
         return interp.pyspace.int_w(interp.pyspace.len(self.wpy_list))
 
     def _getitem_int(self, index):
-        assert type(index) == int
         pyspace = self.interp.pyspace
         wpy_val = pyspace.getitem(self.wpy_list, pyspace.wrap(index))
         return ph_of_py(self.interp, wpy_val)
@@ -201,13 +200,11 @@ class W_PyBridgeDictProxy(W_ArrayObject):
         return interp.pyspace.int_w(interp.pyspace.len(self.wpy_dict))
 
     def _getitem_int(self, index):
-        assert type(index) == int
         pyspace = self.interp.pyspace
         wpy_val = pyspace.getitem(self.wpy_dict, pyspace.wrap(index))
         return ph_of_py(self.interp, wpy_val)
 
     def _getitem_str(self, index):
-        assert type(index) == str
         pyspace = self.interp.pyspace
         wpy_val = pyspace.getitem(self.wpy_dict, pyspace.wrap(index))
         return ph_of_py(self.interp, wpy_val)
