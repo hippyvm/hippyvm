@@ -15,6 +15,9 @@ from hippy.objects.floatobject import W_FloatObject
 from hippy.objects.arrayobject import W_ListArrayObject, W_RDictArrayObject
 from hippy.objects.reference import W_Reference
 from hippy.objects.boolobject import W_BoolObject
+
+from pypy.objspace.std import StdObjSpace as PyStdObjSpace
+
 from testing.runner import MockEngine, MockInterpreter, preparse
 from testing.directrunner import DirectRunner
 from testing.conftest import option
@@ -39,15 +42,17 @@ class BaseTestInterpreter(object):
 
     def setup_method(self, method):
         self.space = ObjSpace()
+        self.pyspace = PyStdObjSpace()
         if option.runappdirect:
-            self.engine = self.DirectRunner(self.space)
+            self.engine = self.DirectRunner(self.space, self.pyspace)
         else:
-            self.engine = self.Engine(self.space)
+            self.engine = self.Engine(self.space, self.pyspace)
             self.engine.Interpreter = self.interpreter
 
     def teardown_method(self, method):
         self.engine = None
         self.space = None
+	self.pyspace = None
 
     def run(self, source, expected_warnings=[], extra_func=None,
             inp_stream=None, **kwds):

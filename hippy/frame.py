@@ -5,6 +5,7 @@ from hippy.objects.base import W_Root
 from hippy.objects.reference import W_Reference
 from hippy.objects.arrayobject import new_rdict
 from hippy.builtin_klass import W_ExceptionObject
+from hippy.module.pypy_bridge.conversion import ph_of_py
 
 
 class ExceptionHandler(object):
@@ -185,17 +186,24 @@ class Frame(object):
 
     def lookup_deref(self, no, give_notice=False):
         w_var = self.lookup_variable_temp(no)
+
         if w_var is not None:
             if isinstance(w_var, W_Reference):
                 return w_var.deref()
             else:
                 self.unique_items[no] = False
                 return w_var
-        else:
-            if give_notice:
-                self.interp.notice("Undefined variable: %s" % (
-                    self.bytecode.varnames[no],))
-            return self.interp.space.w_Null
+
+        bytecode = self.bytecode
+        py_scope = bytecode.py_scope
+        if py_scope is not None:
+            w_var = py_scope.ph_lookup(bytecode.varnames[no])
+            if w_var is not None:
+                return w_var
+        if give_notice:
+            self.interp.notice("Undefined variable: %s" % (
+                bytecode.varnames[no],))
+        return self.interp.space.w_Null
 
     def lookup_deref_temp(self, no, give_notice=False):
         w_var = self.lookup_variable_temp(no)

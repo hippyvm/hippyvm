@@ -2,7 +2,6 @@ import py
 import re
 from testing.test_interpreter import BaseTestInterpreter
 from testing.test_main import TestMain
-from hippy.main import entry_point
 
 class TestOptionsMain(TestMain):
     def test_version_compare(self, capfd):

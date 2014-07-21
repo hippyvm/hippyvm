@@ -24,12 +24,12 @@ def preparse(source):
 class MockInterpreter(Interpreter):
     """ Like the interpreter, but captures stdout
     """
-    def __init__(self, space, err_stream=None, inp_stream=None):
+    def __init__(self, space, err_stream=None, inp_stream=None, pyspace=None):
         if err_stream is None:
             self.msgs = []
         else:
             self.msgs = err_stream
-        Interpreter.__init__(self, space)
+        Interpreter.__init__(self, space, pyspace)
         self.tb = []
         self.output = []
         self.inp_stream = inp_stream
@@ -118,8 +118,9 @@ class WarningChecker(object):
 class MockEngine(object):
     warn_ctx = None
 
-    def __init__(self, space):
+    def __init__(self, space, pyspace=None):
         self.space = space
+        self.pyspace = pyspace
         self.err_stream = []
 
     def warnings(self, expected_warnings=None):
@@ -159,7 +160,7 @@ class MockEngine(object):
 
     def new_interp(self, inp_stream, extra_func, **kwds):
         interp = self.Interpreter(self.space, self.err_stream,
-                                  inp_stream=inp_stream)
+                                  inp_stream=inp_stream, pyspace=self.pyspace)
         interp.setup(**kwds)
         if extra_func is not None:
             extra_func(interp)

@@ -32,83 +32,84 @@ def _run_fastcgi_server(server_port):
     print "Running fcgi server on port %d" % (server_port,)
     return run_fcgi_server(port=server_port)
 
-def entry_point(argv):
-    if len(argv) < 2:
-        print __doc__
-        return 1
+def mk_entry_point(pyspace=None):
 
-    i = 1
-    fname = None
-    gcdump = None
-    cgi = False
-    fastcgi = False
-    bench_mode = False
-    bench_no = 0
-    debugger_pipes = (-1, -1)
-    server_port = 9000
-    while i < len(argv):
-        arg = argv[i]
-        if arg.startswith('-'):
-            if arg == '--gcdump':
-                if i == len(argv) - 1:
-                    print "--gcdump requires an argument"
+    def entry_point(argv):
+        if len(argv) < 2:
+            print __doc__
+            return 1
+
+        i = 1
+        fname = None
+        gcdump = None
+        cgi = False
+        fastcgi = False
+        bench_mode = False
+        bench_no = 0
+        debugger_pipes = (-1, -1)
+        server_port = 9000
+        while i < len(argv):
+            arg = argv[i]
+            if arg.startswith('-'):
+                if arg == '--gcdump':
+                    if i == len(argv) - 1:
+                        print "--gcdump requires an argument"
+                        return 1
+                    i += 1
+                    gcdump = argv[i]
+                elif arg == '--cgi':
+                    cgi = True
+                elif arg == '--server':
+                    if i == len(argv) - 1:
+                        print "--server requires an int"
+                        return 1
+                    server_port = int(argv[i + 1])
+                    i += 1
+                    fastcgi = True
+                elif arg == '--bench':
+                    bench_mode = True
+                    if i == len(argv) - 1:
+                        print "--bench requires an int"
+                        return 1
+                    bench_no = int(argv[i + 1])
+                    i += 1
+                elif arg == '--debugger_pipes':
+                    assert i + 2 < len(argv)
+                    debugger_pipes = (int(argv[i + 1]), int(argv[i + 2]))
+                    i += 2
+                else:
+                    print __doc__
+                    print "Unknown parameter %s" % arg
                     return 1
-                i += 1
-                gcdump = argv[i]
-            elif arg == '--cgi':
-                cgi = True
-            elif arg == '--server':
-                if i == len(argv) - 1:
-                    print "--server requires an int"
-                    return 1
-                server_port = int(argv[i + 1])
-                i += 1
-                fastcgi = True
-            elif arg == '--bench':
-                bench_mode = True
-                if i == len(argv) - 1:
-                    print "--bench requires an int"
-                    return 1
-                bench_no = int(argv[i + 1])
-                i += 1
-            elif arg == '--debugger_pipes':
-                assert i + 2 < len(argv)
-                debugger_pipes = (int(argv[i + 1]), int(argv[i + 2]))
-                i += 2
             else:
-                print __doc__
-                print "Unknown parameter %s" % arg
+                fname = arg
+                break
+            i += 1
+        if not fname and not fastcgi:
+            print "php filename required"
+            return 1
+        if fastcgi:
+            if bench_mode:
+                print "can't specify --bench and --server"
                 return 1
-        else:
-            fname = arg
-            break
-        i += 1
-    if not fname and not fastcgi:
-        print "php filename required"
-        return 1
-    if fastcgi:
-        if bench_mode:
-            print "can't specify --bench and --server"
-            return 1
-        from hippy.hippyoption import is_optional_extension_enabled
-        if not is_optional_extension_enabled("fastcgi"):
-            print("No fastcgi support compiled in")
-            return 1
-        else:
+            print "Running fcgi server on port %d" % (server_port,)
             return _run_fastcgi_server(server_port)
-    else:
-        rest_of_args = []
-        for k in range(i + 1, len(argv)):
-            s = argv[k]
-            assert s is not None
-            rest_of_args.append(s)
-        return main(fname, rest_of_args, cgi, gcdump, debugger_pipes,
-                    bench_mode, bench_no)
+        else:
+            rest_of_args = []
+            for k in range(i + 1, len(argv)):
+                s = argv[k]
+                assert s is not None
+                rest_of_args.append(s)
+            return main(fname, rest_of_args, cgi, gcdump, debugger_pipes,
+                        bench_mode, bench_no, pyspace=pyspace)
+    return entry_point
 
 def main(filename, rest_of_args, cgi, gcdump, debugger_pipes=(-1, -1),
-         bench_mode=False, bench_no=-1):
+         bench_mode=False, bench_no=-1, pyspace=None):
+    assert filename is not None
     space = getspace()
-    interp = Interpreter(space)
+    pyspace.startup() # must be called once prior to use
+    interp = Interpreter(space, pyspace=pyspace)
 
     absname = rpath.abspath(filename)
 
@@ -176,7 +177,7 @@ def main(filename, rest_of_args, cgi, gcdump, debugger_pipes=(-1, -1),
         if exitcode:
             return exitcode
         if i < no - 1:
-            interp = Interpreter(space)
+            interp = Interpreter(space, pyspace=pyspace)
             if ini_data is not None:
                 try:
                     load_ini(interp, ini_data)
@@ -189,4 +190,16 @@ def main(filename, rest_of_args, cgi, gcdump, debugger_pipes=(-1, -1),
     return exitcode
 
 if __name__ == '__main__':
+    from pypy.config.pypyoption import get_pypy_config
+    pypy_config = get_pypy_config(translating=False)
+
+    from pypy.config.pypyoption import enable_allworkingmodules
+    from pypy.config.pypyoption import enable_translationmodules
+    enable_allworkingmodules(pypy_config)
+    enable_translationmodules(pypy_config)
+
+    from pypy.objspace.std import StdObjSpace as PyStdObjSpace
+    pyspace = PyStdObjSpace(pypy_config)
+
+    entry_point = mk_entry_point(pyspace)
     sys.exit(entry_point(sys.argv))

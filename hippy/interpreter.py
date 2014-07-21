@@ -74,6 +74,7 @@ import hippy.module.ctype
 import hippy.module.date.datetime_klass
 import hippy.module.date.dateinterval_klass
 import hippy.module.date.datetimezone_klass
+import hippy.module.pypy_bridge.bridge
 
 from hippy.module.date import default_timezone
 from hippy.buffering import Buffer
@@ -215,8 +216,14 @@ class Interpreter(object):
     last_strtok_str = None
     last_strtok_pos = 0
 
-    def __init__(self, space):
+    def __init__(self, space, pyspace=None):
         self.space = space
+
+        # PyPy Bridge
+        self.pyspace = pyspace
+        if pyspace is not None:
+            self.pyspace.set_php_interp(self) # stash a back ref
+
         self.constant_names = []
         self.class_names = []
         space.global_constant_cache.reset()
@@ -896,6 +903,7 @@ class Interpreter(object):
     def enter(self, frame):
         frame.f_backref = self.topframeref
         self.topframeref = jit.virtual_ref(frame)
+        #self.topframeref = jit.non_virtual_ref(frame)
         if self.debugger is not None:
             self.debugger.enter_frame(self, frame)
 

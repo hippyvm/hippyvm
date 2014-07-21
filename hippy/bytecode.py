@@ -10,7 +10,6 @@ from rpython.rlib.objectmodel import we_are_translated
 from rpython.rlib.rstring import StringBuilder
 from rpython.rlib.rstruct.runpack import runpack
 
-
 class ByteCode(object):
     """ A representation of a single code block
     """
@@ -54,6 +53,7 @@ class ByteCode(object):
         if static_vars is not None:
             for k, (v, cm, no) in static_vars.iteritems():
                 self.static_vars[cm] = v
+        self.py_scope = None
 
     def getline(self, no):
         return self.sourcelines[no - 1]

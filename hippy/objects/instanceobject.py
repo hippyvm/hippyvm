@@ -263,8 +263,8 @@ class W_InstanceObject(W_Object):
         else:
             return interp.space.w_Null
 
-    def getattr(self, interp, attr, contextclass=None, give_notice=False):
-        return self._getattr(interp, attr, contextclass,
+    def getattr(self, interp, name, contextclass=None, give_notice=False):
+        return self._getattr(interp, name, contextclass,
                              isref=False, give_notice=give_notice)
 
     def getattr_ref(self, interp, attr, contextclass):
