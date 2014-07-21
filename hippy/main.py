@@ -92,8 +92,12 @@ def mk_entry_point(pyspace=None):
             if bench_mode:
                 print "can't specify --bench and --server"
                 return 1
-            print "Running fcgi server on port %d" % (server_port,)
-            return _run_fastcgi_server(server_port)
+            from hippy.hippyoption import is_optional_extension_enabled
+            if not is_optional_extension_enabled("fastcgi"):
+                print("No fastcgi support compiled in")
+                return 1
+            else:
+                return _run_fastcgi_server(server_port)
         else:
             rest_of_args = []
             for k in range(i + 1, len(argv)):
