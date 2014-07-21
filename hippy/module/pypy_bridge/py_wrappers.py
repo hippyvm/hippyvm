@@ -140,6 +140,7 @@ class W_PyBridgeListProxy(W_ArrayObject):
         return interp.pyspace.int_w(interp.pyspace.len(self.wpy_list))
 
     def _getitem_int(self, index):
+        assert type(index) == int
         pyspace = self.interp.pyspace
         wpy_val = pyspace.getitem(self.wpy_list, pyspace.wrap(index))
         return ph_of_py(self.interp, wpy_val)
@@ -149,8 +150,6 @@ class W_PyBridgeListProxy(W_ArrayObject):
 
 class W_PyBridgeDictProxy(W_ArrayObject):
     """ Wraps a Python dict as something PHP array. """
-
-    _has_string_keys = False
 
     def __init__(self, interp, wpy_dict):
         self.interp = interp
