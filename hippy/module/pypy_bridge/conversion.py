@@ -2,10 +2,9 @@ from hippy.objects.instanceobject import W_InstanceObject as Wph_InstanceObject
 from hippy.klass import def_class
 from hippy.builtin import wrap, Optional, wrap_method, ThisUnwrapper
 from hippy.objects.base import W_Root as Wph_Root
-from hippy import function as php_function
 
 from pypy.interpreter.baseobjspace import W_Root as Wpy_Root
-from pypy.interpreter import function as py_function
+from pypy.interpreter.function import Function as py_Function
 
 
 def py_of_ph(interp, wph_any):
@@ -29,35 +28,20 @@ def py_of_ph(interp, wph_any):
         return py_wrappers.W_PhBridgeProxy(interp, wph_any)
 
     if wph_tp == phspace.tp_null:
-        return py_none_of_ph_null(interp, wph_any)
+        return interp.pyspace.w_None
     elif wph_tp == phspace.tp_bool:
-        return py_bool_of_ph_boolean(interp, wph_any)
+        return interp.pyspace.wrap(interp.space.is_true(wph_any))
     elif wph_tp == phspace.tp_float:
-        return py_float_of_ph_float(interp, wph_any)
+        return interp.pyspace.newfloat(interp.space.float_w(wph_any))
     elif wph_tp == phspace.tp_int:
-        return py_int_of_ph_int(interp, wph_any)
+        return interp.pyspace.newint(interp.space.int_w(wph_any))
     elif wph_tp == phspace.tp_str:
-        return py_str_of_ph_string(interp, wph_any)
+        return interp.pyspace.wrap(interp.space.str_w(wph_any))
     # XXX disable list conversions
     #elif wph_tp == phspace.tp_array:
     #    return py_list_of_ph_array(interp, wph_any)
     else:
         return py_wrappers.W_PhBridgeProxy(interp, wph_any)
-
-def py_int_of_ph_int(interp, wph_int):
-    return interp.pyspace.newint(interp.space.int_w(wph_int))
-
-def py_float_of_ph_float(interp, wph_float):
-    return interp.pyspace.newfloat(interp.space.float_w(wph_float))
-
-def py_str_of_ph_string(interp, wph_string):
-    return interp.pyspace.wrap(interp.space.str_w(wph_string))
-
-def py_none_of_ph_null(interp, unused):
-    return interp.pyspace.w_None
-
-def py_bool_of_ph_boolean(interp, wph_boolean):
-    return interp.pyspace.wrap(interp.space.is_true(wph_boolean))
 
 def py_list_of_ph_array(interp, wph_array):
     wph_elems = wph_array.as_list_w()
@@ -83,45 +67,28 @@ def ph_of_py(interp, wpy_any):
 
     pyspace = interp.pyspace
     if pyspace.is_w(pyspace.type(wpy_any), pyspace.w_bool):
-        return ph_boolean_of_py_bool(interp, wpy_any)
+        return interp.space.wrap(interp.pyspace.bool_w(wpy_any))
     elif pyspace.is_w(pyspace.type(wpy_any), pyspace.w_int):
-        return ph_int_of_py_int(interp, wpy_any)
+        return interp.space.newint(interp.pyspace.int_w(wpy_any))
     elif pyspace.is_w(pyspace.type(wpy_any), pyspace.w_float):
-        return ph_float_of_py_float(interp, wpy_any)
+        return interp.space.newfloat(interp.pyspace.float_w(wpy_any))
     elif pyspace.is_w(pyspace.type(wpy_any), pyspace.w_str):
-        return ph_string_of_py_str(interp, wpy_any)
+        return interp.space.wrap(interp.pyspace.str_w(wpy_any))
     elif wpy_any is pyspace.w_None:
-        return ph_null_of_py_none(interp, wpy_any)
+        return interp.space.w_Null
     elif pyspace.is_w(pyspace.type(wpy_any), pyspace.w_dict):
         from hippy.module.pypy_bridge.py_wrappers import W_PyBridgeDictProxy
         return W_PyBridgeDictProxy(interp, wpy_any)
     elif pyspace.is_w(pyspace.type(wpy_any), pyspace.w_list):
         from hippy.module.pypy_bridge.py_wrappers import W_PyBridgeListProxy
         return W_PyBridgeListProxy(interp, wpy_any)
-    elif isinstance(wpy_any, py_function.Function):
+    elif isinstance(wpy_any, py_Function):
         from hippy.module.pypy_bridge import php_wrappers
         return php_wrappers.W_EmbeddedPyFunc(interp, wpy_any)
     else:
-        # XXX bug in RPython translator?
-        #return W_PyBridgeProxy.from_wpy_inst(interp, wpy_any)
-        wph_pxy = php_wrappers.W_PyBridgeProxy(php_wrappers.k_PyBridgeProxy, [])
+        wph_pxy = php_wrappers.W_PyBridgeProxy(php_wrappers.W_PyBridgeProxy, [])
         wph_pxy.setup_instance(interp, wpy_any)
         return wph_pxy
-
-def ph_int_of_py_int(interp, wpy_int):
-    return interp.space.newint(interp.pyspace.int_w(wpy_int))
-
-def ph_float_of_py_float(interp, wpy_float):
-    return interp.space.newfloat(interp.pyspace.float_w(wpy_float))
-
-def ph_string_of_py_str(interp, wpy_str):
-    return interp.space.wrap(interp.pyspace.str_w(wpy_str))
-
-def ph_boolean_of_py_bool(interp, wpy_bool):
-    return interp.space.wrap(interp.pyspace.bool_w(wpy_bool))
-
-def ph_null_of_py_none(interp, unused):
-    return interp.space.w_Null
 
 def ph_array_of_py_list(interp, wpy_list):
     wpy_elems = interp.pyspace.listview(wpy_list)
