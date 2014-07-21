@@ -95,4 +95,4 @@ $ar = f();
 echo(count($ar));
 
         ''')
-        assert phspace.int_w(output[0]) == 2
+        assert phspace.int_w(output[0]) == 3

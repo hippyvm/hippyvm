@@ -127,7 +127,7 @@ class W_PyBridgeListProxyIterator(W_BaseIterator):
         return space.wrap(index), ph_of_py(self.interp, wpy_value)
 
 class W_PyBridgeListProxy(W_ArrayObject):
-    """ Wraps a Python list as something PHP understands. """
+    """ Wraps a Python list as PHP array. """
 
     _has_string_keys = False
 
@@ -146,4 +146,17 @@ class W_PyBridgeListProxy(W_ArrayObject):
 
     def create_iter(self, space, contextclass=None):
         return W_PyBridgeListProxyIterator(self.interp, self.wpy_list)
+
+class W_PyBridgeDictProxy(W_ArrayObject):
+    """ Wraps a Python dict as something PHP array. """
+
+    _has_string_keys = False
+
+    def __init__(self, interp, wpy_dict):
+        self.interp = interp
+        self.wpy_dict = wpy_dict
+
+    def arraylen(self):
+        interp = self.interp
+        return interp.pyspace.int_w(interp.pyspace.len(self.wpy_dict))
 

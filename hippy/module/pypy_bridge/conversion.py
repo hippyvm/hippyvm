@@ -92,6 +92,9 @@ def ph_of_py(interp, wpy_any):
         return ph_string_of_py_str(interp, wpy_any)
     elif wpy_any is pyspace.w_None:
         return ph_null_of_py_none(interp, wpy_any)
+    elif pyspace.is_w(pyspace.type(wpy_any), pyspace.w_dict):
+        from hippy.module.pypy_bridge.py_wrappers import W_PyBridgeDictProxy
+        return W_PyBridgeDictProxy(interp, wpy_any)
     elif pyspace.is_w(pyspace.type(wpy_any), pyspace.w_list):
         from hippy.module.pypy_bridge.py_wrappers import W_PyBridgeListProxy
         return W_PyBridgeListProxy(interp, wpy_any)
