@@ -119,6 +119,13 @@ class W_PyBridgeListProxyIterator(W_BaseIterator):
         self.finished = self.index == len(self.storage_w)
         return ph_of_py(self.interp, wpy_value)
 
+    def next_item(self, space):
+        index = self.index
+        wpy_value = self.storage_w[index]
+        self.index = index + 1
+        self.finished = self.index == len(self.storage_w)
+        return space.wrap(index), ph_of_py(self.interp, wpy_value)
+
 class W_PyBridgeListProxy(W_ArrayObject):
     """ Wraps a Python list as something PHP understands. """
 

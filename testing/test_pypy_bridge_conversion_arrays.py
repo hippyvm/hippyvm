@@ -71,6 +71,6 @@ foreach ($ar as $k => $v) {
     echo("$k:$v");
 }
         ''')
-        assert phspace.str_w(output[0]) == "zero:0"
-        assert phspace.str_w(output[1]) == "one:1"
-        assert phspace.str_w(output[2]) == "two:2"
+        assert phspace.str_w(output[0]) == "0:zero"
+        assert phspace.str_w(output[1]) == "1:one"
+        assert phspace.str_w(output[2]) == "2:two"
