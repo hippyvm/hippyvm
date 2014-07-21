@@ -97,7 +97,7 @@ echo(count($ar));
         ''')
         assert phspace.int_w(output[0]) == 3
 
-    def test_return_py_dict_vals(self):
+    def test_return_py_dict_vals_str_key(self):
         phspace = self.space
         output = self.run('''
 
@@ -115,3 +115,22 @@ echo($ar["e"]);
         assert phspace.str_w(output[0]) == "b"
         assert phspace.str_w(output[1]) == "d"
         assert phspace.str_w(output[2]) == "f"
+
+    def test_return_py_dict_vals_int_key(self):
+        phspace = self.space
+        output = self.run('''
+
+$src = <<<EOD
+def f(): return {6 : "a", 7 : "b", 8 : "c"}
+EOD;
+
+embed_py_func($src);
+$ar = f();
+echo($ar[8]);
+echo($ar[7]);
+echo($ar[6]);
+
+        ''')
+        assert phspace.str_w(output[0]) == "c"
+        assert phspace.str_w(output[1]) == "b"
+        assert phspace.str_w(output[2]) == "a"
