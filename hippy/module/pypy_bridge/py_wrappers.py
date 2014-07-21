@@ -160,3 +160,13 @@ class W_PyBridgeDictProxy(W_ArrayObject):
         interp = self.interp
         return interp.pyspace.int_w(interp.pyspace.len(self.wpy_dict))
 
+    def _getitem_int(self, index):
+        raise NotImplementedError("xxx")
+
+    def _getitem_str(self, index):
+        assert type(index) == str
+        pyspace = self.interp.pyspace
+        wpy_val = pyspace.getitem(self.wpy_dict, pyspace.wrap(index))
+        return ph_of_py(self.interp, wpy_val)
+
+

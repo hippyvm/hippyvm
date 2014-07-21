@@ -107,9 +107,9 @@ EOD;
 
 embed_py_func($src);
 $ar = f();
-echo(count($ar["a"]));
-echo(count($ar["c"]));
-echo(count($ar["e"]));
+echo($ar["a"]);
+echo($ar["c"]);
+echo($ar["e"]);
 
         ''')
         assert phspace.str_w(output[0]) == "b"
