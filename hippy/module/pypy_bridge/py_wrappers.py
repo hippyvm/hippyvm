@@ -5,6 +5,7 @@ from pypy.interpreter.function import Function as Py_Function
 
 from hippy.objects.arrayobject import W_ArrayObject
 from hippy.module.pypy_bridge.conversion import py_of_ph, ph_of_py
+from hippy.objects.iterator import W_BaseIterator
 
 from rpython.rlib import jit
 
@@ -103,7 +104,20 @@ W_PhBridgeProxy.typedef = TypeDef("PhBridgeProxy",
     __ne__ = interp2app(W_PhBridgeProxy.descr_ne),
 )
 
+class W_PyBridgeListProxyIterator(W_BaseIterator):
 
+    def __init__(self, interp, wpy_list):
+        self.interp = interp
+        self.storage_w = interp.pyspace.listview(wpy_list)
+        self.index = 0
+        self.finished = len(self.storage_w) == 0
+
+    def next(self, space):
+        index = self.index
+        wpy_value = self.storage_w[index]
+        self.index = index + 1
+        self.finished = self.index == len(self.storage_w)
+        return ph_of_py(self.interp, wpy_value)
 
 class W_PyBridgeListProxy(W_ArrayObject):
     """ Wraps a Python list as something PHP understands. """
@@ -122,4 +136,7 @@ class W_PyBridgeListProxy(W_ArrayObject):
         pyspace = self.interp.pyspace
         wpy_val = pyspace.getitem(self.wpy_list, pyspace.wrap(index))
         return ph_of_py(self.interp, wpy_val)
+
+    def create_iter(self, space, contextclass=None):
+        return W_PyBridgeListProxyIterator(self.interp, self.wpy_list)
 
