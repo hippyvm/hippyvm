@@ -38,7 +38,7 @@ for ($i = 0; $i < 3; $i++) {
         for i in range(3):
             assert phspace.int_w(output[i]) == 3 - i
 
-    def test_iter_py_list_in_php(self):
+    def test_iter_vals_py_list_in_php(self):
         phspace = self.space
         output = self.run('''
 
@@ -55,3 +55,22 @@ foreach ($ar as $i) {
         ''')
         for i in range(3):
             assert phspace.int_w(output[i]) == 3 - i
+
+    def test_iter_keys_vals_py_list_in_php(self):
+        phspace = self.space
+        output = self.run('''
+
+$src = <<<EOD
+def f(): return ["zero", "one", "two"]
+EOD;
+
+embed_py_func($src);
+$ar = f();
+
+foreach ($ar as $k => $v) {
+    echo("$k:$v");
+}
+        ''')
+        assert phspace.str_w(output[0]) == "zero:0"
+        assert phspace.str_w(output[1]) == "one:1"
+        assert phspace.str_w(output[2]) == "two:2"
