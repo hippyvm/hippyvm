@@ -4,6 +4,9 @@ import pytest
 
 class TestPyPyBridgeArrayConversions(BaseTestInterpreter):
 
+    # ------------------------
+    # python list to php array
+    # ------------------------
     def test_return_py_list_len(self):
         phspace = self.space
         output = self.run('''
@@ -74,3 +77,22 @@ foreach ($ar as $k => $v) {
         assert phspace.str_w(output[0]) == "0:zero"
         assert phspace.str_w(output[1]) == "1:one"
         assert phspace.str_w(output[2]) == "2:two"
+
+    #------------------------------
+    # Python dict to PHP array
+    #------------------------------
+
+    def test_return_py_dict_len(self):
+        phspace = self.space
+        output = self.run('''
+
+$src = <<<EOD
+def f(): return {"a" : "b", "c" : "d", "e" : "f"}
+EOD;
+
+embed_py_func($src);
+$ar = f();
+echo(count($ar));
+
+        ''')
+        assert phspace.int_w(output[0]) == 2
