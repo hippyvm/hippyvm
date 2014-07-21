@@ -52,6 +52,7 @@ class BaseTestInterpreter(object):
     def teardown_method(self, method):
         self.engine = None
         self.space = None
+        self.pyspace.set_php_interp(None) # fd leak when testing on linux
 	self.pyspace = None
 
     def run(self, source, expected_warnings=[], extra_func=None,
