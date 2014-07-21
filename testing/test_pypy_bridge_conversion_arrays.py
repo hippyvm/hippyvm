@@ -134,3 +134,44 @@ echo($ar[6]);
         assert phspace.str_w(output[0]) == "c"
         assert phspace.str_w(output[1]) == "b"
         assert phspace.str_w(output[2]) == "a"
+
+    def test_iter_vals_py_dict_in_php(self):
+        phspace = self.space
+        output = self.run('''
+
+$src = <<<EOD
+def f(): return {"x" : 10, 999 : 14, "z" : -1}
+EOD;
+
+embed_py_func($src);
+$ar = f();
+
+foreach ($ar as $i) {
+    echo($i);
+}
+        ''')
+        # ordering is that of python dict
+        assert phspace.int_w(output[0]) == 10
+        assert phspace.int_w(output[1]) == -1
+        assert phspace.int_w(output[2]) == 14
+
+    def test_iter_keys_vals_py_dict_in_php(self):
+        phspace = self.space
+        output = self.run('''
+
+$src = <<<EOD
+def f(): return {"x" : 10, 999 : 14, "z" : -1}
+EOD;
+
+embed_py_func($src);
+$ar = f();
+
+foreach ($ar as $k => $v) {
+    echo("$k:$v");
+}
+        ''')
+        # ordering is that of python dict
+        assert phspace.str_w(output[0]) == "x:10"
+        assert phspace.str_w(output[1]) == "z:-1"
+        assert phspace.str_w(output[2]) == "999:14"
+
