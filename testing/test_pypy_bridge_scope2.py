@@ -1,4 +1,5 @@
 from testing.test_interpreter import BaseTestInterpreter
+from hippy.error import FatalError
 import pytest
 
 class TestPyPyBridgeScope(BaseTestInterpreter):
@@ -169,7 +170,6 @@ echo(f());
         assert phspace.int_w(output[0]) == 45
 
     def test_php_sees_outer_py_functions(self):
-        pytest.skip("BROKEN")
         phspace = self.space
         output = self.run('''
 $pysrc = <<<EOD
@@ -187,3 +187,19 @@ echo(f());
         assert phspace.int_w(output[0]) == 42
 
 
+    def test_php_cant_call_normal_python_objects(self):
+        phspace = self.space
+        with pytest.raises(FatalError):
+            output = self.run('''
+$pysrc = <<<EOD
+def f():
+    g = 42
+
+    phsrc = "function h() { return g(); }"
+    h = embed_php_func(phsrc)
+
+    return h()
+EOD;
+embed_py_func($pysrc);
+echo(f());
+        ''')

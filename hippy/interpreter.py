@@ -78,6 +78,7 @@ import hippy.module.pypy_bridge.bridge
 
 from hippy.module.date import default_timezone
 from hippy.buffering import Buffer
+from hippy.module.pypy_bridge import php_wrappers
 
 if is_optional_extension_enabled("mysql"):
     import ext_module.mysql.funcs
@@ -465,7 +466,16 @@ class Interpreter(object):
         try:
             return self.lookup_function(name)
         except KeyError:
-            self.fatal("Call to undefined function %s()" % name)
+            pass
+        frame = self.topframeref()
+        py_scope = frame.bytecode.py_scope
+        if py_scope is not None:
+            wph_v = py_scope.ph_lookup(name)
+            if wph_v is not None:
+                if not isinstance(wph_v, php_wrappers.W_EmbeddedPyFunc):
+                    self.fatal("Can only call Python functions from PHP")
+                return wph_v
+        self.fatal("Call to undefined function %s()" % name)
 
     def get_this(self, frame):
         w_this = frame.w_this
@@ -1271,6 +1281,10 @@ class Interpreter(object):
         return method.bind(w_this, klass)
 
     def getfunc(self, w_name, w_this, contextclass):
+        if isinstance(w_name, php_wrappers.W_EmbeddedPyFunc):
+            # We allow Python to return references to functions, rather than
+            # merely referencing names.
+            return w_name
         space = self.space
         if space.is_str(w_name):
             name = space.str_w(w_name)

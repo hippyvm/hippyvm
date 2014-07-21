@@ -2,9 +2,10 @@ from hippy.objects.instanceobject import W_InstanceObject as Wph_InstanceObject
 from hippy.klass import def_class
 from hippy.builtin import wrap, Optional, wrap_method, ThisUnwrapper
 from hippy.objects.base import W_Root as Wph_Root
-from hippy import function
+from hippy import function as php_function
 
 from pypy.interpreter.baseobjspace import W_Root as Wpy_Root
+from pypy.interpreter import function as py_function
 
 
 def py_of_ph(interp, wph_any):
@@ -17,6 +18,7 @@ def py_of_ph(interp, wph_any):
     #    return wph_any.wpy_inst
 
     phspace = interp.space
+
     # Note that the primitive types are not objects in PHP, so there is
     # no risk of subclassing interfering there.
 
@@ -39,8 +41,6 @@ def py_of_ph(interp, wph_any):
     # XXX disable list conversions
     #elif wph_tp == phspace.tp_array:
     #    return py_list_of_ph_array(interp, wph_any)
-    elif isinstance(wph_any, function.Function):
-        return py_wrappers.W_EmbeddedPHPFunc(phspace, wph_any)
     else:
         return py_wrappers.W_PhBridgeProxy(interp, wph_any)
 
@@ -98,6 +98,9 @@ def ph_of_py(interp, wpy_any):
     elif pyspace.is_w(pyspace.type(wpy_any), pyspace.w_list):
         from hippy.module.pypy_bridge.py_wrappers import W_PyBridgeListProxy
         return W_PyBridgeListProxy(interp, wpy_any)
+    elif isinstance(wpy_any, py_function.Function):
+        from hippy.module.pypy_bridge import php_wrappers
+        return php_wrappers.W_EmbeddedPyFunc(interp, wpy_any)
     else:
         # XXX bug in RPython translator?
         #return W_PyBridgeProxy.from_wpy_inst(interp, wpy_any)
