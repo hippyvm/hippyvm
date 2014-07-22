@@ -40,6 +40,7 @@ RPython level while `incr(0)` will generate `incr(space, 0)`.
 """
 import py
 import time
+import math
 import os
 import inspect
 from collections import OrderedDict
@@ -961,11 +962,17 @@ def error_reporting(space, level=-1):
         interp.error_level = level
 
 
-@wrap(['space', bool])
-def microtime(space, is_float):
-    if not is_float:
-        raise InterpreterError("only is_float implemented")
-    return space.wrap(time.time())
+@wrap(['space',   Optional(bool)])
+def microtime(space,   is_float=False):
+    from hippy.module.standard.strings.funcs import _printf
+    t = time.time()
+    if is_float:
+        return space.wrap(t)
+    f,  i = math.modf(t)
+    w_f = space.newfloat(f)
+    w_i = space.newint(int(i))
+    res = _printf(space,  "%.8f %d",  [w_f,  w_i],  'microtime')
+    return space.newstr(res)
 
 
 @wrap(['interp', str])
