@@ -2140,7 +2140,7 @@ class Cast(Node):
 
     def _compile(self, ctx):
         self.expr.compile(ctx)
-        ctx.emit(consts.CAST_TO_BC[self.to])
+        ctx.emit(consts.CAST_TO_BC[self.to.strip()])
 
 
 class Switch(Node):
