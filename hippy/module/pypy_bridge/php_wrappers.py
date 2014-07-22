@@ -6,13 +6,14 @@ that they can be used in PHP programs.
 from hippy.objects.instanceobject import W_InstanceObject
 from hippy.klass import def_class
 from hippy.builtin import wrap, Optional, wrap_method, ThisUnwrapper
-from hippy.objects.base import W_Root as Wph_Root
+from hippy.objects.base import W_Root as Wph_Root, W_Object as WPh_Object
 from hippy.function import AbstractFunction
 from hippy.module.pypy_bridge.conversion import py_to_php, php_to_py
 from hippy.objects.iterator import W_BaseIterator
 from hippy.objects.arrayobject import wrap_array_key, W_ArrayObject
 
 from pypy.interpreter.argument import Arguments
+from pypy.interpreter.error import OperationError
 
 from rpython.rlib import jit
 
@@ -40,6 +41,29 @@ class W_EmbeddedPyFunc(AbstractFunction):
 
     def needs_ref(self, i):
         return False # XXX reference args
+
+
+class W_EmbeddedPyMod(WPh_Object):
+    def __init__(self, interp, py_mod):
+        self.interp = interp
+        self.py_mod = py_mod
+
+    def _getattr(self, interp, space, name):
+        py_mod = self.py_mod
+        pyspace = interp.pyspace
+        try:
+            w_obj = pyspace.getattr(py_mod, pyspace.wrap(name))
+        except OperationError, e:
+            if not e.match(pyspace, pyspace.w_AttributeError):
+                raise
+            raise space.ec.fatal("No such member %s in module" % name)
+        return py_to_php(interp, w_obj)
+
+    def getmeth(self, space, name, contextclass=None):
+        return self._getattr(self.interp, space, name)
+
+    def getattr(self, interp, name, contextclass=None, give_notice=False):
+        return self._getattr(interp, interp.space, name)
 
 
 class W_PyBridgeProxy(W_InstanceObject):

@@ -99,3 +99,20 @@ def embed_py_func(interp, func_source):
     func_name = pyspace.str_w(wpy_func_name)
     ph_func = W_EmbeddedPyFunc(interp, wpy_func)
     phspace.global_function_cache.declare_new(func_name, ph_func)
+
+@wrap(['interp', str], name='import_py_mod')
+def import_py_mod(interp, modname):
+    pyspace = interp.pyspace
+
+    assert not pyspace.config.objspace.honor__builtins__
+
+    w_import = pyspace.builtin.getdictvalue(pyspace, '__import__')
+    if w_import is None:
+        raise OperationError(pyspace.w_ImportError,
+                             pyspace.wrap("__import__ not found"))
+
+    w_modname = pyspace.wrap(modname)
+    w_obj = pyspace.call_function(w_import, w_modname, pyspace.w_None,
+                                  pyspace.w_None, pyspace.wrap(modname.split(".")[-1]))
+
+    return py_to_php(interp, w_obj)

@@ -2,6 +2,38 @@ from testing.test_interpreter import BaseTestInterpreter
 import pytest
 
 class TestPyPyBridge(BaseTestInterpreter):
+    def test_import_py_mod_func(self):
+        phspace = self.space
+        output = self.run('''
+        $math = import_py_mod("math");
+        echo($math->pow(2, 3));
+        ''')
+        assert phspace.int_w(output[0]) == 8
+
+    def test_import_py_mod_attr(self):
+        import math
+        phspace = self.space
+        output = self.run('''
+        $math = import_py_mod("math");
+        echo($math->pi);
+        ''')
+        assert phspace.float_w(output[0]) == math.pi
+   
+    def test_import_py_nested1_mod_func(self):
+        phspace = self.space
+        output = self.run('''
+        $os_path = import_py_mod("os.path");
+        echo($os_path->join("a", "b"));
+        ''')
+        assert phspace.str_w(output[0]) == "a/b"
+
+    def test_import_py_nested2_mod_func(self):
+        phspace = self.space
+        output = self.run('''
+        $os = import_py_mod("os");
+        echo($os->path->join("a", "b"));
+        ''')
+        assert phspace.str_w(output[0]) == "a/b"
 
     # ------------------------------------------------------
     # Testing the definitions of new Python modules from PHP

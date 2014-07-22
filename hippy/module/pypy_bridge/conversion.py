@@ -5,6 +5,7 @@ from hippy.objects.base import W_Root as Wph_Root
 
 from pypy.interpreter.baseobjspace import W_Root as Wpy_Root
 from pypy.interpreter.function import Function as py_Function
+from pypy.interpreter.module import Module as py_Module
 
 
 def php_to_py(interp, wph_any):
@@ -77,14 +78,13 @@ def py_to_php(interp, wpy_any):
     elif wpy_any is pyspace.w_None:
         return interp.space.w_Null
     elif pyspace.is_w(pyspace.type(wpy_any), pyspace.w_dict):
-        from hippy.module.pypy_bridge.php_wrappers import W_PyBridgeDictProxy
-        return W_PyBridgeDictProxy(interp, wpy_any)
+        return php_wrappers.W_PyBridgeDictProxy(interp, wpy_any)
     elif pyspace.is_w(pyspace.type(wpy_any), pyspace.w_list):
-        from hippy.module.pypy_bridge.php_wrappers import W_PyBridgeListProxy
-        return W_PyBridgeListProxy(interp, wpy_any)
+        return php_wrappers.W_PyBridgeListProxy(interp, wpy_any)
     elif isinstance(wpy_any, py_Function):
-        from hippy.module.pypy_bridge import php_wrappers
         return php_wrappers.W_EmbeddedPyFunc(interp, wpy_any)
+    elif isinstance(wpy_any, py_Module):
+        return php_wrappers.W_EmbeddedPyMod(interp, wpy_any)
     else:
         wph_pxy = php_wrappers.W_PyBridgeProxy(php_wrappers.k_PyBridgeProxy, [])
         wph_pxy.setup_instance(interp, wpy_any)
