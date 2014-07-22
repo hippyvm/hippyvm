@@ -8,7 +8,7 @@ from hippy.klass import def_class
 from hippy.builtin import wrap, Optional, wrap_method, ThisUnwrapper
 from hippy.objects.base import W_Root as Wph_Root
 from hippy.function import AbstractFunction
-from hippy.module.pypy_bridge.conversion import ph_of_py, py_of_ph
+from hippy.module.pypy_bridge.conversion import py_to_php, php_to_py
 from hippy.objects.iterator import W_BaseIterator
 from hippy.objects.arrayobject import wrap_array_key, W_ArrayObject
 
@@ -27,15 +27,15 @@ class W_EmbeddedPyFunc(AbstractFunction):
     def call_args(self, interp, args_w, w_this=None, thisclass=None,
                   closureargs=None):
 
-        wpy_args_elems = [ py_of_ph(interp, x) for x in args_w ]
+        wpy_args_elems = [ php_to_py(interp, x) for x in args_w ]
 
         # Methods are really just functions with self bound
         if w_this is not None:
-            wpy_args_elems = [py_of_ph(interp, w_this)] + wpy_args_elems
+            wpy_args_elems = [php_to_py(interp, w_this)] + wpy_args_elems
 
         rv = interp.pyspace.call_args(
                 self.py_callable, Arguments(interp.pyspace, wpy_args_elems))
-        return ph_of_py(interp, rv)
+        return py_to_php(interp, rv)
 
 
     def needs_ref(self, i):
@@ -74,7 +74,7 @@ class W_PyBridgeProxy(W_InstanceObject):
         name='PyBridgeProxy::__get')
 def magic__get(interp, this, name):
     wpy_target = this.interp.pyspace.getattr(this.wpy_inst, this.interp.pyspace.wrap(name))
-    return ph_of_py(this.interp, wpy_target)
+    return py_to_php(this.interp, wpy_target)
 
 @wrap_method(['interp', ThisUnwrapper(W_PyBridgeProxy), str, Wph_Root],
         name='PyBridgeProxy::__call')
@@ -85,9 +85,9 @@ def magic__call(interp, this, func_name, wph_args):
     wpy_func_name = interp.pyspace.wrap(func_name)
     wpy_func = interp.pyspace.getattr(this.wpy_inst, wpy_func_name)
 
-    wpy_args_items = [ py_of_ph(interp, x) for x in wph_args.as_list_w() ]
+    wpy_args_items = [ php_to_py(interp, x) for x in wph_args.as_list_w() ]
     wpy_rv = interp.pyspace.call(wpy_func, interp.pyspace.newlist(wpy_args_items))
-    return ph_of_py(interp, wpy_rv)
+    return py_to_php(interp, wpy_rv)
 
 k_PyBridgeProxy = def_class('PyBridgeProxy',
     [magic__get, magic__call],
@@ -107,14 +107,14 @@ class W_PyBridgeListProxyIterator(W_BaseIterator):
         wpy_value = self.storage_w[index]
         self.index = index + 1
         self.finished = self.index == len(self.storage_w)
-        return ph_of_py(self.interp, wpy_value)
+        return py_to_php(self.interp, wpy_value)
 
     def next_item(self, space):
         index = self.index
         wpy_value = self.storage_w[index]
         self.index = index + 1
         self.finished = self.index == len(self.storage_w)
-        return space.wrap(index), ph_of_py(self.interp, wpy_value)
+        return space.wrap(index), py_to_php(self.interp, wpy_value)
 
 class W_PyBridgeListProxy(W_ArrayObject):
     """ Wraps a Python list as PHP array. """
@@ -132,7 +132,7 @@ class W_PyBridgeListProxy(W_ArrayObject):
     def _getitem_int(self, index):
         pyspace = self.interp.pyspace
         wpy_val = pyspace.getitem(self.wpy_list, pyspace.wrap(index))
-        return ph_of_py(self.interp, wpy_val)
+        return py_to_php(self.interp, wpy_val)
 
     def create_iter(self, space, contextclass=None):
         return W_PyBridgeListProxyIterator(self.interp, self.wpy_list)
@@ -164,7 +164,7 @@ class W_PyBridgeDictProxyIterator(W_BaseIterator):
         wpy_k_v = pyspace.call_args(
             self.wpy_iter_next, Arguments(pyspace, []))
         wpy_v = pyspace.getitem(wpy_k_v, self.wpy_one)
-        return ph_of_py(interp, wpy_v)
+        return py_to_php(interp, wpy_v)
 
     def next_item(self, space):
         interp, pyspace = self.interp, self.interp.pyspace
@@ -174,7 +174,7 @@ class W_PyBridgeDictProxyIterator(W_BaseIterator):
             self.wpy_iter_next, Arguments(pyspace, []))
         wpy_k = pyspace.getitem(wpy_k_v, self.wpy_zero)
         wpy_v = pyspace.getitem(wpy_k_v, self.wpy_one)
-        return ph_of_py(interp, wpy_k), ph_of_py(interp, wpy_v)
+        return py_to_php(interp, wpy_k), py_to_php(interp, wpy_v)
 
 class W_PyBridgeDictProxy(W_ArrayObject):
     """ Wraps a Python dict as something PHP array. """
@@ -190,12 +190,12 @@ class W_PyBridgeDictProxy(W_ArrayObject):
     def _getitem_int(self, index):
         pyspace = self.interp.pyspace
         wpy_val = pyspace.getitem(self.wpy_dict, pyspace.wrap(index))
-        return ph_of_py(self.interp, wpy_val)
+        return py_to_php(self.interp, wpy_val)
 
     def _getitem_str(self, index):
         pyspace = self.interp.pyspace
         wpy_val = pyspace.getitem(self.wpy_dict, pyspace.wrap(index))
-        return ph_of_py(self.interp, wpy_val)
+        return py_to_php(self.interp, wpy_val)
 
     def create_iter(self, space, contextclass=None):
         return W_PyBridgeDictProxyIterator(self.interp, self.wpy_dict)

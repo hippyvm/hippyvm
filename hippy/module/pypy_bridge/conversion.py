@@ -7,7 +7,7 @@ from pypy.interpreter.baseobjspace import W_Root as Wpy_Root
 from pypy.interpreter.function import Function as py_Function
 
 
-def py_of_ph(interp, wph_any):
+def php_to_py(interp, wph_any):
     from hippy.module.pypy_bridge import py_wrappers
     assert isinstance(wph_any, Wph_Root)
 
@@ -47,7 +47,7 @@ def py_list_of_ph_array(interp, wph_array):
     wph_elems = wph_array.as_list_w()
     wpy_elems = []
     for i in range(len(wph_elems)):
-        wpy_elems.append(py_of_ph(interp, wph_elems[i]))
+        wpy_elems.append(php_to_py(interp, wph_elems[i]))
     return interp.pyspace.newlist(wpy_elems)
 
 # -------------
@@ -55,7 +55,7 @@ def py_list_of_ph_array(interp, wph_array):
 # -------------
 
 
-def ph_of_py(interp, wpy_any):
+def py_to_php(interp, wpy_any):
     from hippy.module.pypy_bridge import php_wrappers
 
     assert isinstance(wpy_any, Wpy_Root)
@@ -92,6 +92,6 @@ def ph_of_py(interp, wpy_any):
 
 def ph_array_of_py_list(interp, wpy_list):
     wpy_elems = interp.pyspace.listview(wpy_list)
-    wph_elems = [ ph_of_py(interp, x) for x in wpy_elems ]
+    wph_elems = [ py_to_php(interp, x) for x in wpy_elems ]
     return interp.space.new_array_from_list(wph_elems)
 

@@ -1,5 +1,5 @@
 from hippy.objects.reference import W_Reference as Wpy_Reference
-from hippy.module.pypy_bridge.conversion import ph_of_py, py_of_ph
+from hippy.module.pypy_bridge.conversion import py_to_php, php_to_py
 
 class PHP_Scope(object):
     def __init__(self, ph_interp, ph_frame):
@@ -15,7 +15,7 @@ class PHP_Scope(object):
         ph_frame = self.ph_frame
         ph_v = ph_frame.lookup_ref_by_name(n)
         if ph_v is not None:
-            return py_of_ph(ph_interp, ph_v)
+            return php_to_py(ph_interp, ph_v)
 
         # Search for PHP function of that name
         try:
@@ -23,7 +23,7 @@ class PHP_Scope(object):
         except KeyError:
             pass
         else:
-            return py_of_ph(ph_interp, ph_v)
+            return php_to_py(ph_interp, ph_v)
 
         py_scope = ph_frame.bytecode.py_scope
         if py_scope is not None:
@@ -44,7 +44,7 @@ class Py_Scope(object):
 
         py_v = self.py_lookup(n)
         if py_v is not None:
-            return ph_of_py(self.py_interp.get_php_interp(), py_v)
+            return py_to_php(self.py_interp.get_php_interp(), py_v)
         return None
 
 

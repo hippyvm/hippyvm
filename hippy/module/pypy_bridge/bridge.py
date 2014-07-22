@@ -3,7 +3,7 @@ from hippy.objects.base import W_Root as Wph_Root
 from hippy.objects.instanceobject import W_InstanceObject
 from hippy.klass import def_class, Method
 from hippy.module.pypy_bridge.util import get_from_pymodule
-from hippy.module.pypy_bridge.conversion import py_of_ph, ph_of_py
+from hippy.module.pypy_bridge.conversion import php_to_py, py_to_php
 from hippy.module.pypy_bridge.scopes import PHP_Scope
 from hippy.module.pypy_bridge.php_wrappers import W_EmbeddedPyFunc
 from hippy.builtin_klass import k_Exception, W_ExceptionObject, k_RuntimeException
@@ -47,7 +47,7 @@ def embed_py_mod(interp, mod_name, mod_source):
     code = pycompiler.compile(mod_source, 'XXX', 'exec', 0)
     code.exec_code(interp.pyspace, wpy_module.w_dict,wpy_module.w_dict)
 
-    return ph_of_py(interp, wpy_module)
+    return py_to_php(interp, wpy_module)
 
 
 def _compile_py_func_from_string(interp, func_source):

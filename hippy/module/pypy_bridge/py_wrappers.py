@@ -9,7 +9,7 @@ from pypy.interpreter.gateway import interp2app, unwrap_spec
 from pypy.interpreter.function import Function as Py_Function
 from pypy.interpreter.argument import Arguments
 
-from hippy.module.pypy_bridge.conversion import py_of_ph, ph_of_py
+from hippy.module.pypy_bridge.conversion import php_to_py, py_to_php
 from rpython.rlib import jit
 
 class W_EmbeddedPHPFunc(W_Root):
@@ -34,10 +34,10 @@ class W_EmbeddedPHPFunc(W_Root):
         php_interp = self.space.get_php_interp()
         phspace = self.space.get_php_interp().space
 
-        wph_args_elems = [ ph_of_py(php_interp, x) for x in args ]
+        wph_args_elems = [ py_to_php(php_interp, x) for x in args ]
         res = self.wph_func.call_args(php_interp, wph_args_elems)
 
-        return py_of_ph(php_interp, res)
+        return php_to_py(php_interp, res)
 
 W_EmbeddedPHPFunc.typedef = TypeDef("EmbeddedPHPFunc",
     __call__ = interp2app(W_EmbeddedPHPFunc.descr_call),
@@ -77,16 +77,16 @@ class W_PhBridgeProxy(W_Root):
 
             wph_target = wph_meth.bind(self.wph_inst, phspace.getclass(self.wph_inst))
 
-        return py_of_ph(self.interp, wph_target)
+        return php_to_py(self.interp, wph_target)
 
     @jit.unroll_safe
     def descr_call(self, __args__):
         wpy_args, wpy_kwargs = __args__.unpack()
         assert not wpy_kwargs # XXX exception
 
-        wph_args_elems = [ ph_of_py(self.interp, x) for x in wpy_args ]
+        wph_args_elems = [ py_to_php(self.interp, x) for x in wpy_args ]
         wph_rv = self.wph_inst.call_args(self.interp, wph_args_elems)
-        return py_of_ph(self.interp, wph_rv)
+        return php_to_py(self.interp, wph_rv)
 
     def descr_eq(self, space, w_other):
         if not space.eq_w(space.type(self), space.type(w_other)):
