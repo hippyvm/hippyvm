@@ -611,6 +611,23 @@ def fprintf(space, args_w):
 #    raise NotImplementedError()
 
 
+@wrap(['interp',  str,  Optional(int),  Optional(str),  Optional(bool)])
+def htmlentities(interp,  html,  flags=1, encoding='UTF8',
+                 double_encode=True):
+    """Convert all applicable characters to HTML entities."""
+
+    from rpython.rlib.runicode import str_decode_utf_8
+    from hippy.module.standard.strings.htmlentities import UTF8
+    outstr = StringBuilder()
+    s,  l = str_decode_utf_8(html,  len(html),  'ignore')
+    for c in s:
+        try:
+            outstr.append(UTF8[ord(c)])
+        except KeyError:
+            outstr.append(str(c))
+    return interp.space.newstr(outstr.build())
+
+
 def _htmlspecialchars_decode(space, html, flags):
 
     single = flags & 1 != 0
@@ -1222,6 +1239,7 @@ def _as_list(w_arr):
     values = []
     while not iter.done():
         _, w_val = iter.next_item(getspace())
+        w_val = w_val.deref()
         if w_val.tp != space.tp_null:
             values.append(w_val)
     return values
