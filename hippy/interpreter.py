@@ -1514,6 +1514,13 @@ class Interpreter(object):
         frame.store_ref(arg, w_ref)
         return pc
 
+    def DECLARE_GLOBAL_INDIRECT(self, bytecode, frame, space, arg, pc):
+        w_name = frame.pop()
+        name = space.str_w(w_name)
+        r_global = self.globals.get_var(space, name)
+        frame.set_ref_by_name(name, r_global)
+        return pc
+
     def declare_func(self, func):
         name = func.name
         func_id = func.get_identifier()

@@ -126,9 +126,10 @@ class Node(BaseBox):
 
     def __eq__(self, other):
         self.__dict__.pop("reflection", None)
-        if other:
+        if hasattr(other, "reflection"):
             other.__dict__.pop("reflection", None)
-        return (self.__class__ == other.__class__ and self.__dict__ == other.__dict__)
+        return (self.__class__ == other.__class__
+                and self.__dict__ == other.__dict__)
 
     def __ne__(self, other):
         return not self == other
@@ -896,6 +897,9 @@ class Variable(Node):
         node = self.node
         node.compile(ctx)
         ctx.emit(consts.LOAD_VAR_INDIRECT)
+
+    def getnode(self):
+        return self.node
 
     def can_compile_ptr(self):
         return True
@@ -1853,18 +1857,23 @@ class Or(Node):
 
 
 class Global(Node):
-    def __init__(self, names, lineno=0):
-        self.names = names
+    def __init__(self, block, lineno=0):
+        self.variables = block.getstmtlist()
         self.lineno = lineno
 
     def repr(self):
-        return 'Global(%s)' % ', '.join(self.names)
+        return 'Global(%s)' % ', '.join([repr(v) for v in self.variables])
 
     def _compile(self, ctx):
-        for name in self.names:
-            if name == 'this':
-                raise CompilerError("Cannot re-assign $this")
-            ctx.emit(consts.DECLARE_GLOBAL, ctx.create_var_name(name))
+        for variable in self.variables:
+            if isinstance(variable, NamedVariable):
+                if variable.name == 'this':
+                    raise CompilerError("Cannot re-assign $this")
+                ctx.emit(consts.DECLARE_GLOBAL,
+                         ctx.create_var_name(variable.name))
+            else:
+                variable.getnode().compile(ctx)
+                ctx.emit(consts.DECLARE_GLOBAL_INDIRECT)
 
 
 class StaticDecl(Node):
