@@ -25,6 +25,10 @@ class PHP_Scope(object):
         else:
             return php_to_py(ph_interp, ph_v)
 
+        ph_v = self.ph_interp.lookup_class_or_intf(n)
+        if ph_v is not None:
+            return php_to_py(ph_interp, ph_v)
+
         py_scope = ph_frame.bytecode.py_scope
         if py_scope is not None:
             return py_scope.py_lookup(n)

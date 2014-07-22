@@ -186,7 +186,6 @@ echo(f());
         ''')
         assert phspace.int_w(output[0]) == 42
 
-
     def test_php_cant_call_normal_python_objects(self):
         phspace = self.space
         with pytest.raises(FatalError):
@@ -203,3 +202,20 @@ EOD;
 embed_py_func($pysrc);
 echo(f());
         ''')
+
+    def test_python_ref_php_class(self):
+        phspace = self.space
+        output = self.run('''
+        $src = <<<EOD
+        def ref():
+            return C()
+        EOD;
+
+        embed_py_func($src);
+
+        class C {
+            function m() { return "c.m"; }
+        }
+        $x = new C;
+        echo(ref()->m()); ''')
+        assert phspace.str_w(output[0]) == "c.m"
