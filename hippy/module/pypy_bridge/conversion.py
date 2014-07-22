@@ -39,8 +39,10 @@ def php_to_py(interp, wph_any):
     elif wph_tp == phspace.tp_str:
         return interp.pyspace.wrap(interp.space.str_w(wph_any))
     # XXX disable list conversions
-    #elif wph_tp == phspace.tp_array:
-    #    return py_list_of_ph_array(interp, wph_any)
+    elif wph_tp == phspace.tp_array:
+        # We use the PyPy list strategy system to wrap.
+        from hippy.module.pypy_bridge.py_wrappers import make_wrapped_php_array
+        return make_wrapped_php_array(interp, wph_any)
     else:
         return py_wrappers.W_PhBridgeProxy(interp, wph_any)
 

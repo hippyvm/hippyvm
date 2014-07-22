@@ -8,9 +8,14 @@ from pypy.interpreter.typedef import TypeDef
 from pypy.interpreter.gateway import interp2app, unwrap_spec
 from pypy.interpreter.function import Function as Py_Function
 from pypy.interpreter.argument import Arguments
+from pypy.objspace.std.listobject import (ListStrategy, EmptyListStrategy,
+        AbstractUnwrappedStrategy, W_ListObject as WPy_ListObject)
 
 from hippy.module.pypy_bridge.conversion import php_to_py, py_to_php
-from rpython.rlib import jit
+from hippy.objects.base import W_Root as WPHP_Root
+
+from rpython.rlib import jit, rerased
+from rpython.rlib.objectmodel import import_from_mixin
 
 class W_EmbeddedPHPFunc(W_Root):
     """ A Python callable that actually executes a PHP function """
@@ -106,3 +111,45 @@ W_PhBridgeProxy.typedef = TypeDef("PhBridgeProxy",
     __ne__ = interp2app(W_PhBridgeProxy.descr_ne),
 )
 
+
+def make_wrapped_php_array(interp, wphp_arry):
+    if interp.space.arraylen(wphp_arry) <= 0:
+        strategy = interp.pyspace.fromcache(EmptyListStrategy)
+        storage = strategy.erase(None)
+    else:
+        strategy = interp.pyspace.fromcache(WrappedPHPArrayStrategy)
+        storage = strategy.erase(wphp_arry.as_list_w())
+
+    return WPy_ListObject.from_storage_and_strategy(
+            interp.pyspace, storage, strategy)
+
+class WrappedPHPArrayStrategy(ListStrategy):
+    """ Wrapping of a PHP list is implemented as a PyPy list strategy """
+    import_from_mixin(AbstractUnwrappedStrategy)
+
+    _none_value = None
+
+    def wrap(self, wphp_val):
+        return php_to_py(self.space.get_php_interp(), wphp_val)
+
+    erase, unerase = rerased.new_erasing_pair("PHP_Array")
+    erase = staticmethod(erase)
+    unerase = staticmethod(unerase)
+
+    def is_correct_type(self, w_obj):
+        return isinstance(w_obj, WPHP_Root)
+
+    def list_is_correct_type(self, w_list):
+        return w_list.strategy is self.space.fromcache(WrappedPHPArrayStrategy)
+
+    def sort(self, w_list, reverse):
+        raise NotImplementedError("xxx") # XXX
+
+    def getitems_php(self, w_list):
+        raise NotImplementedError("xxx") # XXX
+
+    def _extend_from_list(self, w_list, w_other):
+        raise NotImplementedError("xxx") # XXX
+
+    def setslice(self, w_list, start, step, slicelength, w_other):
+        raise NotImplementedError("xxx") # XXX

@@ -179,12 +179,25 @@ foreach ($ar as $k => $v) {
     # PHP array to Python list/dict
     # -----------------------------
 
-    @pytest.mark.xfail
+    def test_php_empty_array_len_in_php(self):
+        phspace = self.space
+        output = self.run('''
+
+$src = "def f(a): return len(a)";
+embed_py_func($src);
+
+$in = array();
+
+echo(f($in));
+
+        ''')
+        assert phspace.int_w(output[0]) == 0
+
     def test_php_int_key_array_len_in_php(self):
         phspace = self.space
         output = self.run('''
 
-$src = "def f(ary): return len(ary)";
+$src = "def f(a): return len(a)";
 embed_py_func($src);
 
 $in = array("an", "intkeyed", "array");
@@ -194,7 +207,6 @@ echo(f($in));
         ''')
         assert phspace.int_w(output[0]) == 3
 
-    @pytest.mark.xfail
     def test_php_nonint_key_array_len_in_php(self):
         phspace = self.space
         output = self.run('''
@@ -209,7 +221,6 @@ echo(f($in));
         ''')
         assert phspace.int_w(output[0]) == 3
 
-    @pytest.mark.xfail
     def test_php_int_key_array_vals_in_php(self):
         phspace = self.space
         output = self.run('''
@@ -228,6 +239,9 @@ echo(f($in, 2));
         assert phspace.str_w(output[1]) == "intkeyed"
         assert phspace.str_w(output[2]) == "array"
 
+    # XXX this does not work since we can't use a list to store a
+    # PHP array with non-integer keys. XXX look into whether dicts have
+    # strategies like lists do.
     @pytest.mark.xfail
     def test_php_non_int_key_array_vals_in_php(self):
         phspace = self.space
