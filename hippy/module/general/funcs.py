@@ -444,9 +444,10 @@ def get_included_files(interp):
     return space.new_array_from_list(arr_list)
 
 
-def get_magic_quotes_gpc():
+@wrap(['interp'])
+def get_magic_quotes_gpc(interp):
     """ Gets the current configuration setting of magic_quotes_gpc"""
-    raise NotImplementedError()
+    return interp.space.w_False
 
 
 def get_magic_quotes_runtime():
