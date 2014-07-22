@@ -22,6 +22,7 @@ from rpython.rlib.rarithmetic import r_uint
 from hippy.objects.convert import strtol
 from rpython.rlib.rarithmetic import intmask, ovfcheck
 from hippy.module.standard.math.funcs import _bin
+from hippy.module.url import _urldecode
 
 # Side-effect: register the functions defined there:
 from hippy import localemodule as locale
@@ -598,7 +599,64 @@ def fprintf(space, args_w):
 #    """Decodes a hexadecimally encoded binary string."""
 #    raise NotImplementedError()
 
-#
+
+@wrap(['space',   str,   Optional(int),   Optional(str)])
+def html_entity_decode(space,   html,   flags=2,   encoding='UTF-8'):
+    """Convert all HTML entities to their applicable characters."""
+    single = flags & 1 != 0
+    double = flags & 2 != 0
+    xml = flags & 16 != 0
+    xhtml = flags & 32 != 0
+    html5 = flags & 48 != 0
+    acc = None
+    orig_acc = None
+    got_entity = False
+    res = ""
+    for c in html:
+        if acc is None and c == "&":
+            got_entity = True
+            acc = ""
+            orig_acc = ""
+        if got_entity:
+            if acc == "&#" and c == "0":
+                orig_acc += c
+                continue
+            acc += c
+            orig_acc += c
+        if got_entity and (c == ";" or c == " "):
+            got_entity = False
+            if acc == "&lt;" or acc == "&#60;" or \
+               acc == "&#x3C;":
+                res += "<"
+            elif acc == "&gt;" or acc == "&#62;" or \
+                 acc == "&#x3E;":
+                res += ">"
+            elif acc == "&amp;" or acc == "&#38;" or \
+                 acc == "&#x26;":
+                res += "&"
+            elif single and (acc == "&apos;" or
+                             acc == "&#39;" or
+                             acc == "&#x27;"):
+                if acc == "&apos;":
+                    if xml or xhtml or html5:
+                        res += "\'"
+                    else:
+                        res += acc
+                else:
+                        res += "\'"
+
+            elif double and (acc == "&quot;" or
+                             acc == "&#34;" or
+                             acc == "&#x22;"):
+                res += "\""
+            else:
+                res += orig_acc
+            acc = None
+            continue
+        if not got_entity:
+            res += c
+    return space.wrap(res)
+
 #@wrap(['space', 'args_w'])
 #def html_entity_decode(space, args_w):
 #    """Convert all HTML entities to their applicable characters."""
@@ -932,11 +990,34 @@ def ord_(space, string):
         return space.newint(0)
     return space.newint(ord(string[0]))
 
-#
-#@wrap(['space', 'args_w'])
-#def parse_str(space, args_w):
-#    """Parses the string into variables."""
-#    raise NotImplementedError()
+
+@wrap(['space',   str,   Optional('reference')])
+def parse_str(space,   to_parse,   w_arr=None):
+    """Parses the string into variables."""
+    frame = space.ec.interpreter.topframeref()
+    arrs = {}
+    vars = to_parse.split("&")
+    if len(vars) == 0:
+        return
+    for var in vars:
+        val = None
+        if var == '':
+            return
+        try:
+            var,   val = var.split("=",   1)
+        except ValueError:
+            pass
+        val = _urldecode(val)
+        if var.endswith('[]'):
+            var = var.rstrip('[]')
+            if var in arrs:
+                arrs[var].append(space.wrap(val))
+            else:
+                arrs[var] = [space.wrap(val)]
+        else:
+            frame.get_ref_by_name(var).store(space.wrap(val))
+    for var,   val in arrs.items():
+        frame.get_ref_by_name(var).store(space.new_array_from_list(val))
 
 
 def format_str(_str, width=0, to_left=False,
