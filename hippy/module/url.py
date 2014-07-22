@@ -1,4 +1,4 @@
-
+from hippy.objects.base import W_Root
 from hippy.builtin import Optional, wrap
 from hippy.builtin import StringArg
 from hippy.builtin import BoolArg
@@ -7,6 +7,7 @@ from hippy.module.base64 import b64_encode
 from rpython.rlib.rstring import StringBuilder
 from rpython.rlib.unroll import unrolling_iterable
 from collections import OrderedDict
+from hippy.objects.instanceobject import demangle_property
 
 
 CONTROL_CHARS = tuple("\007\b\t\n\v\f\r\1\2\3\4\5\6\16\17\20\21\22\23\24\
@@ -345,8 +346,7 @@ def _ishexdigit(c):
     return False
 
 
-@wrap(['space', StringArg(None)], aliases=['urlencode'])
-def rawurlencode(space, url):
+def _rawurlencode(url):
     res = StringBuilder(len(url))
     for c in url:
         if (c < '0' and c != '-' and c != '.') or \
@@ -358,7 +358,35 @@ def rawurlencode(space, url):
             res.append(HEXCHARS[ord(c) & 15])
         else:
             res.append(c)
-    return space.wrap(res.build())
+    return res.build()
+
+
+@wrap(['space',   StringArg(None)])
+def rawurlencode(space,   url):
+    return space.wrap(_rawurlencode(url))
+
+
+def _urlencode(url):
+    res = StringBuilder(len(url))
+    for c in url:
+        if c == ' ':
+            res.append('+')
+            continue
+        if (c < '0' and c != '-' and c != '.') or \
+           (c < 'A' and c > '9') or \
+           (c > 'Z' and c < 'a' and c != '_') \
+           or (c > 'z'):
+            res.append('%')
+            res.append(HEXCHARS[ord(c) >> 4])
+            res.append(HEXCHARS[ord(c) & 15])
+        else:
+            res.append(c)
+    return res.build()
+
+
+@wrap(['space',   StringArg(None)])
+def urlencode(space,   url):
+    return space.wrap(_urlencode(url))
 
 
 def _decode(c):
@@ -368,14 +396,14 @@ def _decode(c):
         return ord(c) - ord('A') + 10
     return ord(c) - ord('0')
 
-def _urldecode(url):
+
+def _rawurldecode(url):
     res = StringBuilder(len(url))
     l = len(url)
     i = 0
     while i < l:
         c = url[i]
-        if (c == '%' and (i < l - 2) and _ishexdigit(url[i + 1]) and
-            _ishexdigit(url[i + 2])):
+        if (c == '%' and (i < l - 2) and _ishexdigit(url[i + 1]) and _ishexdigit(url[i + 2])):
             k = (_decode(url[i + 1]) << 4) + _decode(url[i + 2])
             res.append(chr(k))
             i += 3
@@ -383,7 +411,108 @@ def _urldecode(url):
             res.append(url[i])
             i += 1
     return res.build()
-    
-@wrap(['space', StringArg(None)], aliases=['rawurldecode'])
-def urldecode(space, url):
+
+
+def _urldecode(url):
+    res = StringBuilder(len(url))
+    l = len(url)
+    i = 0
+    while i < l:
+        c = url[i]
+        if (c == '%' and (i < l - 2) and _ishexdigit(url[i + 1]) and _ishexdigit(url[i + 2])):
+            k = (_decode(url[i + 1]) << 4) + _decode(url[i + 2])
+            res.append(chr(k))
+            i += 3
+        elif c == '+':
+            res.append(' ')
+            i += 1
+        else:
+            res.append(url[i])
+            i += 1
+    return res.build()
+
+
+@wrap(['space',   StringArg(None)])
+def rawurldecode(space,   url):
+    return space.wrap(_rawurldecode(url))
+
+
+@wrap(['space',   StringArg(None)])
+def urldecode(space,   url):
     return space.wrap(_urldecode(url))
+
+
+def _get_key(space,  num_prefix,  w_key):
+    if num_prefix:
+        if w_key.tp == space.tp_int:
+            return "%s%d" % (num_prefix,  space.int_w(w_key))
+    return space.str_w(space.as_string(w_key))
+
+
+def _encode(str,  enctype):
+    if enctype == 1:
+        return _urlencode(str)
+    return _rawurlencode(str)
+
+
+def _build_query(space,  sofar,  accum,  w_value,
+                 num_prefix,  arg_sep,  enctype):
+    if w_value.tp != space.tp_array:
+        value = space.str_w(space.as_string(w_value))
+        sofar.append(_encode(accum,  enctype))
+        sofar.append("=")
+        sofar.append(_encode(value,  enctype))
+        sofar.append(arg_sep)
+    else:
+        with space.iter(w_value) as itr:
+            while not itr.done():
+                w_key,  w_value = itr.next_item(space)
+                k = space.str_w(space.as_string(w_key))
+                if w_value.tp != space.tp_array:
+                    value = space.str_w(space.as_string(w_value))
+                    tmp = accum + "[%s]" % k
+                    sofar.append(_encode(tmp,  enctype))
+                    sofar.append("=")
+                    sofar.append(_encode(value,  enctype))
+                    sofar.append(arg_sep)
+                else:
+                    accum += "[%s]" % (k)
+                    _build_query(space,  sofar,  accum,  w_value,
+                                 num_prefix,  arg_sep,  enctype)
+    return sofar
+
+
+@wrap(['interp',  W_Root,  Optional(str),  Optional(str),  Optional(int)])
+def http_build_query(interp,  w_data,
+                     num_prefix="",  arg_sep=None,  enctype=1):
+    space = interp.space
+    if arg_sep is None:
+        arg_sep = interp.config.get_ini_str("arg_separator.output")
+    w_data = w_data.deref()
+    out = StringBuilder()
+    if not w_data.tp in [space.tp_array,  space.tp_object]:
+        interp.space.ec.warn("http_build_query(): Parameter 1 "
+                             "expected to be Array or Object.  "
+                             "Incorrect value given")
+    if w_data.tp == space.tp_array:
+        with space.iter(w_data) as itr:
+            while not itr.done():
+                w_key,  w_value = itr.next_item(space)
+                key = _get_key(space,  num_prefix,  w_key)
+                res = _build_query(space,  [],  key,  w_value,
+                                   num_prefix,  arg_sep,  enctype)
+                out.append(''.join(res))
+
+    if w_data.tp == space.tp_object:
+        for key,  w_value in w_data.get_instance_attrs().iteritems():
+            _,  prop = demangle_property(key)
+            if prop:
+                continue
+            res = _build_query(space,  [],  key,  w_value,
+                               num_prefix,  arg_sep,  enctype)
+            out.append(''.join(res))
+
+    outstr = out.build()
+    if outstr.endswith(arg_sep):
+        outstr = outstr.rstrip(arg_sep)
+    return interp.space.newstr(outstr)
