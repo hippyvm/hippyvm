@@ -86,7 +86,7 @@ def ph_of_py(interp, wpy_any):
         from hippy.module.pypy_bridge import php_wrappers
         return php_wrappers.W_EmbeddedPyFunc(interp, wpy_any)
     else:
-        wph_pxy = php_wrappers.W_PyBridgeProxy(php_wrappers.W_PyBridgeProxy, [])
+        wph_pxy = php_wrappers.W_PyBridgeProxy(php_wrappers.k_PyBridgeProxy, [])
         wph_pxy.setup_instance(interp, wpy_any)
         return wph_pxy
 
