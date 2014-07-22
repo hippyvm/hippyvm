@@ -65,7 +65,7 @@ import hippy.module.spl
 import hippy.module.ctype
 import hippy.module.general.funcs
 import hippy.module.reflections
-
+import hippy.module.mail
 import hippy.localemodule
 import hippy.builtin_klass
 import hippy.buffering
