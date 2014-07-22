@@ -1625,7 +1625,7 @@ def extract(space, frame, w_arr, w_extr=None, prefix=None):
     else:
         extr = 0
 
-        
+
     as_ref = extr & 0x100
     extr = extr & ~0x100
 
@@ -1683,7 +1683,7 @@ def extract(space, frame, w_arr, w_extr=None, prefix=None):
                 if as_ref:
                     raise NotImplementedError()
                 else:
-                    frame.get_ref_by_name(key).store(w_val)
+                    frame.get_ref_by_name(key).store(w_val.deref())
                 res += 1
     return space.wrap(res)
 
