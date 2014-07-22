@@ -1639,11 +1639,22 @@ def strcmp(space, str1, str2):
     """
     return space.newint(rstrcmp(str1, str2))
 
-#
-#@wrap(['space', 'args_w'])
-#def strip_tags(space, args_w):
-#    """Strip HTML and PHP tags from a string."""
-#    raise NotImplementedError()
+
+@wrap(['space',   str,   Optional(str)])
+def strip_tags(space,   tostrip,   allow=""):
+    """Strip HTML and PHP tags from a string."""
+    tag = False
+    res = StringBuilder()
+    for c in tostrip:
+        if c == '<':
+            tag = True
+            continue
+        if c == '>':
+            tag = False
+            continue
+        if not tag:
+            res.append(c)
+    return space.newstr(res.build())
 
 
 @wrap(['space', str, W_Root, Optional(int)])
