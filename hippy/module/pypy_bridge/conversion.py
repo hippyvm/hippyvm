@@ -4,8 +4,12 @@ from hippy.builtin import wrap, Optional, wrap_method, ThisUnwrapper
 from hippy.objects.base import W_Root as Wph_Root
 
 from pypy.interpreter.baseobjspace import W_Root as Wpy_Root
-from pypy.interpreter.function import Function as py_Function
 from pypy.interpreter.module import Module as py_Module
+
+# Note: this module is one of the centre-pieces of a lot of (inevitable)
+# circular importing, so we use it as the place to push imports to within
+# modules. This not only concentrates the ugliness in one place, but has the
+# virtue of doing so in what is one of the simplest files in the whole bridge.
 
 
 def php_to_py(interp, wph_any):
@@ -60,6 +64,7 @@ def py_list_of_ph_array(interp, wph_array):
 
 def py_to_php(interp, wpy_any):
     from hippy.module.pypy_bridge import php_wrappers, py_wrappers
+    from pypy.interpreter.function import Function as py_Function
 
     assert isinstance(wpy_any, Wpy_Root)
 
