@@ -230,6 +230,25 @@ class TestPyPyBridge(BaseTestInterpreter):
         ''')
         assert phspace.is_true(output[0])
 
+    def test_phbridgeproxy_instanceof(self):
+        phspace = self.space
+        output = self.run('''
+        $src = <<<EOD
+        def iof(a):
+            print C
+            return str(isinstance(a, C))
+        EOD;
+
+        embed_py_func($src);
+
+        class C {}
+        class D {}
+        $x = new C;
+        $y = new D;
+        echo(iof($x) . " " . iof($y));
+        ''')
+        assert phspace.str_w(output[0]) == "True False"
+
     def test_pystone(self):
         pytest.skip("need to enable time module in pypy")
         output = self.run('''
