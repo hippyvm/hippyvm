@@ -727,7 +727,7 @@ def sinh(space, d):
 @wrap(['space', Optional(int)], aliases=["mt_srand"])
 def srand(space, d=0):
     """ srand - Seed the random number generator"""
-    _random.init_genrand(int(d))
+    _random.init_genrand(r_uint(d))
     return space.w_Null
 
 
