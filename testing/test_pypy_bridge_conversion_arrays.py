@@ -207,14 +207,14 @@ echo(f($in));
         ''')
         assert phspace.int_w(output[0]) == 3
 
-    def test_php_nonint_key_array_len_in_php(self):
+    def test_php_mixed_key_array_len_in_python(self):
         phspace = self.space
         output = self.run('''
 
 $src = "def f(ary): return len(ary)";
 embed_py_func($src);
 
-$in = array("a" => 1, "b" => "non-intkeyed", "c" => "array");
+$in = array("a" => 1, "b" => "mixed-key", "c" => "array");
 
 echo(f($in));
 
@@ -239,11 +239,7 @@ echo(f($in, 2));
         assert phspace.str_w(output[1]) == "intkeyed"
         assert phspace.str_w(output[2]) == "array"
 
-    # XXX this does not work since we can't use a list to store a
-    # PHP array with non-integer keys. XXX look into whether dicts have
-    # strategies like lists do.
-    @pytest.mark.xfail
-    def test_php_non_int_key_array_vals_in_php(self):
+    def test_php_mixed_key_array_vals_in_php(self):
         phspace = self.space
         output = self.run('''
 
@@ -258,5 +254,64 @@ echo(f($in, "c"));
 
         ''')
         assert phspace.int_w(output[0]) == 1
-        assert phspace.int_w(output[0]) == 22
-        assert phspace.int_w(output[0]) == 333
+        assert phspace.int_w(output[1]) == 22
+        assert phspace.int_w(output[2]) == 333
+
+    def test_php_mixed_key_array_iteritems(self):
+        phspace = self.space
+        output = self.run('''
+
+$src = <<<EOD
+def f(ary):
+    ret = []
+    for x, y in ary.iteritems():
+        ret += ["%s,%s" % (x, y)]
+    return "|".join(ret)
+EOD;
+
+embed_py_func($src);
+
+$in = array("a" => 1, "b" => 22, "c" => 333);
+
+echo(f($in));
+
+        ''')
+        assert phspace.str_w(output[0]) == "a,1|b,22|c,333"
+
+    def test_php_mixed_key_array_iterkeys(self):
+        phspace = self.space
+        output = self.run('''
+
+$src = <<<EOD
+def f(ary):
+    ret = [ x for x in ary.iterkeys() ]
+    return "|".join(ret)
+EOD;
+
+embed_py_func($src);
+
+$in = array("a" => 1, "b" => 22, "c" => 333);
+
+echo(f($in));
+
+        ''')
+        assert phspace.str_w(output[0]) == "a|b|c"
+
+    def test_php_mixed_key_array_itervalues(self):
+        phspace = self.space
+        output = self.run('''
+
+$src = <<<EOD
+def f(ary):
+    ret = [ str(x) for x in ary.itervalues() ]
+    return "|".join(ret)
+EOD;
+
+embed_py_func($src);
+
+$in = array("a" => 1, "b" => 22, "c" => 333);
+
+echo(f($in));
+
+        ''')
+        assert phspace.str_w(output[0]) == "1|22|333"

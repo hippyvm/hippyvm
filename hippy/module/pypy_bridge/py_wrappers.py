@@ -10,6 +10,11 @@ from pypy.interpreter.function import Function as Py_Function
 from pypy.interpreter.argument import Arguments
 from pypy.objspace.std.listobject import (ListStrategy, EmptyListStrategy,
         AbstractUnwrappedStrategy, W_ListObject as WPy_ListObject)
+from pypy.objspace.std.dictmultiobject import (AbstractTypedStrategy,
+      DictStrategy, create_iterator_classes,
+      EmptyDictStrategy)
+from pypy.objspace.std.dictmultiobject import (
+        W_DictMultiObject as WPy_DictMultiObject)
 
 from hippy.module.pypy_bridge.conversion import php_to_py, py_to_php
 from hippy.objects.base import W_Root as WPHP_Root
@@ -149,7 +154,7 @@ W_EmbeddedPHPFunc.typedef = TypeDef("EmbeddedPHPFunc",
     __call__ = interp2app(W_EmbeddedPHPFunc.descr_call),
 )
 
-def make_wrapped_php_array(interp, wphp_arry):
+def make_wrapped_int_key_php_array(interp, wphp_arry):
     if interp.space.arraylen(wphp_arry) <= 0:
         strategy = interp.pyspace.fromcache(EmptyListStrategy)
         storage = strategy.erase(None)
@@ -169,7 +174,7 @@ class WrappedPHPArrayStrategy(ListStrategy):
     def wrap(self, wphp_val):
         return php_to_py(self.space.get_php_interp(), wphp_val)
 
-    erase, unerase = rerased.new_erasing_pair("PHP_Array")
+    erase, unerase = rerased.new_erasing_pair("php_int_key_array")
     erase = staticmethod(erase)
     unerase = staticmethod(unerase)
 
@@ -190,3 +195,91 @@ class WrappedPHPArrayStrategy(ListStrategy):
 
     def setslice(self, w_list, start, step, slicelength, w_other):
         raise NotImplementedError("xxx") # XXX
+
+class WrappedPHPArrayKVIterator(object):
+    def __init__(self, interp, wph_arry):
+        self.interp = interp
+        self.itr = wph_arry.dct_w.iteritems()
+
+    def __iter__(self): return self
+
+    def next(self):
+        try:
+            (key, wphp_val) = self.itr.next()
+        except StopIteration:
+            raise
+
+        wpy_val = php_to_py(self.interp, wphp_val)
+        return key, wpy_val
+
+class WrappedPHPArrayVIterator(object):
+    def __init__(self, interp, wph_arry):
+        self.interp = interp
+        self.itr = wph_arry.dct_w.itervalues()
+
+    def __iter__(self): return self
+
+    def next(self):
+        try:
+            wphp_val = self.itr.next()
+        except StopIteration:
+            raise
+
+        return php_to_py(self.interp, wphp_val)
+
+class WrappedPHPArrayDictStrategy(DictStrategy):
+    """ Wrapping a non-int keyed (mixed key) PHP array uses a special Dict strategy """
+
+    erase, unerase = rerased.new_erasing_pair("php_mixed_key_array")
+    erase = staticmethod(erase)
+    unerase = staticmethod(unerase)
+
+    def wrap(self, unwrapped):
+        return php_to_py(self.space.get_php_interp(), unwrapped)
+
+    def getitem(self, w_dict, w_key):
+        # XXX if the key is not a string or int, we should do a implicit
+        # cast to mimick PHP semantics.
+
+        interp = self.space.get_php_interp()
+        pyspace = self.space
+
+        wphp_arry = self.unerase(w_dict.dstorage)
+        wphp_key = py_to_php(interp, w_key)
+        return php_to_py(interp, interp.space.getitem(wphp_arry, wphp_key))
+
+    def listview_int(self, w_dict):
+        raise NotImplementedError("xxx")
+        #return self.unerase(w_dict.dstorage).keys()
+
+    def wrapkey(space, key):
+        return space.wrap(key)
+
+    def length(self, w_dict):
+        wphp_arry = self.unerase(w_dict.dstorage)
+        return wphp_arry.arraylen()
+
+    def getiteritems(self, w_dict):
+        wphp_arry = self.unerase(w_dict.dstorage)
+        return WrappedPHPArrayKVIterator(self.space.get_php_interp(), wphp_arry)
+
+    def getiterkeys(self, w_dict):
+        wphp_arry = self.unerase(w_dict.dstorage)
+        return wphp_arry.dct_w.iterkeys()
+
+    def getitervalues(self, w_dict):
+        wphp_arry = self.unerase(w_dict.dstorage)
+        return WrappedPHPArrayVIterator(self.space.get_php_interp(), wphp_arry)
+
+create_iterator_classes(WrappedPHPArrayDictStrategy)
+
+def make_wrapped_mixed_key_php_array(interp, wphp_arry):
+    if interp.space.arraylen(wphp_arry) <= 0:
+        strategy = interp.pyspace.fromcache(EmptyDictStrategy)
+        storage = strategy.erase(None)
+    else:
+        strategy = interp.pyspace.fromcache(WrappedPHPArrayDictStrategy)
+        storage = strategy.erase(wphp_arry)
+
+    return WPy_DictMultiObject(interp.pyspace, strategy, storage)
+

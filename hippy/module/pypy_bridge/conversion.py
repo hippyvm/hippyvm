@@ -2,6 +2,8 @@ from hippy.objects.instanceobject import W_InstanceObject as Wph_InstanceObject
 from hippy.klass import def_class
 from hippy.builtin import wrap, Optional, wrap_method, ThisUnwrapper
 from hippy.objects.base import W_Object as WPHP_Object
+from hippy.objects.arrayobject import W_ListArrayObject as WPHP_ListArrayObject
+from hippy.objects.arrayobject import W_RDictArrayObject as WPHP_RDictArrayObject
 
 from pypy.interpreter.baseobjspace import W_Root as Wpy_Root
 from pypy.interpreter.module import Module as py_Module
@@ -33,11 +35,18 @@ def php_to_py(interp, wph_any):
         return interp.pyspace.newint(interp.space.int_w(wph_any))
     elif wph_tp == phspace.tp_str:
         return interp.pyspace.wrap(interp.space.str_w(wph_any))
-    # XXX disable list conversions
     elif wph_tp == phspace.tp_array:
-        # We use the PyPy list strategy system to wrap.
-        from hippy.module.pypy_bridge.py_wrappers import make_wrapped_php_array
-        return make_wrapped_php_array(interp, wph_any)
+        # We use a special PyPy list/dict strategy to wrap a PHP array.
+        if isinstance(wph_any, WPHP_ListArrayObject):
+            from hippy.module.pypy_bridge.py_wrappers import (
+                    make_wrapped_int_key_php_array)
+            return make_wrapped_int_key_php_array(interp, wph_any)
+        elif isinstance(wph_any, WPHP_RDictArrayObject):
+            from hippy.module.pypy_bridge.py_wrappers import (
+                    make_wrapped_mixed_key_php_array)
+            return make_wrapped_mixed_key_php_array(interp, wph_any)
+        else:
+            assert False # Should never happen
     else:
         return py_wrappers.W_PHPProxyGeneric(interp, wph_any)
 
