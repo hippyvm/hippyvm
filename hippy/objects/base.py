@@ -26,6 +26,11 @@ class W_Root(object):
     def _note_making_a_copy(self):
         pass       # for test_refcount
 
+    def get_wrapped_py_obj(self):
+        """If this object wraps a PyPy object, it returns that object;
+        otherwise it returns None."""
+        return None
+
 
 class W_Object(W_Root):
     _attrs_ = ()

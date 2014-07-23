@@ -23,6 +23,8 @@ class W_EmbeddedPyFunc(AbstractFunction):
         self.interp = interp
         self.py_callable = py_callable
 
+    def get_wrapped_py_obj(self):
+        return self.py_callable
 
     @jit.unroll_safe
     def call_args(self, interp, args_w, w_this=None, thisclass=None,
@@ -47,6 +49,9 @@ class W_EmbeddedPyMod(WPh_Object):
     def __init__(self, interp, py_mod):
         self.interp = interp
         self.py_mod = py_mod
+
+    def get_wrapped_py_obj(self):
+        return self.py_mod
 
     def _getattr(self, interp, space, name):
         py_mod = self.py_mod
@@ -73,6 +78,10 @@ class W_PyBridgeProxy(W_InstanceObject):
         self.wpy_inst = None # set later as we can't change the sig of __init__
         self.interp = None # set later
         W_InstanceObject.__init__(self, klass, dct_w)
+
+    def get_wrapped_py_obj(self):
+        assert self.wpy_inst is not None
+        return self.wpy_inst
 
     # Use this as a low level ctor instead of the above.
     @classmethod
@@ -119,12 +128,16 @@ k_PyBridgeProxy = def_class('PyBridgeProxy',
 )
 
 class W_PyBridgeListProxyIterator(W_BaseIterator):
-
     def __init__(self, interp, wpy_list):
         self.interp = interp
         self.storage_w = interp.pyspace.listview(wpy_list)
         self.index = 0
         self.finished = len(self.storage_w) == 0
+
+    def get_wrapped_py_obj(self):
+        # Iterators can reasonably be considered opaque from a wrapping
+        # perspective.
+        return None
 
     def next(self, space):
         index = self.index
@@ -148,6 +161,9 @@ class W_PyBridgeListProxy(W_ArrayObject):
     def __init__(self, interp, wpy_list):
         self.interp = interp
         self.wpy_list = wpy_list
+
+    def get_wrapped_py_obj(self):
+        return self.wpy_list
 
     def arraylen(self):
         interp = self.interp
@@ -181,6 +197,11 @@ class W_PyBridgeDictProxyIterator(W_BaseIterator):
         self.remaining = pyspace.int_w(interp.pyspace.len(rdct_w))
         self.finished = self.remaining == 0
 
+    def get_wrapped_py_obj(self):
+        # Iterators can reasonably be considered opaque from a wrapping
+        # perspective.
+        return None
+
     def next(self, space):
         interp, pyspace = self.interp, self.interp.pyspace
         self.remaining -= 1
@@ -206,6 +227,9 @@ class W_PyBridgeDictProxy(W_ArrayObject):
     def __init__(self, interp, wpy_dict):
         self.interp = interp
         self.wpy_dict = wpy_dict
+
+    def get_wrapped_py_obj(self):
+        return self.wpy_dict
 
     def arraylen(self):
         interp = self.interp

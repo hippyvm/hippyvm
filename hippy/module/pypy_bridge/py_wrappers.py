@@ -23,6 +23,12 @@ class W_EmbeddedPHPFunc(W_Root):
         self.space = space
         self.wph_func = wph_func
 
+    def get_wrapped_php_obj(self):
+        return self.wph_func
+
+    def get_php_interp(self):
+        return self.space.get_php_interp()
+
     @property
     def name(self):
         return self.wph_func.name
@@ -56,6 +62,12 @@ class W_PhBridgeProxy(W_Root):
     def __init__(self, interp, wph_inst):
         self.wph_inst = wph_inst
         self.interp = interp
+
+    def get_wrapped_php_obj(self):
+        return self.wph_inst
+
+    def get_php_interp(self):
+        return self.interp
 
     # XXX unwrap spec
     def descr_get(self, w_name):
