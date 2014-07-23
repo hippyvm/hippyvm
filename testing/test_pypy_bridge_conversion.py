@@ -94,6 +94,8 @@ class TestPyPyBridgeConversions(BaseTestInterpreter):
         assert pyspace.int_w(pyspace.getitem(wpy_innr, consts[0])) == 1
         assert pyspace.str_w(pyspace.getitem(wpy_innr, consts[1])) == "a"
 
+    # XXX Any way of mutating the list.
+
     # -------------
     # Python -> PHP
     # -------------
@@ -193,4 +195,7 @@ class TestPyPyBridgeConversions(BaseTestInterpreter):
         wph_closure = py_to_php(interp, wpy_func)
         # XXX until interp.space.tp_closure
         assert type(wph_closure) is W_ClosureObject
+
+    # XXX List slices
+    # XXX Any way of mutating the list.
 
