@@ -62,7 +62,6 @@ class TestPyPyBridgeConversions(BaseTestInterpreter):
         wpy_expect = pyspace.newlist([ pyspace.wrap(i) for i in input ])
         assert pyspace.is_true(pyspace.eq(wpy_converted, wpy_expect))
 
-
     def test_py_list_of_ph_array_nested(self):
         pytest.skip("XXX disabled list conversions for now")
         interp = self.new_interp()
@@ -95,6 +94,21 @@ class TestPyPyBridgeConversions(BaseTestInterpreter):
         assert pyspace.str_w(pyspace.getitem(wpy_innr, consts[1])) == "a"
 
     # XXX Any way of mutating the list.
+
+    def test_unwrap_php(self):
+        phspace = self.space
+        output = self.run('''
+        $src = <<<EOD
+        def dummy(x):
+            return x
+        EOD;
+        embed_py_func($src);
+
+        class C { }
+        $x = new C();
+        echo(dummy($x) === $x);
+        ''')
+        assert phspace.is_true(output[0])
 
     # -------------
     # Python -> PHP
@@ -199,3 +213,23 @@ class TestPyPyBridgeConversions(BaseTestInterpreter):
     # XXX List slices
     # XXX Any way of mutating the list.
 
+
+    def test_unwrap_py(self):
+        phspace = self.space
+        output = self.run('''
+        function dummy($x) {
+            return $x;
+        }
+
+        $src = <<<EOD
+        def tst():
+            class C: pass
+            x = C()
+            print x, dummy(x)
+            return x is dummy(x)
+        EOD;
+        embed_py_func($src);
+
+        echo(tst());
+        ''')
+        assert phspace.is_true(output[0])

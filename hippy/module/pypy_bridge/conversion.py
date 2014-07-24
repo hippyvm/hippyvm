@@ -13,20 +13,14 @@ from pypy.interpreter.module import Module as py_Module
 
 
 def php_to_py(interp, wph_any):
-    from hippy.module.pypy_bridge import py_wrappers
+    from hippy.module.pypy_bridge import php_wrappers, py_wrappers
     assert isinstance(wph_any, Wph_Root)
-
-    # If it's a proxied Python instance, a trivial unwrapping? XXX
-    #if isinstance(wph_any, W_PyBridgeProxy):
-    #    import pdb; pdb.set_trace()
-    #    return wph_any.wpy_inst
 
     phspace = interp.space
 
-    # Note that the primitive types are not objects in PHP, so there is
-    # no risk of subclassing interfering there.
+    if isinstance(wph_any, php_wrappers.W_PyBridgeProxy):
+        return wph_any.wpy_inst
 
-    #if hasattr(wph_any, "tp"):
     try:
         wph_tp = wph_any.deref().tp
     except AttributeError:
@@ -56,10 +50,6 @@ def py_list_of_ph_array(interp, wph_array):
     for i in range(len(wph_elems)):
         wpy_elems.append(php_to_py(interp, wph_elems[i]))
     return interp.pyspace.newlist(wpy_elems)
-
-# -------------
-# Python -> PHP
-# -------------
 
 
 def py_to_php(interp, wpy_any):
