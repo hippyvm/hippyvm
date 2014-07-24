@@ -24,7 +24,7 @@ def php_to_py(interp, wph_any):
     try:
         wph_tp = wph_any.deref().tp
     except AttributeError:
-        return py_wrappers.W_PhBridgeProxy(interp, wph_any)
+        return py_wrappers.W_PHPProxyGeneric(interp, wph_any)
 
     if wph_tp == phspace.tp_null:
         return interp.pyspace.w_None
@@ -42,7 +42,7 @@ def php_to_py(interp, wph_any):
         from hippy.module.pypy_bridge.py_wrappers import make_wrapped_php_array
         return make_wrapped_php_array(interp, wph_any)
     else:
-        return py_wrappers.W_PhBridgeProxy(interp, wph_any)
+        return py_wrappers.W_PHPProxyGeneric(interp, wph_any)
 
 def py_list_of_ph_array(interp, wph_array):
     wph_elems = wph_array.as_list_w()
@@ -77,7 +77,7 @@ def py_to_php(interp, wpy_any):
         return php_wrappers.W_EmbeddedPyFunc(interp, wpy_any)
     elif isinstance(wpy_any, py_Module):
         return php_wrappers.W_EmbeddedPyMod(interp, wpy_any)
-    elif isinstance(wpy_any, py_wrappers.W_PhBridgeProxy):
+    elif isinstance(wpy_any, py_wrappers.W_PHPProxyGeneric):
         return wpy_any.wph_inst
     else:
         wph_pxy = php_wrappers.W_PyProxyGeneric(php_wrappers.k_PyBridgeProxy, [])

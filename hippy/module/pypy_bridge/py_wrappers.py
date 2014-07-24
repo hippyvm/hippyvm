@@ -17,49 +17,10 @@ from hippy.objects.base import W_Root as WPHP_Root
 from rpython.rlib import jit, rerased
 from rpython.rlib.objectmodel import import_from_mixin
 
-class W_EmbeddedPHPFunc(W_Root):
-    """ A Python callable that actually executes a PHP function """
+class W_PHPProxyGeneric(W_Root):
+    """Generic proxy for wrapping PHP objects in PyPy when no more specific
+    proxy is available."""
 
-    _immutable_fields_ = ["space", "wph_func"]
-
-    def __init__(self, space, wph_func):
-        self.space = space
-        self.wph_func = wph_func
-
-    def get_wrapped_php_obj(self):
-        return self.wph_func
-
-    def get_php_interp(self):
-        return self.space.get_php_interp()
-
-    @property
-    def name(self):
-        return self.wph_func.name
-
-    def descr_call(self, __args__):
-        (args, kwargs) = __args__.unpack()
-
-        # PHP has no equivalent to keyword arguments.
-        # For now if the user passes any kwargs, we crap out.
-        # XXX raise PHP exception
-        assert not kwargs
-
-        pyspace = self.space
-        php_interp = self.space.get_php_interp()
-        phspace = self.space.get_php_interp().space
-
-        wph_args_elems = [ py_to_php(php_interp, x) for x in args ]
-        res = self.wph_func.call_args(php_interp, wph_args_elems)
-
-        return php_to_py(php_interp, res)
-
-W_EmbeddedPHPFunc.typedef = TypeDef("EmbeddedPHPFunc",
-    __call__ = interp2app(W_EmbeddedPHPFunc.descr_call),
-)
-
-
-
-class W_PhBridgeProxy(W_Root):
     _immutable_fields_ = ["interp", "wph_inst"]
 
     def __init__(self, interp, wph_inst):
@@ -107,7 +68,7 @@ class W_PhBridgeProxy(W_Root):
         return php_to_py(self.interp, wph_rv)
 
     def descr_eq(self, space, w_other):
-        if isinstance(w_other, W_PhBridgeProxy):
+        if isinstance(w_other, W_PHPProxyGeneric):
             php_interp = self.interp
             php_space = php_interp.space
             if php_space.eq_w(self.wph_inst, w_other.wph_inst):
@@ -117,14 +78,53 @@ class W_PhBridgeProxy(W_Root):
     def descr_ne(self, space, w_other):
         return space.not_(self.descr_eq(space, w_other))
 
-
-W_PhBridgeProxy.typedef = TypeDef("PhBridgeProxy",
-    __call__ = interp2app(W_PhBridgeProxy.descr_call),
-    __getattr__ = interp2app(W_PhBridgeProxy.descr_get),
-    __eq__ = interp2app(W_PhBridgeProxy.descr_eq),
-    __ne__ = interp2app(W_PhBridgeProxy.descr_ne),
+W_PHPProxyGeneric.typedef = TypeDef("PhBridgeProxy",
+    __call__ = interp2app(W_PHPProxyGeneric.descr_call),
+    __getattr__ = interp2app(W_PHPProxyGeneric.descr_get),
+    __eq__ = interp2app(W_PHPProxyGeneric.descr_eq),
+    __ne__ = interp2app(W_PHPProxyGeneric.descr_ne),
 )
 
+
+class W_EmbeddedPHPFunc(W_Root):
+    """ A Python callable that actually executes a PHP function """
+
+    _immutable_fields_ = ["space", "wph_func"]
+
+    def __init__(self, space, wph_func):
+        self.space = space
+        self.wph_func = wph_func
+
+    def get_wrapped_php_obj(self):
+        return self.wph_func
+
+    def get_php_interp(self):
+        return self.space.get_php_interp()
+
+    @property
+    def name(self):
+        return self.wph_func.name
+
+    def descr_call(self, __args__):
+        (args, kwargs) = __args__.unpack()
+
+        # PHP has no equivalent to keyword arguments.
+        # For now if the user passes any kwargs, we crap out.
+        # XXX raise PHP exception
+        assert not kwargs
+
+        pyspace = self.space
+        php_interp = self.space.get_php_interp()
+        phspace = self.space.get_php_interp().space
+
+        wph_args_elems = [ py_to_php(php_interp, x) for x in args ]
+        res = self.wph_func.call_args(php_interp, wph_args_elems)
+
+        return php_to_py(php_interp, res)
+
+W_EmbeddedPHPFunc.typedef = TypeDef("EmbeddedPHPFunc",
+    __call__ = interp2app(W_EmbeddedPHPFunc.descr_call),
+)
 
 def make_wrapped_php_array(interp, wphp_arry):
     if interp.space.arraylen(wphp_arry) <= 0:
