@@ -18,6 +18,67 @@ from pypy.interpreter.error import OperationError
 from rpython.rlib import jit
 
 
+class W_PyProxyGeneric(W_InstanceObject):
+    """Generic proxy for wrapping Python objects in Hippy when no more specific
+    proxy is available."""
+
+    _immutable_fields_ = ["interp?", "wpy_inst?"]
+
+    def __init__(self, klass, dct_w):
+        self.interp = None # set later
+        self.wpy_inst = None # set later as we can't change the sig of __init__
+        W_InstanceObject.__init__(self, klass, dct_w)
+
+    def get_wrapped_py_obj(self):
+        assert self.wpy_inst is not None
+        return self.wpy_inst
+
+    # Use this as a low level ctor instead of the above.
+    @classmethod
+    def from_wpy_inst(cls, interp, wpy_inst):
+        wph_pxy = cls(interp, [])
+        wph_pxy.set_instance(wpy_inst)
+        return wph_pxy
+
+    def setup_instance(self, interp, wpy_inst):
+        self.interp = interp
+        self.wpy_inst = wpy_inst
+
+    def get_callable(self):
+        """ PHP interpreter calls this when calls a wrapped Python var  """
+        # We trick the interpreter into seeing something that looks like
+        # the kind of function that came from a PHP closure.
+        ph_func = W_EmbeddedPyFunc(self.interp, self.wpy_inst)
+        return ph_func
+
+@wrap_method(['interp', ThisUnwrapper(W_PyProxyGeneric), str],
+        name='GenericPyProxy::__get')
+def generic__get(interp, this, name):
+    interp = this.interp
+    pyspace = interp.pyspace
+    wpy_target = pyspace.getattr(this.wpy_inst, pyspace.wrap(name))
+    return py_to_php(interp, wpy_target)
+
+@wrap_method(['interp', ThisUnwrapper(W_PyProxyGeneric), str, Wph_Root],
+        name='GenericPyProxy::__call')
+def generic__call(interp, this, func_name, wph_args):
+    from hippy.interpreter import Interpreter
+    assert isinstance(interp, Interpreter)
+
+    pyspace = interp.pyspace
+    wpy_func_name = pyspace.wrap(func_name)
+    wpy_func = pyspace.getattr(this.wpy_inst, wpy_func_name)
+
+    wpy_args_items = [ php_to_py(interp, x) for x in wph_args.as_list_w() ]
+    wpy_rv = interp.pyspace.call(wpy_func, interp.pyspace.newlist(wpy_args_items))
+    return py_to_php(interp, wpy_rv)
+
+k_PyBridgeProxy = def_class('PyBridgeProxy',
+    [generic__get, generic__call],
+    [], instance_class=W_PyProxyGeneric
+)
+
+
 class W_EmbeddedPyFunc(AbstractFunction):
     _immutable_fields_ = ["interp", "py_callable"]
 
@@ -74,62 +135,6 @@ class W_EmbeddedPyMod(WPh_Object):
     def getattr(self, interp, name, contextclass=None, give_notice=False):
         return self._getattr(interp, interp.space, name)
 
-
-class W_PyBridgeProxy(W_InstanceObject):
-    _immutable_fields_ = ["interp?", "wpy_inst?"]
-
-    def __init__(self, klass, dct_w):
-        self.interp = None # set later
-        self.wpy_inst = None # set later as we can't change the sig of __init__
-        W_InstanceObject.__init__(self, klass, dct_w)
-
-    def get_wrapped_py_obj(self):
-        assert self.wpy_inst is not None
-        return self.wpy_inst
-
-    # Use this as a low level ctor instead of the above.
-    @classmethod
-    def from_wpy_inst(cls, interp, wpy_inst):
-        wph_pxy = cls(interp, [])
-        wph_pxy.set_instance(wpy_inst)
-        return wph_pxy
-
-    def setup_instance(self, interp, wpy_inst):
-        self.interp = interp
-        self.wpy_inst = wpy_inst
-
-    def get_callable(self):
-        """ PHP interpreter calls this when calls a wrapped Python var  """
-        #assert isinstance(self.wpy_inst, Py_Function) # XXX exception
-
-        # We trick the interpreter into seeing something that looks like
-        # the kind of function that came from a PHP closure.
-        ph_func = W_EmbeddedPyFunc(self.interp, self.wpy_inst)
-        return ph_func
-
-@wrap_method(['interp', ThisUnwrapper(W_PyBridgeProxy), str],
-        name='PyBridgeProxy::__get')
-def magic__get(interp, this, name):
-    wpy_target = this.interp.pyspace.getattr(this.wpy_inst, this.interp.pyspace.wrap(name))
-    return py_to_php(this.interp, wpy_target)
-
-@wrap_method(['interp', ThisUnwrapper(W_PyBridgeProxy), str, Wph_Root],
-        name='PyBridgeProxy::__call')
-def magic__call(interp, this, func_name, wph_args):
-    from hippy.interpreter import Interpreter
-    assert isinstance(interp, Interpreter)
-
-    wpy_func_name = interp.pyspace.wrap(func_name)
-    wpy_func = interp.pyspace.getattr(this.wpy_inst, wpy_func_name)
-
-    wpy_args_items = [ php_to_py(interp, x) for x in wph_args.as_list_w() ]
-    wpy_rv = interp.pyspace.call(wpy_func, interp.pyspace.newlist(wpy_args_items))
-    return py_to_php(interp, wpy_rv)
-
-k_PyBridgeProxy = def_class('PyBridgeProxy',
-    [magic__get, magic__call],
-    [], instance_class=W_PyBridgeProxy
-)
 
 class W_PyBridgeListProxyIterator(W_BaseIterator):
     def __init__(self, interp, wpy_list):

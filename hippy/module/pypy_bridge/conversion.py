@@ -18,7 +18,7 @@ def php_to_py(interp, wph_any):
 
     phspace = interp.space
 
-    if isinstance(wph_any, php_wrappers.W_PyBridgeProxy):
+    if isinstance(wph_any, php_wrappers.W_PyProxyGeneric):
         return wph_any.wpy_inst
 
     try:
@@ -80,7 +80,7 @@ def py_to_php(interp, wpy_any):
     elif isinstance(wpy_any, py_wrappers.W_PhBridgeProxy):
         return wpy_any.wph_inst
     else:
-        wph_pxy = php_wrappers.W_PyBridgeProxy(php_wrappers.k_PyBridgeProxy, [])
+        wph_pxy = php_wrappers.W_PyProxyGeneric(php_wrappers.k_PyBridgeProxy, [])
         wph_pxy.setup_instance(interp, wpy_any)
         return wph_pxy
 
