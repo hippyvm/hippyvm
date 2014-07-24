@@ -19,6 +19,8 @@ from rpython.rlib import jit
 
 
 class W_EmbeddedPyFunc(AbstractFunction):
+    _immutable_fields_ = ["interp", "py_callable"]
+
     def __init__(self, interp, py_callable):
         self.interp = interp
         self.py_callable = py_callable
@@ -46,6 +48,8 @@ class W_EmbeddedPyFunc(AbstractFunction):
 
 
 class W_EmbeddedPyMod(WPh_Object):
+    _immutable_fields_ = ["interp", "py_mod"]
+
     def __init__(self, interp, py_mod):
         self.interp = interp
         self.py_mod = py_mod
@@ -72,11 +76,11 @@ class W_EmbeddedPyMod(WPh_Object):
 
 
 class W_PyBridgeProxy(W_InstanceObject):
-    """ Wraps up a Python instance and offers a PHP friendly interface. """
+    _immutable_fields_ = ["interp?", "wpy_inst?"]
 
     def __init__(self, klass, dct_w):
-        self.wpy_inst = None # set later as we can't change the sig of __init__
         self.interp = None # set later
+        self.wpy_inst = None # set later as we can't change the sig of __init__
         W_InstanceObject.__init__(self, klass, dct_w)
 
     def get_wrapped_py_obj(self):
@@ -156,6 +160,8 @@ class W_PyBridgeListProxyIterator(W_BaseIterator):
 class W_PyBridgeListProxy(W_ArrayObject):
     """ Wraps a Python list as PHP array. """
 
+    _immutable_fields_ = ["interp", "wpy_list"]
+
     _has_string_keys = False
 
     def __init__(self, interp, wpy_list):
@@ -223,6 +229,8 @@ class W_PyBridgeDictProxyIterator(W_BaseIterator):
 
 class W_PyBridgeDictProxy(W_ArrayObject):
     """ Wraps a Python dict as something PHP array. """
+
+    _immutable_fields_ = ["interp", "wpy_dict"]
 
     def __init__(self, interp, wpy_dict):
         self.interp = interp

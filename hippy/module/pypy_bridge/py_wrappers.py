@@ -19,6 +19,9 @@ from rpython.rlib.objectmodel import import_from_mixin
 
 class W_EmbeddedPHPFunc(W_Root):
     """ A Python callable that actually executes a PHP function """
+
+    _immutable_fields_ = ["space", "wph_func"]
+
     def __init__(self, space, wph_func):
         self.space = space
         self.wph_func = wph_func
@@ -57,7 +60,7 @@ W_EmbeddedPHPFunc.typedef = TypeDef("EmbeddedPHPFunc",
 
 
 class W_PhBridgeProxy(W_Root):
-    """ Wraps up a PHP instance and offers a Python friendly interface. """
+    _immutable_fields_ = ["interp", "wph_inst"]
 
     def __init__(self, interp, wph_inst):
         self.wph_inst = wph_inst

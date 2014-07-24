@@ -5,6 +5,8 @@ from pypy.interpreter.baseobjspace import W_Root as Wpy_Root
 from hippy.objects.base import W_Root as Wph_Root
 
 class PHP_Scope(Wpy_Root):
+    _immutable_fields_ = ["ph_interp", "ph_frame"]
+
     def __init__(self, ph_interp, ph_frame):
         self.ph_interp = ph_interp
         self.ph_frame = ph_frame
@@ -40,6 +42,8 @@ class PHP_Scope(Wpy_Root):
 
 
 class Py_Scope(Wph_Root):
+    _immutable_fields_ = ["py_interp", "py_frame"]
+
     def __init__(self, py_interp, py_frame):
         self.py_interp = py_interp
         self.py_frame = py_frame
