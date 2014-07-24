@@ -79,25 +79,23 @@ class W_PhBridgeProxy(W_Root):
 
         name = pyspace.str_w(w_name)
 
-        wph_target = self.wph_inst.getattr(
-                self.interp,
-                name,
-                phspace.getclass(self.wph_inst)
-        )
+        interp = self.interp
+        wph_inst = self.wph_inst
+        wph_class = phspace.getclass(wph_inst)
+        wph_target = wph_inst.getattr(interp, name, wph_class)
 
-        # If we didn't find the thing we are looking for, there is a good
-        # chance that it is a method of a class. Presumably since methods
-        # are not 1st class in PHP, you can't access them via getattr.
-        # We instead go poking around inside the class.
         if wph_target is phspace.w_Null:
+            # If we didn't find the thing we are looking for, there is a good
+            # chance that it is a method of a class. Presumably since methods
+            # are not 1st class in PHP, you can't access them via getattr.
+            # We instead go poking around inside the class.
             try:
-                wph_meth = self.interp.space.getclass(self.wph_inst).methods[name]
+                wph_meth = wph_class.methods[name]
             except KeyError:
                 assert False # XXX raise exception
+            wph_target = wph_meth.bind(wph_inst, wph_class)
 
-            wph_target = wph_meth.bind(self.wph_inst, phspace.getclass(self.wph_inst))
-
-        return php_to_py(self.interp, wph_target)
+        return php_to_py(interp, wph_target)
 
     @jit.unroll_safe
     def descr_call(self, __args__):
