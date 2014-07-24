@@ -109,11 +109,12 @@ class W_PhBridgeProxy(W_Root):
         return php_to_py(self.interp, wph_rv)
 
     def descr_eq(self, space, w_other):
-        if not space.eq_w(space.type(self), space.type(w_other)):
-            return space.w_False
-        w_other = space.interp_w(W_PhBridgeProxy, w_other)
-        eq = self.interp.space.eq_w(self.wph_inst, w_other.wph_inst)
-        return space.wrap(eq)
+        if isinstance(w_other, W_PhBridgeProxy):
+            php_interp = self.interp
+            php_space = php_interp.space
+            if php_space.eq_w(self.wph_inst, w_other.wph_inst):
+                return space.w_True
+        return space.w_False
 
     def descr_ne(self, space, w_other):
         return space.not_(self.descr_eq(space, w_other))

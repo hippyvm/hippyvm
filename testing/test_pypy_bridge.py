@@ -164,47 +164,55 @@ class TestPyPyBridge(BaseTestInterpreter):
         ''')
         assert phspace.str_w(output[0]) == "abc-def-333"
 
-    def test_phbridgeproxy_equality(self):
+    def test_phbridgeproxy_equality1(self):
         phspace = self.space
         output = self.run('''
         $src = <<<EOD
         def cmp(x, y):
             return x == y
         EOD;
+        embed_py_func($src);
 
-        $m = embed_py_mod("cmps", $src);
-
-        class Flibble {
-            public $val;
-            function __construct($val) {
-                $this->val = $val;
-            }
-        }
-        $x = new Flibble("123");
-        $y = new Flibble("123");
-        echo($m->cmp($x, $y));
+        class C { }
+        $x = new C();
+        echo(cmp($x, $x));
         ''')
         assert phspace.is_true(output[0])
 
-    def test_phbridgeproxy_nequality(self):
+    def test_phbridgeproxy_equality2(self):
         phspace = self.space
         output = self.run('''
         $src = <<<EOD
         def cmp(x, y):
             return x == y
         EOD;
+        embed_py_func($src);
 
-        $m = embed_py_mod("cmps", $src);
+        class C { }
+        $x = new C();
+        $y = new C();
+        echo(cmp($x, $y));
+        ''')
+        assert phspace.is_true(output[0])
 
-        class Flibble {
+    def test_phbridgeproxy_nequality1(self):
+        phspace = self.space
+        output = self.run('''
+        $src = <<<EOD
+        def cmp(x, y):
+            return x == y
+        EOD;
+        embed_py_func($src);
+
+        class C {
             public $val;
             function __construct($val) {
                 $this->val = $val;
             }
         }
-        $x = new Flibble("666");
-        $y = new Flibble("123");
-        echo($m->cmp($x, $y));
+        $x = new C(1);
+        $y = new C(2);
+        echo(cmp($x, $y));
         ''')
         assert not phspace.is_true(output[0])
 
@@ -212,21 +220,20 @@ class TestPyPyBridge(BaseTestInterpreter):
         phspace = self.space
         output = self.run('''
         $src = <<<EOD
-        def ncmp(x, y):
-            return x != y
+        def cmp(x, y):
+            return x == y
         EOD;
+        embed_py_func($src);
 
-        $m = embed_py_mod("cmps", $src);
-
-        class Flibble {
+        class C {
             public $val;
             function __construct($val) {
                 $this->val = $val;
             }
         }
-        $x = new Flibble("666");
-        $y = new Flibble("123");
-        echo($m->ncmp($x, $y));
+        $x = new C(1);
+        $y = new C(1);
+        echo(cmp($x, $y));
         ''')
         assert phspace.is_true(output[0])
 
