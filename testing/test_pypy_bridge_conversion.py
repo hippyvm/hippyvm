@@ -233,3 +233,16 @@ class TestPyPyBridgeConversions(BaseTestInterpreter):
         echo(tst());
         ''')
         assert phspace.is_true(output[0])
+
+    def test_php_null(self):
+        phspace = self.space
+        output = self.run('''
+        $src = <<<EOD
+        def n():
+            return None
+        EOD;
+        embed_py_func($src);
+
+        echo(null === n());
+        ''')
+        assert phspace.is_true(output[0])
