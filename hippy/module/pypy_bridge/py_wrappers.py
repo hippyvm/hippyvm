@@ -33,6 +33,11 @@ class W_PHPProxyGeneric(W_Root):
     def get_php_interp(self):
         return self.interp
 
+    def is_w(self, space, other):
+        if isinstance(other, W_PHPProxyGeneric):
+            return self.wph_inst is other.wph_inst
+        return False
+
     # XXX unwrap spec
     def descr_get(self, w_name):
         """ Python is asking for an attribute of a proxied PHP object """
@@ -100,6 +105,11 @@ class W_EmbeddedPHPFunc(W_Root):
 
     def get_php_interp(self):
         return self.space.get_php_interp()
+
+    def is_w(self, space, other):
+        if isinstance(other, W_EmbeddedPHPFunc):
+            return self.wph_inst is other.wph_func
+        return False
 
     @property
     def name(self):

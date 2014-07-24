@@ -242,7 +242,6 @@ class TestPyPyBridge(BaseTestInterpreter):
         output = self.run('''
         $src = <<<EOD
         def iof(a):
-            print C
             return str(isinstance(a, C))
         EOD;
 
@@ -255,6 +254,70 @@ class TestPyPyBridge(BaseTestInterpreter):
         echo(iof($x) . " " . iof($y));
         ''')
         assert phspace.str_w(output[0]) == "True False"
+
+    def test_phbridgeproxy_id1(self):
+        phspace = self.space
+        output = self.run('''
+        $src = <<<EOD
+        def is_chk(x, y):
+            return str(id(x) == id(y))
+        EOD;
+        embed_py_func($src);
+
+        class C {}
+        $x = new C;
+        $y = new c;
+        echo(is_chk($x, $y) . " " . is_chk($x, $x));
+        ''')
+        assert phspace.str_w(output[0]) == "False True"
+
+    def test_phbridgeproxy_id2(self):
+        phspace = self.space
+        output = self.run('''
+        function f() {}
+        function g() {}
+
+        $src = <<<EOD
+        def is_chk():
+            return "%s %s" % (str(id(f) == id(g)), str(id(f) == id(f)))
+        EOD;
+        embed_py_func($src);
+
+        echo(is_chk());
+        ''')
+        assert phspace.str_w(output[0]) == "False True"
+
+    def test_phbridgeproxy_is1(self):
+        phspace = self.space
+        output = self.run('''
+        $src = <<<EOD
+        def is_chk(x, y):
+            return str(x is y)
+        EOD;
+        embed_py_func($src);
+
+        class C {}
+        $x = new C;
+        $y = new c;
+        echo(is_chk($x, $y) . " " . is_chk($x, $x));
+        ''')
+        assert phspace.str_w(output[0]) == "False True"
+
+    def test_phbridgeproxy_is2(self):
+        phspace = self.space
+        output = self.run('''
+        function f() {}
+        function g() {}
+
+        $src = <<<EOD
+        def is_chk():
+            return "%s %s" % (str(f is g), str(f is f))
+        EOD;
+        embed_py_func($src);
+
+        echo(is_chk());
+        ''')
+        assert phspace.str_w(output[0]) == "False True"
 
     def test_pystone(self):
         pytest.skip("need to enable time module in pypy")
