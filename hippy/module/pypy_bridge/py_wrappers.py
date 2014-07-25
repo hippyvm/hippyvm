@@ -108,7 +108,7 @@ class W_EmbeddedPHPFunc(W_Root):
 
     def is_w(self, space, other):
         if isinstance(other, W_EmbeddedPHPFunc):
-            return self.wph_inst is other.wph_func
+            return self.wph_func is other.wph_func
         return False
 
     @property
