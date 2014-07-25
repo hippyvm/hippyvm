@@ -46,8 +46,6 @@ class W_PHPProxyGeneric(W_Root):
         py_space = interp.pyspace
 
         name = py_space.str_w(w_name)
-
-        interp = self.interp
         wph_inst = self.wph_inst
         wph_class = php_space.getclass(wph_inst)
         wph_target = wph_inst.getattr(interp, name, wph_class)
@@ -67,17 +65,15 @@ class W_PHPProxyGeneric(W_Root):
 
     # XXX unwrap spec
     def descr_set(self, w_name, w_obj):
+        interp = self.interp
         php_space = self.interp.space
         py_space = self.interp.pyspace
 
         name = py_space.str_w(w_name)
-
-        interp = self.interp
         wph_inst = self.wph_inst
-        wph_class = php_space.getclass(wph_inst)
-        wph_target = wph_inst.setattr(interp, name, py_to_php(interp, w_obj), wph_class)
+        self.wph_inst.setattr(interp, name, py_to_php(interp, w_obj), None)
 
-        return php_space.w_Null
+        return py_space.w_None
 
     @jit.unroll_safe
     def descr_call(self, __args__):
