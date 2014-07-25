@@ -231,3 +231,43 @@ echo(f());
         $x = new C;
         echo(ref()->m()); ''')
         assert phspace.str_w(output[0]) == "c.m"
+
+    def test_python_lookup_php_attr(self):
+        phspace = self.space
+        output = self.run("""
+            $src = <<<EOD
+            def ref():
+                return C(2).x
+            EOD;
+            embed_py_func($src);
+
+            class C {
+                public $x;
+                function __construct($x) {
+                    $this->x = $x;
+                }
+            }
+            echo(ref());
+        """)
+        assert phspace.int_w(output[0]) == 2
+
+    def test_python_set_php_attr(self):
+        phspace = self.space
+        output = self.run("""
+            $src = <<<EOD
+            def ref(c):
+                c.x = 3
+            EOD;
+            embed_py_func($src);
+
+            class C {
+                public $x;
+                function __construct($x) {
+                    $this->x = $x;
+                }
+            }
+            $c = new C(2);
+            ref($c);
+            echo($c->x);
+        """)
+        assert phspace.int_w(output[0]) == 3

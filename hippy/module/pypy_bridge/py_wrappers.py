@@ -41,16 +41,18 @@ class W_PHPProxyGeneric(W_Root):
     # XXX unwrap spec
     def descr_get(self, w_name):
         """ Python is asking for an attribute of a proxied PHP object """
-        phspace, pyspace = self.interp.space, self.interp.pyspace
+        interp = self.interp
+        php_space = interp.space
+        py_space = interp.pyspace
 
-        name = pyspace.str_w(w_name)
+        name = py_space.str_w(w_name)
 
         interp = self.interp
         wph_inst = self.wph_inst
-        wph_class = phspace.getclass(wph_inst)
+        wph_class = php_space.getclass(wph_inst)
         wph_target = wph_inst.getattr(interp, name, wph_class)
 
-        if wph_target is phspace.w_Null:
+        if wph_target is php_space.w_Null:
             # If we didn't find the thing we are looking for, there is a good
             # chance that it is a method of a class. Presumably since methods
             # are not 1st class in PHP, you can't access them via getattr.
@@ -62,6 +64,20 @@ class W_PHPProxyGeneric(W_Root):
             wph_target = wph_meth.bind(wph_inst, wph_class)
 
         return php_to_py(interp, wph_target)
+
+    # XXX unwrap spec
+    def descr_set(self, w_name, w_obj):
+        php_space = self.interp.space
+        py_space = self.interp.pyspace
+
+        name = py_space.str_w(w_name)
+
+        interp = self.interp
+        wph_inst = self.wph_inst
+        wph_class = php_space.getclass(wph_inst)
+        wph_target = wph_inst.setattr(interp, name, py_to_php(interp, w_obj), wph_class)
+
+        return php_space.w_Null
 
     @jit.unroll_safe
     def descr_call(self, __args__):
@@ -86,6 +102,7 @@ class W_PHPProxyGeneric(W_Root):
 W_PHPProxyGeneric.typedef = TypeDef("PhBridgeProxy",
     __call__ = interp2app(W_PHPProxyGeneric.descr_call),
     __getattr__ = interp2app(W_PHPProxyGeneric.descr_get),
+    __setattr__ = interp2app(W_PHPProxyGeneric.descr_set),
     __eq__ = interp2app(W_PHPProxyGeneric.descr_eq),
     __ne__ = interp2app(W_PHPProxyGeneric.descr_ne),
 )
