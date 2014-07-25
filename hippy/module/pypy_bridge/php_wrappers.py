@@ -132,7 +132,7 @@ class W_EmbeddedPyMod(WPh_Object):
     def getmeth(self, space, name, contextclass=None):
         return self._getattr(self.interp, space, name)
 
-    def getattr(self, interp, name, contextclass=None, give_notice=False):
+    def getattr(self, interp, name, contextclass=None, give_notice=False, fail_with_none=False):
         return self._getattr(interp, interp.space, name)
 
 

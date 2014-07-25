@@ -152,7 +152,7 @@ class W_Object(W_Root):
     def bitwise_not(self, space):
         raise space.ec.fatal("Unsupported operand types")
 
-    def getattr(self, interp, name, contextclass=None, give_notice=False):
+    def getattr(self, interp, name, contextclass=None, give_notice=False, fail_with_none=False):
         if give_notice:
             interp.notice('Trying to get property of non-object')
         return interp.space.w_Null
