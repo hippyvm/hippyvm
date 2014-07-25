@@ -104,7 +104,6 @@ echo function_exists("g");
         ''')
         assert not phspace.is_true(output[0])
 
-    # --
     def test_php_looks_into_lexical_scope(self):
         phspace = self.space
         output = self.run('''
@@ -123,6 +122,19 @@ echo $g(7);
 
         ''')
         assert phspace.int_w(output[0]) == 8
+
+    def test_lookup_php_constant(self):
+        phspace = self.space
+        output = self.run('''
+            define("x", 3);
+            $pysrc = <<<EOD
+            def f():
+                return x
+            EOD;
+            embed_py_func($pysrc);
+            echo(f());
+        ''')
+        assert phspace.int_w(output[0]) == 3
 
     # XXX test for looking up PHP function from python code
     # XXX test lookup up Python outer-outer scopes from PHP

@@ -22,6 +22,13 @@ class PHP_Scope(Wpy_Root):
         if ph_v is not None:
             return php_to_py(ph_interp, ph_v)
 
+        try:
+            ph_v = ph_interp.lookup_constant(n)
+        except KeyError:
+            pass
+        else:
+            return php_to_py(ph_interp, ph_v)
+
         # Search for PHP function of that name
         try:
             ph_v = self.ph_interp.lookup_function(n)
