@@ -47,17 +47,16 @@ class W_PHPProxyGeneric(W_Root):
 
         name = py_space.str_w(w_name)
         wph_inst = self.wph_inst
-        wph_class = php_space.getclass(wph_inst)
-        wph_target = wph_inst.getattr(interp, name, wph_class)
+        wph_target = wph_inst.getattr(interp, name, None, fail_with_none=True)
 
-        if wph_target is php_space.w_Null:
-            # If we didn't find the thing we are looking for, there is a good
-            # chance that it is a method of a class. Presumably since methods
-            # are not 1st class in PHP, you can't access them via getattr.
-            # We instead go poking around inside the class.
+        if wph_target is None:
+            # If the attribute wasn't found in wph_inst, it may be a function,
+            # which needs to be searched for separately.
+            wph_class = php_space.getclass(wph_inst)
             try:
                 wph_meth = wph_class.methods[name]
             except KeyError:
+                print "can't lookup", name
                 assert False # XXX raise exception
             wph_target = wph_meth.bind(wph_inst, wph_class)
 

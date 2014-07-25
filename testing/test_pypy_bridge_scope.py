@@ -251,6 +251,21 @@ echo(f());
         """)
         assert phspace.int_w(output[0]) == 2
 
+    def test_python_lookup_missing_php_attr(self):
+        pytest.skip("BROKEN")
+        phspace = self.space
+        output = self.run("""
+            $src = <<<EOD
+            def ref():
+                return C().x
+            EOD;
+            embed_py_func($src);
+
+            class C {}
+            ref();
+        """)
+        assert phspace.int_w(output[0]) == 2
+
     def test_python_set_php_attr(self):
         phspace = self.space
         output = self.run("""

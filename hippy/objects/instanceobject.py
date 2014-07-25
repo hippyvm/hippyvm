@@ -232,7 +232,8 @@ class W_InstanceObject(W_Object):
         mapattr = self.add_attribute(name)
         self.storage_w[mapattr.index] = w_value
 
-    def _getattr(self, interp, attr, contextclass, isref, give_notice=False):
+    def _getattr(self, interp, attr, contextclass, isref, give_notice=False,
+                 fail_with_none=False):
         cls = self.getclass()
         try:
             name = cls.lookup_property_name(LOOKUP_GETATTR, interp, self, attr,
@@ -260,12 +261,15 @@ class W_InstanceObject(W_Object):
             r_value = interp.space.empty_ref()
             self._create_attr(name, r_value)
             return r_value
-        else:
-            return interp.space.w_Null
+        if fail_with_none:
+            return None
+        return interp.space.w_Null
 
-    def getattr(self, interp, name, contextclass=None, give_notice=False):
-        return self._getattr(interp, name, contextclass,
-                             isref=False, give_notice=give_notice)
+    def getattr(self, interp, name, contextclass=None, give_notice=False,
+                fail_with_none=False):
+        return self._getattr(interp, name, contextclass, isref=False,
+                             give_notice=give_notice,
+                             fail_with_none=fail_with_none)
 
     def getattr_ref(self, interp, attr, contextclass):
         return self._getattr(interp, attr, contextclass,
