@@ -56,11 +56,16 @@ class ByteCode(object):
         self.py_scope = None
 
     def getline(self, no):
-        return self.sourcelines[no - 1]
+        try:
+            return self.sourcelines[no - 1]
+        except IndexError:
+            ## XXX find out why!!!!
+            return 'ERROR'
 
     @jit.elidable
     def lookup_pos(self, v):
         return self.names_to_pos[v]
+
     # XXX rename one or both of these two different functions!
     @jit.elidable
     def _lookup_pos(self, v):

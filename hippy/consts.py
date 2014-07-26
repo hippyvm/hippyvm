@@ -105,6 +105,7 @@ BYTECODES = [
     ('NEXT_VALUE_ITER', 1, +1),
     ('NEXT_ITEM_ITER', 1, +2),
     ('DECLARE_GLOBAL', 1, 0),
+    ('DECLARE_GLOBAL_INDIRECT', 0, -1),
     ('DECLARE_FUNC', 1, 0),
     ('DECLARE_CLASS', 1, 0),
     ('LOAD_CLOSURE', 1, +1),

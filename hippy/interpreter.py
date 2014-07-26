@@ -65,7 +65,7 @@ import hippy.module.spl
 import hippy.module.ctype
 import hippy.module.general.funcs
 import hippy.module.reflections
-
+import hippy.module.mail
 import hippy.localemodule
 import hippy.builtin_klass
 import hippy.buffering
@@ -1533,6 +1533,13 @@ class Interpreter(object):
         name = bytecode.varnames[arg]
         w_ref = self.globals.get_var(space, name)
         frame.store_ref(arg, w_ref)
+        return pc
+
+    def DECLARE_GLOBAL_INDIRECT(self, bytecode, frame, space, arg, pc):
+        w_name = frame.pop()
+        name = space.str_w(w_name)
+        r_global = self.globals.get_var(space, name)
+        frame.set_ref_by_name(name, r_global)
         return pc
 
     def declare_func(self, func):

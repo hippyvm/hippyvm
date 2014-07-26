@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 """ Hippy VM. Execute by typing
 
-hippy [--gcdump dumpfile] [--cgi] <file.php> [php program options]
+hippy [--gcdump dumpfile] [--cgi] [--server port] <file.php> [php program options]
 
 and enjoy
 """
