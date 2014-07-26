@@ -61,6 +61,7 @@ def generic__get(interp, this, name):
 
 @wrap_method(['interp', ThisUnwrapper(W_PyProxyGeneric), str, Wph_Root],
         name='GenericPyProxy::__call')
+@jit.unroll_safe
 def generic__call(interp, this, func_name, wph_args):
     from hippy.interpreter import Interpreter
     assert isinstance(interp, Interpreter)

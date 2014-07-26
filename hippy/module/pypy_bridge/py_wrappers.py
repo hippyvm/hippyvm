@@ -127,6 +127,7 @@ class W_EmbeddedPHPFunc(W_Root):
     def name(self):
         return self.wph_func.name
 
+    @jit.unroll_safe
     def descr_call(self, __args__):
         (args, kwargs) = __args__.unpack()
 
