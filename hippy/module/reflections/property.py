@@ -25,8 +25,17 @@ def construct(interp, this, class_name, property_name):
     this.class_name = class_name
     this.name = property_name
     this.ref_klass = klass
+    this.flags = 0
     try:
         this.ref_prop = klass.properties[property_name]
+        if this.ref_prop.is_static():
+            this.flags |= IS_STATIC
+        if this.ref_prop.is_public():
+            this.flags |= IS_PUBLIC
+        elif this.ref_prop.is_private():
+            this.flags |= IS_PRIVATE
+        elif this.ref_prop.is_protected():
+            this.flags |= IS_PROTECTED
     except KeyError:
         msg = "Property %s does not exist" % property_name
         raise PHPException(interp._class_get('ReflectionException').call_args(
@@ -66,7 +75,8 @@ def get_value(interp, this, w_obj=None):
 def set_value(interp, this, w_arg_1, w_arg_2=None):
 
     if not this.ref_prop.is_public():
-        msg = "Cannot access non-public member %s::%s" % (this.class_name, this.name)
+        msg = "Cannot access non-public member %s::%s" % (this.class_name,
+                                                          this.name)
         raise PHPException(interp._class_get('ReflectionException').call_args(
             interp, [interp.space.wrap(msg)]
         ))
@@ -102,7 +112,6 @@ def is_protected(interp, this):
              name='ReflectionProperty::isStatic')
 def is_static(interp, this):
     return interp.space.newbool(this.ref_prop.is_static())
-
 
 
 def _get_class(interp, this):

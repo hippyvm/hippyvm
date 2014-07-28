@@ -7,7 +7,10 @@ from hippy.objects.intobject import W_IntObject
 from hippy.builtin_klass import GetterSetterWrapper
 from hippy.objects.instanceobject import W_InstanceObject
 from hippy.objects.strobject import W_ConstStringObject
-from hippy.builtin import wrap_method, ThisUnwrapper
+from hippy.builtin import wrap_method, ThisUnwrapper, Optional
+from hippy.module.reflections.property import (IS_PUBLIC, IS_PROTECTED,
+                                               IS_PRIVATE, IS_STATIC,
+                                               W_ReflectionPropertyObject)
 
 
 IS_IMPLICIT_ABSTRACT = 16
@@ -58,6 +61,12 @@ def reflection_class_new_instance(interp, this, args_w):
 def reflection_class_new_instance_args(interp, this, w_arr):
     args_w = interp.space.as_array(w_arr).as_list_w()
     return this.get_refl_klass(interp).call_args(interp, args_w)
+
+
+@wrap_method(['interp', ThisUnwrapper(W_ReflectionObject), str],
+             name='ReflectionClass::hasConstant')
+def reflection_class_has_constant(interp, this, name):
+    return interp.space.wrap(name.lower() in this.refl_klass.constants_w.keys())
 
 
 @wrap_method(['interp', ThisUnwrapper(W_ReflectionObject), str],
@@ -206,9 +215,47 @@ def reflection_class_get_file_name(interp, this):
 
 
 @wrap_method(['interp', ThisUnwrapper(W_ReflectionObject)],
-             name='ReflectionClass::getproperties')
-def reflection_class_get_properties(interp, this):
-    raise NotImplementedError
+             name='ReflectionClass::getStaticProperties')
+def reflection_class_get_static_properties(interp, this):
+    static_property_values = []
+    for k, v in this.refl_klass.properties.items():
+        if v.is_static():
+            static_property_values.append(v.value)
+    return interp.space.new_array_from_list(static_property_values)
+
+
+@wrap_method(['interp', ThisUnwrapper(W_ReflectionObject), Optional(int)],
+             name='ReflectionClass::getProperties')
+def reflection_class_get_properties(interp, this, flags=0):
+    reflection_property_klass = interp._class_get('ReflectionProperty')
+    properties = []
+    for name in this.refl_klass.properties.keys():
+        reflection_prop = reflection_property_klass.call_args(
+            interp, [interp.space.wrap(this.refl_klass.name),
+                     interp.space.wrap(name)])
+        assert isinstance(reflection_prop, W_ReflectionPropertyObject)
+        prop_flags = reflection_prop.flags
+        if flags == 0:
+            properties.append(reflection_prop)
+
+        elif flags & prop_flags:
+            properties.append(reflection_prop)
+
+    return interp.space.new_array_from_list(properties)
+
+
+@wrap_method(['interp', ThisUnwrapper(W_ReflectionObject), str],
+             name='ReflectionClass::hasProperty')
+def reflection_class_has_property(interp, this, name):
+    return interp.space.wrap(name.lower() in this.refl_klass.properties)
+
+
+@wrap_method(['interp', ThisUnwrapper(W_ReflectionObject), str],
+             name='ReflectionClass::getProperty')
+def reflection_class_get_property(interp, this, name):
+    return interp._class_get('ReflectionProperty').call_args(
+        interp, [interp.space.wrap(this.refl_klass.name),
+                 interp.space.wrap(name)])
 
 
 @wrap_method(['interp', ThisUnwrapper(W_ReflectionObject), str],
@@ -262,6 +309,7 @@ def_class(
     [reflection_class_construct,
      reflection_class_new_instance,
      reflection_class_new_instance_args,
+     reflection_class_has_constant,
      reflection_class_get_constant,
      reflection_class_get_constants,
      reflection_class_get_constructor,
@@ -279,7 +327,10 @@ def_class(
      reflection_class_get_extension,
      reflection_class_get_extension_name,
      reflection_class_get_namespace_name,
+     reflection_class_get_static_properties,
      reflection_class_get_properties,
+     reflection_class_get_property,
+     reflection_class_has_property,
      reflection_class_is_subclass_of,
      reflection_class_is_instantiable,
      reflection_class_has_method,
