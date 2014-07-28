@@ -108,7 +108,7 @@ After having HippyVM tests up and running you can
 try running PHP's tests against the HippyVM implementation. 
 
 ```bash
- PYTHONPATH=$PYTHONPATH:../pypy py.test test_phpt/
+PYTHONPATH=$PYTHONPATH:/path-to-pypy py.test test_phpt/
 ```
 
 Those tests are moved over the [PHP implementation](https://github.com/php/php-src)
