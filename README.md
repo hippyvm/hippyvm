@@ -15,38 +15,34 @@ The build process was tested for **Ubutnu 14.04**. Please create an issue/submit
 
 #### 1. Clone this repo ;)
 
-        git clone https://github.com/hippyvm/hippyvm
+    git clone https://github.com/hippyvm/hippyvm
 
 #### 2. Get the full checkout of RPython repository. 
 
 The two alternatives ways to achieve this, both equally functionall:
    - [a snapshot](https://bitbucket.org/pypy/pypy/get/default.tar.gz) of PyPy is the easiest way to get a large repository.
 
-        ```bash
         wget https://bitbucket.org/pypy/pypy/get/default.tar.gz 
-        mkdir pypy
+        mkdir pypy 
         tar xfv default.tar.gz -C pypy --strip-components 1
-        ```
+
    
    - [a full checkout](http://bitbucket.org/pypy/pypy) of the RPython repository translation toolchain (currently inside the PyPy repository). It will download whole PyPy commit history 
 
-        ```bash
         hg clone http://bitbucket.org/pypy/pypy
-        ```
+
  
 #### 3. Get the build dependencies:
 
-    ```bash
-    pip install -r requirements.txt
-    sudo apt-get install libmysqlclient-dev libpcre3-dev librhash-dev libbz2-dev php5-cli
-    ```
+        pip install -r requirements.txt
+        sudo apt-get install libmysqlclient-dev libpcre3-dev librhash-dev libbz2-dev php5-cli
+
 
 #### 4. The building process goes like this:
 
-    ```bash
-    cd hippyvm
-    <path to pypy>/rpython/bin/rpython -Ojit targethippy.py
-    ```
+        cd hippyvm
+        <path to pypy>/rpython/bin/rpython -Ojit targethippy.py
+    
 
 This will create a hippy-c binary that works mostly like a php-cli without
 readling support.
