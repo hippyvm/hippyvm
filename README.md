@@ -10,16 +10,16 @@ ARMv6 and ARMv7 on windows, os x and linux).
 
 ## Building
 
-The build process was tested for **Ubutnu 14.04**. Please create an issue/submit pull request if things are not working as expected.
+The build process was tested for **Ubuntu 14.04**. Please create an issue/submit pull request if things are not working as expected.
 
 
 #### 1. Clone this repo ;)
 
     git clone https://github.com/hippyvm/hippyvm
 
-#### 2. Get the full checkout of RPython repository. 
+#### 2. Get a full source checkout of RPython: 
 
-The two alternatives ways to achieve this, both equally functionall:
+There are two alternative ways to achieve this, both equally functional:
    - [a snapshot](https://bitbucket.org/pypy/pypy/get/default.tar.gz) of PyPy is the easiest way to get a large repository.
 
         wget https://bitbucket.org/pypy/pypy/get/default.tar.gz 
@@ -27,7 +27,7 @@ The two alternatives ways to achieve this, both equally functionall:
         tar xfv default.tar.gz -C pypy --strip-components 1
 
    
-   - [a full checkout](http://bitbucket.org/pypy/pypy) of the RPython repository translation toolchain (currently inside the PyPy repository). It will download whole PyPy commit history 
+   - [a full checkout](http://bitbucket.org/pypy/pypy) of the RPython repository translation toolchain (currently inside the PyPy repository). It will download the whole commit history of PyPy.
 
         hg clone http://bitbucket.org/pypy/pypy
 
@@ -45,7 +45,7 @@ The two alternatives ways to achieve this, both equally functionall:
     
 
 This will create a hippy-c binary that works mostly like a php-cli without
-readling support.
+readline support.
 
 
 
@@ -58,9 +58,9 @@ sub-directory.
 
 ## Contribution
 
-As many opensource projects, HippyVM is looking for contributors.
+Like many open-source projects, HippyVM is looking for contributors.
 
-HippyVM has a really low barrier of entry, differently than other VM's is not using nigher C nor C++, it uses RPython, which syntax is a subset of Python language. It's really easy to write and read. Check out our implementation of [strstr](http://php.net/manual/pl/function.strstr.php)
+In contrast with most language implementations that use C or C++, HippyVM has a low barrier of entry since it uses RPython, a subset of the Python language. It's really easy to write and read. Check out our implementation of [strstr](http://php.net/manual/pl/function.strstr.php)
 
 ```python
 @wrap(['space', str, W_Root, Optional(bool)], aliases=['strchr'])
@@ -85,7 +85,7 @@ def strstr(space, haystack, w_needle, before_needle=False):
 
 Doesn't look that scary, right?
 
-The idea why HippyVM is using RPython goes beyond this README, though if you being interested, please have read more [here](http://pypy.readthedocs.org/en/latest/getting-started-dev.html)
+The reasons why HippyVM uses RPython go beyond this README. If you are interested, you can read more [here](http://pypy.readthedocs.org/en/latest/getting-started-dev.html)
 
 
 ### HippyVM's tests 
@@ -96,9 +96,9 @@ If the project is up and running, which means the building section from this REA
 PYTHONPATH=$PYTHONPATH:/path-to-pypy py.test testing
 ```
 
-This will execute all tests that were written for HippyVM explicitly,
-those test are written in Python as well.
-The example test for the `strstr` [here](https://github.com/hippyvm/hippyvm/blob/master/testing/test_string_funcs.py#L696).
+This will execute all the tests that were explicitly written for HippyVM,
+these tests are written in Python as well.
+The example test for the `strstr` is [here](https://github.com/hippyvm/hippyvm/blob/master/testing/test_string_funcs.py#L696).
 
 ### PHP's tests 
 
@@ -109,12 +109,12 @@ try running PHP's tests against the HippyVM implementation.
 PYTHONPATH=$PYTHONPATH:/path-to-pypy py.test test_phpt/
 ```
 
-Those tests are moved over the [PHP implementation](https://github.com/php/php-src)
+Those tests are exact copies from the [reference PHP implementation](https://github.com/php/php-src)
 
 
 ### What now?
 
-If you find something missing, being broken, poorly implemented:
+If you find something missing, broken, or poorly implemented:
  - please create an issue, or better,
  - create a pull request and update the AUTHORS file.
 
