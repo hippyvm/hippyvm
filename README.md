@@ -62,7 +62,7 @@ sub-directory.
 
 As many opensource projects, HippyVM is looking for contributors.
 
-HippyVM has a really low barrier of entry, differently than other VM's is not using nigher C nor C++, it uses RPython, which syntax is subset of Python language. It's really easy to write and read. Check out our implementation of [strstr](http://php.net/manual/pl/function.strstr.php)
+HippyVM has a really low barrier of entry, differently than other VM's is not using nigher C nor C++, it uses RPython, which syntax is a subset of Python language. It's really easy to write and read. Check out our implementation of [strstr](http://php.net/manual/pl/function.strstr.php)
 
 ```python
 @wrap(['space', str, W_Root, Optional(bool)], aliases=['strchr'])
