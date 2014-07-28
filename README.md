@@ -34,14 +34,14 @@ The two alternatives ways to achieve this, both equally functionall:
  
 #### 3. Get the build dependencies:
 
-        pip install -r requirements.txt
-        sudo apt-get install libmysqlclient-dev libpcre3-dev librhash-dev libbz2-dev php5-cli
+    pip install -r requirements.txt
+    sudo apt-get install libmysqlclient-dev libpcre3-dev librhash-dev libbz2-dev php5-cli
 
 
 #### 4. The building process goes like this:
 
-        cd hippyvm
-        <path to pypy>/rpython/bin/rpython -Ojit targethippy.py
+    cd hippyvm
+    <path to pypy>/rpython/bin/rpython -Ojit targethippy.py
     
 
 This will create a hippy-c binary that works mostly like a php-cli without
