@@ -608,7 +608,7 @@ def unbiased_rand(mn, mx):
 
 def rand_range(a, b):
     # php way a + n(b-a+1)/(M+1)
-    n = intmask(_random.genrand32())
+    n = intmask(_random.genrand32()) >> 1
     M = RANDMAX
     return int(a + n * (b - a + 1) / (M + 1))
 
@@ -619,10 +619,10 @@ def rand(space, num_args, x=0, y=RANDMAX):
     """ rand - Generate a random integer"""
     if num_args == 1 or num_args >= 3:
         space.ec.warn("rand() expects exactly 2 parameters, %d given"
-                % num_args)
+                      % num_args)
         return space.w_Null
-    # return space.wrap(int(rand_range(x, y)))
-    return space.wrap(int(unbiased_rand(x, y)))
+    return space.wrap(int(rand_range(x, y)))
+    #return space.wrap(int(unbiased_rand(x, y)))
 
 NDIGITS_MAX = int((rfloat.DBL_MANT_DIG - rfloat.DBL_MIN_EXP) * 0.30103)
 NDIGITS_MIN = -int((rfloat.DBL_MAX_EXP + 1) * 0.30103)
