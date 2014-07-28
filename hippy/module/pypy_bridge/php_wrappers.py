@@ -22,15 +22,13 @@ class W_PyProxyGeneric(W_InstanceObject):
     """Generic proxy for wrapping Python objects in Hippy when no more specific
     proxy is available."""
 
-    _immutable_fields_ = ["interp?", "wpy_inst?"]
+    _immutable_fields_ = ["interp", "wpy_inst"]
 
-    def __init__(self, klass, dct_w):
-        self.interp = None # set later
-        self.wpy_inst = None # set later as we can't change the sig of __init__
-        W_InstanceObject.__init__(self, klass, dct_w)
+    def setup_instance(self, interp, wpy_inst):
+        self.interp = interp
+        self.wpy_inst = wpy_inst
 
     def get_wrapped_py_obj(self):
-        assert self.wpy_inst is not None
         return self.wpy_inst
 
     # Use this as a low level ctor instead of the above.
@@ -39,10 +37,6 @@ class W_PyProxyGeneric(W_InstanceObject):
         wph_pxy = cls(interp, [])
         wph_pxy.set_instance(wpy_inst)
         return wph_pxy
-
-    def setup_instance(self, interp, wpy_inst):
-        self.interp = interp
-        self.wpy_inst = wpy_inst
 
     def get_callable(self):
         """ PHP interpreter calls this when calls a wrapped Python var  """
