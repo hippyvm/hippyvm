@@ -13,11 +13,13 @@ ARMv6 and ARMv7 on windows, os x and linux).
 The build process was tested for **Ubutnu 14.04**. Please create an issue/submit pull request if things are not working as expected.
 
 
-1. Clone this repo ;)
+#### 1. Clone this repo ;)
 
         git clone https://github.com/hippyvm/hippyvm
 
-2. Get the full checkout of RPython repository. The two alternatives ways to achieve this, both equally functionall:
+#### 2. Get the full checkout of RPython repository. 
+
+The two alternatives ways to achieve this, both equally functionall:
    - [a snapshot](https://bitbucket.org/pypy/pypy/get/default.tar.gz) of PyPy is the easiest way to get a large repository.
 
         ```bash
@@ -32,14 +34,14 @@ The build process was tested for **Ubutnu 14.04**. Please create an issue/submit
         hg clone http://bitbucket.org/pypy/pypy
         ```
  
-3. The build dependencies:
+#### 3. Get the build dependencies:
 
     ```bash
     pip install -r requirements.txt
     sudo apt-get install libmysqlclient-dev libpcre3-dev librhash-dev libbz2-dev php5-cli
     ```
 
-3. The building process goes like this (in HippyVm main directory):
+#### 4. The building process goes like this:
 
     ```bash
     cd hippyvm
