@@ -366,6 +366,9 @@ class Interpreter(object):
             self.session.write_close(self)
         for i, func in enumerate(self.shutdown_functions):
             func.call_args(self, self.shutdown_arguments[i])
+        for _,  mysql_link in self.mysql_links.items():
+            if not mysql_link.persistent:
+                mysql_link.close()
 
     def initialize_server_variable(self, space):
         if self.web_config is None:
