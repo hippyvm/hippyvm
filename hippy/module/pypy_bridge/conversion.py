@@ -1,7 +1,9 @@
+from rpython.rlib.objectmodel import we_are_translated
+
 from hippy.objects.instanceobject import W_InstanceObject as Wph_InstanceObject
 from hippy.klass import def_class
 from hippy.builtin import wrap, Optional, wrap_method, ThisUnwrapper
-from hippy.objects.base import W_Object as WPHP_Object
+from hippy.function import AbstractFunction
 from hippy.objects.arrayobject import W_ListArrayObject as WPHP_ListArrayObject
 from hippy.objects.arrayobject import W_RDictArrayObject as WPHP_RDictArrayObject
 
@@ -16,26 +18,24 @@ from pypy.interpreter.module import Module as py_Module
 
 def php_to_py(interp, wph_any):
     from hippy.module.pypy_bridge import php_wrappers, py_wrappers
+    from hippy import objspace
 
     phspace = interp.space
 
+    wph_any = wph_any.deref()
     if isinstance(wph_any, php_wrappers.W_PyProxyGeneric):
         return wph_any.wpy_inst
-    elif not isinstance(wph_any, WPHP_Object):
-        return py_wrappers.W_PHPProxyGeneric(interp, wph_any)
-
-    wph_tp = wph_any.deref().tp
-    if wph_tp == phspace.tp_null:
+    elif isinstance(wph_any, objspace.W_NullObject):
         return interp.pyspace.w_None
-    elif wph_tp == phspace.tp_bool:
+    elif isinstance(wph_any, objspace.W_BoolObject):
         return interp.pyspace.wrap(interp.space.is_true(wph_any))
-    elif wph_tp == phspace.tp_float:
+    elif isinstance(wph_any, objspace.W_FloatObject):
         return interp.pyspace.newfloat(interp.space.float_w(wph_any))
-    elif wph_tp == phspace.tp_int:
+    elif isinstance(wph_any, objspace.W_IntObject):
         return interp.pyspace.newint(interp.space.int_w(wph_any))
-    elif wph_tp == phspace.tp_str:
+    elif isinstance(wph_any, objspace.W_StringObject):
         return interp.pyspace.wrap(interp.space.str_w(wph_any))
-    elif wph_tp == phspace.tp_array:
+    elif isinstance(wph_any, objspace.W_ArrayObject):
         # We use a special PyPy list/dict strategy to wrap a PHP array.
         if isinstance(wph_any, WPHP_ListArrayObject):
             from hippy.module.pypy_bridge.py_wrappers import (
