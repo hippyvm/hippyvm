@@ -228,7 +228,6 @@ echo(f());
         class C {
             function m() { return "c.m"; }
         }
-        $x = new C;
         echo(ref()->m()); ''')
         assert phspace.str_w(output[0]) == "c.m"
 
