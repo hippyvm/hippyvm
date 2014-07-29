@@ -59,7 +59,7 @@ class W_PHPProxyGeneric(W_Root):
             # which needs to be searched for separately.
             wph_class = php_space.getclass(wph_inst)
             try:
-                wph_meth = wph_class.methods[name]
+                wph_meth = wph_class.methods[name.lower()]
             except KeyError:
                 print "can't lookup", name
                 assert False # XXX raise exception

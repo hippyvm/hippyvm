@@ -215,6 +215,38 @@ embed_py_func($pysrc);
 echo(f());
         ''')
 
+    def test_python_calling_php_func(self):
+        phspace = self.space
+        output = self.run('''
+        function f() {
+            return "f";
+        }
+
+        $src = <<<EOD
+        def test():
+            return f()
+        EOD;
+        embed_py_func($src);
+
+        echo(test()); ''')
+        assert phspace.str_w(output[0]) == "f"
+
+    def test_python_calling_php_func_case_insensitive(self):
+        phspace = self.space
+        output = self.run('''
+        function F() {
+            return "F";
+        }
+
+        $src = <<<EOD
+        def test():
+            return "%s %s" % (f(), F())
+        EOD;
+        embed_py_func($src);
+
+        echo(test()); ''')
+        assert phspace.str_w(output[0]) == "F F"
+
     def test_python_ref_php_class(self):
         phspace = self.space
         output = self.run('''
@@ -285,6 +317,38 @@ echo(f());
             echo($c->x);
         """)
         assert phspace.int_w(output[0]) == 3
+
+    def test_python_call_php_method(self):
+        phspace = self.space
+        output = self.run("""
+            $src = <<<EOD
+            def ref():
+                return C().m()
+            EOD;
+            embed_py_func($src);
+
+            class C {
+                function m() { return "c.m"; }
+            }
+            echo(ref());
+        """)
+        assert phspace.str_w(output[0]) == "c.m"
+
+    def test_python_call_php_method_case_insensitive(self):
+        phspace = self.space
+        output = self.run("""
+            $src = <<<EOD
+            def ref():
+                return C().M()
+            EOD;
+            embed_py_func($src);
+
+            class C {
+                function M() { return "c.m"; }
+            }
+            echo(ref());
+        """)
+        assert phspace.str_w(output[0]) == "c.m"
 
     #
     # PHP importing Python
