@@ -63,6 +63,7 @@ class W_DirResource(W_Resource):
     def close(self):
         self.space.ec.interpreter.unregister_fd(self)
         self.state = CLOSED
+        return True
 
     def is_valid(self):
         return self.state == OPEN
