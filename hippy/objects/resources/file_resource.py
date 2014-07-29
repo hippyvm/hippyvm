@@ -58,11 +58,13 @@ class W_FileResource(W_Resource):
             self.resource = open(self.filename, self.mode)
             self.resource.seek(0, 0)
         self.state = OPEN
+        self.space.ec.interpreter.register_fd(self)
 
     def close(self):
         try:
             self.resource.close()
             self.state = CLOSE
+            self.space.ec.interpreter.unregister_fd(self)
             return True
         except IOError:
             return False

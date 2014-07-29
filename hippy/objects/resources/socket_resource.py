@@ -61,6 +61,7 @@ class W_SocketResource(W_FileResource):
         try:
             self.socket.connect(self.addr)
             self.state = OPEN
+            self.space.ec.interpreter.register_fd(self)
         except (SocketTimeout, CSocketError), e:
             self.errno = e.errno
             self.errstr = e.get_msg()
@@ -80,6 +81,7 @@ class W_SocketResource(W_FileResource):
         try:
             self.socket.close()
             self.state = CLOSE
+            self.space.ec.interpreter.unregister_fd(self)
             return True
         except IOError:
             return False
