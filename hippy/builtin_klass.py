@@ -137,8 +137,12 @@ k_DomainException = def_class('DomainException', [], extends=k_Exception, instan
 k_UnexpectedValueException = def_class('UnexpectedValueException', [],
         extends=k_Exception, instance_class=W_ExceptionObject)
 
-
-
+k_InvalidArgumentException = def_class(
+    'InvalidArgumentException',
+    [],
+    extends=k_LogicException,
+    instance_class=W_ExceptionObject
+)
 
 
 def new_abstract_method(args, **kwds):
@@ -151,6 +155,12 @@ def new_abstract_method(args, **kwds):
     return wrap_method(args, **kwds)(method)
 
 
+k_IteratorAggregate = def_class('IteratorAggregate',
+    [new_abstract_method(["interp"], name="IteratorAggregate::getIterator")],
+    flags=consts.ACC_INTERFACE | consts.ACC_ABSTRACT,
+)
+
+
 k_Iterator = def_class('Iterator',
     [new_abstract_method(["interp"], name="Iterator::current"),
      new_abstract_method(["interp"], name="Iterator::next"),
@@ -158,7 +168,7 @@ k_Iterator = def_class('Iterator',
      new_abstract_method(["interp"], name="Iterator::rewind"),
      new_abstract_method(["interp"], name="Iterator::valid")],
     flags=consts.ACC_INTERFACE | consts.ACC_ABSTRACT,
-    is_iterator=True
+    is_iterator=True,
 )
 
 
@@ -176,6 +186,11 @@ def_class('RecursiveIterator',
 def_class('Countable',
     [new_abstract_method(["interp"], name="Countable::count")],
     flags=consts.ACC_INTERFACE | consts.ACC_ABSTRACT)
+
+
+def_class('OuterIterator',
+    [new_abstract_method(["interp"], name="OuterIterator::getInnerIterator")],
+    flags=consts.ACC_INTERFACE | consts.ACC_ABSTRACT, implements=[k_Iterator])
 
 
 ArrayAccess = def_class('ArrayAccess', [

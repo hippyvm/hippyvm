@@ -1,6 +1,7 @@
 from hippy.objects.arrayobject import wrap_array_key
 from hippy.objects.iterator import W_BaseIterator
 
+
 class W_ListArrayIterator(W_BaseIterator):
 
     def __init__(self, storage_w):
@@ -21,6 +22,19 @@ class W_ListArrayIterator(W_BaseIterator):
         self.index = index + 1
         self.finished = self.index == len(self.storage_w)
         return space.wrap(index), w_value
+
+    def current(self, space):
+        return self.storage_w[self.index]
+
+    def key(self, space):
+        return space.wrap(self.index)
+
+    def rewind(self, space):
+        self.index = 0
+
+    def len(self, space):
+        return space.wrap(len(self.storage_w))
+
 
 class ListArrayIteratorRef(W_BaseIterator):
     def __init__(self, space, r_array):
@@ -51,6 +65,7 @@ class ListArrayIteratorRef(W_BaseIterator):
         self.finished = self.is_finished()
         return space.wrap(index), r_value
 
+
 class W_RDictArrayIterator(W_BaseIterator):
     def __init__(self, rdct_w):
         self.rdct_w = rdct_w
@@ -68,6 +83,22 @@ class W_RDictArrayIterator(W_BaseIterator):
         self.finished = self.remaining == 0
         key, w_value = self.dctiter.next()
         return wrap_array_key(space, key), w_value
+
+    def current(self, space):
+        return self.rdct_w.values()[self.remaining*-1]
+
+    def key(self, space):
+        return space.wrap(self.rdct_w.keys()[self.remaining*-1])
+
+    def rewind(self, space):
+        self.dctiter = self.rdct_w.iteritems()
+        self.remaining = len(self.rdct_w)
+        self.finished = self.remaining == 0
+
+    def len(self, space):
+        return space.wrap(len(self.rdct_w))
+
+
 
 class RDictArrayIteratorRef(W_BaseIterator):
     def __init__(self, space, r_array):

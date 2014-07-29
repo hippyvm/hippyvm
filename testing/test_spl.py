@@ -1210,3 +1210,232 @@ class TestRecursiveDirectoryIterator(BaseTestInterpreter):
         assert self.space.str_w(output[1]) == tempdir + '/'
         assert self.space.str_w(output[2]) == 'RecursiveDirectoryIterator'
         assert self.space.str_w(output[3]) == tempdir + '/testdir/.'
+
+
+class TestArrayIterator(BaseTestInterpreter):
+
+    def test_construct(self):
+        output = self.run("""
+
+            $x = new ArrayIterator(array(1, 2, 3, 4));
+            echo get_class($x);
+
+        """)
+
+        assert self.space.str_w(output[0]) == "ArrayIterator"
+
+    def test_offset_exists(self):
+        output = self.run("""
+
+            $x = new ArrayIterator(array(1, 2, 3, 4));
+            echo $x->offsetExists(1);
+
+            echo isset($x[1]);
+            echo isset($x[10]);
+        """)
+
+        assert output[0] == self.space.w_True
+        assert output[1] == self.space.w_True
+        assert output[2] == self.space.w_False
+
+    def test_offset_get(self):
+        output = self.run("""
+
+            $x = new ArrayIterator(array(1, 2, 3, 4));
+            echo $x->offsetGet(1);
+            echo $x[1];
+        """)
+
+        assert self.space.int_w(output[0]) == 2
+        assert self.space.int_w(output[1]) == 2
+
+    def test_offset_set(self):
+        output = self.run("""
+
+            $x = new ArrayIterator(array(1, 2, 3, 4));
+            $x->offsetSet(1, 11);
+            $x[2] = 22;
+
+            echo $x[1];
+            echo $x[2];
+        """)
+
+        assert self.space.int_w(output[0]) == 11
+        assert self.space.int_w(output[1]) == 22
+
+    def test_offset_unset(self):
+        output = self.run("""
+
+            $x = new ArrayIterator(array(1, 2, 3, 4));
+            unset($x[3]);
+            echo isset($x[3]);
+        """)
+
+        assert output[0] == self.space.w_False
+
+    def test_current(self):
+        output = self.run("""
+
+            $x = new ArrayIterator(array(1, 2, 3, 4));
+            echo $x->current();
+            echo $x->current();
+        """)
+
+        assert self.space.int_w(output[0]) == 1
+        assert self.space.int_w(output[1]) == 1
+
+    def test_iteration(self):
+        output = self.run("""
+
+            $x = new ArrayIterator(array(1, 2, 3, 4));
+            foreach ($x as $value) {
+                echo $value;
+            }
+        """)
+
+        assert self.space.int_w(output[0]) == 1
+        assert self.space.int_w(output[1]) == 2
+        assert self.space.int_w(output[2]) == 3
+        assert self.space.int_w(output[3]) == 4
+
+    def test_next(self):
+        output = self.run("""
+
+            $x = new ArrayIterator(array(1, 2, 3, 4));
+            echo $x->current();
+            $x->next();
+            echo $x->current();
+            $x->next();
+            echo $x->current();
+        """)
+
+        assert self.space.int_w(output[0]) == 1
+        assert self.space.int_w(output[1]) == 2
+        assert self.space.int_w(output[2]) == 3
+
+    def test_key(self):
+        output = self.run("""
+
+            $x = new ArrayIterator(array(1, 2, 3, 4));
+            echo $x->key();
+            $x->next();
+            echo $x->key();
+            $x->next();
+            echo $x->key();
+
+        """)
+
+        assert self.space.int_w(output[0]) == 0
+        assert self.space.int_w(output[1]) == 1
+        assert self.space.int_w(output[2]) == 2
+
+        output = self.run("""
+
+            $x = new ArrayIterator(array("test"=>"ala", "test2"=>"ala2"));
+            echo $x->key();
+            $x->next();
+            echo $x->key();
+        """)
+
+        assert self.space.str_w(output[0]) == "test"
+        assert self.space.str_w(output[1]) == "test2"
+
+    def test_rewind(self):
+        output = self.run("""
+
+            $x = new ArrayIterator(array(1, 2, 3, 4));
+            $x->next();
+            $x->next();
+            echo $x->current();
+            $x->rewind();
+            echo $x->current();
+
+        """)
+
+        assert self.space.int_w(output[0]) == 3
+        assert self.space.int_w(output[1]) == 1
+
+        output = self.run("""
+
+            $x = new ArrayIterator(array("test"=>"ala", "test2"=>"ala2"));
+            echo $x->current();
+            $x->next();
+            echo $x->current();
+            $x->rewind();
+            echo $x->current();
+
+        """)
+
+        assert self.space.str_w(output[0]) == "ala"
+        assert self.space.str_w(output[1]) == "ala2"
+        assert self.space.str_w(output[2]) == "ala"
+
+    def test_count(self):
+        output = self.run("""
+
+            $x = new ArrayIterator(array(1, 2, 3, 4));
+            echo $x->count();
+
+        """)
+
+        assert self.space.int_w(output[0]) == 4
+
+        output = self.run("""
+
+            $x = new ArrayIterator(array("test"=>"ala", "test2"=>"ala2"));
+            echo $x->count();
+
+        """)
+
+        assert self.space.int_w(output[0]) == 2
+
+
+class TestRecursiveArrayIterator(BaseTestInterpreter):
+
+    def test_construct(self):
+        output = self.run("""
+
+            $x = new RecursiveArrayIterator(array(1, 2, 3, 4));
+            echo get_class($x);
+
+        """)
+
+        assert self.space.str_w(output[0]) == "RecursiveArrayIterator"
+
+    def test_has_children(self):
+        output = self.run("""
+
+            $x = new ArrayIterator(array(1, 2, 3, 4));
+            $arr = array('Zero', array(1,2,3), array(), array("test"=>"test"), $x);
+            $x = new RecursiveArrayIterator($arr);
+
+            echo $x->hasChildren();
+            $x->next();
+            echo $x->hasChildren();
+            $x->next();
+            echo $x->hasChildren();
+            $x->next();
+            echo $x->hasChildren();
+            $x->next();
+            echo $x->hasChildren();
+        """)
+
+        assert output[0] == self.space.w_False
+        assert output[1] == self.space.w_True
+        assert output[2] == self.space.w_True
+        assert output[3] == self.space.w_True
+        assert output[4] == self.space.w_True
+
+
+    def test_get_children(self):
+        output = self.run("""
+
+            $arr = array('Zero', array(1,2,3), array(), array("test"=>"test"));
+            $x = new RecursiveArrayIterator($arr);
+
+            $x->next();
+            $children = $x->getChildren();
+            echo $children->current();
+        """)
+
+        assert self.space.int_w(output[0]) == 1

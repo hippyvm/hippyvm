@@ -1,5 +1,5 @@
-
 from hippy.objects.base import W_Root
+
 
 class W_BaseIterator(W_Root):
 
@@ -11,6 +11,7 @@ class W_BaseIterator(W_Root):
 
     def next_item(self, space):
         raise NotImplementedError
+
 
 class W_InstanceIterator(W_BaseIterator):
     def __init__(self, space, w_inst):

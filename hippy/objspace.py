@@ -368,9 +368,16 @@ class ObjSpace(object):
     def iter(self, w_arr):
         return ObjSpaceWithIter(self, w_arr)
 
-    def create_iter(self, w_arr, contextclass=None):
-        w_arr = w_arr.deref()
-        return w_arr.create_iter(self, contextclass)
+    def create_iter(self, w_obj, contextclass=None):
+        w_obj = w_obj.deref()
+
+        if isinstance(w_obj, W_InstanceObject):
+            if w_obj.klass.is_subclass_of_class_or_intf_name('IteratorAggregate'):
+                w_method = self.ec.interpreter.getmeth(w_obj, 'getIterator')
+                w_obj = w_method.call_args(self.ec.interpreter, [])
+                return w_obj.create_iter(self)
+
+        return w_obj.create_iter(self, contextclass)
 
     def create_iter_ref(self, r_array, contextclass=None):
         if not isinstance(r_array, W_Reference):

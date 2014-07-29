@@ -852,6 +852,16 @@ class UserClass(ClassBase):
         if parent is not None:
             immediate_parents.append(self.parentclass)
         if decl.base_interface_names:
+            if 'Traversable' in decl.base_interface_names:
+                interp.fatal("Class %s must implement interface Traversable as"
+                             " part of either Iterator or IteratorAggregate in"
+                             " Unknown on line " % self.name)
+
+            if 'IteratorAggregate' in decl.base_interface_names and \
+                'Iterator' in decl.base_interface_names:
+                interp.fatal("Class %s cannot implement both Iterator and "
+                             "IteratorAggregate at the same time" % self.name)
+
             for intfname in decl.base_interface_names:
                 intf = interp.lookup_class_or_intf(intfname)
                 if intf is None:
