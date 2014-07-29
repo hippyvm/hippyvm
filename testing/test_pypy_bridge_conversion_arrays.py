@@ -7,7 +7,7 @@ class TestPyPyBridgeArrayConversions(BaseTestInterpreter):
     # ------------------------
     # python list to php array
     # ------------------------
-    def test_return_py_list_len(self):
+    def test_return_py_list_len_in_php(self):
         phspace = self.space
         output = self.run('''
 
@@ -23,7 +23,7 @@ echo(count($ar));
         assert phspace.int_w(output[0]) == 3
 
 
-    def test_return_py_list_vals(self):
+    def test_return_py_list_vals_in_php(self):
         phspace = self.space
         output = self.run('''
 
@@ -78,11 +78,53 @@ foreach ($ar as $k => $v) {
         assert phspace.str_w(output[1]) == "1:one"
         assert phspace.str_w(output[2]) == "2:two"
 
+
+    def test_py_list_setitem_in_php(self):
+        phspace = self.space
+        output = self.run('''
+
+$src = <<<EOD
+def f(): return ["zero", "one", "two"]
+EOD;
+
+embed_py_func($src);
+$ar = f();
+
+$ar[1] = "three";
+for ($i = 0; $i < 3; $i++) {
+    echo($ar[$i]);
+}
+        ''')
+        assert phspace.str_w(output[0]) == "zero"
+        assert phspace.str_w(output[1]) == "three"
+        assert phspace.str_w(output[2]) == "two"
+
+    def test_py_list_append_in_php(self):
+        phspace = self.space
+        output = self.run('''
+
+$src = <<<EOD
+def f(): return ["zero", "one", "two"]
+EOD;
+
+embed_py_func($src);
+$ar = f();
+
+$ar[] = "three";
+for ($i = 0; $i < 4; $i++) {
+    echo($ar[$i]);
+}
+        ''')
+        assert phspace.str_w(output[0]) == "zero"
+        assert phspace.str_w(output[1]) == "one"
+        assert phspace.str_w(output[2]) == "two"
+        assert phspace.str_w(output[3]) == "three"
+
     #------------------------------
     # Python dict to PHP array
     #------------------------------
 
-    def test_return_py_dict_len(self):
+    def test_return_py_dict_len_in_php(self):
         phspace = self.space
         output = self.run('''
 
@@ -97,7 +139,7 @@ echo(count($ar));
         ''')
         assert phspace.int_w(output[0]) == 3
 
-    def test_return_py_dict_vals_str_key(self):
+    def test_return_py_dict_vals_str_key_in_php(self):
         phspace = self.space
         output = self.run('''
 
@@ -116,7 +158,7 @@ echo($ar["e"]);
         assert phspace.str_w(output[1]) == "d"
         assert phspace.str_w(output[2]) == "f"
 
-    def test_return_py_dict_vals_int_key(self):
+    def test_return_py_dict_vals_int_key_in_php(self):
         phspace = self.space
         output = self.run('''
 
@@ -175,11 +217,173 @@ foreach ($ar as $k => $v) {
         assert phspace.str_w(output[1]) == "z:-1"
         assert phspace.str_w(output[2]) == "999:14"
 
+
+    def test_py_dict_setitem_int_in_php(self):
+        phspace = self.space
+        output = self.run('''
+
+$src = <<<EOD
+def f(): return { 0 : "one", 1 : "two", 2 : "three" }
+EOD;
+
+embed_py_func($src);
+$ar = f();
+
+$ar[1] = "bumble";
+for ($i = 0; $i < 3; $i++) {
+    echo($ar[$i]);
+}
+        ''')
+        assert phspace.str_w(output[0]) == "one"
+        assert phspace.str_w(output[1]) == "bumble"
+        assert phspace.str_w(output[2]) == "three"
+
+
+    def test_py_dict_setitem_str_in_php(self):
+        phspace = self.space
+        output = self.run('''
+
+$src = <<<EOD
+def f(): return { 0 : "one", 1 : "two", 2 : "three" }
+EOD;
+
+embed_py_func($src);
+$ar = f();
+
+$ar["x"] = "bumble";
+echo($ar[0]);
+echo($ar[1]);
+echo($ar[2]);
+echo($ar["x"]);
+        ''')
+        assert phspace.str_w(output[0]) == "one"
+        assert phspace.str_w(output[1]) == "two"
+        assert phspace.str_w(output[2]) == "three"
+        assert phspace.str_w(output[3]) == "bumble"
+
+    def test_py_dict_setitem_str_in_php2(self):
+        phspace = self.space
+        output = self.run('''
+
+$src = <<<EOD
+def f(): return { "one" : "one", "two" : "two", "three" : "three" }
+EOD;
+
+embed_py_func($src);
+$ar = f();
+
+$ar["two"] = "bumble";
+echo($ar["one"]);
+echo($ar["two"]);
+echo($ar["three"]);
+        ''')
+        assert phspace.str_w(output[0]) == "one"
+        assert phspace.str_w(output[1]) == "bumble"
+        assert phspace.str_w(output[2]) == "three"
+
+    # We need to decide a semantics for [] on a wrapped Python dict/list
+    @pytest.mark.xfail
+    def test_py_dict_append_in_php(self):
+
+        phspace = self.space
+        output = self.run('''
+
+$src = <<<EOD
+def f(): return { "x" : "one", "y" : "two", "z" : "three" }
+EOD;
+
+embed_py_func($src);
+$ar = f();
+
+$ar[] = "bumble"; # ?!?!
+        ''')
+        # XXX assert
+
+
     # -----------------------------
     # PHP array to Python list/dict
     # -----------------------------
 
-    def test_php_empty_array_len_in_php(self):
+
+    def test_array_type_over_php_py_boundary(self):
+        phspace = self.space
+        output = self.run('''
+
+$src = "def f(a): return type(a) == dict";
+embed_py_func($src);
+
+$in = array("my", "array", 2, 3);
+
+echo(f($in));
+
+        ''')
+        assert phspace.is_true(output[0])
+
+    def test_array_type_over_php_py_boundary2(self):
+        phspace = self.space
+        output = self.run('''
+
+$src = "def f(a): return type(a.as_list()) == list";
+embed_py_func($src);
+
+$in = array(1, 2, 4, 8, 16);
+
+echo(f($in));
+
+        ''')
+        assert phspace.is_true(output[0])
+
+    def test_cannot_apply_as_list_to_wrapped_mixed_key_php_array(self):
+        phspace = self.space
+        output = self.run('''
+
+$src = <<<EOD
+def f(a):
+    try:
+        a.as_list() # boom
+    except BridgeError: # XXX read message
+        return True
+    else:
+        return False
+EOD;
+
+embed_py_func($src);
+
+$in = array("a" => 1); // mixed keys
+
+echo(f($in));
+
+        ''')
+        assert self.space.is_true(output[0])
+
+    def test_as_list_invalidates(self):
+        phspace = self.space
+        output = self.run('''
+
+$src = <<<EOD
+def f(arry_d):
+    arry_l = arry_d.as_list()
+    arry_d["x"] = 890 #non-integer keyed
+    try:
+        arry_l[0] # stale!
+    except BridgeError as e:
+        return e.args[0]
+EOD;
+
+embed_py_func($src);
+
+$in = array(1, 2, 3); // int keys
+
+echo(f($in));
+
+        ''')
+        assert phspace.str_w(output[0]) == "Stale wrapped PHP array. No longer integer keyed!"
+
+    # XXX We need a load more invalidation tests.
+    # One for every operation that could cause a WListArrayObject to become
+    # a WRDictArrayObject.
+
+    def test_php_empty_array_len_in_python(self):
         phspace = self.space
         output = self.run('''
 
@@ -193,11 +397,11 @@ echo(f($in));
         ''')
         assert phspace.int_w(output[0]) == 0
 
-    def test_php_int_key_array_len_in_php(self):
+    def test_php_int_key_array_len_in_python(self):
         phspace = self.space
         output = self.run('''
 
-$src = "def f(a): return len(a)";
+$src = "def f(a): return len(a.as_list())";
 embed_py_func($src);
 
 $in = array("an", "intkeyed", "array");
@@ -221,7 +425,7 @@ echo(f($in));
         ''')
         assert phspace.int_w(output[0]) == 3
 
-    def test_php_int_key_array_vals_in_php(self):
+    def test_php_int_key_array_vals_in_python(self):
         phspace = self.space
         output = self.run('''
 
@@ -239,7 +443,45 @@ echo(f($in, 2));
         assert phspace.str_w(output[1]) == "intkeyed"
         assert phspace.str_w(output[2]) == "array"
 
-    def test_php_mixed_key_array_vals_in_php(self):
+    def test_php_int_key_array_vals_in_python_as_list(self):
+        phspace = self.space
+        output = self.run('''
+
+$src = <<<EOD
+def f(ary, idx):
+    ls = ary.as_list()
+    return ls[idx]
+EOD;
+
+embed_py_func($src);
+
+$in = array("an", "intkeyed", "array");
+
+echo(f($in, 0));
+echo(f($in, 1));
+echo(f($in, 2));
+
+        ''')
+        assert phspace.str_w(output[0]) == "an"
+        assert phspace.str_w(output[1]) == "intkeyed"
+        assert phspace.str_w(output[2]) == "array"
+
+    def test_php_int_key_array_len_in_python_as_list(self):
+        phspace = self.space
+        output = self.run('''
+
+$src = "def f(ary): return len(ary.as_list())";
+
+embed_py_func($src);
+
+$in = array("an", "intkeyed", "array");
+
+echo(f($in));
+
+        ''')
+        assert phspace.int_w(output[0]) == 3
+
+    def test_php_mixed_key_array_vals_in_python(self):
         phspace = self.space
         output = self.run('''
 
@@ -257,7 +499,7 @@ echo(f($in, "c"));
         assert phspace.int_w(output[1]) == 22
         assert phspace.int_w(output[2]) == 333
 
-    def test_php_mixed_key_array_iteritems(self):
+    def test_php_mixed_key_array_iteritems_in_python(self):
         phspace = self.space
         output = self.run('''
 
@@ -278,7 +520,7 @@ echo(f($in));
         ''')
         assert phspace.str_w(output[0]) == "a,1|b,22|c,333"
 
-    def test_php_mixed_key_array_iterkeys(self):
+    def test_php_mixed_key_array_iterkeys_in_python(self):
         phspace = self.space
         output = self.run('''
 
@@ -297,7 +539,7 @@ echo(f($in));
         ''')
         assert phspace.str_w(output[0]) == "a|b|c"
 
-    def test_php_mixed_key_array_itervalues(self):
+    def test_php_mixed_key_array_itervalues_in_python(self):
         phspace = self.space
         output = self.run('''
 
@@ -315,3 +557,148 @@ echo(f($in));
 
         ''')
         assert phspace.str_w(output[0]) == "1|22|333"
+
+    def test_php_int_key_array_iteritems_in_python(self):
+        phspace = self.space
+        output = self.run('''
+
+$src = <<<EOD
+def f(ary):
+    ret = []
+    for x, y in ary.iteritems():
+        ret += ["%s,%s" % (x, y)]
+    return "|".join(ret)
+EOD;
+
+embed_py_func($src);
+
+$in = array(2, 1, 0);
+
+echo(f($in));
+
+        ''')
+        assert phspace.str_w(output[0]) == "0,2|1,1|2,0"
+
+    def test_php_int_key_array_iterkeys_in_python(self):
+        phspace = self.space
+        output = self.run('''
+
+$src = <<<EOD
+def f(ary):
+    ret = [ str(x) for x in ary.iterkeys() ]
+    return "|".join(ret)
+EOD;
+
+embed_py_func($src);
+
+$in = array("a", "b", "c");
+
+echo(f($in));
+
+        ''')
+        assert phspace.str_w(output[0]) == "0|1|2"
+
+    def test_php_int_key_array_itervalues_in_python(self):
+        phspace = self.space
+        output = self.run('''
+
+$src = <<<EOD
+def f(ary):
+    ret = [ x for x in ary.itervalues() ]
+    return "|".join(ret)
+EOD;
+
+embed_py_func($src);
+
+$in = array("x", "y", "z");
+
+echo(f($in));
+
+        ''')
+        assert phspace.str_w(output[0]) == "x|y|z"
+
+    def test_php_mixed_key_array_setitem_in_python_ret(self):
+        phspace = self.space
+        output = self.run('''
+
+$src = <<<EOD
+def f(ary):
+    ary["x"] = "y"
+    print(72 * "*")
+    print(ary)
+    return ary
+EOD;
+
+embed_py_func($src);
+
+$in = array("x", "y", "z");
+
+$out = f($in);
+
+echo $out["x"];
+
+        ''')
+        assert phspace.str_w(output[0]) == "y"
+
+    def test_php_mixed_key_array_setitem_in_python_no_ret(self):
+        phspace = self.space
+        output = self.run('''
+
+$src = <<<EOD
+def f(ary):
+    ary["x"] = "y"
+EOD;
+
+embed_py_func($src);
+
+$in = array("x", "y", "z");
+
+f($in);
+
+echo $in["x"];
+
+        ''')
+        assert phspace.str_w(output[0]) == "y"
+
+    def test_php_int_key_array_setitem_in_python_ret(self):
+        phspace = self.space
+        output = self.run('''
+
+$src = <<<EOD
+def f(ary):
+    ary_l = ary.as_list()
+    ary_l[3] = "a"
+    return ary
+EOD;
+
+embed_py_func($src);
+
+$in = array("x", "y", "z");
+
+$out = f($in);
+
+echo $out[3];
+
+        ''')
+        assert phspace.str_w(output[0]) == "a"
+
+    def test_php_int_key_array_append_in_python(self):
+        phspace = self.space
+        output = self.run('''
+
+$src = <<<EOD
+def f(ary):
+    ary_l = ary.as_list()
+    ary_l.append("a")
+EOD;
+
+embed_py_func($src);
+
+$in = array("x", "y", "z");
+
+f($in);
+
+echo $in[3];
+
+        ''')
+        assert phspace.str_w(output[0]) == "a"

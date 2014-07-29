@@ -1434,6 +1434,7 @@ class Interpreter(object):
         ptr_argument = frame.pop_ptr()
         func = frame.pop()
         assert isinstance(func, AbstractFunction)
+
         if func.needs_value(arg):
             w_argument = ptr_argument.deref(self, give_notice=True)
         else:
