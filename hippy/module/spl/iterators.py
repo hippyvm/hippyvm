@@ -18,7 +18,6 @@ class W_RecursiveIteratorIterator(W_InstanceObject):
 @wrap_method(['interp', ThisUnwrapper(W_RecursiveIteratorIterator), Optional(W_Root)],
              name='RecursiveIteratorIterator::__construct')
 def RecursiveIteratorIterator_construct(interp, this, w_arr=None):
-    import pdb; pdb.pdb.set_trace()
     if w_arr is None:
         w_arr = interp.space.new_array_from_list([])
     this.setattr(interp, "storage", w_arr, k_ArrayIterator)
