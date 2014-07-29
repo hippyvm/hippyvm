@@ -1,5 +1,6 @@
 import math
 import sys
+import os
 from rpython.rlib import rfloat, jit
 from rpython.rlib.rarithmetic import r_uint, intmask, ovfcheck
 from rpython.rlib.rstring import StringBuilder
@@ -12,7 +13,8 @@ from hippy.objects.floatobject import W_FloatObject
 from hippy.builtin import wrap, Optional, LongArg
 
 from rpython.rlib.rrandom import Random
-_random = Random()
+seed = int(os.urandom(4).encode('hex'), 16)
+_random = Random(seed=seed)
 
 RANDMAX = 0x7fffffff
 MAX_BITS = sys.maxint.bit_length()  # == 31 or 63
