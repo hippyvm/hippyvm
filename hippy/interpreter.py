@@ -197,6 +197,7 @@ class OutputBufferingLock(object):
     def __exit__(self, exc_type, exc_val, trace):
         self.interp.ob_lock = False
 
+
 @jit.elidable
 def is_constant_self_or_parent(name):
     key = name.lower()
@@ -270,6 +271,13 @@ class Interpreter(object):
         self.http_status_code = -1
         self.shutdown_functions = []
         self.shutdown_arguments = []
+        self.open_fd = {}
+
+    def register_fd(self, w_fd):
+        self.open_fd[w_fd.res_id] = w_fd
+
+    def unregister_fd(self, w_fd):
+        del self.open_fd[w_fd.res_id]
 
     def _class_get(self, class_name):
         kls = self.space.global_class_cache.locate(class_name)
@@ -369,6 +377,8 @@ class Interpreter(object):
         for _,  mysql_link in self.mysql_links.items():
             if not mysql_link.persistent:
                 mysql_link.close()
+        for _, fd in self.open_fd.items():
+            fd.close()
 
     def initialize_server_variable(self, space):
         if self.web_config is None:

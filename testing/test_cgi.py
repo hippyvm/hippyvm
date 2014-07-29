@@ -4,13 +4,6 @@ from StringIO import StringIO
 from testing.test_interpreter import BaseTestInterpreter
 
 class TestCGI(BaseTestInterpreter):
-    def setup_method(self, meth):
-        super(TestCGI, self).setup_method(self)
-        self.env_copy = os.environ.copy()
-
-    def teardown_method(self, meth):
-        os.environ = self.env_copy
-
     def test_get(self):
         os.environ['QUERY_STRING'] = 'xyz=3'
         output = self.run('''
