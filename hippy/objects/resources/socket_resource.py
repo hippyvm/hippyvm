@@ -50,6 +50,7 @@ class W_SocketResource(W_FileResource):
         else:
             self.socket = RSocket(type=type)
             self.addr = INETAddress(self.hostname, self.port)
+        self.space.ec.interpreter.register_fd(self)
 
     def settimeout(self, timeout):
         self.socket.settimeout(timeout)
@@ -61,7 +62,6 @@ class W_SocketResource(W_FileResource):
         try:
             self.socket.connect(self.addr)
             self.state = OPEN
-            self.space.ec.interpreter.register_fd(self)
         except (SocketTimeout, CSocketError), e:
             self.errno = e.errno
             self.errstr = e.get_msg()
