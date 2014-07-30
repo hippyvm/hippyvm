@@ -1,7 +1,6 @@
 import py
 import os
 import sys
-import cStringIO
 import pytest
 from collections import OrderedDict
 
@@ -41,6 +40,7 @@ class BaseTestInterpreter(object):
         return self.engine.warnings(expected_warnings)
 
     def setup_method(self, method):
+        self.env_copy = os.environ.copy()
         self.space = ObjSpace()
         self.pyspace = PyStdObjSpace()
         if option.runappdirect:
@@ -50,6 +50,7 @@ class BaseTestInterpreter(object):
             self.engine.Interpreter = self.interpreter
 
     def teardown_method(self, method):
+        os.environ = self.env_copy
         self.engine = None
         self.space = None
         self.pyspace.set_php_interp(None) # fd leak when testing on linux
