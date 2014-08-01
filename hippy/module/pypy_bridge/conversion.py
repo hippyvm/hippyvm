@@ -24,6 +24,8 @@ def php_to_py(interp, wph_any):
 
     phspace = interp.space
 
+    # XXX general trivial unwrappings.
+
     # We want to pass arrays by reference
     if isinstance(wph_any, W_Reference):
         wph_inside = wph_any.deref_temp()
@@ -47,7 +49,7 @@ def php_to_py(interp, wph_any):
     elif isinstance(wph_any, objspace.W_StringObject):
         return interp.pyspace.wrap(interp.space.str_w(wph_any))
     elif isinstance(wph_any, php_wrappers.W_PyBridgeListProxy):
-        # Prevent a double wrapping.
+        # Prevent a double wrapping. XXX can go when general unwrappings done
         return wph_any.get_wrapped_py_obj()
     elif isinstance(wph_any, objspace.W_ArrayObject):
         from hippy.module.pypy_bridge.py_wrappers import (
@@ -68,6 +70,8 @@ def py_list_of_ph_array(interp, wph_array):
 def py_to_php(interp, wpy_any):
     from hippy.module.pypy_bridge import php_wrappers, py_wrappers
     from pypy.interpreter.function import Function as py_Function
+
+    # XXX general trivial unwrappings.
 
     assert isinstance(wpy_any, Wpy_Root)
 
