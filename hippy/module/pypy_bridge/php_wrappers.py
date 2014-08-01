@@ -189,10 +189,7 @@ class W_PyBridgeListProxy(W_ArrayObject):
         assert False # XXX proper exception (accessing string key of py list)
 
     def _appenditem(self, w_obj, as_ref=False):
-        py_space = self.interp.pyspace
-        wpy_append = py_space.getattr(self.wpy_list, py_space.wrap("append"))
-        wpy_obj = php_to_py(self.interp, w_obj)
-        py_space.call_args(wpy_append, Arguments(py_space, [wpy_obj]))
+        self.wpy_list.append(php_to_py(self.interp, w_obj))
 
     def _setitem_int(self, index, w_value, as_ref, unique_item=False):
         py_space = self.interp.pyspace
