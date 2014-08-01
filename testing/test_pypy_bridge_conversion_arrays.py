@@ -706,8 +706,6 @@ echo $in[3];
 
 class TestPyPyBridgeArrayConversionsInstances(BaseTestInterpreter):
 
-    # Fires a "can't happen" assert
-    @pytest.mark.xfail
     def test_python_array_in_php_instance(self):
         phspace = self.space
         output = self.run('''

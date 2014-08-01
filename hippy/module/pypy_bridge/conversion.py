@@ -46,6 +46,9 @@ def php_to_py(interp, wph_any):
         return interp.pyspace.newint(interp.space.int_w(wph_any))
     elif isinstance(wph_any, objspace.W_StringObject):
         return interp.pyspace.wrap(interp.space.str_w(wph_any))
+    elif isinstance(wph_any, php_wrappers.W_PyBridgeListProxy):
+        # Prevent a double wrapping.
+        return wph_any.get_wrapped_py_obj()
     elif isinstance(wph_any, objspace.W_ArrayObject):
         from hippy.module.pypy_bridge.py_wrappers import (
                 make_wrapped_mixed_key_php_array)
