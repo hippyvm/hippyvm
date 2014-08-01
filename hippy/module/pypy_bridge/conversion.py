@@ -59,14 +59,6 @@ def php_to_py(interp, wph_any):
     else:
         return py_wrappers.W_PHPProxyGeneric(interp, wph_any)
 
-def py_list_of_ph_array(interp, wph_array):
-    wph_elems = wph_array.as_list_w()
-    wpy_elems = []
-    for i in range(len(wph_elems)):
-        wpy_elems.append(php_to_py(interp, wph_elems[i]))
-    return interp.pyspace.newlist(wpy_elems)
-
-
 def py_to_php(interp, wpy_any):
     from hippy.module.pypy_bridge import php_wrappers, py_wrappers
     from pypy.interpreter.function import Function as py_Function
@@ -100,9 +92,3 @@ def py_to_php(interp, wpy_any):
         wph_pxy = php_wrappers.W_PyProxyGeneric(php_wrappers.k_PyBridgeProxy, [])
         wph_pxy.setup_instance(interp, wpy_any)
         return wph_pxy
-
-def ph_array_of_py_list(interp, wpy_list):
-    wpy_elems = interp.pyspace.listview(wpy_list)
-    wph_elems = [ py_to_php(interp, x) for x in wpy_elems ]
-    return interp.space.new_array_from_list(wph_elems)
-
