@@ -241,6 +241,9 @@ class WrappedPHPArrayStrategy(ListStrategy):
 # The following types make the PHP array iterators iterable at the RPython
 # level so that we can use create_iterator_classes().
 class W_ArrayKeyIteratorWrap(object):
+
+    _immutable_fields_ = ["interp", "wph_arry", "self.itr"]
+
     def __init__(self, interp, wphp_arry_ref):
 
         wphp_arry = wphp_arry_ref.deref_temp()
@@ -259,6 +262,9 @@ class W_ArrayKeyIteratorWrap(object):
         return self.itr.next_item(self.interp.space)[0]
 
 class W_ArrayValIteratorWrap(object):
+
+    _immutable_fields_ = ["interp", "wph_arry", "self.itr"]
+
     def __init__(self, interp, wphp_arry_ref):
 
         wphp_arry = wphp_arry_ref.deref_temp()
@@ -277,6 +283,9 @@ class W_ArrayValIteratorWrap(object):
         return self.itr.next(self.interp.space)
 
 class W_ArrayItemIteratorWrap(object):
+
+    _immutable_fields_ = ["interp", "wph_arry", "self.itr"]
+
     def __init__(self, interp, wphp_arry_ref):
 
         wphp_arry = wphp_arry_ref.deref_temp()

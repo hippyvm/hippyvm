@@ -134,6 +134,9 @@ class W_EmbeddedPyMod(WPh_Object):
 
 
 class W_PyBridgeListProxyIterator(W_BaseIterator):
+
+    _immutable_fields_ = ["interp", "storage_w"]
+
     def __init__(self, interp, wpy_list):
         self.interp = interp
         self.storage_w = interp.pyspace.listview(wpy_list)
@@ -210,6 +213,9 @@ class W_PyBridgeListProxy(W_ArrayObject):
         return W_PyBridgeListProxyIterator(self.interp, self.wpy_list)
 
 class W_PyBridgeDictProxyIterator(W_BaseIterator):
+
+    _immutable_fields_ = ["interp", "rdct_w", "wpy_iter", "wpy_iter_next", "wpy_zero", "wpy_one"]
+
     def __init__(self, interp, rdct_w):
         pyspace = interp.pyspace
         self.interp = interp
