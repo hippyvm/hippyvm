@@ -114,6 +114,30 @@ def is_static(interp, this):
     return interp.space.newbool(this.ref_prop.is_static())
 
 
+@wrap_method(['interp', ThisUnwrapper(W_ReflectionProperty)],
+             name='ReflectionProperty::__toString')
+def toString(interp, this):
+    prop = this.ref_prop
+    if prop is None:
+        inner = '<dynamic> public $%s' % this.name
+    else:
+        access = ''
+        if not prop.is_static():
+            access += '<default> '
+        if prop.is_public():
+            access += 'public'
+        elif prop.is_protected():
+            access += 'protected'
+        elif prop.is_private():
+            access += 'private'
+        else:
+            assert False, 'should not happen'
+        if prop.is_static():
+            access += ' static'
+        inner = '%s $%s' % (access, prop.name)
+    return interp.space.newstr('Property [ %s ]\n' % inner)
+
+
 def _get_class(interp, this):
     return interp.space.newstr(this.ref_klass.name)
 
@@ -139,7 +163,8 @@ k_ReflectionProperty = def_class(
      is_public,
      is_private,
      is_protected,
-     is_static],
+     is_static,
+     toString],
     [GetterSetterWrapper(_get_name, _set_name, 'name', consts.ACC_PUBLIC),
      GetterSetterWrapper(_get_class, _set_class, 'class', consts.ACC_PUBLIC)],
     [('IS_STATIC', W_IntObject(IS_STATIC)),
