@@ -702,3 +702,30 @@ echo $in[3];
 
         ''')
         assert phspace.str_w(output[0]) == "a"
+
+
+class TestPyPyBridgeArrayConversionsInstances(BaseTestInterpreter):
+
+    # Fires a "can't happen" assert
+    @pytest.mark.xfail
+    def test_python_array_in_php_instance(self):
+        phspace = self.space
+        output = self.run('''
+
+$src = <<<EOD
+def A_construct(self):
+    self.l = [1,2,3]
+    print(self.l)
+EOD;
+embed_py_func($src);
+
+class A {
+    function __construct() {
+        A_construct($this);
+    }
+}
+
+
+$a = new A();
+
+        ''')
