@@ -18,7 +18,7 @@ class ByteCode(object):
                           'var_to_pos', 'names_to_pos', 'late_declarations[*]',
                           'classes[*]', 'functions[*]',
                           'method_of_class', 'superglobals[*]', 'this_var_num',
-                          'static_vars[*]']
+                          'static_vars[*]', 'py_scope?']
     _marker = None
 
     def __init__(self, code, consts, names, varnames, late_declarations,
