@@ -15,6 +15,7 @@ from hippy.objects.reference import W_Reference
 
 from pypy.interpreter.argument import Arguments
 from pypy.interpreter.error import OperationError
+from pypy.objspace.std.listobject import W_ListObject as WPy_ListObject
 
 from rpython.rlib import jit
 
@@ -170,6 +171,7 @@ class W_PyBridgeListProxy(W_ArrayObject):
     _has_string_keys = False
 
     def __init__(self, interp, wpy_list):
+        assert isinstance(wpy_list, WPy_ListObject)
         self.interp = interp
         self.wpy_list = wpy_list
 
