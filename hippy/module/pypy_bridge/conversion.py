@@ -59,36 +59,3 @@ def php_to_py(interp, wph_any):
     else:
         return py_wrappers.W_PHPProxyGeneric(interp, wph_any)
 
-def py_to_php(interp, wpy_any):
-    from hippy.module.pypy_bridge import php_wrappers, py_wrappers
-    from pypy.interpreter.function import Function as py_Function
-
-    # XXX general trivial unwrappings.
-
-    assert isinstance(wpy_any, Wpy_Root)
-
-    pyspace = interp.pyspace
-    if pyspace.is_w(pyspace.type(wpy_any), pyspace.w_bool):
-        return interp.space.wrap(interp.pyspace.bool_w(wpy_any))
-    elif pyspace.is_w(pyspace.type(wpy_any), pyspace.w_int):
-        return interp.space.newint(interp.pyspace.int_w(wpy_any))
-    elif pyspace.is_w(pyspace.type(wpy_any), pyspace.w_float):
-        return interp.space.newfloat(interp.pyspace.float_w(wpy_any))
-    elif pyspace.is_w(pyspace.type(wpy_any), pyspace.w_str):
-        return interp.space.wrap(interp.pyspace.str_w(wpy_any))
-    elif wpy_any is pyspace.w_None:
-        return interp.space.w_Null
-    elif pyspace.is_w(pyspace.type(wpy_any), pyspace.w_dict):
-        return php_wrappers.W_PyBridgeDictProxy(interp, wpy_any)
-    elif pyspace.is_w(pyspace.type(wpy_any), pyspace.w_list):
-        return php_wrappers.W_PyBridgeListProxy(interp, wpy_any)
-    elif isinstance(wpy_any, py_Function):
-        return php_wrappers.W_EmbeddedPyFunc(interp, wpy_any)
-    elif isinstance(wpy_any, py_Module):
-        return php_wrappers.W_EmbeddedPyMod(interp, wpy_any)
-    elif isinstance(wpy_any, py_wrappers.W_PHPProxyGeneric):
-        return wpy_any.wph_inst
-    else:
-        wph_pxy = php_wrappers.W_PyProxyGeneric(php_wrappers.k_PyBridgeProxy, [])
-        wph_pxy.setup_instance(interp, wpy_any)
-        return wph_pxy

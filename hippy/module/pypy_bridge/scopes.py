@@ -2,7 +2,7 @@ from rpython.rlib import jit
 
 from hippy.objects.base import W_Root as WPHP_Root
 from hippy.objects.reference import W_Reference as Wpy_Reference
-from hippy.module.pypy_bridge.conversion import py_to_php, php_to_py
+from hippy.module.pypy_bridge.conversion import php_to_py
 
 from pypy.interpreter.baseobjspace import W_Root as WPy_Root
 from pypy.interpreter.typedef import TypeDef
@@ -125,7 +125,7 @@ class Py_Scope(WPHP_Root):
 
         py_v = self.py_lookup(n)
         if py_v is not None:
-            return py_to_php(self.py_interp.get_php_interp(), py_v)
+            return py_v.wrap_for_php(self.py_interp.get_php_interp())
         return None
 
 

@@ -1,4 +1,4 @@
-from hippy.module.pypy_bridge.conversion import php_to_py, py_to_php
+from hippy.module.pypy_bridge.conversion import php_to_py
 from testing.test_interpreter import MockInterpreter, BaseTestInterpreter
 
 import pytest
@@ -116,27 +116,27 @@ class TestPyPyBridgeConversions(BaseTestInterpreter):
     def test_ph_integer_of_py_int(self):
         interp = self.new_interp()
         py_int = interp.pyspace.newint(666)
-        wph_integer = py_to_php(interp, py_int)
+        wph_integer = py_int.wrap_for_php(interp)
         assert interp.space.int_w(wph_integer) == 666
         assert wph_integer.tp == interp.space.tp_int
 
     def test_ph_float_of_py_float(self):
         interp = self.new_interp()
         py_float = interp.pyspace.newfloat(3.1415)
-        wph_float = py_to_php(interp, py_float)
+        wph_float = py_float.wrap_for_php(interp)
         assert interp.space.float_w(wph_float) == 3.1415
         assert wph_float.tp == interp.space.tp_float
 
     def test_ph_null_of_py_none(self):
         interp = self.new_interp()
-        wph_null = py_to_php(interp, interp.pyspace.w_None)
+        wph_null = interp.pyspace.w_None.wrap_for_php(interp)
         assert wph_null is interp.space.w_Null
         assert wph_null.tp == interp.space.tp_null
 
     def test_ph_string_of_py_str(self):
         interp = self.new_interp()
         wpy_str = interp.pyspace.wrap("transmogrification")
-        wph_string = py_to_php(interp, wpy_str)
+        wph_string = wpy_str.wrap_for_php(interp)
         assert interp.space.str_w(wph_string) == "transmogrification"
         assert wph_string.tp == interp.space.tp_str
 
@@ -144,7 +144,7 @@ class TestPyPyBridgeConversions(BaseTestInterpreter):
         interp = self.new_interp()
         for b in [True, False]:
             wpy_bool = interp.pyspace.wrap(b)
-            wph_boolean = py_to_php(interp, wpy_bool)
+            wph_boolean = wpy_bool.wrap_for_php(interp)
             assert wph_boolean.boolval == b
             assert wph_boolean.tp == interp.space.tp_bool
 
@@ -158,7 +158,7 @@ class TestPyPyBridgeConversions(BaseTestInterpreter):
                 [ phspace.wrap(x) for x in input ])
 
         wpy_list = pyspace.newlist([ pyspace.wrap(x) for x in input ])
-        wph_actual = py_to_php(interp, wpy_list)
+        wph_actual = wpy_list.wrap_for_php(interp)
 
         assert phspace.is_true(phspace.eq(wph_actual, wph_expect))
 
@@ -186,7 +186,7 @@ class TestPyPyBridgeConversions(BaseTestInterpreter):
                 [ wpy_list_inner ]
         wpy_list_outer = pyspace.newlist(wpy_list_outer)
 
-        wph_got = py_to_php(interp, wpy_list_outer)
+        wph_got = wpy_list_outer.wrap_for_php(interp)
         assert phspace.is_true(phspace.eq(wph_expect_outer, wph_got))
 
     def test_ph_closure_of_py_function(self):
@@ -206,7 +206,7 @@ class TestPyPyBridgeConversions(BaseTestInterpreter):
         func = interp.pyspace.getattr(wpy_module, interp.pyspace.wrap("f"))
         wpy_func = interp.pyspace.wrap(func)
 
-        wph_closure = py_to_php(interp, wpy_func)
+        wph_closure = wpy_func.wrap_for_php(interp)
         # XXX until interp.space.tp_closure
         assert type(wph_closure) is W_ClosureObject
 

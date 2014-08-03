@@ -5,7 +5,6 @@ from hippy.objects.base import W_Root
 from hippy.objects.reference import W_Reference
 from hippy.objects.arrayobject import new_rdict
 from hippy.builtin_klass import W_ExceptionObject
-from hippy.module.pypy_bridge.conversion import py_to_php
 
 
 class ExceptionHandler(object):
