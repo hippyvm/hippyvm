@@ -1,3 +1,5 @@
+from rpython.rlib import jit
+
 from hippy.objects.base import W_Root as WPHP_Root
 from hippy.objects.reference import W_Reference as Wpy_Reference
 from hippy.module.pypy_bridge.conversion import py_to_php, php_to_py
@@ -18,26 +20,20 @@ class PHP_Scope(WPy_Root):
     def py_lookup(self, n):
         """Lookup 'n' in this scope and return it as a PyPy object or None
         if not found."""
-
+    
         ph_interp = self.ph_interp
         ph_frame = self.ph_frame
-        ph_v = ph_frame.lookup_ref_by_name(n)
+
+        bc = jit.promote(ph_frame.bytecode)
+        no = bc.lookup_var_pos(n)
+        if no >= 0:
+            ph_v = ph_frame.lookup_deref(no, one_level=True)
+            if ph_v is not None:
+                return php_to_py(ph_interp, ph_v)
+            return None
+
+        ph_v = self.lookup_elidables(n)
         if ph_v is not None:
-            return php_to_py(ph_interp, ph_v)
-
-        try:
-            ph_v = ph_interp.lookup_constant(n)
-        except KeyError:
-            pass
-        else:
-            return php_to_py(ph_interp, ph_v)
-
-        # Search for PHP function of that name
-        try:
-            ph_v = ph_interp.lookup_function(n)
-        except KeyError:
-            pass
-        else:
             return php_to_py(ph_interp, ph_v)
 
         ph_v = ph_interp.lookup_class_or_intf(n)
@@ -48,7 +44,27 @@ class PHP_Scope(WPy_Root):
         if py_scope is not None:
             return py_scope.py_lookup(n)
 
-        return None
+
+    @jit.elidable_promote()
+    def lookup_elidables(self, n):
+        ph_interp = self.ph_interp
+        ph_frame = self.ph_frame
+        try:
+            ph_v = ph_interp.lookup_constant(n)
+        except KeyError:
+            pass
+        else:
+            return ph_v
+
+        # Search for PHP function of that name
+        try:
+            ph_v = ph_interp.lookup_function(n)
+        except KeyError:
+            pass
+        else:
+            return ph_v
+
+
 
 
 class W_PHPGlobalScope(WPy_Root):

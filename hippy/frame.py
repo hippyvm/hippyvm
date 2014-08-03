@@ -54,7 +54,7 @@ class Frame(object):
                        'next_instr']
     _immutable_fields_ = ['unique_items',   # the list itself, not its content
                           '_contextclass',
-                          'is_global_level']
+                          'is_global_level', 'bytecode']
 
     is_global_level = False
     extra_variables = None
@@ -184,7 +184,7 @@ class Frame(object):
         assert no >= 0
         return self.vars_w[no]
 
-    def lookup_deref(self, no, give_notice=False):
+    def lookup_deref(self, no, give_notice=False, one_level=False):
         w_var = self.lookup_variable_temp(no)
 
         if w_var is not None:
@@ -194,15 +194,16 @@ class Frame(object):
                 self.unique_items[no] = False
                 return w_var
 
-        bytecode = self.bytecode
-        py_scope = bytecode.py_scope
-        if py_scope is not None:
-            w_var = py_scope.ph_lookup(bytecode.varnames[no])
-            if w_var is not None:
-                return w_var
+        if not one_level:
+            bytecode = self.bytecode
+            py_scope = bytecode.py_scope
+            if py_scope is not None:
+                w_var = py_scope.ph_lookup(bytecode.varnames[no])
+                if w_var is not None:
+                    return w_var
         if give_notice:
             self.interp.notice("Undefined variable: %s" % (
-                bytecode.varnames[no],))
+                self.bytecode.varnames[no],))
         return self.interp.space.w_Null
 
     def lookup_deref_temp(self, no, give_notice=False):
@@ -291,7 +292,7 @@ class Frame(object):
         Returns None if the variable does not exist.
         """
         try:
-            no = self.bytecode.var_to_pos[name]
+            no = self.bytecode._lookup_pos(name)
         except KeyError:
             if self.extra_variables is None:
                 return None
