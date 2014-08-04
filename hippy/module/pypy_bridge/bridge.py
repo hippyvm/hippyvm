@@ -20,6 +20,7 @@ from pypy.interpreter.baseobjspace import W_Root as Wpy_Root
 from pypy.interpreter.function import Function as Py_Function
 from pypy.objspace.std import StdObjSpace
 from pypy.interpreter.argument import Arguments
+from pypy.module.__builtin__ import compiling as py_compiling
 
 from rpython.rlib import jit
 
@@ -49,31 +50,23 @@ def embed_py_mod(interp, mod_name, mod_source):
 
     return wpy_module.wrap_for_php(interp)
 
-
 def _compile_py_func_from_string(interp, func_source):
     """ compiles a string returning a <name, func> pair """
 
     pyspace = interp.pyspace
 
     # compile the user's code
-    wpy_compile = pyspace.getattr(pyspace.builtin, pyspace.wrap("compile"))
-    wpy_code = pyspace.call_args(wpy_compile, Arguments(pyspace,
-        [
-            pyspace.wrap(func_source),
-            pyspace.wrap("<string>"),
-            pyspace.wrap("exec")
-        ]
-    ))
+    wpy_code = py_compiling.compile(
+            pyspace, pyspace.wrap(func_source), "<string>", "exec")
 
     # Eval it into a dict
     wpy_fake_locals = pyspace.newdict()
-    wpy_eval = pyspace.getattr(pyspace.builtin, pyspace.wrap("eval"))
-    pyspace.call_args(wpy_eval, Arguments(pyspace,
-        [ wpy_code, pyspace.newdict(), wpy_fake_locals ]))
+    py_compiling.eval(pyspace, wpy_code, pyspace.newdict(), wpy_fake_locals)
 
     # Extract the users function from the dict
-    wpy_keys = pyspace.call_method(wpy_fake_locals, "keys")
-    wpy_vals = pyspace.call_method(wpy_fake_locals, "values")
+    wpy_keys = wpy_fake_locals.descr_keys(pyspace)
+    wpy_vals = wpy_fake_locals.descr_values(pyspace)
+
     wpy_zero = pyspace.wrap(0)
     wpy_func_name = pyspace.getitem(wpy_keys, wpy_zero)
     wpy_func = pyspace.getitem(wpy_vals, wpy_zero)
