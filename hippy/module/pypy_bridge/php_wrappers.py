@@ -127,7 +127,7 @@ class W_EmbeddedPyMod(WPh_Object):
             raise space.ec.fatal("No such member %s in module" % name)
         return w_obj.wrap_for_php(py_space.get_php_interp())
 
-    def getmeth(self, space, name, contextclass=None):
+    def getmeth(self, space, name, contextclass=None, for_callback=None):
         interp = self.py_space.get_php_interp()
         return self._getattr(interp, space, name)
 

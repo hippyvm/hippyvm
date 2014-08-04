@@ -62,7 +62,7 @@ class W_PHPProxyGeneric(W_Root):
         wph_target = wph_inst.getattr(interp, name, None, fail_with_none=True)
 
         if wph_target is None:
-            wph_target = wph_inst.getmeth(php_space, name) # XXX what if this raises a VisibilityError?
+            wph_target = wph_inst.getmeth(php_space, name, None) # XXX what if this raises a VisibilityError?
             if not wph_target:
                 print "can't lookup", name
                 assert False # XXX raise exception
