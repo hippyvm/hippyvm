@@ -215,23 +215,11 @@ class W_PyBridgeListProxy(W_ArrayObject):
 
 class W_PyBridgeDictProxyIterator(W_BaseIterator):
 
-    _immutable_fields_ = ["interp", "rdct_w", "wpy_iter", "wpy_iter_next", "wpy_zero", "wpy_one"]
+    _immutable_fields_ = ["interp", "wpy_iter"]
 
     def __init__(self, py_space, rdct_w):
         self.py_space = py_space
-        self.rdct_w = rdct_w
-
-        wpy_dict_iteritems = py_space.getattr(
-                rdct_w, py_space.wrap("iteritems"))
-        self.wpy_iter = py_space.call_args(
-                wpy_dict_iteritems, Arguments(py_space, []))
-        self.wpy_iter_next = py_space.getattr(
-                self.wpy_iter, py_space.wrap("next"))
-
-        # constant offsets used often
-        self.wpy_zero = py_space.wrap(0)
-        self.wpy_one = py_space.wrap(1)
-
+        self.wpy_iter = rdct_w.iteritems()
         self.remaining = py_space.int_w(py_space.len(rdct_w))
         self.finished = self.remaining == 0
 
@@ -244,9 +232,7 @@ class W_PyBridgeDictProxyIterator(W_BaseIterator):
         py_space = self.py_space
         self.remaining -= 1
         self.finished = self.remaining == 0
-        wpy_k_v = py_space.call_args(
-            self.wpy_iter_next, Arguments(py_space, []))
-        wpy_v = py_space.getitem(wpy_k_v, self.wpy_one)
+        wpy_v = self.wpy_iter.next_item()[1]
         return wpy_v.wrap_for_php(py_space.get_php_interp())
 
     def next_item(self, space):
@@ -254,10 +240,7 @@ class W_PyBridgeDictProxyIterator(W_BaseIterator):
         interp = py_space.get_php_interp()
         self.remaining -= 1
         self.finished = self.remaining == 0
-        wpy_k_v = py_space.call_args(
-            self.wpy_iter_next, Arguments(py_space, []))
-        wpy_k = py_space.getitem(wpy_k_v, self.wpy_zero)
-        wpy_v = py_space.getitem(wpy_k_v, self.wpy_one)
+        wpy_k, wpy_v = self.wpy_iter.next_item()
         return wpy_k.wrap_for_php(interp), wpy_v.wrap_for_php(interp)
 
 class W_PyBridgeDictProxy(W_ArrayObject):
