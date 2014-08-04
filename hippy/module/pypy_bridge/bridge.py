@@ -32,14 +32,13 @@ k_PyPyException = def_class('PyPyException',
 @wrap(['interp', str, str], name='embed_py_mod')
 def embed_py_mod(interp, mod_name, mod_source):
     phspace = interp.space
-    #wph_args_items = [ phspace.wrap(x) for x in (mod_name, mod_source) ]
 
     # create a new Python module in which to inject code
     wpy_mod_name = interp.pyspace.wrap(mod_name)
     wpy_module = Module(interp.pyspace, wpy_mod_name)
 
     # Register it in sys.modules
-    wpy_sys_modules = interp.pyspace.sys.get('modules') # use space.getattr XXX
+    wpy_sys_modules = interp.pyspace.sys.get('modules')
     interp.pyspace.setitem(wpy_sys_modules, wpy_mod_name, wpy_module)
 
     # Inject code into the fresh module
