@@ -62,16 +62,10 @@ class W_PHPProxyGeneric(W_Root):
         wph_target = wph_inst.getattr(interp, name, None, fail_with_none=True)
 
         if wph_target is None:
-            # If the attribute wasn't found in wph_inst, it may be a function,
-            # which needs to be searched for separately.
-            wph_class = php_space.getclass(wph_inst)
-            try:
-                wph_meth = wph_class.methods[name.lower()]
-            except KeyError:
+            wph_target = wph_inst.getmeth(php_space, name) # XXX what if this raises a VisibilityError?
+            if not wph_target:
                 print "can't lookup", name
                 assert False # XXX raise exception
-            wph_target = wph_meth.bind(wph_inst, wph_class)
-
         return php_to_py(interp, wph_target)
 
     # XXX unwrap spec
