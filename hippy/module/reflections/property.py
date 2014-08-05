@@ -37,6 +37,20 @@ class W_ReflectionProperty(W_InstanceObject):
         return 'Property [ %s ]\n' % inner
 
 
+@wrap_method(['interp', W_Root, str, Optional(bool)],
+             name='ReflectionProperty::export', flags=consts.ACC_STATIC)
+def export(interp, w_klass, name, return_string=False):
+    refl = k_ReflectionProperty.call_args(interp,
+            [w_klass, interp.space.wrap(name)])
+    result = refl.get_str()
+    if return_string:
+        return interp.space.wrap(result)
+    else:
+        interp.writestr(result)
+        interp.writestr('\n')
+        return interp.space.w_Null
+
+
 @wrap_method(['interp', ThisUnwrapper(W_ReflectionProperty), str, str],
              name='ReflectionProperty::__construct')
 def construct(interp, this, class_name, property_name):
@@ -157,7 +171,8 @@ def _set_name(interp, this, w_value):
 
 k_ReflectionProperty = def_class(
     'ReflectionProperty',
-    [construct,
+    [export,
+     construct,
      get_name,
      get_value,
      set_value,
