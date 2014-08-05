@@ -80,7 +80,6 @@ def _compile_py_func_from_string(interp, func_source):
 
 @wrap(['interp', str], name='embed_py_func')
 def embed_py_func(interp, func_source):
-    # XXX scope
     phspace, pyspace = interp.space, interp.pyspace
 
     # Compile
