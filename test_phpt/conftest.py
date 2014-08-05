@@ -1081,7 +1081,7 @@ markers[general_test_dir] = {
     'get_loaded_extensions_basic.phpt': "not implemented",
     # 'get_magic_quotes_gpc.phpt': "not implemented",
     'get_magic_quotes_runtime.phpt': "not implemented",
-    'getmypid_basic.phpt': "not implemented",
+    # 'getmypid_basic.phpt': "not implemented",
     'getopt.phpt': "not implemented",
     'getopt_002.phpt': "not implemented",
     'getopt_003.phpt': "not implemented",
@@ -1245,7 +1245,7 @@ markers[lang_test_dir] = {
     'bug22690.phpt': "missing create_function()",
     'bug23624.phpt': "does not compile",
     # 'bug23922.phpt': "$this when not in object context",
-    'bug24396.phpt': "does not parse",
+    # 'bug24396.phpt': "does not parse",
     'bug24403.phpt': "problem in preg_replace()",
     'bug24658.phpt': "error wording",
     'bug24908.phpt': "?",
@@ -1342,7 +1342,7 @@ markers[security_test_dir] = {
 }
 
 markers[strings_test_dir] = {
-    '001.phpt': "missing strtok()",
+    # '001.phpt': "missing strtok()",
     '002.phpt': "problem with php://stdout",
     '004.phpt': "undefined function highlight_string()",
     'bug26703.phpt': "undefined function highlight_string()",
@@ -1699,7 +1699,7 @@ markers[date_test_dir] = {
     "gmdate_variation9.phpt": "not implemented",
     "idate_variation5.phpt": "not implemented",
     "idate_variation6.phpt": "not implemented",
-    "microtime_basic.phpt": "not implemented",
+    # "microtime_basic.phpt": "not implemented",
     # "microtime_error.phpt": "not implemented",
     "oo_001.phpt": "not implemented",
     "rfc-datetime_and_daylight_saving_time-type2.phpt": "not implemented",
