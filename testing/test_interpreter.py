@@ -4057,6 +4057,23 @@ class TestInterpreter(_TestInterpreter):
             '\x00DB\x00type-mysql', '\x00DB\x00conn-', '\x00DB\x00user-',
             '\x00DB\x00pass-']
 
+    def test_constant_in_namespace(self):
+        output = self.run("""
+        namespace foo\\bar;
+        $x = falsE;
+        echo $x;
+        """)
+        assert output == [self.space.w_False]
+
+    def test_constant_in_classdef_in_namespace(self):
+        output = self.run("""
+        namespace foo\\bar;
+        class A {
+            static $x = falsE;
+        }
+        echo A::$x;
+        """)
+        assert output == [self.space.w_False]
 
     @skip_on_travis
     def test_backtick_expr(self):
