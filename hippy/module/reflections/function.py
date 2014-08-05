@@ -42,6 +42,7 @@ class NameWrapper(Wrapper):
         self.space = interp.space
         self.name = interp.space.str_w(name)
         self.function = interp.lookup_function(self.name)
+        assert self.function is not None
 
     def get_name(self):
         return self.space.wrap(self.function.get_fullname())

@@ -1758,6 +1758,7 @@ def natsort(interp, w_ref):
         return space.w_False
     pairs = w_arr.as_pair_list(space)
     w_natsort_func = interp.lookup_function('strnatcmp')
+    assert w_natsort_func is not None
     _sort(space, pairs, sort_type=2, elem=VALUE, cmp=w_natsort_func)
     w_ref.store(space.new_array_from_pairs(pairs))
     return space.w_True
@@ -1776,6 +1777,7 @@ def natcasesort(interp, w_ref):
         return space.w_Null
     pairs = w_arr.as_pair_list(space)
     w_natsort_func = interp.lookup_function('strnatcasecmp')
+    assert w_natsort_func is not None
     _sort(space, pairs, sort_type=2, elem=VALUE, cmp=w_natsort_func)
     w_ref.store(space.new_array_from_pairs(pairs))
     return space.w_True
