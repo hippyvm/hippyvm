@@ -478,7 +478,7 @@ def getlastmod():
 @wrap(['space'])
 def getmygid(space):
     """ Get PHP script owner's GID"""
-    res = os.getpid()
+    res = os.getgid()
     return space.newint(res)
 
 
@@ -487,14 +487,18 @@ def getmyinode():
     raise NotImplementedError()
 
 
-def getmypid():
+@wrap(['space'])
+def getmypid(space):
     """ Gets PHP's process ID"""
-    raise NotImplementedError()
+    res = os.getpid()
+    return space.newint(res)
 
 
-def getmyuid():
+@wrap(['space'])
+def getmyuid(space):
     """ Gets PHP script owner's UID"""
-    raise NotImplementedError()
+    res = os.geteuid()
+    return space.newint(res)
 
 
 def getopt():
