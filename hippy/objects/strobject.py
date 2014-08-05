@@ -299,6 +299,8 @@ class StringMixin(object):
             builder.append(chr(c ^ 0xff))
         return W_ConstStringObject(builder.build())
 
+    def to_py(self, interp):
+        return interp.pyspace.wrap(interp.space.str_w(self))
 
 class W_ConstStringObject(StringMixin, W_StringObject):
 

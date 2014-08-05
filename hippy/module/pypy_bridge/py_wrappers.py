@@ -16,7 +16,6 @@ from pypy.objspace.std.dictmultiobject import (AbstractTypedStrategy,
 from pypy.objspace.std.dictmultiobject import (
         W_DictMultiObject as WPy_DictMultiObject)
 
-from hippy.module.pypy_bridge.conversion import php_to_py
 from hippy.objects.base import W_Root as WPHP_Root
 from hippy.objects.arrayobject import W_ListArrayObject, W_RDictArrayObject
 from hippy.objects.arrayiter import ListArrayIteratorRef, RDictArrayIteratorRef
@@ -42,7 +41,7 @@ class W_PHPProxyGeneric(W_Root):
     def get_php_interp(self):
         return self.interp
 
-    def wrap_for_php(self, php_interp):
+    def to_php(self, php_interp):
         return self.wph_inst
 
     def is_w(self, space, other):
@@ -66,7 +65,7 @@ class W_PHPProxyGeneric(W_Root):
             if not wph_target:
                 print "can't lookup", name
                 assert False # XXX raise exception
-        return php_to_py(interp, wph_target)
+        return wph_target.to_py(interp)
 
     # XXX unwrap spec
     def descr_set(self, w_name, w_obj):
@@ -76,7 +75,7 @@ class W_PHPProxyGeneric(W_Root):
 
         name = py_space.str_w(w_name)
         wph_inst = self.wph_inst
-        self.wph_inst.setattr(interp, name, w_obj.wrap_for_php(interp), None)
+        self.wph_inst.setattr(interp, name, w_obj.to_php(interp), None)
 
         return py_space.w_None
 
@@ -85,9 +84,9 @@ class W_PHPProxyGeneric(W_Root):
         wpy_args, wpy_kwargs = __args__.unpack()
         assert not wpy_kwargs # XXX exception
 
-        wph_args_elems = [ x.wrap_for_php(self.interp) for x in wpy_args ]
+        wph_args_elems = [ x.to_php(self.interp) for x in wpy_args ]
         wph_rv = self.wph_inst.call_args(self.interp, wph_args_elems)
-        return php_to_py(self.interp, wph_rv)
+        return wph_rv.to_py(self.interp)
 
     def descr_eq(self, space, w_other):
         if isinstance(w_other, W_PHPProxyGeneric):
@@ -146,10 +145,10 @@ class W_EmbeddedPHPFunc(W_Root):
         php_interp = self.space.get_php_interp()
         phspace = self.space.get_php_interp().space
 
-        wph_args_elems = [ x.wrap_for_php(php_interp) for x in args ]
+        wph_args_elems = [ x.to_php(php_interp) for x in args ]
         res = self.wph_func.call_args(php_interp, wph_args_elems)
 
-        return php_to_py(php_interp, res)
+        return res.to_py(php_interp)
 
 W_EmbeddedPHPFunc.typedef = TypeDef("EmbeddedPHPFunc",
     __call__ = interp2app(W_EmbeddedPHPFunc.descr_call),
@@ -182,7 +181,7 @@ class WrappedPHPArrayStrategy(ListStrategy):
                     "Stale wrapped PHP array. No longer integer keyed!")
 
     def wrap(self, wphp_val):
-        return php_to_py(self.space.get_php_interp(), wphp_val)
+        return wphp_val.to_py(self.space.get_php_interp())
 
     erase, unerase = rerased.new_erasing_pair("php_int_key_array")
     erase = staticmethod(erase)
@@ -220,7 +219,7 @@ class WrappedPHPArrayStrategy(ListStrategy):
 
         wphp_arry_ref = self.unerase(w_list.lstorage)
         wphp_key = php_space.wrap(key) # key always an int
-        wphp_value = w_value.wrap_for_php(interp)
+        wphp_value = w_value.to_php(interp)
 
         wphp_arry_ref.setitem_ref(php_space, wphp_key, wphp_value)
 
@@ -229,7 +228,7 @@ class WrappedPHPArrayStrategy(ListStrategy):
         py_space, php_space = self.space, interp.space
 
         wphp_arry_ref = self.unerase(w_list.lstorage)
-        wphp_item = w_item.wrap_for_php(interp)
+        wphp_item = w_item.to_php(interp)
         wphp_arry = wphp_arry_ref.deref_temp()
         wphp_next_idx = php_space.wrap(wphp_arry.arraylen())
 
@@ -309,7 +308,7 @@ class WrappedPHPArrayDictStrategy(DictStrategy):
     unerase = staticmethod(unerase)
 
     def wrap(self, unwrapped):
-        return php_to_py(self.space.get_php_interp(), unwrapped)
+        return unwrapped.to_py(self.space.get_php_interp())
 
     def getitem(self, w_dict, w_key):
         # XXX if the key is not a string or int, we should do a implicit
@@ -319,8 +318,8 @@ class WrappedPHPArrayDictStrategy(DictStrategy):
         pyspace = self.space
 
         wphp_arry = self.unerase(w_dict.dstorage)
-        wphp_key = w_key.wrap_for_php(interp)
-        return php_to_py(interp, interp.space.getitem(wphp_arry, wphp_key))
+        wphp_key = w_key.to_php(interp)
+        return interp.space.getitem(wphp_arry, wphp_key).to_py(interp)
 
     def setitem(self, w_dict, w_key, w_value):
         # XXX again with the implicit cast on the key if not str or int
@@ -328,16 +327,16 @@ class WrappedPHPArrayDictStrategy(DictStrategy):
         py_space, php_space = self.space, interp.space
 
         wphp_arry_ref = self.unerase(w_dict.dstorage)
-        wphp_key = w_key.wrap_for_php(interp)
-        wphp_value = w_value.wrap_for_php(interp)
+        wphp_key = w_key.to_php(interp)
+        wphp_value = w_value.to_php(interp)
 
         wphp_arry_ref.setitem_ref(php_space, wphp_key, wphp_value)
 
     def wrapkey(space, key):
-        return php_to_py(space.get_php_interp(), key)
+        return key.to_py(space.get_php_interp())
 
     def wrapvalue(space, val):
-        return php_to_py(space.get_php_interp(), val)
+        return val.to_py(space.get_php_interp())
 
     def length(self, w_dict):
         wphp_arry = self.unerase(w_dict.dstorage).deref_temp()

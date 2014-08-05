@@ -31,6 +31,10 @@ class W_Root(object):
         otherwise it returns None."""
         return None
 
+    def call_args(self, interp, args_w, w_this=None, thisclass=None,
+                  closureargs=None):
+        raise NotImplementedError("abstract")
+
 
 class W_Object(W_Root):
     _attrs_ = ()
@@ -235,3 +239,7 @@ class W_Object(W_Root):
 
     def serialize(self, space, builder, memo):
         raise NotImplementedError # serialize need to be implemented by everyone
+
+    def to_py(self, interp):
+        from hippy.module.pypy_bridge import py_wrappers
+        return py_wrappers.W_PHPProxyGeneric(interp, self)

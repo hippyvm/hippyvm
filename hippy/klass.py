@@ -607,6 +607,9 @@ class ClassBase(AbstractFunction, AccessMixin):
             self._all_nonstatic_special_properties = result
         return result
 
+    def to_py(self, interp):
+        from hippy.module.pypy_bridge import py_wrappers
+        return py_wrappers.W_PHPProxyGeneric(interp, self)
 
 all_builtin_classes = OrderedDict()
 
@@ -1125,7 +1128,6 @@ class W_BoundMethod(AbstractFunction):
         return self.method_func.call_args(interp, args_w,
                                           w_this=self.w_instance,
                                           thisclass=thisclass)
-
 
 class W_UnderUnderCall(AbstractFunction):
     def __init__(self, name, call_func):

@@ -2,7 +2,6 @@ from rpython.rlib import jit
 
 from hippy.objects.base import W_Root as WPHP_Root
 from hippy.objects.reference import W_Reference as Wpy_Reference
-from hippy.module.pypy_bridge.conversion import php_to_py
 
 from pypy.interpreter.baseobjspace import W_Root as WPy_Root
 from pypy.interpreter.typedef import TypeDef
@@ -29,20 +28,20 @@ class PHP_Scope(WPy_Root):
         if no >= 0:
             ph_v = ph_frame.lookup_deref(no, one_level=True)
             if ph_v is not None:
-                return php_to_py(ph_interp, ph_v)
+                return ph_v.to_py(ph_interp)
             return None
 
         ph_v = ph_interp.lookup_constant(n)
         if ph_v is not None:
-            return php_to_py(ph_interp, ph_v)
+            return ph_v.to_py(ph_interp)
 
         ph_v = ph_interp.lookup_function(n)
         if ph_v is not None:
-            return php_to_py(ph_interp, ph_v)
+            return ph_v.to_py(ph_interp)
 
         ph_v = ph_interp.lookup_class_or_intf(n)
         if ph_v is not None:
-            return php_to_py(ph_interp, ph_v)
+            return ph_v.to_py(ph_interp)
 
         py_scope = ph_frame.bytecode.py_scope
         if py_scope is not None:
@@ -67,15 +66,15 @@ class W_PHPGlobalScope(WPy_Root):
         n = py_space.str_w(w_name)
         ph_v = ph_interp.lookup_constant(n)
         if ph_v is not None:
-            return php_to_py(ph_interp, ph_v)
+            return ph_v.to_py(ph_interp)
 
         ph_v = ph_interp.lookup_function(n)
         if ph_v is not None:
-            return php_to_py(ph_interp, ph_v)
+            return ph_v.to_py(ph_interp)
 
         ph_v = ph_interp.lookup_class_or_intf(n)
         if ph_v is not None:
-            return php_to_py(ph_interp, ph_v)
+            return ph_v.to_py(ph_interp)
 
         print "can't find", n
         assert False
@@ -100,7 +99,7 @@ class Py_Scope(WPHP_Root):
 
         py_v = self.py_lookup(n)
         if py_v is not None:
-            return py_v.wrap_for_php(self.py_interp.get_php_interp())
+            return py_v.to_php(self.py_interp.get_php_interp())
         return None
 
 

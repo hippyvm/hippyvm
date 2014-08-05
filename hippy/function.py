@@ -74,6 +74,9 @@ class AbstractFunction(W_Root):
                   closureargs=None):
         raise NotImplementedError("abstract base class")
 
+    def to_py(self, interp):
+        from hippy.module.pypy_bridge import py_wrappers
+        return py_wrappers.W_EmbeddedPHPFunc(interp.pyspace, self)
 
 class Function(AbstractFunction):
     _immutable_fields_ = ['tp[*]', 'names[*]',
@@ -165,3 +168,7 @@ class Function(AbstractFunction):
         w_res = interp.interpret(newframe)
         assert w_res is not None
         return w_res
+
+    def to_py(self, interp):
+        from hippy.module.pypy_bridge import py_wrappers
+        return py_wrappers.W_EmbeddedPHPFunc(interp.pyspace, self)

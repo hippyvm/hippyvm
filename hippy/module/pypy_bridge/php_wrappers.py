@@ -8,7 +8,6 @@ from hippy.klass import def_class
 from hippy.builtin import wrap, Optional, wrap_method, ThisUnwrapper
 from hippy.objects.base import W_Root as Wph_Root, W_Object as WPh_Object
 from hippy.function import AbstractFunction
-from hippy.module.pypy_bridge.conversion import php_to_py
 from hippy.objects.iterator import W_BaseIterator
 from hippy.objects.arrayobject import wrap_array_key, W_ArrayObject
 from hippy.objects.reference import W_Reference
@@ -47,13 +46,16 @@ class W_PyProxyGeneric(W_InstanceObject):
         ph_func = W_EmbeddedPyFunc(self.interp, self.wpy_inst)
         return ph_func
 
+    def to_py(self, interp):
+        return self.wpy_inst
+
 @wrap_method(['interp', ThisUnwrapper(W_PyProxyGeneric), str],
         name='GenericPyProxy::__get')
 def generic__get(interp, this, name):
     interp = this.interp
     pyspace = interp.pyspace
     wpy_target = pyspace.getattr(this.wpy_inst, pyspace.wrap(name))
-    return wpy_target.wrap_for_php(interp)
+    return wpy_target.to_php(interp)
 
 @wrap_method(['interp', ThisUnwrapper(W_PyProxyGeneric), str, Wph_Root],
         name='GenericPyProxy::__call')
@@ -66,9 +68,9 @@ def generic__call(interp, this, func_name, wph_args):
     wpy_func_name = pyspace.wrap(func_name)
     wpy_func = pyspace.getattr(this.wpy_inst, wpy_func_name)
 
-    wpy_args_items = [ php_to_py(interp, x) for x in wph_args.as_list_w() ]
+    wpy_args_items = [ x.to_py(interp) for x in wph_args.as_list_w() ]
     wpy_rv = interp.pyspace.call(wpy_func, interp.pyspace.newlist(wpy_args_items))
-    return wpy_rv.wrap_for_php(interp)
+    return wpy_rv.to_php(interp)
 
 k_PyBridgeProxy = def_class('PyBridgeProxy',
     [generic__get, generic__call],
@@ -90,15 +92,15 @@ class W_EmbeddedPyFunc(AbstractFunction):
     def call_args(self, interp, args_w, w_this=None, thisclass=None,
                   closureargs=None):
 
-        wpy_args_elems = [ php_to_py(interp, x) for x in args_w ]
+        wpy_args_elems = [ x.to_py(interp) for x in args_w ]
 
         # Methods are really just functions with self bound
         if w_this is not None:
-            wpy_args_elems = [php_to_py(interp, w_this)] + wpy_args_elems
+            wpy_args_elems = [w_this.to_py(interp)] + wpy_args_elems
 
         rv = interp.pyspace.call_args(
                 self.py_callable, Arguments(interp.pyspace, wpy_args_elems))
-        return rv.wrap_for_php(interp)
+        return rv.to_php(interp)
 
     def needs_ref(self, i):
         return False
@@ -125,7 +127,7 @@ class W_EmbeddedPyMod(WPh_Object):
             if not e.match(py_space, py_space.w_AttributeError):
                 raise
             raise space.ec.fatal("No such member %s in module" % name)
-        return w_obj.wrap_for_php(py_space.get_php_interp())
+        return w_obj.to_php(py_space.get_php_interp())
 
     def getmeth(self, space, name, contextclass=None, for_callback=None):
         interp = self.py_space.get_php_interp()
@@ -156,14 +158,14 @@ class W_PyBridgeListProxyIterator(W_BaseIterator):
         wpy_value = self.storage_w[index]
         self.index = index + 1
         self.finished = self.index == len(self.storage_w)
-        return wpy_value.wrap_for_php(self.py_space.get_php_interp())
+        return wpy_value.to_php(self.py_space.get_php_interp())
 
     def next_item(self, space):
         index = self.index
         wpy_value = self.storage_w[index]
         self.index = index + 1
         self.finished = self.index == len(self.storage_w)
-        return space.wrap(index), wpy_value.wrap_for_php(self.py_space.get_php_interp())
+        return space.wrap(index), wpy_value.to_php(self.py_space.get_php_interp())
 
 class W_PyBridgeListProxy(W_ArrayObject):
     """ Wraps a Python list as PHP array. """
@@ -187,17 +189,17 @@ class W_PyBridgeListProxy(W_ArrayObject):
     def _getitem_int(self, index):
         py_space = self.py_space
         wpy_val = py_space.getitem(self.wpy_list, py_space.wrap(index))
-        return wpy_val.wrap_for_php(py_space.get_php_interp())
+        return wpy_val.to_php(py_space.get_php_interp())
 
     def _getitem_str(self, index):
         assert False # XXX proper exception (accessing string key of py list)
 
     def _appenditem(self, w_obj, as_ref=False):
-        self.wpy_list.append(php_to_py(self.py_space.get_php_interp(), w_obj))
+        self.wpy_list.append(w_obj.to_py(self.py_space.get_php_interp()))
 
     def _setitem_int(self, index, w_value, as_ref, unique_item=False):
         py_space = self.py_space
-        wpy_val = php_to_py(py_space.get_php_interp(), w_value)
+        wpy_val = w_value.to_py(py_space.get_php_interp())
         wpy_index = py_space.wrap(index)
         py_space.setitem(self.wpy_list, wpy_index, wpy_val)
         return self
@@ -205,13 +207,16 @@ class W_PyBridgeListProxy(W_ArrayObject):
     def _setitem_str(self, key, w_value, as_ref,
                      unique_array=False, unique_item=False):
         py_space = self.py_space
-        wpy_val = php_to_py(py_space.get_php_interp(), w_value)
+        wpy_val = w_value.to_py(py_space.get_php_interp())
         wpy_key = py_space.wrap(key)
         py_space.setitem(self.wpy_list, wpy_key, wpy_val)
         return self
 
     def create_iter(self, space, contextclass=None):
         return W_PyBridgeListProxyIterator(self.py_space, self.wpy_list)
+
+    def to_py(self, interp):
+        return self.wpy_list
 
 class W_PyBridgeDictProxyIterator(W_BaseIterator):
 
@@ -233,7 +238,7 @@ class W_PyBridgeDictProxyIterator(W_BaseIterator):
         self.remaining -= 1
         self.finished = self.remaining == 0
         wpy_v = self.wpy_iter.next_item()[1]
-        return wpy_v.wrap_for_php(py_space.get_php_interp())
+        return wpy_v.to_php(py_space.get_php_interp())
 
     def next_item(self, space):
         py_space = self.py_space
@@ -241,7 +246,10 @@ class W_PyBridgeDictProxyIterator(W_BaseIterator):
         self.remaining -= 1
         self.finished = self.remaining == 0
         wpy_k, wpy_v = self.wpy_iter.next_item()
-        return wpy_k.wrap_for_php(interp), wpy_v.wrap_for_php(interp)
+        return wpy_k.to_php(interp), wpy_v.to_php(interp)
+
+    def to_py(self, interp):
+        return None
 
 class W_PyBridgeDictProxy(W_ArrayObject):
     """ Wraps a Python dict as something PHP array. """
@@ -261,16 +269,16 @@ class W_PyBridgeDictProxy(W_ArrayObject):
     def _getitem_int(self, index):
         py_space = self.py_space
         wpy_val = py_space.getitem(self.wpy_dict, py_space.wrap(index))
-        return wpy_val.wrap_for_php(py_space.get_php_interp())
+        return wpy_val.to_php(py_space.get_php_interp())
 
     def _getitem_str(self, index):
         py_space = self.py_space
         wpy_val = py_space.getitem(self.wpy_dict, py_space.wrap(index))
-        return wpy_val.wrap_for_php(py_space.get_php_interp())
+        return wpy_val.to_php(py_space.get_php_interp())
 
     def _setitem_int(self, index, w_value, as_ref, unique_item=False):
         py_space = self.py_space
-        wpy_val = php_to_py(py_space.get_php_interp(), w_value)
+        wpy_val = w_value.to_py(py_space.get_php_interp())
         wpy_index = py_space.wrap(index)
         py_space.setitem(self.wpy_dict, wpy_index, wpy_val)
         return self
@@ -278,7 +286,7 @@ class W_PyBridgeDictProxy(W_ArrayObject):
     def _setitem_str(self, key, w_value, as_ref,
                      unique_array=False, unique_item=False):
         py_space = self.py_space
-        wpy_val = php_to_py(py_space.get_php_interp(), w_value)
+        wpy_val = w_value.to_py(py_space.get_php_interp())
         wpy_key = py_space.wrap(key)
         py_space.setitem(self.wpy_dict, wpy_key, wpy_val)
         return self
@@ -286,3 +294,5 @@ class W_PyBridgeDictProxy(W_ArrayObject):
     def create_iter(self, space, contextclass=None):
         return W_PyBridgeDictProxyIterator(self.py_space, self.wpy_dict)
 
+    def to_py(self, interp):
+        return self.wpy_dict

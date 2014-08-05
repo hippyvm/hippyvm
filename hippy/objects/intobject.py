@@ -167,6 +167,8 @@ class W_IntObject(W_Object):
     def eval_static(self, space):
         return self
 
+    def to_py(self, interp):
+        return interp.pyspace.newint(interp.space.int_w(self))
 
 for _name in BINOP_LIST:
     if hasattr(W_IntObject, _name):

@@ -375,6 +375,13 @@ class W_ArrayObject(W_Object):
                 d[k] = w_v
         return space.new_array_from_rdict(d)
 
+    def to_py(self, interp):
+        # We have to wrap a reference so that the array can be mutable
+        # within Python code.
+        from hippy.module.pypy_bridge.py_wrappers import (
+                make_wrapped_mixed_key_php_array)
+        wph_arry_ref = W_Reference(self)
+        return make_wrapped_mixed_key_php_array(interp, wph_arry_ref)
 
 class ListItemVRef(VirtualReference):
     def __init__(self, w_array, index):
