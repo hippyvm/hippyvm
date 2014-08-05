@@ -427,7 +427,6 @@ markers[class_object_test_dir] = {
 
 # MATH
 markers[math_test_dir] = {
-    # 'atanh_variation.phpt': "value of atanh(1)",
     "bug28228.phpt": "bullshit NULL as string arg",
     'bug45712.phpt': "the test is wrong (asks for inf != inf)",
 }
@@ -642,17 +641,6 @@ markers[file_test_dir] = {
     'lstat_stat_variation4.phpt': "?",
     'lstat_stat_variation5.phpt': "?",
     'lstat_stat_variation6.phpt': "?",
-
-    # 'lstat_stat_variation17.phpt': "?",
-    # 'lstat_stat_variation16.phpt': "?",
-    # 'lstat_stat_variation15.phpt': "?",
-    # 'lstat_stat_variation13.phpt': "?",
-    # 'lstat_stat_variation12.phpt': "?",
-    # 'lstat_stat_variation11.phpt': "?",
-    # 'lstat_stat_variation10.phpt': "?",
-    # 'lstat_stat_variation21.phpt': "?",
-    # 'lstat_stat_variation8.phpt': "?",
-    # 'lstat_stat_basic.phpt': "?",
 
     'move_uploaded_file_basic.phpt': "missing move_uploaded_file()",
     'parse_ini_file_error.phpt': "missing parse_ini_file()",
@@ -1016,8 +1004,6 @@ markers[general_test_dir] = {
     'parse_ini_file.phpt': "parsing",
     'print_r_64bit.phpt': "?",
     'parse_ini_string_002.phpt': "?",
-    'is_resource.phpt': "?",
-    'is_resource_basic.phpt': "?",
     'include_path.phpt': "?",
     'call_user_func_array_variation_003.phpt': "?",
     'call_user_func_array_variation_001.phpt': "missing call_user_func_array()",
