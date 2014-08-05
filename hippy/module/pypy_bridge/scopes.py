@@ -32,19 +32,12 @@ class PHP_Scope(WPy_Root):
                 return php_to_py(ph_interp, ph_v)
             return None
 
-        try:
-            ph_v = ph_interp.lookup_constant(n)
-        except KeyError:
-            pass
-        else:
+        ph_v = ph_interp.lookup_constant(n)
+        if ph_v is not None:
             return php_to_py(ph_interp, ph_v)
 
-        # Search for PHP function of that name
-        try:
-            ph_v = ph_interp.lookup_function(n)
-        except KeyError:
-            pass
-        else:
+        ph_v = ph_interp.lookup_function(n)
+        if ph_v is not None:
             return php_to_py(ph_interp, ph_v)
 
         ph_v = ph_interp.lookup_class_or_intf(n)
@@ -72,19 +65,12 @@ class W_PHPGlobalScope(WPy_Root):
         py_space = ph_interp.pyspace
 
         n = py_space.str_w(w_name)
-        try:
-            ph_v = ph_interp.lookup_constant(n)
-        except KeyError:
-            pass
-        else:
+        ph_v = ph_interp.lookup_constant(n)
+        if ph_v is not None:
             return php_to_py(ph_interp, ph_v)
 
-        # Search for PHP function of that name
-        try:
-            ph_v = ph_interp.lookup_function(n)
-        except KeyError:
-            pass
-        else:
+        ph_v = ph_interp.lookup_function(n)
+        if ph_v is not None:
             return php_to_py(ph_interp, ph_v)
 
         ph_v = ph_interp.lookup_class_or_intf(n)

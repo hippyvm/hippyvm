@@ -14,6 +14,7 @@ class ImmutCell(object):
     _class_key = (None, None, None)
 
     def __init__(self, constant_value, is_builtin=False):
+        assert constant_value is not None
         self.constant_value = constant_value
         self.currently_declared = constant_value
         self.constant_value_is_currently_declared = True
@@ -23,10 +24,7 @@ class ImmutCell(object):
         if self.is_builtin or self.constant_value_is_currently_declared:
             return self.constant_value     # constant-folded
         else:
-            result = self.currently_declared
-            if result is None:
-                raise KeyError
-            return result
+            return self.currently_declared
 
 
 class GlobalImmutCache(object):
@@ -52,7 +50,10 @@ class GlobalImmutCache(object):
     def get_cell(self, name):
         if self.force_lowcase:
             name = name.lower()
-        return self.all_cells[name]
+        try:
+            return self.all_cells[name]
+        except KeyError:
+            return None
 
     def set_cell(self, name, newcell):
         if self.force_lowcase:
@@ -61,24 +62,21 @@ class GlobalImmutCache(object):
         self.all_cells[name] = newcell
 
     def has_definition(self, name):
-        if self.force_lowcase:
-            name = name.lower()
-        try:
-            cell = self.get_cell(name)
-            return cell.currently_declared is not None
-        except KeyError:
+        cell = self.get_cell(name)
+        if cell is None:
             return False
+        return cell.currently_declared is not None
 
     def locate(self, name):
-        # return the currently declared object, or raises KeyError
         cell = self.get_cell(name)
+        if cell is None:
+            return None
         return cell.get_current_value()
 
     def declare_new(self, name, value):
         assert value is not None
-        try:
-            cell = self.get_cell(name)
-        except KeyError:
+        cell = self.get_cell(name)
+        if cell is None:
             cell = ImmutCell(value)
             self.set_cell(name, cell)
         else:
@@ -91,11 +89,8 @@ class GlobalImmutCache(object):
 
     def create_class(self, interp, name, decl, key):
         "Special case for classes"
-        try:
-            cell = self.get_cell(name)
-        except KeyError:
-            pass
-        else:
+        cell = self.get_cell(name)
+        if cell is not None:
             if cell._class_key == key:
                 cell.currently_declared = cell.constant_value
                 cell.constant_value_is_currently_declared = True

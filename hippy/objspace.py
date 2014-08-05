@@ -793,11 +793,11 @@ class ObjSpace(object):
             clsname = name[:pos]
             methname = name[pos + 2:]
             return self._get_callback_from_class(clsname, methname)
-        try:
-            return self.ec.interpreter.lookup_function(name)
-        except KeyError:
-            raise InvalidCallback("function '%s' not found or invalid "
-                                    "function name" % (name))
+        func = self.ec.interpreter.lookup_function(name)
+        if func is not None:
+            return func
+        raise InvalidCallback("function '%s' not found or invalid "
+                              "function name" % (name))
 
     def _get_callback_from_class(self, clsname, methname):
         interp = self.ec.interpreter

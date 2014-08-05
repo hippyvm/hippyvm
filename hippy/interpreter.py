@@ -288,7 +288,7 @@ class Interpreter(object):
 
     def _class_get(self, class_name):
         kls = self.space.global_class_cache.locate(class_name)
-        assert isinstance(kls, ClassBase)
+        assert kls is None or isinstance(kls, ClassBase)
         return kls
 
     def load_static(self, bc, arg):
@@ -456,14 +456,14 @@ class Interpreter(object):
         self.constant_names.append(name)
 
     def locate_constant(self, name, complain=True):
-        try:
-            return self.lookup_constant(name)
-        except KeyError:
-            if not complain:
-                return None
-            self.notice("Use of undefined constant %s - "
-                    "assumed '%s'" % (name, name))
-            return self.space.wrap(name)
+        c = self.lookup_constant(name)
+        if c is not None:
+            return c
+        if not complain:
+            return None
+        self.notice("Use of undefined constant %s - "
+                "assumed '%s'" % (name, name))
+        return self.space.wrap(name)
 
     def lookup_function(self, name):
         if not name:
@@ -471,14 +471,15 @@ class Interpreter(object):
         if name[0] == '\\':
             name = name[1:]
         func = self.space.global_function_cache.locate(name)
+        if func is None:
+            return None 
         assert isinstance(func, AbstractFunction)
         return func
 
     def locate_function(self, name):
-        try:
-            return self.lookup_function(name)
-        except KeyError:
-            pass
+        func = self.lookup_function(name)
+        if func is not None:
+            return func
         frame = self.topframeref()
         py_scope = frame.bytecode.py_scope
         if py_scope is not None:
@@ -510,12 +511,13 @@ class Interpreter(object):
             name = name[1:]
         if not name:
             return None
-        try:
-            return self._class_get(name)
-        except KeyError:
+        kls = self._class_get(name)
+        if kls is None:
             if autoload:
-                return self._autoload(name)
-            return None
+                kls = self._autoload(name)
+            else:
+                return None
+        return kls
 
     def _get_self_class(self):
         contextclass = self.get_contextclass()
@@ -574,10 +576,7 @@ class Interpreter(object):
         if self.autoload_stack:
             return self._autoload_from_stack(name)
 
-        try:
-            autoload_func = self.lookup_function('__autoload')
-        except KeyError:
-            return None
+        autoload_func = self.lookup_function('__autoload')
         if autoload_func is None:
             return None
         self._autoloading[cls_id] = None
@@ -1347,9 +1346,8 @@ class Interpreter(object):
         w_name = frame.pop().deref()
         name = space.str_w(w_name)
         w_base_name = frame.pop().deref()
-        try:
-            func = self.lookup_function(name)
-        except KeyError:
+        func = self.lookup_function(name)
+        if func is None:
             func = self.getfunc(w_base_name, frame.w_this,
                     frame.get_contextclass())
         assert func is not None
@@ -1559,16 +1557,15 @@ class Interpreter(object):
     def declare_func(self, func):
         name = func.name
         func_id = func.get_identifier()
-        try:
-            func = self.lookup_function(func_id)
+        ldfunc = self.lookup_function(func_id)
+        if ldfunc is not None:
+            func = ldfunc
             if isinstance(func, Function):
                 extra = ' (previously declared in %s:%d)' % (
                     func.bytecode.filename, func.bytecode.startlineno)
             else:
                 extra = ''
             self.fatal("Cannot redeclare %s()%s" % (name, extra))
-        except KeyError:
-            pass
         self.space.global_function_cache.declare_new(func_id, func)
 
     def DECLARE_FUNC(self, bytecode, frame, space, arg, pc):
@@ -1793,6 +1790,7 @@ class Interpreter(object):
 
         if self._class_is_defined(name):
             cls = self._class_get(name)
+            assert cls is not None
         else:
             cls = None
 
