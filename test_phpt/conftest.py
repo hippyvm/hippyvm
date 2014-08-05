@@ -431,7 +431,7 @@ markers[math_test_dir] = {
     "bug27646.phpt": "serialize INF",
     "bug28228.phpt": "bullshit NULL as string arg",
     'bug45712.phpt': "the test is wrong (asks for inf != inf)",
-    'mt_rand_basic.phpt': "PHP has a different randmax",
+    # 'mt_rand_basic.phpt': "PHP has a different randmax",
 }
 
 
@@ -1079,7 +1079,7 @@ markers[general_test_dir] = {
     'get_extension_funcs_error.phpt': "not implemented",
     'get_extension_funcs_variation.phpt': "not implemented",
     'get_loaded_extensions_basic.phpt': "not implemented",
-    'get_magic_quotes_gpc.phpt': "not implemented",
+    # 'get_magic_quotes_gpc.phpt': "not implemented",
     'get_magic_quotes_runtime.phpt': "not implemented",
     'getmypid_basic.phpt': "not implemented",
     'getopt.phpt': "not implemented",
@@ -1700,7 +1700,7 @@ markers[date_test_dir] = {
     "idate_variation5.phpt": "not implemented",
     "idate_variation6.phpt": "not implemented",
     "microtime_basic.phpt": "not implemented",
-    "microtime_error.phpt": "not implemented",
+    # "microtime_error.phpt": "not implemented",
     "oo_001.phpt": "not implemented",
     "rfc-datetime_and_daylight_saving_time-type2.phpt": "not implemented",
     "strtotime3-64bit.phpt": "not implemented",
@@ -1725,7 +1725,7 @@ markers[pcre_test_dir] = {
     '004.phpt': 'flag e unsupported',
     '006.phpt': 'backtrack_limit setting via --INI-- not working?',
     'backtrack_limit.phpt': 'in-progress',
-    'bug27103.phpt': 'htmlentities unimplemented',
+    # 'bug27103.phpt': 'htmlentities unimplemented',
     'bug44191.phpt': 'preg_grep() unimplemented',
     'bug44925.phpt': 'preg_grep() unimplemented',
     'bug52732.phpt': 'SKIP: hangs',
