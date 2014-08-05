@@ -32,8 +32,19 @@ class PHP_Scope(WPy_Root):
                 return php_to_py(ph_interp, ph_v)
             return None
 
-        ph_v = self.lookup_elidables(n)
-        if ph_v is not None:
+        try:
+            ph_v = ph_interp.lookup_constant(n)
+        except KeyError:
+            pass
+        else:
+            return php_to_py(ph_interp, ph_v)
+
+        # Search for PHP function of that name
+        try:
+            ph_v = ph_interp.lookup_function(n)
+        except KeyError:
+            pass
+        else:
             return php_to_py(ph_interp, ph_v)
 
         ph_v = ph_interp.lookup_class_or_intf(n)
@@ -43,28 +54,6 @@ class PHP_Scope(WPy_Root):
         py_scope = ph_frame.bytecode.py_scope
         if py_scope is not None:
             return py_scope.py_lookup(n)
-
-
-    @jit.elidable_promote()
-    def lookup_elidables(self, n):
-        ph_interp = self.ph_interp
-        ph_frame = self.ph_frame
-        try:
-            ph_v = ph_interp.lookup_constant(n)
-        except KeyError:
-            pass
-        else:
-            return ph_v
-
-        # Search for PHP function of that name
-        try:
-            ph_v = ph_interp.lookup_function(n)
-        except KeyError:
-            pass
-        else:
-            return ph_v
-
-
 
 
 class W_PHPGlobalScope(WPy_Root):
