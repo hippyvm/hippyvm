@@ -205,11 +205,11 @@ def recognize(runner, i):
                 runner.state = 3
                 return i
             if 'A' <= char <= 'Z':
-                state = 498
+                state = 509
             elif 'a' <= char <= 'z':
-                state = 498
+                state = 509
             elif char == '_':
-                state = 498
+                state = 509
             else:
                 break
         if state == 4:
@@ -223,22 +223,24 @@ def recognize(runner, i):
                 return i
             if char == 'a':
                 state = 432
-            elif char == 'b':
+            elif char == ' ':
                 state = 433
-            elif char == 'd':
+            elif char == 'b':
                 state = 434
-            elif char == 'f':
+            elif char == 'd':
                 state = 435
-            elif char == 'i':
+            elif char == 'f':
                 state = 436
-            elif char == 'o':
+            elif char == 'i':
                 state = 437
-            elif char == 's':
+            elif char == 'o':
                 state = 438
-            elif char == 'r':
+            elif char == 's':
                 state = 439
-            elif char == 'u':
+            elif char == 'r':
                 state = 440
+            elif char == 'u':
+                state = 441
             else:
                 break
         if state == 6:
@@ -11867,7 +11869,7 @@ def recognize(runner, i):
                 runner.state = 432
                 return ~i
             if char == 'r':
-                state = 493
+                state = 504
             else:
                 break
         if state == 433:
@@ -11877,10 +11879,28 @@ def recognize(runner, i):
             except IndexError:
                 runner.state = 433
                 return ~i
-            if char == 'i':
-                state = 482
+            if char == 'a':
+                state = 432
+                continue
+            elif char == ' ':
+                state = 433
+                continue
+            elif char == 'b':
+                state = 434
+            elif char == 'd':
+                state = 435
+            elif char == 'f':
+                state = 436
+            elif char == 'i':
+                state = 437
             elif char == 'o':
-                state = 483
+                state = 438
+            elif char == 's':
+                state = 439
+            elif char == 'r':
+                state = 440
+            elif char == 'u':
+                state = 441
             else:
                 break
         if state == 434:
@@ -11890,8 +11910,10 @@ def recognize(runner, i):
             except IndexError:
                 runner.state = 434
                 return ~i
-            if char == 'o':
-                state = 478
+            if char == 'i':
+                state = 489
+            elif char == 'o':
+                state = 490
             else:
                 break
         if state == 435:
@@ -11901,8 +11923,8 @@ def recognize(runner, i):
             except IndexError:
                 runner.state = 435
                 return ~i
-            if char == 'l':
-                state = 475
+            if char == 'o':
+                state = 483
             else:
                 break
         if state == 436:
@@ -11912,8 +11934,8 @@ def recognize(runner, i):
             except IndexError:
                 runner.state = 436
                 return ~i
-            if char == 'n':
-                state = 468
+            if char == 'l':
+                state = 478
             else:
                 break
         if state == 437:
@@ -11923,8 +11945,8 @@ def recognize(runner, i):
             except IndexError:
                 runner.state = 437
                 return ~i
-            if char == 'b':
-                state = 462
+            if char == 'n':
+                state = 469
             else:
                 break
         if state == 438:
@@ -11934,8 +11956,8 @@ def recognize(runner, i):
             except IndexError:
                 runner.state = 438
                 return ~i
-            if char == 't':
-                state = 456
+            if char == 'b':
+                state = 463
             else:
                 break
         if state == 439:
@@ -11945,8 +11967,8 @@ def recognize(runner, i):
             except IndexError:
                 runner.state = 439
                 return ~i
-            if char == 'e':
-                state = 452
+            if char == 't':
+                state = 457
             else:
                 break
         if state == 440:
@@ -11956,8 +11978,8 @@ def recognize(runner, i):
             except IndexError:
                 runner.state = 440
                 return ~i
-            if char == 'n':
-                state = 441
+            if char == 'e':
+                state = 453
             else:
                 break
         if state == 441:
@@ -11967,10 +11989,8 @@ def recognize(runner, i):
             except IndexError:
                 runner.state = 441
                 return ~i
-            if char == 'i':
+            if char == 'n':
                 state = 442
-            elif char == 's':
-                state = 443
             else:
                 break
         if state == 442:
@@ -11980,8 +12000,10 @@ def recognize(runner, i):
             except IndexError:
                 runner.state = 442
                 return ~i
-            if char == 'c':
-                state = 447
+            if char == 'i':
+                state = 443
+            elif char == 's':
+                state = 444
             else:
                 break
         if state == 443:
@@ -11991,8 +12013,8 @@ def recognize(runner, i):
             except IndexError:
                 runner.state = 443
                 return ~i
-            if char == 'e':
-                state = 444
+            if char == 'c':
+                state = 448
             else:
                 break
         if state == 444:
@@ -12002,7 +12024,7 @@ def recognize(runner, i):
             except IndexError:
                 runner.state = 444
                 return ~i
-            if char == 't':
+            if char == 'e':
                 state = 445
             else:
                 break
@@ -12013,19 +12035,22 @@ def recognize(runner, i):
             except IndexError:
                 runner.state = 445
                 return ~i
-            if char == ')':
+            if char == 't':
                 state = 446
             else:
                 break
-        if state == 447:
+        if state == 446:
             try:
                 char = input[i]
                 i += 1
             except IndexError:
-                runner.state = 447
+                runner.state = 446
                 return ~i
-            if char == 'o':
-                state = 448
+            if char == ' ':
+                state = 446
+                continue
+            elif char == ')':
+                state = 447
             else:
                 break
         if state == 448:
@@ -12035,7 +12060,7 @@ def recognize(runner, i):
             except IndexError:
                 runner.state = 448
                 return ~i
-            if char == 'd':
+            if char == 'o':
                 state = 449
             else:
                 break
@@ -12046,7 +12071,7 @@ def recognize(runner, i):
             except IndexError:
                 runner.state = 449
                 return ~i
-            if char == 'e':
+            if char == 'd':
                 state = 450
             else:
                 break
@@ -12057,19 +12082,22 @@ def recognize(runner, i):
             except IndexError:
                 runner.state = 450
                 return ~i
-            if char == ')':
+            if char == 'e':
                 state = 451
             else:
                 break
-        if state == 452:
+        if state == 451:
             try:
                 char = input[i]
                 i += 1
             except IndexError:
-                runner.state = 452
+                runner.state = 451
                 return ~i
-            if char == 'a':
-                state = 453
+            if char == ' ':
+                state = 451
+                continue
+            elif char == ')':
+                state = 452
             else:
                 break
         if state == 453:
@@ -12079,7 +12107,7 @@ def recognize(runner, i):
             except IndexError:
                 runner.state = 453
                 return ~i
-            if char == 'l':
+            if char == 'a':
                 state = 454
             else:
                 break
@@ -12090,19 +12118,22 @@ def recognize(runner, i):
             except IndexError:
                 runner.state = 454
                 return ~i
-            if char == ')':
+            if char == 'l':
                 state = 455
             else:
                 break
-        if state == 456:
+        if state == 455:
             try:
                 char = input[i]
                 i += 1
             except IndexError:
-                runner.state = 456
+                runner.state = 455
                 return ~i
-            if char == 'r':
-                state = 457
+            if char == ')':
+                state = 456
+            elif char == ' ':
+                state = 455
+                continue
             else:
                 break
         if state == 457:
@@ -12112,7 +12143,7 @@ def recognize(runner, i):
             except IndexError:
                 runner.state = 457
                 return ~i
-            if char == 'i':
+            if char == 'r':
                 state = 458
             else:
                 break
@@ -12123,7 +12154,7 @@ def recognize(runner, i):
             except IndexError:
                 runner.state = 458
                 return ~i
-            if char == 'n':
+            if char == 'i':
                 state = 459
             else:
                 break
@@ -12134,7 +12165,7 @@ def recognize(runner, i):
             except IndexError:
                 runner.state = 459
                 return ~i
-            if char == 'g':
+            if char == 'n':
                 state = 460
             else:
                 break
@@ -12145,19 +12176,22 @@ def recognize(runner, i):
             except IndexError:
                 runner.state = 460
                 return ~i
-            if char == ')':
+            if char == 'g':
                 state = 461
             else:
                 break
-        if state == 462:
+        if state == 461:
             try:
                 char = input[i]
                 i += 1
             except IndexError:
-                runner.state = 462
+                runner.state = 461
                 return ~i
-            if char == 'j':
-                state = 463
+            if char == ' ':
+                state = 461
+                continue
+            elif char == ')':
+                state = 462
             else:
                 break
         if state == 463:
@@ -12167,7 +12201,7 @@ def recognize(runner, i):
             except IndexError:
                 runner.state = 463
                 return ~i
-            if char == 'e':
+            if char == 'j':
                 state = 464
             else:
                 break
@@ -12178,7 +12212,7 @@ def recognize(runner, i):
             except IndexError:
                 runner.state = 464
                 return ~i
-            if char == 'c':
+            if char == 'e':
                 state = 465
             else:
                 break
@@ -12189,7 +12223,7 @@ def recognize(runner, i):
             except IndexError:
                 runner.state = 465
                 return ~i
-            if char == 't':
+            if char == 'c':
                 state = 466
             else:
                 break
@@ -12200,19 +12234,22 @@ def recognize(runner, i):
             except IndexError:
                 runner.state = 466
                 return ~i
-            if char == ')':
+            if char == 't':
                 state = 467
             else:
                 break
-        if state == 468:
+        if state == 467:
             try:
                 char = input[i]
                 i += 1
             except IndexError:
-                runner.state = 468
+                runner.state = 467
                 return ~i
-            if char == 't':
-                state = 469
+            if char == ' ':
+                state = 467
+                continue
+            elif char == ')':
+                state = 468
             else:
                 break
         if state == 469:
@@ -12222,21 +12259,23 @@ def recognize(runner, i):
             except IndexError:
                 runner.state = 469
                 return ~i
-            if char == ')':
+            if char == 't':
                 state = 470
-            elif char == 'e':
-                state = 471
             else:
                 break
-        if state == 471:
+        if state == 470:
             try:
                 char = input[i]
                 i += 1
             except IndexError:
-                runner.state = 471
+                runner.state = 470
                 return ~i
-            if char == 'g':
+            if char == ' ':
                 state = 472
+            elif char == 'e':
+                state = 473
+            elif char == ')':
+                state = 471
             else:
                 break
         if state == 472:
@@ -12246,8 +12285,11 @@ def recognize(runner, i):
             except IndexError:
                 runner.state = 472
                 return ~i
-            if char == 'e':
-                state = 473
+            if char == ' ':
+                state = 472
+                continue
+            elif char == ')':
+                state = 471
             else:
                 break
         if state == 473:
@@ -12257,7 +12299,7 @@ def recognize(runner, i):
             except IndexError:
                 runner.state = 473
                 return ~i
-            if char == 'r':
+            if char == 'g':
                 state = 474
             else:
                 break
@@ -12268,8 +12310,8 @@ def recognize(runner, i):
             except IndexError:
                 runner.state = 474
                 return ~i
-            if char == ')':
-                state = 470
+            if char == 'e':
+                state = 475
             else:
                 break
         if state == 475:
@@ -12279,7 +12321,7 @@ def recognize(runner, i):
             except IndexError:
                 runner.state = 475
                 return ~i
-            if char == 'o':
+            if char == 'r':
                 state = 476
             else:
                 break
@@ -12290,20 +12332,11 @@ def recognize(runner, i):
             except IndexError:
                 runner.state = 476
                 return ~i
-            if char == 'a':
-                state = 477
-            else:
-                break
-        if state == 477:
-            try:
-                char = input[i]
-                i += 1
-            except IndexError:
-                runner.state = 477
-                return ~i
-            if char == 't':
-                state = 454
+            if char == ' ':
+                state = 476
                 continue
+            elif char == ')':
+                state = 477
             else:
                 break
         if state == 478:
@@ -12313,7 +12346,7 @@ def recognize(runner, i):
             except IndexError:
                 runner.state = 478
                 return ~i
-            if char == 'u':
+            if char == 'o':
                 state = 479
             else:
                 break
@@ -12324,7 +12357,7 @@ def recognize(runner, i):
             except IndexError:
                 runner.state = 479
                 return ~i
-            if char == 'b':
+            if char == 'a':
                 state = 480
             else:
                 break
@@ -12335,7 +12368,7 @@ def recognize(runner, i):
             except IndexError:
                 runner.state = 480
                 return ~i
-            if char == 'l':
+            if char == 't':
                 state = 481
             else:
                 break
@@ -12346,20 +12379,11 @@ def recognize(runner, i):
             except IndexError:
                 runner.state = 481
                 return ~i
-            if char == 'e':
-                state = 454
+            if char == ' ':
+                state = 481
                 continue
-            else:
-                break
-        if state == 482:
-            try:
-                char = input[i]
-                i += 1
-            except IndexError:
-                runner.state = 482
-                return ~i
-            if char == 'n':
-                state = 490
+            elif char == ')':
+                state = 482
             else:
                 break
         if state == 483:
@@ -12369,7 +12393,7 @@ def recognize(runner, i):
             except IndexError:
                 runner.state = 483
                 return ~i
-            if char == 'o':
+            if char == 'u':
                 state = 484
             else:
                 break
@@ -12380,7 +12404,7 @@ def recognize(runner, i):
             except IndexError:
                 runner.state = 484
                 return ~i
-            if char == 'l':
+            if char == 'b':
                 state = 485
             else:
                 break
@@ -12391,9 +12415,18 @@ def recognize(runner, i):
             except IndexError:
                 runner.state = 485
                 return ~i
-            if char == ')':
+            if char == 'l':
                 state = 486
-            elif char == 'e':
+            else:
+                break
+        if state == 486:
+            try:
+                char = input[i]
+                i += 1
+            except IndexError:
+                runner.state = 486
+                return ~i
+            if char == 'e':
                 state = 487
             else:
                 break
@@ -12404,19 +12437,11 @@ def recognize(runner, i):
             except IndexError:
                 runner.state = 487
                 return ~i
-            if char == 'a':
+            if char == ')':
                 state = 488
-            else:
-                break
-        if state == 488:
-            try:
-                char = input[i]
-                i += 1
-            except IndexError:
-                runner.state = 488
-                return ~i
-            if char == 'n':
-                state = 489
+            elif char == ' ':
+                state = 487
+                continue
             else:
                 break
         if state == 489:
@@ -12426,8 +12451,8 @@ def recognize(runner, i):
             except IndexError:
                 runner.state = 489
                 return ~i
-            if char == ')':
-                state = 486
+            if char == 'n':
+                state = 499
             else:
                 break
         if state == 490:
@@ -12437,7 +12462,7 @@ def recognize(runner, i):
             except IndexError:
                 runner.state = 490
                 return ~i
-            if char == 'a':
+            if char == 'o':
                 state = 491
             else:
                 break
@@ -12448,7 +12473,7 @@ def recognize(runner, i):
             except IndexError:
                 runner.state = 491
                 return ~i
-            if char == 'r':
+            if char == 'l':
                 state = 492
             else:
                 break
@@ -12459,20 +12484,12 @@ def recognize(runner, i):
             except IndexError:
                 runner.state = 492
                 return ~i
-            if char == 'y':
-                state = 460
-                continue
-            else:
-                break
-        if state == 493:
-            try:
-                char = input[i]
-                i += 1
-            except IndexError:
-                runner.state = 493
-                return ~i
-            if char == 'r':
+            if char == ')':
+                state = 493
+            elif char == ' ':
                 state = 494
+            elif char == 'e':
+                state = 495
             else:
                 break
         if state == 494:
@@ -12482,8 +12499,11 @@ def recognize(runner, i):
             except IndexError:
                 runner.state = 494
                 return ~i
-            if char == 'a':
-                state = 495
+            if char == ')':
+                state = 493
+            elif char == ' ':
+                state = 494
+                continue
             else:
                 break
         if state == 495:
@@ -12493,7 +12513,7 @@ def recognize(runner, i):
             except IndexError:
                 runner.state = 495
                 return ~i
-            if char == 'y':
+            if char == 'a':
                 state = 496
             else:
                 break
@@ -12504,30 +12524,138 @@ def recognize(runner, i):
             except IndexError:
                 runner.state = 496
                 return ~i
-            if char == ')':
+            if char == 'n':
                 state = 497
             else:
                 break
-        if state == 498:
+        if state == 497:
+            try:
+                char = input[i]
+                i += 1
+            except IndexError:
+                runner.state = 497
+                return ~i
+            if char == ' ':
+                state = 497
+                continue
+            elif char == ')':
+                state = 498
+            else:
+                break
+        if state == 499:
+            try:
+                char = input[i]
+                i += 1
+            except IndexError:
+                runner.state = 499
+                return ~i
+            if char == 'a':
+                state = 500
+            else:
+                break
+        if state == 500:
+            try:
+                char = input[i]
+                i += 1
+            except IndexError:
+                runner.state = 500
+                return ~i
+            if char == 'r':
+                state = 501
+            else:
+                break
+        if state == 501:
+            try:
+                char = input[i]
+                i += 1
+            except IndexError:
+                runner.state = 501
+                return ~i
+            if char == 'y':
+                state = 502
+            else:
+                break
+        if state == 502:
+            try:
+                char = input[i]
+                i += 1
+            except IndexError:
+                runner.state = 502
+                return ~i
+            if char == ' ':
+                state = 502
+                continue
+            elif char == ')':
+                state = 503
+            else:
+                break
+        if state == 504:
+            try:
+                char = input[i]
+                i += 1
+            except IndexError:
+                runner.state = 504
+                return ~i
+            if char == 'r':
+                state = 505
+            else:
+                break
+        if state == 505:
+            try:
+                char = input[i]
+                i += 1
+            except IndexError:
+                runner.state = 505
+                return ~i
+            if char == 'a':
+                state = 506
+            else:
+                break
+        if state == 506:
+            try:
+                char = input[i]
+                i += 1
+            except IndexError:
+                runner.state = 506
+                return ~i
+            if char == 'y':
+                state = 507
+            else:
+                break
+        if state == 507:
+            try:
+                char = input[i]
+                i += 1
+            except IndexError:
+                runner.state = 507
+                return ~i
+            if char == ' ':
+                state = 507
+                continue
+            elif char == ')':
+                state = 508
+            else:
+                break
+        if state == 509:
             runner.last_matched_index = i - 1
             runner.last_matched_state = state
             try:
                 char = input[i]
                 i += 1
             except IndexError:
-                runner.state = 498
+                runner.state = 509
                 return i
             if 'A' <= char <= 'Z':
-                state = 498
+                state = 509
                 continue
             elif 'a' <= char <= 'z':
-                state = 498
+                state = 509
                 continue
             elif '0' <= char <= '9':
-                state = 498
+                state = 509
                 continue
             elif char == '_':
-                state = 498
+                state = 509
                 continue
             else:
                 break
@@ -12542,7 +12670,7 @@ def recognize(runner, i):
     runner.state = state
     return ~i
 from rpython.rlib.parsing.deterministic import DFA
-automaton = DFA(499,
+automaton = DFA(510,
  {(0, '\x00'): 1,
   (0, '\t'): 49,
   (0, '\n'): 34,
@@ -12642,68 +12770,69 @@ automaton = DFA(499,
   (0, '|'): 18,
   (0, '}'): 61,
   (0, '~'): 48,
-  (3, 'A'): 498,
-  (3, 'B'): 498,
-  (3, 'C'): 498,
-  (3, 'D'): 498,
-  (3, 'E'): 498,
-  (3, 'F'): 498,
-  (3, 'G'): 498,
-  (3, 'H'): 498,
-  (3, 'I'): 498,
-  (3, 'J'): 498,
-  (3, 'K'): 498,
-  (3, 'L'): 498,
-  (3, 'M'): 498,
-  (3, 'N'): 498,
-  (3, 'O'): 498,
-  (3, 'P'): 498,
-  (3, 'Q'): 498,
-  (3, 'R'): 498,
-  (3, 'S'): 498,
-  (3, 'T'): 498,
-  (3, 'U'): 498,
-  (3, 'V'): 498,
-  (3, 'W'): 498,
-  (3, 'X'): 498,
-  (3, 'Y'): 498,
-  (3, 'Z'): 498,
-  (3, '_'): 498,
-  (3, 'a'): 498,
-  (3, 'b'): 498,
-  (3, 'c'): 498,
-  (3, 'd'): 498,
-  (3, 'e'): 498,
-  (3, 'f'): 498,
-  (3, 'g'): 498,
-  (3, 'h'): 498,
-  (3, 'i'): 498,
-  (3, 'j'): 498,
-  (3, 'k'): 498,
-  (3, 'l'): 498,
-  (3, 'm'): 498,
-  (3, 'n'): 498,
-  (3, 'o'): 498,
-  (3, 'p'): 498,
-  (3, 'q'): 498,
-  (3, 'r'): 498,
-  (3, 's'): 498,
-  (3, 't'): 498,
-  (3, 'u'): 498,
-  (3, 'v'): 498,
-  (3, 'w'): 498,
-  (3, 'x'): 498,
-  (3, 'y'): 498,
-  (3, 'z'): 498,
+  (3, 'A'): 509,
+  (3, 'B'): 509,
+  (3, 'C'): 509,
+  (3, 'D'): 509,
+  (3, 'E'): 509,
+  (3, 'F'): 509,
+  (3, 'G'): 509,
+  (3, 'H'): 509,
+  (3, 'I'): 509,
+  (3, 'J'): 509,
+  (3, 'K'): 509,
+  (3, 'L'): 509,
+  (3, 'M'): 509,
+  (3, 'N'): 509,
+  (3, 'O'): 509,
+  (3, 'P'): 509,
+  (3, 'Q'): 509,
+  (3, 'R'): 509,
+  (3, 'S'): 509,
+  (3, 'T'): 509,
+  (3, 'U'): 509,
+  (3, 'V'): 509,
+  (3, 'W'): 509,
+  (3, 'X'): 509,
+  (3, 'Y'): 509,
+  (3, 'Z'): 509,
+  (3, '_'): 509,
+  (3, 'a'): 509,
+  (3, 'b'): 509,
+  (3, 'c'): 509,
+  (3, 'd'): 509,
+  (3, 'e'): 509,
+  (3, 'f'): 509,
+  (3, 'g'): 509,
+  (3, 'h'): 509,
+  (3, 'i'): 509,
+  (3, 'j'): 509,
+  (3, 'k'): 509,
+  (3, 'l'): 509,
+  (3, 'm'): 509,
+  (3, 'n'): 509,
+  (3, 'o'): 509,
+  (3, 'p'): 509,
+  (3, 'q'): 509,
+  (3, 'r'): 509,
+  (3, 's'): 509,
+  (3, 't'): 509,
+  (3, 'u'): 509,
+  (3, 'v'): 509,
+  (3, 'w'): 509,
+  (3, 'x'): 509,
+  (3, 'y'): 509,
+  (3, 'z'): 509,
+  (4, ' '): 433,
   (4, 'a'): 432,
-  (4, 'b'): 433,
-  (4, 'd'): 434,
-  (4, 'f'): 435,
-  (4, 'i'): 436,
-  (4, 'o'): 437,
-  (4, 'r'): 439,
-  (4, 's'): 438,
-  (4, 'u'): 440,
+  (4, 'b'): 434,
+  (4, 'd'): 435,
+  (4, 'f'): 436,
+  (4, 'i'): 437,
+  (4, 'o'): 438,
+  (4, 'r'): 440,
+  (4, 's'): 439,
+  (4, 'u'): 441,
   (6, '.'): 245,
   (6, '0'): 7,
   (6, '1'): 7,
@@ -37074,131 +37203,161 @@ automaton = DFA(499,
   (431, 'd'): 431,
   (431, 'e'): 431,
   (431, 'f'): 431,
-  (432, 'r'): 493,
-  (433, 'i'): 482,
-  (433, 'o'): 483,
-  (434, 'o'): 478,
-  (435, 'l'): 475,
-  (436, 'n'): 468,
-  (437, 'b'): 462,
-  (438, 't'): 456,
-  (439, 'e'): 452,
-  (440, 'n'): 441,
-  (441, 'i'): 442,
-  (441, 's'): 443,
-  (442, 'c'): 447,
-  (443, 'e'): 444,
-  (444, 't'): 445,
-  (445, ')'): 446,
-  (447, 'o'): 448,
-  (448, 'd'): 449,
-  (449, 'e'): 450,
-  (450, ')'): 451,
-  (452, 'a'): 453,
-  (453, 'l'): 454,
-  (454, ')'): 455,
-  (456, 'r'): 457,
-  (457, 'i'): 458,
-  (458, 'n'): 459,
-  (459, 'g'): 460,
-  (460, ')'): 461,
-  (462, 'j'): 463,
-  (463, 'e'): 464,
-  (464, 'c'): 465,
-  (465, 't'): 466,
-  (466, ')'): 467,
-  (468, 't'): 469,
-  (469, ')'): 470,
-  (469, 'e'): 471,
-  (471, 'g'): 472,
-  (472, 'e'): 473,
-  (473, 'r'): 474,
-  (474, ')'): 470,
-  (475, 'o'): 476,
-  (476, 'a'): 477,
-  (477, 't'): 454,
-  (478, 'u'): 479,
-  (479, 'b'): 480,
-  (480, 'l'): 481,
-  (481, 'e'): 454,
-  (482, 'n'): 490,
-  (483, 'o'): 484,
-  (484, 'l'): 485,
-  (485, ')'): 486,
-  (485, 'e'): 487,
-  (487, 'a'): 488,
-  (488, 'n'): 489,
-  (489, ')'): 486,
-  (490, 'a'): 491,
-  (491, 'r'): 492,
-  (492, 'y'): 460,
-  (493, 'r'): 494,
-  (494, 'a'): 495,
-  (495, 'y'): 496,
-  (496, ')'): 497,
-  (498, '0'): 498,
-  (498, '1'): 498,
-  (498, '2'): 498,
-  (498, '3'): 498,
-  (498, '4'): 498,
-  (498, '5'): 498,
-  (498, '6'): 498,
-  (498, '7'): 498,
-  (498, '8'): 498,
-  (498, '9'): 498,
-  (498, 'A'): 498,
-  (498, 'B'): 498,
-  (498, 'C'): 498,
-  (498, 'D'): 498,
-  (498, 'E'): 498,
-  (498, 'F'): 498,
-  (498, 'G'): 498,
-  (498, 'H'): 498,
-  (498, 'I'): 498,
-  (498, 'J'): 498,
-  (498, 'K'): 498,
-  (498, 'L'): 498,
-  (498, 'M'): 498,
-  (498, 'N'): 498,
-  (498, 'O'): 498,
-  (498, 'P'): 498,
-  (498, 'Q'): 498,
-  (498, 'R'): 498,
-  (498, 'S'): 498,
-  (498, 'T'): 498,
-  (498, 'U'): 498,
-  (498, 'V'): 498,
-  (498, 'W'): 498,
-  (498, 'X'): 498,
-  (498, 'Y'): 498,
-  (498, 'Z'): 498,
-  (498, '_'): 498,
-  (498, 'a'): 498,
-  (498, 'b'): 498,
-  (498, 'c'): 498,
-  (498, 'd'): 498,
-  (498, 'e'): 498,
-  (498, 'f'): 498,
-  (498, 'g'): 498,
-  (498, 'h'): 498,
-  (498, 'i'): 498,
-  (498, 'j'): 498,
-  (498, 'k'): 498,
-  (498, 'l'): 498,
-  (498, 'm'): 498,
-  (498, 'n'): 498,
-  (498, 'o'): 498,
-  (498, 'p'): 498,
-  (498, 'q'): 498,
-  (498, 'r'): 498,
-  (498, 's'): 498,
-  (498, 't'): 498,
-  (498, 'u'): 498,
-  (498, 'v'): 498,
-  (498, 'w'): 498,
-  (498, 'x'): 498,
-  (498, 'y'): 498,
-  (498, 'z'): 498},
+  (432, 'r'): 504,
+  (433, ' '): 433,
+  (433, 'a'): 432,
+  (433, 'b'): 434,
+  (433, 'd'): 435,
+  (433, 'f'): 436,
+  (433, 'i'): 437,
+  (433, 'o'): 438,
+  (433, 'r'): 440,
+  (433, 's'): 439,
+  (433, 'u'): 441,
+  (434, 'i'): 489,
+  (434, 'o'): 490,
+  (435, 'o'): 483,
+  (436, 'l'): 478,
+  (437, 'n'): 469,
+  (438, 'b'): 463,
+  (439, 't'): 457,
+  (440, 'e'): 453,
+  (441, 'n'): 442,
+  (442, 'i'): 443,
+  (442, 's'): 444,
+  (443, 'c'): 448,
+  (444, 'e'): 445,
+  (445, 't'): 446,
+  (446, ' '): 446,
+  (446, ')'): 447,
+  (448, 'o'): 449,
+  (449, 'd'): 450,
+  (450, 'e'): 451,
+  (451, ' '): 451,
+  (451, ')'): 452,
+  (453, 'a'): 454,
+  (454, 'l'): 455,
+  (455, ' '): 455,
+  (455, ')'): 456,
+  (457, 'r'): 458,
+  (458, 'i'): 459,
+  (459, 'n'): 460,
+  (460, 'g'): 461,
+  (461, ' '): 461,
+  (461, ')'): 462,
+  (463, 'j'): 464,
+  (464, 'e'): 465,
+  (465, 'c'): 466,
+  (466, 't'): 467,
+  (467, ' '): 467,
+  (467, ')'): 468,
+  (469, 't'): 470,
+  (470, ' '): 472,
+  (470, ')'): 471,
+  (470, 'e'): 473,
+  (472, ' '): 472,
+  (472, ')'): 471,
+  (473, 'g'): 474,
+  (474, 'e'): 475,
+  (475, 'r'): 476,
+  (476, ' '): 476,
+  (476, ')'): 477,
+  (478, 'o'): 479,
+  (479, 'a'): 480,
+  (480, 't'): 481,
+  (481, ' '): 481,
+  (481, ')'): 482,
+  (483, 'u'): 484,
+  (484, 'b'): 485,
+  (485, 'l'): 486,
+  (486, 'e'): 487,
+  (487, ' '): 487,
+  (487, ')'): 488,
+  (489, 'n'): 499,
+  (490, 'o'): 491,
+  (491, 'l'): 492,
+  (492, ' '): 494,
+  (492, ')'): 493,
+  (492, 'e'): 495,
+  (494, ' '): 494,
+  (494, ')'): 493,
+  (495, 'a'): 496,
+  (496, 'n'): 497,
+  (497, ' '): 497,
+  (497, ')'): 498,
+  (499, 'a'): 500,
+  (500, 'r'): 501,
+  (501, 'y'): 502,
+  (502, ' '): 502,
+  (502, ')'): 503,
+  (504, 'r'): 505,
+  (505, 'a'): 506,
+  (506, 'y'): 507,
+  (507, ' '): 507,
+  (507, ')'): 508,
+  (509, '0'): 509,
+  (509, '1'): 509,
+  (509, '2'): 509,
+  (509, '3'): 509,
+  (509, '4'): 509,
+  (509, '5'): 509,
+  (509, '6'): 509,
+  (509, '7'): 509,
+  (509, '8'): 509,
+  (509, '9'): 509,
+  (509, 'A'): 509,
+  (509, 'B'): 509,
+  (509, 'C'): 509,
+  (509, 'D'): 509,
+  (509, 'E'): 509,
+  (509, 'F'): 509,
+  (509, 'G'): 509,
+  (509, 'H'): 509,
+  (509, 'I'): 509,
+  (509, 'J'): 509,
+  (509, 'K'): 509,
+  (509, 'L'): 509,
+  (509, 'M'): 509,
+  (509, 'N'): 509,
+  (509, 'O'): 509,
+  (509, 'P'): 509,
+  (509, 'Q'): 509,
+  (509, 'R'): 509,
+  (509, 'S'): 509,
+  (509, 'T'): 509,
+  (509, 'U'): 509,
+  (509, 'V'): 509,
+  (509, 'W'): 509,
+  (509, 'X'): 509,
+  (509, 'Y'): 509,
+  (509, 'Z'): 509,
+  (509, '_'): 509,
+  (509, 'a'): 509,
+  (509, 'b'): 509,
+  (509, 'c'): 509,
+  (509, 'd'): 509,
+  (509, 'e'): 509,
+  (509, 'f'): 509,
+  (509, 'g'): 509,
+  (509, 'h'): 509,
+  (509, 'i'): 509,
+  (509, 'j'): 509,
+  (509, 'k'): 509,
+  (509, 'l'): 509,
+  (509, 'm'): 509,
+  (509, 'n'): 509,
+  (509, 'o'): 509,
+  (509, 'p'): 509,
+  (509, 'q'): 509,
+  (509, 'r'): 509,
+  (509, 's'): 509,
+  (509, 't'): 509,
+  (509, 'u'): 509,
+  (509, 'v'): 509,
+  (509, 'w'): 509,
+  (509, 'x'): 509,
+  (509, 'y'): 509,
+  (509, 'z'): 509},
  set([1,
       2,
       3,
@@ -37618,15 +37777,20 @@ automaton = DFA(499,
       429,
       430,
       431,
-      446,
-      451,
-      455,
-      461,
-      467,
-      470,
-      486,
-      497,
-      498]),
+      447,
+      452,
+      456,
+      462,
+      468,
+      471,
+      477,
+      482,
+      488,
+      493,
+      498,
+      503,
+      508,
+      509]),
  set([1,
       2,
       3,
@@ -38046,16 +38210,21 @@ automaton = DFA(499,
       429,
       430,
       431,
-      446,
-      451,
-      455,
-      461,
-      467,
-      470,
-      486,
-      497,
-      498]),
- ['0, 0, 0, start|, 0, 0, 0, start|, 0, 0, 0, 0, start|, 0, 0, 0, 0, start|, 0, 0, 0, start|, 0, 0, 0, 0, 0, start|, 0, 0, 0, start|, 0, 0, 0, 0, start|, 0, 0, 0, start|, 0, 0, 0, start|, 0, 0, 0, start|, 0, 0, 0, 0, start|, 0, 0, 0, start|, 0, 0, final*, 0, final|, start|, 0, 0, 0, 0, start|, 0, 0, 0, 0, 0, start|, 0, 0, 0, final*, 0, final|, start|, 0, final*, 0, final|, start|, 0, 0, 0, start|, 0, 0, 0, start|, 0, 0, 0, start|, 0, start|, 0, 0, 0, start|, 0, 0, 0, 0, start|, 0, 0, 0, 0, 0, 0, start|, 0, 0, 0, 0, start|, 0, 0, 0, 0, 0, start|, 0, 0, 0, 0, 0, 0, 0, start|, 0, 0, 0, start|, 0, 0, 0, start|, 0, 0, 0, 0, start|, 0, 0, 0, 0, 0, 0, start|, 0, 0, 0, 0, 0, start|, 0, 0, 0, 0, 0, 0, start|, 0, 0, 0, 0, 0, 0, start|, 0, 0, 0, 0, start|, 0, 0, 0, 0, start|, 0, 0, 0, 0, start|, 0, 0, 0, start|, 0, 0, 0, 0, start|, 0, 0, 0, start|, 0, 0, 0, 0, start|, 0, 0, 0, 0, start|, 0, 0, 0, 0, start|, 0, 0, 0, start|, 0, 0, 0, 0, start|, 0, 0, 0, start|, 0, 0, 0, 0, final*, 0, final*, start*, 0, start|, 0, start|, 0, 0, start|, 0, start|, 0, 0, 0, 0, 0, start|, 0, 0, 0, start|, 0, 0, start|, 0, 0, 0, start|, 0, 0, 0, start|, 0, 0, 0, start|, 0, 0, 0, 0, start|, 0, 0, 0, 0, start|, 0, 0, 0, 0, start|, 0, 0, 0, start|, 0, 0, 0, 0, 0, 0, start|, 0, 0, 0, 0, 0, 0, 0, 0, 0, start|, 0, 0, 0, 0, start|, 0, 0, 0, 0, 0, start|, 0, 0, 0, 0, 0, 0, start|, 0, 0, 0, 0, 0, 0, 0, 0, start|, 0, 0, 0, 0, 0, 0, 0, start|, 0, 0, 0, 0, 0, start|, 0, 0, 0, 0, 0, start|, 0, 0, 0, 0, 0, start|, 0, 0, 0, 0, 0, 0, 0, 0, 0, start|, 0, 0, 0, start|, 0, 0, 0, start|, 0, 0, 0, start|, 0, 0, 0, 0, 0, 0, 0, start|, 0',
+      447,
+      452,
+      456,
+      462,
+      468,
+      471,
+      477,
+      482,
+      488,
+      493,
+      498,
+      503,
+      508,
+      509]),
+ ['0, 0, 0, start|, 0, 0, 0, start|, 0, 0, 0, 0, start|, 0, 0, 0, 0, start|, 0, 0, 0, start|, 0, 0, 0, 0, 0, start|, 0, 0, 0, start|, 0, 0, 0, 0, start|, 0, 0, 0, start|, 0, 0, 0, start|, 0, 0, 0, start|, 0, 0, 0, 0, start|, 0, 0, 0, start|, 0, 0, final*, 0, final|, start|, 0, 0, 0, 0, start|, 0, 0, 0, 0, start|, 0, 0, 0, 0, start|, 0, 0, 0, final*, 0, final|, start|, 0, final*, 0, final|, start|, 0, 0, 0, start|, 0, 0, 0, start|, 0, 0, 0, start|, 0, start|, 0, 0, 0, 0, start|, 0, 0, 0, 0, 0, 0, start|, 0, 0, 0, 0, start|, 0, 0, 0, 0, 0, start|, 0, 0, 0, 0, 0, 0, 0, start|, 0, 0, 0, start|, 0, 0, 0, start|, 0, 0, 0, 0, start|, 0, 0, 0, 0, 0, 0, start|, 0, 0, 0, 0, 0, start|, 0, 0, 0, 0, 0, start|, 0, 0, 0, 0, 0, 0, start|, 0, 0, 0, 0, start|, 0, 0, 0, 0, 0, start|, 0, 0, 0, 0, start|, 0, 0, 0, 0, 0, start|, 0, 0, 0, start|, 0, 0, 0, 0, start|, 0, 0, 0, 0, start|, 0, 0, 0, 0, start|, 0, 0, 0, 0, start|, 0, 0, 0, 0, 0, start|, 0, 0, 0, 0, start|, 0, 0, 0, 0, start|, 0, 0, 0, 0, start|, 0, 0, 0, 0, start|, 0, 0, 0, start|, 0, 0, 0, 0, final*, 0, final*, start*, 0, start|, 0, start|, 0, 0, start|, 0, start|, 0, 0, 0, 0, 0, start|, 0, 0, 0, start|, 0, 0, start|, 0, 0, 0, start|, 0, 0, 0, 0, start|, 0, 0, start|, 0, 0, 0, start|, 0, 0, 0, 0, start|, 0, 0, 0, 0, 0, start|, 0, 0, 0, 0, start|, 0, 0, 0, start|, 0, 0, 0, 0, start|, 0, 0, 0, 0, 0, start|, 0, 0, 0, 0, 0, 0, 0, 0, start|, 0, 0, 0, 0, 0, 0, 0, start|, 0, 0, 0, 0, 0, start|, 0, 0, 0, 0, 0, start|, 0, 0, 0, 0, 0, start|, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, start|, 0, 0, 0, 0, 0, 0, start|, 0, 0, 0, 0, 0, 0, 0, start|, 0, 0, 0, 0, 0, start|, 0, 0, 0, 0',
   'T_END_HEREDOC',
   'H_WHITESPACE',
   '$',
@@ -38487,70 +38656,81 @@ automaton = DFA(499,
   'T_IS_NOT_EQUAL',
   'T_SL_EQUAL',
   'T_LNUMBER',
-  '2',
+  '1',
+  '1, final*, 0, final*, start*, 0, final*, 0, 1, final*, start*, 0, 1, final*, 0, final*, start*, 0, final*, 0, 1, final*, start*, 0, 1, final*, 0, final*, start*, 0, final*, 0, 1, final*, start*, 0, 1, final*, 0, final*, start*, 0, final*, 0, 1, final*, start*, 0, 1, final*, 0, final*, start*, 0, final*, 0, 1, final*, start*, 0, 1, final*, 0, final*, start*, 0, final*, 0, 1, final*, start*, 0, 1, final*, 0, final*, start*, 0, final*, 0, 1, final*, start*, 0, 1, final*, 0, final*, start*, 0, final*, 0, 1, final*, start*, 0, 1, final*, 0, final*, start*, 0, final*, 0, 1, final*, start*, 0, 1, final*, 0, final*, start*, 0, final*, 0, 1, final*, start*, 0, 1, final*, 0, final*, start*, 0, final*, 0, 1, final*, start*, 0, 1, final*, 0, final*, start*, 0, final*, 0, 1, final*, start*, 0, 1, final*, 0, final*, start*, 0, final*, 0, 1, final*, start*, 0',
   '1, 1, 1',
   '1',
   '1',
   '1, 1',
-  '2',
   '1',
   '1',
+  '1',
+  '1, 1',
   '2, 2',
-  '3, 3',
+  '3',
+  '3',
   '4',
-  '4',
-  '5',
-  '6',
+  'final*, 0, 1, final*, start*, 0, final*, 5, final*, 0, final*, start*, 0',
   'T_UNSET_CAST',
+  '4',
   '5',
   '6',
-  '7',
-  '8',
+  'final*, 7, final*, 0, final*, start*, 0, final*, 0, 1, final*, start*, 0',
   'T_UNICODE_CAST',
   '2',
   '3',
-  '5, final|, final*, 0, final|, final|, final*, 0, 4, 6, final|, final*, 0, final|',
+  'final*, 0, 1, final*, start*, 0, final*, 4, final*, 0, final*, start*, 0',
   'T_DOUBLE_CAST',
   '2',
   '3',
   '4',
   '5',
-  '6, final*, 0, final|, 6, final|, 0, final*',
+  'final*, 6, final*, 0, final*, start*, 0, final*, 0, 1, final*, start*, 0',
   'T_STRING_CAST',
+  '2',
   '3',
   '4',
   '5',
-  '6',
-  '7',
+  'final*, 6, final*, 0, final*, start*, 0, final*, 0, 1, final*, start*, 0',
   'T_OBJECT_CAST',
   '2, 2',
-  'final*, 3, 0, 3, final|',
+  '3, final*, 3, final*, 0, final*, start*, 0, final*, 0, 1, final*, start*, 0',
   'T_INT_CAST',
+  'final*, 3, final*, 0, final*, start*, 0, final*, 0, 1, final*, start*, 0',
   '4',
   '5',
   '6',
-  '7, final*, 0, final|',
+  'final*, 7, final*, 0, final*, start*, 0, final*, 0, 1, final*, start*, 0',
+  'T_INT_CAST',
   '2',
   '3',
   '4',
+  'final*, 0, 1, final*, start*, 0, final*, 5, final*, 0, final*, start*, 0',
+  'T_DOUBLE_CAST',
   '2',
   '3',
   '4',
   '5',
+  'final*, 6, final*, 0, final*, start*, 0, final*, 0, 1, final*, start*, 0',
+  'T_DOUBLE_CAST',
   '2',
   '2, 2',
   '3, 3',
-  'final|, final*, 0, 4, 4',
+  '4, final*, 0, 1, final*, start*, 0, final*, 4, final*, 0, final*, start*, 0',
   'T_BOOL_CAST',
+  'final*, 0, 1, final*, start*, 0, final*, 4, final*, 0, final*, start*, 0',
   '5',
   '6',
-  'final|, 7, final*, 0',
+  'final*, 7, final*, 0, final*, start*, 0, final*, 0, 1, final*, start*, 0',
+  'T_BOOL_CAST',
   '3',
   '4',
   '5',
+  'final*, 6, final*, 0, final*, start*, 0, final*, 0, 1, final*, start*, 0',
+  'T_STRING_CAST',
+  '2',
   '3',
   '4',
-  '5',
-  '6',
+  'final*, 0, 1, final*, start*, 0, final*, 5, final*, 0, final*, start*, 0',
   'T_ARRAY_CAST',
   'T_VARIABLE'])
