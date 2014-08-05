@@ -1007,9 +1007,6 @@ markers[general_test_dir] = {
     'include_path.phpt': "?",
     'call_user_func_array_variation_003.phpt': "?",
     'call_user_func_array_variation_001.phpt': "missing call_user_func_array()",
-    'putenv.phpt': "?",
-    'putenv_error1.phpt': "?",
-    'putenv_error2.phpt': "?",
 
     '002.phpt': "not implemented",
     '003.phpt': "not implemented",

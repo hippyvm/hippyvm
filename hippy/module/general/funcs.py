@@ -629,7 +629,9 @@ def putenv(space, envstr):
     """ Sets the value of an environment variable"""
     try:
         key, value = envstr.split("=")
+        # import pdb; pdb.set_trace()
     except ValueError:
+        del os.environ[envstr]
         return space.w_True
     os.environ[key] = value
     return space.w_True
