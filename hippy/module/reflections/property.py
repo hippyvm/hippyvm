@@ -15,7 +15,26 @@ IS_PRIVATE = 1024
 
 
 class W_ReflectionProperty(W_InstanceObject):
-    pass
+    def get_str(self):
+        prop = self.ref_prop
+        if prop is None:
+            inner = '<dynamic> public $%s' % self.name
+        else:
+            access = ''
+            if not prop.is_static():
+                access += '<default> '
+            if prop.is_public():
+                access += 'public'
+            elif prop.is_protected():
+                access += 'protected'
+            elif prop.is_private():
+                access += 'private'
+            else:
+                assert False, 'should not happen'
+            if prop.is_static():
+                access += ' static'
+            inner = '%s $%s' % (access, prop.name)
+        return 'Property [ %s ]\n' % inner
 
 
 @wrap_method(['interp', ThisUnwrapper(W_ReflectionProperty), str, str],
@@ -117,25 +136,7 @@ def is_static(interp, this):
 @wrap_method(['interp', ThisUnwrapper(W_ReflectionProperty)],
              name='ReflectionProperty::__toString')
 def toString(interp, this):
-    prop = this.ref_prop
-    if prop is None:
-        inner = '<dynamic> public $%s' % this.name
-    else:
-        access = ''
-        if not prop.is_static():
-            access += '<default> '
-        if prop.is_public():
-            access += 'public'
-        elif prop.is_protected():
-            access += 'protected'
-        elif prop.is_private():
-            access += 'private'
-        else:
-            assert False, 'should not happen'
-        if prop.is_static():
-            access += ' static'
-        inner = '%s $%s' % (access, prop.name)
-    return interp.space.newstr('Property [ %s ]\n' % inner)
+    return interp.space.newstr(this.get_str())
 
 
 def _get_class(interp, this):
