@@ -427,11 +427,9 @@ markers[class_object_test_dir] = {
 
 # MATH
 markers[math_test_dir] = {
-    'atanh_variation.phpt': "value of atanh(1)",
-    # "bug27646.phpt": "serialize INF",
+    # 'atanh_variation.phpt': "value of atanh(1)",
     "bug28228.phpt": "bullshit NULL as string arg",
     'bug45712.phpt': "the test is wrong (asks for inf != inf)",
-    # 'mt_rand_basic.phpt': "PHP has a different randmax",
 }
 
 
