@@ -1404,7 +1404,7 @@ class TestParser(object):
     def test_minus_static_decl(self):
         r = parse("class A { var $x = -1; }")
         assert r == Block([ClassBlock('A', 0x0, None, [], Block([
-            PropertyDecl("x", ConstantInt(-1), 1)]))])
+            PropertyDecl("x", ConstantInt(-1))]))])
 
     def test_lambda_function(self):
         r = parse("$x = function($a) {};")

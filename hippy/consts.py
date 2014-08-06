@@ -189,14 +189,16 @@ CAST_TO_BC = {'array': CAST_ARRAY,
 
 ARG_ARGUMENT, ARG_REFERENCE = 'A', 'R'    # no relation to 'A'rmin 'R'igo :-)
 
-ACC_PUBLIC     = 0x01
-ACC_PROTECTED  = 0x02
-ACC_PRIVATE    = 0x04
-ACC_STATIC     = 0x08
-ACC_ABSTRACT   = 0x10
-ACC_FINAL      = 0x20
+ACC_STATIC     = 0x01
+ACC_ABSTRACT   = 0x02
+ACC_FINAL      = 0x04
+
+ACC_INTERFACE  = 0x80
+
+ACC_PUBLIC     = 0x0100
+ACC_PROTECTED  = 0x0200
+ACC_PRIVATE    = 0x0400
 ACCMASK_VISIBILITY = ACC_PUBLIC | ACC_PROTECTED | ACC_PRIVATE
-ACC_INTERFACE  = 0x4000
 
 if __name__ == '__main__':
     for i, (bc, _, _) in enumerate(BYTECODES):

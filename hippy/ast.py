@@ -965,7 +965,7 @@ class InitializedVariable(Node):
 
 
 class PropertyDecl(Node):
-    def __init__(self, name, expr, access_flags=0, lineno=0):
+    def __init__(self, name, expr, access_flags=consts.ACC_PUBLIC, lineno=0):
         self.name = name
         self.expr = expr
         self.lineno = lineno
