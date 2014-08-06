@@ -154,6 +154,12 @@ def is_default(interp, this):
 
 
 @wrap_method(['interp', ThisUnwrapper(W_ReflectionProperty)],
+             name='ReflectionProperty::getModifiers')
+def get_modifiers(interp, this):
+    return interp.space.newint(this.ref_prop.access_flags)
+
+
+@wrap_method(['interp', ThisUnwrapper(W_ReflectionProperty)],
              name='ReflectionProperty::__toString')
 def toString(interp, this):
     return interp.space.newstr(this.get_str())
@@ -187,6 +193,7 @@ k_ReflectionProperty = def_class(
      is_protected,
      is_static,
      is_default,
+     get_modifiers,
      toString],
     [GetterSetterWrapper(_get_name, _set_name, 'name', consts.ACC_PUBLIC),
      GetterSetterWrapper(_get_class, _set_class, 'class', consts.ACC_PUBLIC)],
