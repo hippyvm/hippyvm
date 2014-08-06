@@ -9,7 +9,7 @@ class TestFunctionCache(BaseTestInterpreter):
         echo myf2197123(10, 20);
         ''')
         assert self.space.int_w(output[0]) == 30
-        cell = self.space.global_function_cache.get_cell('myf2197123')
+        cell = self.space.global_function_cache.get_cell('myf2197123', object())
         assert cell.constant_value_is_currently_declared
         assert cell.constant_value is cell.currently_declared
         #
@@ -18,7 +18,7 @@ class TestFunctionCache(BaseTestInterpreter):
         echo myf2197123(100, 20);
         ''')
         assert self.space.int_w(output2[0]) == 80
-        cell2 = self.space.global_function_cache.get_cell('myf2197123')
+        cell2 = self.space.global_function_cache.get_cell('myf2197123', object())
         assert cell2 is cell
         assert not cell2.constant_value_is_currently_declared
         assert cell2.constant_value is not cell2.currently_declared
