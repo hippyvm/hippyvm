@@ -2425,7 +2425,6 @@ markers['ext/reflection'] = {
     'ReflectionProperty_getModifiers.001.phpt': '?',
     'ReflectionProperty_getModifiers_basic.phpt': '?',
     'ReflectionProperty_getValue_error.phpt': '?',
-    'ReflectionProperty_isDefault_basic.phpt': '?',
     'ReflectionProperty_setAccessible.phpt': '?',
     'ReflectionProperty_setValue_error.phpt': '?',
     'bug26695.phpt': '?',
