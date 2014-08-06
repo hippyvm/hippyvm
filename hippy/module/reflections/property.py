@@ -96,10 +96,10 @@ def get_value(interp, this, w_obj=None):
         ))
 
     if not this.ref_prop.is_static():
-        value = w_obj.getattr(interp, this.name, w_obj.getclass(), True)
+        w_value = w_obj.getattr(interp, this.name, w_obj.getclass(), True)
     else:
-        value = interp.space.wrap(this.ref_prop.getvalue(interp.space))
-    return value
+        w_value = this.ref_prop.getvalue(interp.space).deref()
+    return w_value
 
 
 @wrap_method(['interp', ThisUnwrapper(W_ReflectionProperty),
