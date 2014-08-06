@@ -475,10 +475,10 @@ class Interpreter(object):
         return func
 
     def locate_function(self, name):
-        try:
-            return self.lookup_function(name)
-        except KeyError:
-            self.fatal("Call to undefined function %s()" % name)
+        func = self.lookup_function(name)
+        if func is not None:
+            return func
+        self.fatal("Call to undefined function %s()" % name)
 
     def get_this(self, frame):
         w_this = frame.w_this
