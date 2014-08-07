@@ -124,6 +124,14 @@ def set_value(interp, this, w_arg_1, w_arg_2=None):
 
 
 @wrap_method(['interp', ThisUnwrapper(W_ReflectionProperty)],
+             name='ReflectionProperty::getDeclaringClass')
+def get_declaring_class(interp, this):
+    name = this.ref_klass.name
+    k_ReflClass = interp.lookup_class_or_intf('ReflectionClass')
+    return k_ReflClass.call_args(interp, [interp.space.newstr(name)])
+
+
+@wrap_method(['interp', ThisUnwrapper(W_ReflectionProperty)],
              name='ReflectionProperty::isPublic')
 def is_public(interp, this):
     return interp.space.newbool(this.ref_prop.is_public())
@@ -188,6 +196,7 @@ k_ReflectionProperty = def_class(
      get_name,
      get_value,
      set_value,
+     get_declaring_class,
      is_public,
      is_private,
      is_protected,
