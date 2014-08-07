@@ -372,7 +372,7 @@ class TestRegex(BaseTestInterpreter):
         assert self.space.int_w(output[1]) == 0
         self.run("""
         preg_match('/\\x{105}/', '');
-        """, ["Warning: preg_match(): Compilation failed: character value in \\x{...} sequence is too large at offset 6"])
+        """, ["Warning: preg_match(): Compilation failed: character value...too large at offset 6"])
 
     # those are known problems in the simplistic unicode implementation,
     # we have to write those tests and fix it one day
