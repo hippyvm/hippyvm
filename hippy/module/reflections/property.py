@@ -126,7 +126,7 @@ def set_value(interp, this, w_arg_1, w_arg_2=None):
 @wrap_method(['interp', ThisUnwrapper(W_ReflectionProperty)],
              name='ReflectionProperty::getDeclaringClass')
 def get_declaring_class(interp, this):
-    name = this.ref_klass.name
+    name = this.ref_prop.klass.name
     k_ReflClass = interp.lookup_class_or_intf('ReflectionClass')
     return k_ReflClass.call_args(interp, [interp.space.newstr(name)])
 

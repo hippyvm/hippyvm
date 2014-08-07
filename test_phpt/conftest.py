@@ -2419,7 +2419,6 @@ markers['ext/reflection'] = {
     'ReflectionProperty_constructor_variation1.phpt': '?',
     'ReflectionProperty_error.phpt': '?',
     'ReflectionProperty_export_error.phpt': '?',
-    'ReflectionProperty_getDeclaringClass_variation1.phpt': '?',
     'ReflectionProperty_getDocComment_basic.phpt': '?',
     'ReflectionProperty_getDocComment_error.phpt': '?',
     'ReflectionProperty_getModifiers_basic.phpt': 'some flags are missing',
