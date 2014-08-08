@@ -1822,12 +1822,12 @@ class Interpreter(object):
         try:
             bc = self.compile_file(fname)
         except OSError as exc:
-            self._report_include_warning(frame, func_name, fname, exc,
+            self._report_include_warning(frame, func_name, name, exc,
                                          require)
             return
         except IOError as exc:
             if not we_are_translated():
-                self._report_include_warning(frame, func_name, fname, exc,
+                self._report_include_warning(frame, func_name, name, exc,
                                              require)
                 return
             assert False # dead code
