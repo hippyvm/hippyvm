@@ -65,7 +65,7 @@ import hippy.module.spl
 import hippy.module.ctype
 import hippy.module.general.funcs
 import hippy.module.reflections
-
+import hippy.module.mail
 import hippy.localemodule
 import hippy.builtin_klass
 import hippy.buffering
@@ -197,6 +197,7 @@ class OutputBufferingLock(object):
     def __exit__(self, exc_type, exc_val, trace):
         self.interp.ob_lock = False
 
+
 @jit.elidable
 def is_constant_self_or_parent(name):
     key = name.lower()
@@ -270,6 +271,13 @@ class Interpreter(object):
         self.http_status_code = -1
         self.shutdown_functions = []
         self.shutdown_arguments = []
+        self.open_fd = {}
+
+    def register_fd(self, w_fd):
+        self.open_fd[w_fd.res_id] = w_fd
+
+    def unregister_fd(self, w_fd):
+        del self.open_fd[w_fd.res_id]
 
     def _class_get(self, class_name):
         kls = self.space.global_class_cache.locate(class_name)
@@ -366,16 +374,21 @@ class Interpreter(object):
             self.session.write_close(self)
         for i, func in enumerate(self.shutdown_functions):
             func.call_args(self, self.shutdown_arguments[i])
+        for _,  mysql_link in self.mysql_links.items():
+            if not mysql_link.persistent:
+                mysql_link.close()
+        for _, fd in self.open_fd.items():
+            fd.close()
 
-    def initialize_server_variable(self, space):
+    def _get_server_env(self):
         if self.web_config is None:
             initial_server_dict = OrderedDict()
             for k, v in os.environ.items():
                 if k not in initial_server_dict:
-                    initial_server_dict[k] = space.wrap(v)
+                    initial_server_dict[k] = self.space.wrap(v)
         else:
             initial_server_dict = self.web_config.initial_server_dict
-        return space.new_array_from_rdict(initial_server_dict)
+        return initial_server_dict
 
     def initialize_cookie_variable(self, space):
         if self.web_config is not None and self.web_config.cookie is not None:
@@ -396,11 +409,16 @@ class Interpreter(object):
 
     def setup_globals(self, space, argv=None):
         self.globals.set_var('GLOBALS', self.w_globals_ref)
-        self.r_server = W_Reference(self.initialize_server_variable(space))
+        server_dict = self._get_server_env()
         if argv:
-            self.globals.set_var('argc', W_Reference(space.wrap(len(argv))))
-            self.globals.set_var('argv', W_Reference(space.new_array_from_list(
-                [space.wrap(x) for x in argv])))
+            w_argc = space.wrap(len(argv))
+            w_argv = space.new_array_from_list([space.wrap(x) for x in argv])
+            self.globals.set_var('argc', W_Reference(w_argc))
+            self.globals.set_var('argv', W_Reference(w_argv))
+            server_dict['argc'] = w_argc
+            server_dict['argv'] = w_argv
+        self.r_server = W_Reference(
+            self.space.new_array_from_rdict(server_dict))
         self.globals.set_var('_SERVER', self.r_server)
 
         if self.web_config is not None:
@@ -1514,6 +1532,13 @@ class Interpreter(object):
         frame.store_ref(arg, w_ref)
         return pc
 
+    def DECLARE_GLOBAL_INDIRECT(self, bytecode, frame, space, arg, pc):
+        w_name = frame.pop()
+        name = space.str_w(w_name)
+        r_global = self.globals.get_var(space, name)
+        frame.set_ref_by_name(name, r_global)
+        return pc
+
     def declare_func(self, func):
         name = func.name
         func_id = func.get_identifier()
@@ -1797,12 +1822,12 @@ class Interpreter(object):
         try:
             bc = self.compile_file(fname)
         except OSError as exc:
-            self._report_include_warning(frame, func_name, fname, exc,
+            self._report_include_warning(frame, func_name, name, exc,
                                          require)
             return
         except IOError as exc:
             if not we_are_translated():
-                self._report_include_warning(frame, func_name, fname, exc,
+                self._report_include_warning(frame, func_name, name, exc,
                                              require)
                 return
             assert False # dead code

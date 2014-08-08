@@ -566,9 +566,10 @@ class TestParser(object):
 
     def test_global(self):
         r = parse("global $a, $b, $c;")
-        assert r == Block([Global(["a", "b", "c"])])
+        assert r == Block([Global(Block([
+            NamedVariable("a"), NamedVariable("b"), NamedVariable("c")]))])
         r = parse("global $a;")
-        assert r == Block([Global(["a"])])
+        assert r == Block([Global(Block([NamedVariable("a")]))])
 
     def test_constant(self):
         r = parse("$x = c;")

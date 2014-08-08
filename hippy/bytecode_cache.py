@@ -29,7 +29,7 @@ class BytecodeCache(object):
         actual_code_dir = dirname(interp.global_frame.bytecode.filename)
         if exists(join(actual_code_dir, [fname])):
             return join(actual_code_dir, [fname])
-        return fname
+        return abspath(fname)
 
     def compile_file(self, fname, space):
         absname = abspath(fname)

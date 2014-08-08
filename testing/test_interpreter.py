@@ -1,7 +1,6 @@
 import py
 import os
 import sys
-import cStringIO
 import pytest
 from collections import OrderedDict
 
@@ -38,6 +37,7 @@ class BaseTestInterpreter(object):
         return self.engine.warnings(expected_warnings)
 
     def setup_method(self, method):
+        self.env_copy = os.environ.copy()
         self.space = ObjSpace()
         if option.runappdirect:
             self.engine = self.DirectRunner(self.space)
@@ -46,6 +46,7 @@ class BaseTestInterpreter(object):
             self.engine.Interpreter = self.interpreter
 
     def teardown_method(self, method):
+        os.environ = self.env_copy
         self.engine = None
         self.space = None
 
@@ -4056,6 +4057,23 @@ class TestInterpreter(_TestInterpreter):
             '\x00DB\x00type-mysql', '\x00DB\x00conn-', '\x00DB\x00user-',
             '\x00DB\x00pass-']
 
+    def test_constant_in_namespace(self):
+        output = self.run("""
+        namespace foo\\bar;
+        $x = falsE;
+        echo $x;
+        """)
+        assert output == [self.space.w_False]
+
+    def test_constant_in_classdef_in_namespace(self):
+        output = self.run("""
+        namespace foo\\bar;
+        class A {
+            static $x = falsE;
+        }
+        echo A::$x;
+        """)
+        assert output == [self.space.w_False]
 
     @skip_on_travis
     def test_backtick_expr(self):

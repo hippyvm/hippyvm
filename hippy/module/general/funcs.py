@@ -2,6 +2,7 @@ from hippy.builtin import wrap, Optional, LongArg, BoolArg, StringArg
 from collections import OrderedDict
 from hippy.objects.base import W_Root
 from hippy.objects.instanceobject import W_InstanceObject, demangle_property
+from hippy.objects.resources.resource import W_Resource
 from rpython.rlib.rarithmetic import intmask
 from rpython.rlib.rstring import StringBuilder
 from hippy.module import serialize as serialize_mod
@@ -201,7 +202,8 @@ def is_object(space, w_obj):
 @wrap(['space', W_Root], error=False)
 def is_resource(space, w_obj):
     """ Finds whether a variable is a resource"""
-    return space.wrap(space.is_resource(w_obj))
+    result = isinstance(w_obj, W_Resource) and w_obj.is_valid()
+    return space.wrap(result)
 
 
 @wrap(['space', W_Root])
@@ -444,9 +446,10 @@ def get_included_files(interp):
     return space.new_array_from_list(arr_list)
 
 
-def get_magic_quotes_gpc():
+@wrap(['interp'])
+def get_magic_quotes_gpc(interp):
     """ Gets the current configuration setting of magic_quotes_gpc"""
-    raise NotImplementedError()
+    return interp.space.w_False
 
 
 def get_magic_quotes_runtime():
@@ -477,7 +480,7 @@ def getlastmod():
 @wrap(['space'])
 def getmygid(space):
     """ Get PHP script owner's GID"""
-    res = os.getpid()
+    res = os.getgid()
     return space.newint(res)
 
 
@@ -486,14 +489,18 @@ def getmyinode():
     raise NotImplementedError()
 
 
-def getmypid():
+@wrap(['space'])
+def getmypid(space):
     """ Gets PHP's process ID"""
-    raise NotImplementedError()
+    res = os.getpid()
+    return space.newint(res)
 
 
-def getmyuid():
+@wrap(['space'])
+def getmyuid(space):
     """ Gets PHP script owner's UID"""
-    raise NotImplementedError()
+    res = os.geteuid()
+    return space.newint(res)
 
 
 def getopt():
@@ -624,7 +631,9 @@ def putenv(space, envstr):
     """ Sets the value of an environment variable"""
     try:
         key, value = envstr.split("=")
+        # import pdb; pdb.set_trace()
     except ValueError:
+        del os.environ[envstr]
         return space.w_True
     os.environ[key] = value
     return space.w_True

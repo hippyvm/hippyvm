@@ -2,10 +2,12 @@ import os
 from hippy.objects.resources import W_Resource
 from rpython.rlib.rStringIO import RStringIO
 from rpython.rlib.rfile import RFile
+from rpython.rlib.objectmodel import import_from_mixin
 from collections import OrderedDict
 
 
-class RMemoryFile(RStringIO, RFile):
+class RMemoryFile(RFile):
+    import_from_mixin(RStringIO)
 
     def flush(self):
         pass
@@ -58,11 +60,13 @@ class W_FileResource(W_Resource):
             self.resource = open(self.filename, self.mode)
             self.resource.seek(0, 0)
         self.state = OPEN
+        self.space.ec.interpreter.register_fd(self)
 
     def close(self):
         try:
             self.resource.close()
             self.state = CLOSE
+            self.space.ec.interpreter.unregister_fd(self)
             return True
         except IOError:
             return False

@@ -33,6 +33,7 @@ class W_DirResource(W_Resource):
             self.dir_iter = self.create_dir_iter()
             self.state = OPEN
             self.space.ec.interpreter.last_dir_resource = self
+            self.space.ec.interpreter.register_fd(self)
             return self
         except OSError:
             self.space.ec.warn("opendir(%s): "
@@ -60,7 +61,9 @@ class W_DirResource(W_Resource):
             self.read()
 
     def close(self):
+        self.space.ec.interpreter.unregister_fd(self)
         self.state = CLOSED
+        return True
 
     def is_valid(self):
         return self.state == OPEN

@@ -132,10 +132,6 @@ def setup_cgi(interp, params, argv, post_data=None):
     initial_server_dict = OrderedDict()
     if script_name is not None:
         initial_server_dict['PHP_SELF'] = space.wrap(script_name)
-    if argv:
-        initial_server_dict['argc'] = space.wrap(len(argv))
-        initial_server_dict['argv'] = space.new_array_from_list(
-            [space.wrap(x) for x in argv])
 
     cookie = get_param(params, 'HTTP_COOKIE')
     content_length = get_param(params, 'CONTENT_LENGTH')

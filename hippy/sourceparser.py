@@ -1144,7 +1144,7 @@ class SourceParser(BaseParser):
 
     @pg.production("unticked_statement : T_GLOBAL global_var_list ;")
     def unticked_statement_t_global_global_var_list(self, p):
-        return Global(p[1].unwrap_as_strings(), lineno=p[0].getsourcepos())
+        return Global(p[1], lineno=p[0].getsourcepos())
 
     @pg.production("global_var_list : global_var_list , global_var")
     def global_var_list_global_var_list_global_var(self, p):
@@ -1157,11 +1157,11 @@ class SourceParser(BaseParser):
 
     @pg.production("global_var : T_VARIABLE")
     def global_var_t_variable(self, p):
-        return ConstantStr(p[0].getstr()[1:], lineno=p[0].getsourcepos())
+        return NamedVariable(p[0].getstr()[1:])
 
     @pg.production("global_var : $ r_variable")
     def global_var_dollar_r_variable(self, p):
-        raise ParseError("not implemented", p[0].getsourcepos())
+        return Variable(p[1], p[1].getsourcepos())
 
     @pg.production("global_var : $ { expr }")
     def global_var_expr(self, p):
