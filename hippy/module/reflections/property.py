@@ -70,7 +70,7 @@ def construct(interp, this, class_name, property_name):
         elif this.ref_prop.is_protected():
             this.flags |= IS_PROTECTED
     except KeyError:
-        msg = "Property %s does not exist" % property_name
+        msg = "Property %s::$%s does not exist" % (class_name, property_name)
         raise PHPException(interp._class_get('ReflectionException').call_args(
             interp, [interp.space.wrap(msg)]
         ))
