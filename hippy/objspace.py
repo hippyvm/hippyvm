@@ -422,10 +422,7 @@ class ObjSpace(object):
         return w_obj.deref().tp == self.tp_object
 
     def is_resource(self, w_obj):
-        if isinstance(w_obj, W_Resource):
-            if w_obj.is_valid():
-                return True
-        return False
+        return isinstance(w_obj, W_Resource)
 
     def gettypename(self, w_obj):
         w_obj = w_obj.deref()
