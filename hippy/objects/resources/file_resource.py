@@ -2,10 +2,12 @@ import os
 from hippy.objects.resources import W_Resource
 from rpython.rlib.rStringIO import RStringIO
 from rpython.rlib.rfile import RFile
+from rpython.rlib.objectmodel import import_from_mixin
 from collections import OrderedDict
 
 
-class RMemoryFile(RStringIO, RFile):
+class RMemoryFile(RFile):
+    import_from_mixin(RStringIO)
 
     def flush(self):
         pass

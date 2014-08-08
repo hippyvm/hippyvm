@@ -387,15 +387,15 @@ class Interpreter(object):
         for _, fd in self.open_fd.items():
             fd.close()
 
-    def initialize_server_variable(self, space):
+    def _get_server_env(self):
         if self.web_config is None:
             initial_server_dict = OrderedDict()
             for k, v in os.environ.items():
                 if k not in initial_server_dict:
-                    initial_server_dict[k] = space.wrap(v)
+                    initial_server_dict[k] = self.space.wrap(v)
         else:
             initial_server_dict = self.web_config.initial_server_dict
-        return space.new_array_from_rdict(initial_server_dict)
+        return initial_server_dict
 
     def initialize_cookie_variable(self, space):
         if self.web_config is not None and self.web_config.cookie is not None:
@@ -416,11 +416,16 @@ class Interpreter(object):
 
     def setup_globals(self, space, argv=None):
         self.globals.set_var('GLOBALS', self.w_globals_ref)
-        self.r_server = W_Reference(self.initialize_server_variable(space))
+        server_dict = self._get_server_env()
         if argv:
-            self.globals.set_var('argc', W_Reference(space.wrap(len(argv))))
-            self.globals.set_var('argv', W_Reference(space.new_array_from_list(
-                [space.wrap(x) for x in argv])))
+            w_argc = space.wrap(len(argv))
+            w_argv = space.new_array_from_list([space.wrap(x) for x in argv])
+            self.globals.set_var('argc', W_Reference(w_argc))
+            self.globals.set_var('argv', W_Reference(w_argv))
+            server_dict['argc'] = w_argc
+            server_dict['argv'] = w_argv
+        self.r_server = W_Reference(
+            self.space.new_array_from_rdict(server_dict))
         self.globals.set_var('_SERVER', self.r_server)
 
         if self.web_config is not None:
@@ -1837,12 +1842,12 @@ class Interpreter(object):
         try:
             bc = self.compile_file(fname)
         except OSError as exc:
-            self._report_include_warning(frame, func_name, fname, exc,
+            self._report_include_warning(frame, func_name, name, exc,
                                          require)
             return
         except IOError as exc:
             if not we_are_translated():
-                self._report_include_warning(frame, func_name, fname, exc,
+                self._report_include_warning(frame, func_name, name, exc,
                                              require)
                 return
             assert False # dead code

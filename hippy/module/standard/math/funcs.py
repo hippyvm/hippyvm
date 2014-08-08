@@ -92,6 +92,8 @@ def atan(space, d):
 @wrap(['space', float])
 def atanh(space, d):
     """ atanh - Inverse hyperbolic tangent """
+    if d == 1:
+        return space.wrap(rfloat.INFINITY)
     try:
         return space.wrap(math.atanh(d))
     except OverflowError:

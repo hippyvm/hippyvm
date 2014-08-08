@@ -1937,16 +1937,17 @@ class NamedConstant(Node):
         ctx.emit(consts.LOAD_NAMED_CONSTANT, ctx.create_name(name))
 
     def wrap(self, ctx, space):
+        name = self.name.as_unqualified()
+        if name is not None:
+            name_lower = name.lower()
+            if name_lower == 'null':
+                return space.w_Null
+            elif name_lower == 'true':
+                return space.w_True
+            elif name_lower == 'false':
+                return space.w_False
         name = self.name.get_qualified_name(ctx)
-        name_lower = name.lower()
-        if name_lower == 'null':
-            return space.w_Null
-        elif name_lower == 'true':
-            return space.w_True
-        elif name_lower == 'false':
-            return space.w_False
-        else:
-            return W_Constant(name)
+        return W_Constant(name)
 
 
 class MagicConstant(Node):
