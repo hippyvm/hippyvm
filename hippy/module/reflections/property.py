@@ -16,6 +16,8 @@ IS_PRIVATE = 1024
 
 
 class W_ReflectionProperty(W_InstanceObject):
+    class_name = ''
+    name = ''
     def get_str(self):
         prop = self.ref_prop
         if prop is None:
@@ -52,14 +54,25 @@ def export(interp, w_klass, name, return_string=False):
         return interp.space.w_Null
 
 
-@wrap_method(['interp', ThisUnwrapper(W_ReflectionProperty), str, str],
+@wrap_method(['interp', ThisUnwrapper(W_ReflectionProperty), W_Root, str],
              name='ReflectionProperty::__construct')
-def construct(interp, this, class_name, property_name):
-    klass = interp.lookup_class_or_intf(class_name)
-    if klass is None:
-        msg = "Class %s does not exist" % class_name
+def construct(interp, this, w_class, property_name):
+    space = interp.space
+    if space.is_str(w_class):
+        class_name = space.str_w(w_class)
+        klass = interp.lookup_class_or_intf(class_name)
+        if klass is None:
+            msg = "Class %s does not exist" % class_name
+            raise PHPException(k_ReflectionException.call_args(
+                interp, [space.wrap(msg)]))
+    elif space.is_object(w_class):
+        raise NotImplementedError
+    else:
+        msg = ("The parameter class is expected to be either a string "
+               "or an object")
         raise PHPException(k_ReflectionException.call_args(
-            interp, [interp.space.wrap(msg)]))
+            interp, [space.wrap(msg)]))
+
     this.class_name = class_name
     this.name = property_name
     this.ref_klass = klass
@@ -179,7 +192,7 @@ def toString(interp, this):
 
 
 def _get_class(interp, this):
-    return interp.space.newstr(this.ref_klass.name)
+    return interp.space.newstr(this.class_name)
 
 
 def _set_class(interp, this, w_value):
@@ -187,7 +200,7 @@ def _set_class(interp, this, w_value):
 
 
 def _get_name(interp, this):
-    return interp.space.newstr(this.ref_prop.name)
+    return interp.space.newstr(this.name)
 
 
 def _set_name(interp, this, w_value):
