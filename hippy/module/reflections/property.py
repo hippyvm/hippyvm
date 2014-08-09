@@ -66,7 +66,8 @@ def construct(interp, this, w_class, property_name):
             raise PHPException(k_ReflectionException.call_args(
                 interp, [space.wrap(msg)]))
     elif space.is_object(w_class):
-        raise NotImplementedError
+        klass = w_class.klass
+        class_name = klass.name
     else:
         msg = ("The parameter class is expected to be either a string "
                "or an object")

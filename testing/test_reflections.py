@@ -1,4 +1,5 @@
 import pytest
+from hippy.objects.strobject import W_ConstStringObject
 from testing.test_interpreter import BaseTestInterpreter, hippy_fail
 
 
@@ -148,7 +149,7 @@ class TestReflectionClass(BaseTestInterpreter):
 
     def test_get_doc_comment(self):
         pytest.xfail("Not implemented")
-        
+
         output = self.run("""
             /**
             * A test class
@@ -904,6 +905,19 @@ class TestReflectionProperty(BaseTestInterpreter):
 
         ''')
         assert self.space.str_w(output[0]) == "Cannot access non-public member String::length"
+
+    def test_from_object(self):
+        output = self.run('''
+        class String
+        {
+            public $length = 5;
+        }
+        $obj = new String();
+        $prop = new ReflectionProperty($obj, 'length');
+        echo $prop->class;
+        ''')
+        assert output == [W_ConstStringObject("String")]
+
 
     @hippy_fail(reason="setAccessible not implemented")
     def test_accessible_private(self):
