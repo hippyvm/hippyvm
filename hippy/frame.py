@@ -265,6 +265,20 @@ class Frame(object):
             globals = self.interp.globals
             globals.unset_var(self.bytecode.varnames[no])
 
+    def lookup_name(self, name):
+        """Get a reference to the variable `$name`."""
+        try:
+            no = jit.promote(self.bytecode).var_to_pos[name]
+        except KeyError:
+            if self.extra_variables is None:
+                self.extra_variables = new_rdict()
+            try:
+                ph_v = self.extra_variables[name]
+            except KeyError:
+                return None
+            return ph_v
+        return self.lookup_deref(no, one_level=True)
+
     def get_ref_by_name(self, name, create_new=True):
         """Get or create a reference to the variable `$name`."""
         try:

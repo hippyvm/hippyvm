@@ -350,6 +350,20 @@ echo(f());
         """)
         assert phspace.str_w(output[0]) == "c.m"
 
+    def test_python_referencing_dollardollar_var(self):
+        output = self.run("""
+            $a = "b";
+            $$a = "c";
+
+            $src = <<<EOD
+            def ref():
+                return b
+            EOD;
+            embed_py_func($src);
+            echo(ref());
+        """)
+        assert self.space.str_w(output[0]) == "c"
+
     #
     # PHP importing Python
     #

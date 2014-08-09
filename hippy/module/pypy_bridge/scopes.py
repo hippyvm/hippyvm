@@ -23,13 +23,9 @@ class PHP_Scope(WPy_Root):
         ph_interp = self.ph_interp
         ph_frame = self.ph_frame
 
-        bc = jit.promote(ph_frame.bytecode)
-        no = bc.lookup_var_pos(n)
-        if no >= 0:
-            ph_v = ph_frame.lookup_deref(no, one_level=True)
-            if ph_v is not None:
-                return ph_v.to_py(ph_interp)
-            return None
+        ph_v = ph_frame.lookup_name(n)
+        if ph_v is not None:
+            return ph_v.to_py(ph_interp)
 
         ph_v = ph_interp.lookup_constant(n)
         if ph_v is not None:
