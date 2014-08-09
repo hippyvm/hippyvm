@@ -119,7 +119,10 @@ def set_value(interp, this, w_arg_1, w_arg_2=None):
         w_value = w_arg_2
         w_obj.setattr(interp, this.name, w_value, None)
     else:
-        w_value = w_arg_1
+        if w_arg_2 is None:
+            w_value = w_arg_1
+        else:
+            w_value = w_arg_2
         this.ref_prop.r_value.store(w_value)
 
 
