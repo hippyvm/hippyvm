@@ -2,7 +2,7 @@ from hippy.klass import def_class
 from hippy.builtin_klass import k_Exception, W_ExceptionObject
 
 
-def_class(
+k_ReflectionException = def_class(
     'ReflectionException',
     [],
     extends=k_Exception,

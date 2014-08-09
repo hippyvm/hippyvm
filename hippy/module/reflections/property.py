@@ -6,6 +6,7 @@ from hippy.objects.instanceobject import W_InstanceObject
 from hippy.builtin import wrap_method, ThisUnwrapper, Optional
 from hippy.builtin_klass import GetterSetterWrapper
 from hippy.error import PHPException
+from hippy.module.reflections.exception import k_ReflectionException
 
 
 IS_STATIC = 1
@@ -55,6 +56,10 @@ def export(interp, w_klass, name, return_string=False):
              name='ReflectionProperty::__construct')
 def construct(interp, this, class_name, property_name):
     klass = interp.lookup_class_or_intf(class_name)
+    if klass is None:
+        msg = "Class %s does not exist" % class_name
+        raise PHPException(k_ReflectionException.call_args(
+            interp, [interp.space.wrap(msg)]))
     this.class_name = class_name
     this.name = property_name
     this.ref_klass = klass
@@ -71,9 +76,8 @@ def construct(interp, this, class_name, property_name):
             this.flags |= IS_PROTECTED
     except KeyError:
         msg = "Property %s::$%s does not exist" % (class_name, property_name)
-        raise PHPException(interp._class_get('ReflectionException').call_args(
-            interp, [interp.space.wrap(msg)]
-        ))
+        raise PHPException(k_ReflectionException.call_args(
+            interp, [interp.space.wrap(msg)]))
 
 
 @wrap_method(['interp', ThisUnwrapper(W_ReflectionProperty)],
@@ -91,9 +95,8 @@ def get_value(interp, this, w_obj=None):
     if not this.ref_prop.is_public():
         msg = "Cannot access non-public member %s::%s" % (this.class_name,
                                                           this.name)
-        raise PHPException(interp._class_get('ReflectionException').call_args(
-            interp, [interp.space.wrap(msg)]
-        ))
+        raise PHPException(k_ReflectionException.call_args(
+            interp, [interp.space.wrap(msg)]))
 
     if not this.ref_prop.is_static():
         w_value = w_obj.getattr(interp, this.name, w_obj.getclass(), True)
@@ -110,9 +113,8 @@ def set_value(interp, this, w_arg_1, w_arg_2=None):
     if not this.ref_prop.is_public():
         msg = "Cannot access non-public member %s::%s" % (this.class_name,
                                                           this.name)
-        raise PHPException(interp._class_get('ReflectionException').call_args(
-            interp, [interp.space.wrap(msg)]
-        ))
+        raise PHPException(k_ReflectionException.call_args(
+            interp, [interp.space.wrap(msg)]))
 
     if not this.ref_prop.is_static():
         w_obj = w_arg_1
