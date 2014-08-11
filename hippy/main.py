@@ -174,8 +174,7 @@ def main(filename, rest_of_args, cgi, gcdump, debugger_pipes=(-1, -1),
             os.write(1, e.message)
             exitcode = e.code
         except SignalReceived:
-            exitcode = 1
-            os.write(1, "interrupt received")
+            exitcode = 130
         if exitcode:
             return exitcode
         if i < no - 1:
