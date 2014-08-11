@@ -201,6 +201,8 @@ ACC_PROTECTED  = 0x0200
 ACC_PRIVATE    = 0x0400
 ACCMASK_VISIBILITY = ACC_PUBLIC | ACC_PROTECTED | ACC_PRIVATE
 
+ACC_IMPLICIT_PUBLIC = 0x1000  # instance property (for ReflectionProperty)
+
 if __name__ == '__main__':
     for i, (bc, _, _) in enumerate(BYTECODES):
         print i, bc

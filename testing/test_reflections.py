@@ -1,5 +1,6 @@
 import pytest
 from hippy.objects.strobject import W_ConstStringObject
+from hippy.objects.intobject import W_IntObject
 from testing.test_interpreter import BaseTestInterpreter, hippy_fail
 
 
@@ -917,6 +918,21 @@ class TestReflectionProperty(BaseTestInterpreter):
         echo $prop->class;
         ''')
         assert output == [W_ConstStringObject("String")]
+
+    def test_from_object_dynamic(self):
+        output = self.run('''
+        class String
+        {
+            public $length = 5;
+        }
+        $obj = new String();
+        $obj->x = 1;
+        $prop = new ReflectionProperty($obj, 'x');
+        echo $prop->getValue($obj);
+        $obj2 = new String();
+        echo $prop->getValue($obj2);
+        ''')
+        assert output == [W_IntObject(1), self.space.w_Null]
 
 
     @hippy_fail(reason="setAccessible not implemented")

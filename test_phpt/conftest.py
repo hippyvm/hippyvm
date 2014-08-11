@@ -2405,7 +2405,6 @@ markers['ext/reflection'] = {
     'bug33312.phpt': '?',
     'bug33389.phpt': '?',
     'bug36308.phpt': '?',
-    'bug37816.phpt': '?',
     'bug37964.phpt': '?',
     'bug38132.phpt': '?',
     'bug38194.phpt': '?',

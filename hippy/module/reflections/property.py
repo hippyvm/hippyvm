@@ -89,6 +89,11 @@ def construct(interp, this, w_class, property_name):
         elif this.ref_prop.is_protected():
             this.flags |= IS_PROTECTED
     except KeyError:
+        if (isinstance(w_class, W_InstanceObject) and
+                w_class.map.lookup(property_name) is not None):
+            this.ref_prop = None
+            this.flags = consts.ACC_IMPLICIT_PUBLIC
+            return
         msg = "Property %s::$%s does not exist" % (class_name, property_name)
         raise PHPException(k_ReflectionException.call_args(
             interp, [interp.space.wrap(msg)]))
@@ -106,16 +111,20 @@ def get_name(interp, this):
               Optional(W_Root)],
              name='ReflectionProperty::getValue')
 def get_value(interp, this, w_obj=None):
-    if not this.ref_prop.is_public():
+    property = this.ref_prop
+    if property is None:
+        return w_obj.getattr(interp, this.name, w_obj.getclass())
+
+    if not property.is_public():
         msg = "Cannot access non-public member %s::%s" % (this.class_name,
                                                           this.name)
         raise PHPException(k_ReflectionException.call_args(
             interp, [interp.space.wrap(msg)]))
 
-    if not this.ref_prop.is_static():
-        w_value = w_obj.getattr(interp, this.name, w_obj.getclass(), True)
+    if not property.is_static():
+        w_value = w_obj.getattr(interp, this.name, w_obj.getclass())
     else:
-        w_value = this.ref_prop.getvalue(interp.space).deref()
+        w_value = property.getvalue(interp.space).deref()
     return w_value
 
 
