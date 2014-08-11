@@ -65,7 +65,7 @@ def construct(interp, this, w_class, property_name):
             msg = "Class %s does not exist" % class_name
             raise PHPException(k_ReflectionException.call_args(
                 interp, [space.wrap(msg)]))
-    elif space.is_object(w_class):
+    elif isinstance(w_class, W_InstanceObject):
         klass = w_class.klass
         class_name = klass.name
     else:
@@ -113,7 +113,7 @@ def get_name(interp, this):
 def get_value(interp, this, w_obj=None):
     property = this.ref_prop
     if property is None:
-        return w_obj.getattr(interp, this.name, w_obj.getclass())
+        return w_obj.getattr(interp, this.name, w_obj.getclass(), give_notice=False)
 
     if not property.is_public():
         msg = "Cannot access non-public member %s::%s" % (this.class_name,
@@ -122,7 +122,7 @@ def get_value(interp, this, w_obj=None):
             interp, [interp.space.wrap(msg)]))
 
     if not property.is_static():
-        w_value = w_obj.getattr(interp, this.name, w_obj.getclass())
+        w_value = w_obj.getattr(interp, this.name, w_obj.getclass(), give_notice=False)
     else:
         w_value = property.getvalue(interp.space).deref()
     return w_value
