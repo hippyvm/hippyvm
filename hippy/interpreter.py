@@ -7,7 +7,7 @@ from hippy.consts import BYTECODE_HAS_ARG, BYTECODE_NAMES,\
     BINOP_LIST, BINOP_BITWISE, RETURN
 from hippy.function import AbstractFunction
 from hippy.error import (IllegalInstruction, FatalError, PHPException,
-                         ExplicitExitException, VisibilityError)
+                         ExplicitExitException, VisibilityError, SignalReceived)
 from hippy.lexer import LexerError
 from hippy.sourceparser import ParseError
 from hippy.phpcompiler import compile_php
@@ -34,7 +34,7 @@ from hippy.module.standard.glob import php_glob
 from hippy.module.spl import spl
 from rpython.rlib.objectmodel import we_are_translated
 from rpython.rlib import jit
-from rpython.rlib import rpath
+from rpython.rlib import rpath, rsignal
 from rpython.rlib.unroll import unrolling_iterable
 from rpython.rlib.rfile import create_popen_file
 
@@ -228,6 +228,7 @@ class Interpreter(object):
         self.topframeref = jit.vref_None
         self.error_handler = None
         space.ec.interpreter = self  # one interpreter at a time
+        space.ec.init_signals()
         self._autoloading = {}
         self.autoload_stack = []
         self.autoload_extensions = ['.inc', '.php']
@@ -278,6 +279,13 @@ class Interpreter(object):
 
     def unregister_fd(self, w_fd):
         del self.open_fd[w_fd.res_id]
+
+    def handle_signal_if_necessary(self):
+        n = rsignal.pypysig_getaddr_occurred().c_value
+        if n < 0:
+            n = rsignal.pypysig_poll()
+            if n < 0:
+                raise SignalReceived()
 
     def _class_get(self, class_name):
         kls = self.space.global_class_cache.locate(class_name)
@@ -1196,6 +1204,7 @@ class Interpreter(object):
 
     def JUMP_BACK_IF_TRUE(self, bytecode, frame, space, arg, pc):
         if space.is_true(frame.pop()):
+            self.handle_signal_if_necessary()
             driver.can_enter_jit(pc=arg, bytecode=bytecode, frame=frame,
                              self=self, contextclass=frame.get_contextclass())
             return arg
@@ -1223,6 +1232,7 @@ class Interpreter(object):
         return arg
 
     def JUMP_BACKWARD(self, bytecode, frame, space, arg, pc):
+        self.handle_signal_if_necessary()
         driver.can_enter_jit(pc=arg, bytecode=bytecode, frame=frame,
                              self=self, contextclass=frame.get_contextclass())
         return arg

@@ -1,11 +1,12 @@
 import sys
 import operator
+import signal
 from collections import OrderedDict
 from rpython.rlib.objectmodel import specialize, we_are_translated
 from rpython.rlib.rarithmetic import intmask
 from rpython.rlib.rstring import StringBuilder
 from rpython.rlib.signature import signature, types
-from rpython.rlib import jit
+from rpython.rlib import jit, rsignal
 from hippy.consts import BINOP_LIST, BINOP_COMPARISON_LIST
 from hippy.error import VisibilityError, InvalidCallback
 from hippy.objects.reference import W_Reference
@@ -53,6 +54,13 @@ def my_cmp(one, two, ignore_order=False):
 class ExecutionContext(object):
     def __init__(self, space):
         self.interpreter = None
+        self.initialized = False
+
+    def init_signals(self):
+        if self.initialized:
+            return
+        self.initialized = True
+        rsignal.pypysig_setflag(signal.SIGINT)
 
     def notice(self, msg):
         self.interpreter.notice(msg)

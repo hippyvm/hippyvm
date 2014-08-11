@@ -18,7 +18,7 @@ if __name__ == '__main__': # untranslated
 from hippy.phpcompiler import compile_php
 from hippy.interpreter import Interpreter
 from hippy.objspace import getspace
-from hippy.error import ExplicitExitException, InterpreterError
+from hippy.error import ExplicitExitException, InterpreterError, SignalReceived
 from hippy.config import load_ini
 from hippy.sourceparser import ParseError
 from rpython.rlib.rgc import dump_rpy_heap
@@ -173,6 +173,9 @@ def main(filename, rest_of_args, cgi, gcdump, debugger_pipes=(-1, -1),
         except ExplicitExitException, e:
             os.write(1, e.message)
             exitcode = e.code
+        except SignalReceived:
+            exitcode = 1
+            os.write(1, "interrupt received")
         if exitcode:
             return exitcode
         if i < no - 1:
