@@ -285,6 +285,7 @@ class Interpreter(object):
         if n < 0:
             n = rsignal.pypysig_poll()
             if n < 0:
+                rsignal.pypysig_getaddr_occurred().c_value = 0
                 raise SignalReceived()
 
     def _class_get(self, class_name):
