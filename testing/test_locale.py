@@ -12,6 +12,7 @@ def has_locales(*locales):
     try:
         for locale in locales:
             rsetlocale(LC_CTYPE, locale)
+            rsetlocale(LC_COLLATE, locale)
     except LocaleError:
         return False
     else:
