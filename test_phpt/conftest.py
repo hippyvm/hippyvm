@@ -6,7 +6,9 @@ import re
 import locale
 from collections import OrderedDict
 
-from hippy.hippyoption import enable_all_optional_extensions
+from hippy.hippyoption import (
+    enable_all_optional_extensions, is_optional_extension_enabled)
+
 enable_all_optional_extensions()
 
 from hippy.config import load_ini
@@ -3037,12 +3039,16 @@ markers[hash_test_dir] = {
     'whirlpool.phpt':  slow,
 }
 
+prerequisites = {hash_test_dir: "hash", mysql_test_dir: "mysql"}
 
 class PHPTest(Item):
     def runtest(self):
         basename = py.path.local(self.name).relto(TEST_DIR)
         dirname = basename[:basename.rfind('/')]
         fname = py.path.local(self.name).basename
+        prereq = prerequisites.get(dirname)
+        if prereq and not is_optional_extension_enabled(prereq):
+            py.test.skip("Extension %s required" % prereq)
         phpt_test(dirname, fname)
 
     def reportinfo(self):
