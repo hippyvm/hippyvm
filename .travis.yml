@@ -3,6 +3,11 @@ python:
   - "2.7"
 cache: apt
 
+env:
+  - TRANSLATE=true
+  - TESTDIR=testing/
+  - TESTDIR=test_phpt/
+
 before_install:
   - sudo apt-get update -qq
   - sudo apt-get install -y libmysqlclient-dev
