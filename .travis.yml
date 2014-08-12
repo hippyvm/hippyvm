@@ -24,6 +24,11 @@ install:
 script:
   - ./travis.sh
 
+matrix:
+  fast_finish: true
+  allow_failures:
+    - env: TESTDIR=test_phpt/
+
 notifications:
   irc:
     channels: "irc.freenode.org#hippyvm"
