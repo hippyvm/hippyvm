@@ -1410,13 +1410,48 @@ def sha1(space, s, raw_output=False):
 #    """Calculate the similarity between two strings."""
 #    raise NotImplementedError()
 
-#
-#@wrap(['space', 'args_w'])
-#def soundex(space, args_w):
-#    """Calculate the soundex key of a string."""
-#    raise NotImplementedError()
 
-#
+@wrap(['space', str])
+def soundex(space, data):
+    """Calculate the soundex key of a string."""
+    #                ABCDEFGHIJKLMNOPQRSTUVWXYZ
+    soundex_table = '01230120022455012623010202'
+
+    if not data:
+        return space.w_False
+
+    # build soundex string
+    soundex_data = ['0'] * 4
+
+    data = data.upper()
+    last_code = None
+    i = 0
+    for letter in data:
+        # Strip non-letter chars
+        # BUG: should also map here accented letters used in non
+        # English words or names (also found in English text!):
+        # esstsett, thorn, n-tilde, c-cedilla, s-caron, ...
+        if 'A' <= letter <= 'Z':
+            code = soundex_table[ord(letter) - ord('A')]
+            if i == 0:
+                # remember first valid char
+                soundex_data[i] = letter
+                i += 1
+                last_code = code
+            elif code != last_code:
+                # ignore sequences of consonants with same soundex
+                # code in trail, and vowels unless they separate
+                # consonant letters
+                if code != '0':
+                    soundex_data[i] = code
+                    i += 1
+                    if i == 4:
+                        break
+                last_code = code
+
+    return space.newstr(''.join(soundex_data))
+
+
 #@wrap(['space', 'args_w'])
 #def sscanf(space, args_w):
 #    """Parses input from a string according to a format."""

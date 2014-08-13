@@ -914,9 +914,6 @@ markers[string_test_dir] = {
     'show_source_variation2.phpt': "not implemented",
     'similar_text_basic.phpt': "not implemented",
     'similar_text_error.phpt': "not implemented",
-    'soundex.phpt': "not implemented",
-    'soundex_basic.phpt': "not implemented",
-    'soundex_error.phpt': "not implemented",
     'sscanf_basic1.phpt': "not implemented",
     'sscanf_basic2.phpt': "not implemented",
     'sscanf_basic3.phpt': "not implemented",
@@ -1347,7 +1344,7 @@ markers[mysql_test_dir] = {
     'mysql_query_load_data_openbasedir.phpt': "not finished",
     'mysql_result.phpt': '?',
     'mysql_sql_safe_mode.phpt': "?",
-    'mysql_stat.phpt': "missing soundex()",
+    # 'mysql_stat.phpt': "missing soundex()",
     'mysql_trace_mode.phpt': 'missing mysql_escape_string()',
 }
 
