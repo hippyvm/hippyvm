@@ -135,6 +135,7 @@ def main(filename, rest_of_args, cgi, gcdump, debugger_pipes=(-1, -1),
         no = 1
 
     exitcode = 0
+    space.ec.init_signals()
     for i in range(no):
         # load the ini file situated in the current wc
         interp.setup(cgi, argv=[filename] + rest_of_args)
