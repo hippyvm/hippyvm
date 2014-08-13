@@ -2,10 +2,12 @@ from rpython.rlib.rstring import StringBuilder
 from rpython.rtyper.lltypesystem import lltype, rffi
 from rpython.rlib.rarithmetic import intmask
 from rpython.rlib.rrandom import Random
-from hippy.builtin import wrap, Optional, BoolArg
+from hippy.builtin import wrap, Optional, BoolArg, StringArg
 from hippy.objects.base import W_Root
 from hippy.module.date import timelib
+from hippy.module.phpstruct import _unpack
 from hippy.phpcompiler import compile_php
+
 _random = Random()
 
 
@@ -167,9 +169,10 @@ def uniqid(space, prefix='', more_entropy=False):
     return space.newstr(builder.build())
 
 
-def unpack():
+@wrap(['space', StringArg(None), StringArg(None)])
+def unpack(space, formats, string):
     """ Unpack data from binary string"""
-    return NotImplementedError()
+    return _unpack(space, formats, string)
 
 
 def usleep():
