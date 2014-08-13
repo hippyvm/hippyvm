@@ -279,6 +279,18 @@ class ClassBase(AbstractFunction, AccessMixin):
         else:
             return None
 
+    def get_methods(self, contextclass):
+        '''Returns a list of accessible method names for the given context.'''
+        methods = []
+        for method_name, method in self.methods.iteritems():
+            try:
+                self._visibility_check(method, method_name, contextclass)
+                methods.append(method.get_name())
+            except VisibilityError:
+                pass
+
+        return methods
+
     def lookup_staticmember(self, name, contextclass, check_visibility):
         property = self._lookup_property(name, contextclass, check_visibility)
         if property is not None and property.is_static():
