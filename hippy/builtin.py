@@ -45,6 +45,7 @@ import os
 import inspect
 from collections import OrderedDict
 from rpython.rlib import jit
+from rpython.rlib.objectmodel import newlist_hint
 from hippy.error import (InterpreterError, ExplicitExitException,
                          ConvertError, FatalError, PHPException,
                          VisibilityError)
@@ -1056,14 +1057,22 @@ def is_subclass_of(space, w_obj, classname, allow_string=False):
                  must_be_different=True)
 
 
-@wrap(['interp', W_Root, str])
-def method_exists(interp, w_obj, method_name):
+def _get_class(interp, w_obj):
+    '''Returns a class object starting from either a string or object.'''
     klass = None
     space = interp.space
     if w_obj.tp == space.tp_str:
         klass = interp._lookup_class(space.str_w(w_obj))
     elif w_obj.tp == space.tp_object:
         klass = space.getclass(w_obj)
+
+    return klass
+
+
+@wrap(['interp', W_Root, str])
+def method_exists(interp, w_obj, method_name):
+    klass = _get_class(interp, w_obj)
+    space = interp.space
     if not klass:
         return space.w_False
 
@@ -1093,6 +1102,23 @@ def get_class(space, w_object=None):
         klass = space.getclass(w_object)
     #
     return space.newstr(klass.name)
+
+
+@wrap(['interp', W_Root])
+def get_class_methods(interp, w_obj):
+    '''Gets the class methods' names.'''
+    klass = _get_class(interp, w_obj)
+    space = interp.space
+    if not klass:
+        return space.w_Null
+
+    contextclass = interp.get_contextclass()
+    methods = klass.get_methods(contextclass)
+    class_methods = newlist_hint(len(klass.methods))
+    for method in methods:
+        class_methods.append(space.newstr(method))
+
+    return space.new_array_from_list(class_methods)
 
 
 @wrap(['space'])
