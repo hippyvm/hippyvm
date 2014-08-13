@@ -6,8 +6,9 @@ cache: apt
 env:
   - TRANSLATE=true
   - TESTDIR=testing/
-  - TESTDIR=test_phpt/ext/
   - TESTDIR=test_phpt/[^e]*/
+  - TESTDIR="test_phpt/ext/ -k 'not standard'"
+  - TESTDIR=test_phpt/ext/standard/
 
 before_install:
   - sudo apt-get update -qq
@@ -28,8 +29,8 @@ script:
 matrix:
   fast_finish: true
   allow_failures:
-    - env: TESTDIR=test_phpt/ext/
-    - env: TESTDIR=test_phpt/[^e]*/
+    - env: TESTDIR="test_phpt/ext/ -k 'not standard'"
+    - env: TESTDIR=test_phpt/ext/standard/
 
 notifications:
   irc:
