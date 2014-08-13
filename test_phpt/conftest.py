@@ -1090,10 +1090,6 @@ markers[general_test_dir] = {
     'proc_open02.phpt': "not implemented",
     'set_magic_quotes_runtime_basic.phpt': "not implemented",
     'set_magic_quotes_runtime_error.phpt': "not implemented",
-    # 'sleep_basic.phpt': "not implemented",
-    'sleep_error.phpt': "not implemented",
-    'usleep_basic.phpt': "not implemented",
-    'usleep_error.phpt': "not implemented",
     'var_dump_64bit.phpt': "not implemented",
 }
 
