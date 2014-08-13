@@ -11,5 +11,5 @@ declare -a STEPS=(
 if [[ "$TRANSLATE" == "true" ]]; then
     python pypy/rpython/bin/rpython targethippy.py
 else
-    py.test "$TESTDIR" -v
+    py.test $TESTDIR -v
 fi
