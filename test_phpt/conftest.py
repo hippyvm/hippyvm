@@ -764,7 +764,6 @@ markers[string_test_dir] = {
     'bug29119.phpt': "not implemented",
     'bug35817.phpt': "not implemented",
     'bug36148.phpt': "not implemented",
-    'bug36306.phpt': "not implemented",
     'bug37262.phpt': "not implemented",
     'bug38322.phpt': "not implemented",
     'bug38770.phpt': "not implemented",
