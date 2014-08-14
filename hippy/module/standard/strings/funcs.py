@@ -1,4 +1,5 @@
 import sys, math
+import binascii
 from collections import OrderedDict
 
 from rpython.rlib.rstring import StringBuilder
@@ -518,13 +519,22 @@ def count_chars(interp, s, mode=0):
         return space.wrap("".join(res))
     assert False # unreachable code
 
-#
-#@wrap(['space', 'args_w'])
-#def crc32(space, args_w):
-#    """Calculates the crc32 polynomial of a string."""
-#    raise NotImplementedError()
 
-#
+@wrap(['space', str])
+def crc32(space, data):
+    """Calculates the crc32 polynomial of a string."""
+    crc = binascii.crc32(data)
+    # Python returns a value in the range [-2**31, 2**31-1], whereas PHP returns
+    # a value that depends on the platform on 32 bits system has that same range
+    # but in 64 bits systems is in the range [0, 2**32-1]
+    # See https://docs.python.org/2/library/binascii.html#binascii.crc32 and
+    # http://php.net//manual/en/function.crc32.php.
+    if sys.maxint <= 2 ** 31:  # 32 bits
+        return space.newint(crc)
+    else:
+        return space.newint(crc & 0xffffffff)
+
+
 #@wrap(['space', 'args_w'])
 #def crypt(space, args_w):
 #    """One-way string hashing."""

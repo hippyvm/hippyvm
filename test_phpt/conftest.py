@@ -802,7 +802,7 @@ markers[string_test_dir] = {
     'convert_cyr_string_basic.phpt': "not implemented",
     'convert_cyr_string_error.phpt': "not implemented",
     'convert_cyr_string_variation1.phpt': "not implemented",
-    'crc32.phpt': "not implemented",
+    # 'crc32.phpt': "not implemented",
     'crypt.phpt': "not implemented",
     'crypt_blowfish.phpt': "not implemented",
     'crypt_blowfish_variation1.phpt': "not implemented",
