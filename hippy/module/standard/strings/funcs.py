@@ -591,6 +591,7 @@ _crc32tab = [
 @wrap(['space', str])
 def crc32(space, data):
     """Calculates the crc32 polynomial of a string."""
+    # Implementation based on PHP's ext/standard/crc32.h
     crc = 0xFFFFFFFF
     for c in data:
         crc = ((crc >> 8) & 0x00FFFFFF) ^ _crc32tab[(crc ^ ord(c)) & 0xFF]
