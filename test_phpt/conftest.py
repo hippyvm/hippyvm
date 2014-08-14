@@ -1866,7 +1866,7 @@ markers[Zend_test_dir] = {
     'bug50174.phpt': "missing ReflectionMethod",
     'bug50261.phpt': "?",
     'bug50383.phpt': "$exc->getTrace()",
-    # 'bug50810.phpt': "Fails in a method calling property_exists()",
+    'bug50810.phpt': "Fails in a method calling property_exists()",
     'bug51394.phpt': "stack trace",
     'bug51421.phpt': "signature check for ctor",
     'bug51822.phpt': "?",
