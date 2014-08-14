@@ -880,7 +880,6 @@ markers[string_test_dir] = {
     'http_build_query_error.phpt': "not implemented",
     'http_build_query_variation1.phpt': "not implemented",
     'http_build_query_variation2.phpt': "not implemented",
-    'levenshtein.phpt': "not implemented",
     'md5_file.phpt': "not implemented",
     'metaphone.phpt': "not implemented",
     'money_format_basic1.phpt': "not implemented",
@@ -998,7 +997,6 @@ markers[general_test_dir] = {
     'call_user_func_array_variation_001.phpt': "missing call_user_func_array()",
 
     '002.phpt': "not implemented",
-    '003.phpt': "not implemented",
     '004.phpt': "not implemented",
     '006.phpt': "not implemented",
     '010.phpt': "not implemented",
