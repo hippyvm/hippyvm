@@ -489,7 +489,7 @@ class TestBuiltin(BaseTestInterpreter):
         output = self.run("echo stristr('abc', 'd');")
         assert self.space.is_w(output[0], self.space.w_False)
         output = self.run("echo stristr('a', '');", [
-            "Warning: stristr(): Empty delimiter"])
+            "Warning: stristr(): Empty needle"])
         assert self.space.is_w(output[0], self.space.w_False)
 
     def test_strlen(self):
@@ -572,7 +572,7 @@ class TestBuiltin(BaseTestInterpreter):
         assert self.space.is_w(output[0], self.space.w_False)
 
         output = self.run("echo strpos('a', '');", [
-            "Warning: strpos(): Empty delimiter"])
+            "Warning: strpos(): Empty needle"])
         assert self.space.is_w(output[0], self.space.w_False)
 
         output = self.run("echo strpos('a', '', 1, 2);", [
@@ -711,7 +711,7 @@ class TestBuiltin(BaseTestInterpreter):
         assert all([self.space.is_w(out, self.space.w_False) for out in output])
 
         output = self.run('''echo strstr('abc', '');''', [
-            "Warning: strstr(): Empty delimiter"])
+            "Warning: strstr(): Empty needle"])
         assert self.space.is_w(output[0], self.space.w_False)
 
     def test_strtr(self):
