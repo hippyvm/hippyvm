@@ -1728,7 +1728,7 @@ def stristr(space, haystack, w_needle, before_needle=False):
         space.ec.warn("stristr(): " + exc.msg)
         return space.w_False
     if len(needle) == 0:
-        space.ec.warn("stristr(): Empty delimiter")
+        space.ec.warn("stristr(): Empty needle")
         return space.w_False
     needle = locale.lower(needle)
     hay_lower = locale.lower(haystack)
@@ -2062,7 +2062,7 @@ def strstr(space, haystack, w_needle, before_needle=False):
         space.ec.warn("strstr(): " + exc.msg)
         return space.w_False
     if len(needle) == 0:
-        space.ec.warn("strstr(): Empty delimiter")
+        space.ec.warn("strstr(): Empty needle")
         return space.w_False
     pos = haystack.find(needle)
     if pos < 0:

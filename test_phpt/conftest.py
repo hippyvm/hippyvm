@@ -954,8 +954,7 @@ markers[string_test_dir] = {
     'str_replace.phpt': "need to review",
     'stripos_variation10.phpt': "need to review",
     'stripos_variation11.phpt': "need to review",
-    'stristr_error.phpt': "need to review",
-    'stristr_variation2.phpt': "need to review",
+    'stristr_variation2.phpt': "For an object it expects: Notice: Object of class sample could not be converted to int",
     'strlen.phpt': "need to review",
     'strlen_variation1.phpt': "need to review",
     'strncasecmp_variation10.phpt': "need to review",
@@ -967,7 +966,6 @@ markers[string_test_dir] = {
     'strrchr_variation11.phpt': "need to review",
     'strrpos_variation10.phpt': "need to review",
     'strrpos_variation11.phpt': "need to review",
-    'strstr.phpt': "need to review",
 }
 
 # GENERAL
