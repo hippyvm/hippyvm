@@ -1392,8 +1392,8 @@ def array_unique(space, w_arr, sort_type=0):
     return space.new_array_from_rdict(d)
 
 
-@wrap(['space', 'reference', 'args_w'])
-def array_unshift(space, w_ref, args_w):
+@wrap(['space', 'reference', W_Root, 'args_w'])
+def array_unshift(space, w_ref, w_value1, args_w):
     """ Prepend one or more elements to the beginning of an array """
     w_arr = w_ref.deref()
     if w_arr.tp != space.tp_array:
@@ -1401,7 +1401,10 @@ def array_unshift(space, w_ref, args_w):
                       "to be array, %s given"
                       % space.get_type_name(w_arr.tp))
         return space.w_Null
-    new_arr = space.new_array_from_list(args_w)
+    args = newlist_hint(len(args_w) + 1)
+    args.append(w_value1)
+    args.extend(args_w)
+    new_arr = space.new_array_from_list(args)
     with space.iter(w_arr) as w_arr_iter:
         while not w_arr_iter.done():
             w_key, w_val = w_arr_iter.next_item(space)

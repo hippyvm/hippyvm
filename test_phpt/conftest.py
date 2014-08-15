@@ -323,7 +323,6 @@ markers[array_test_dir] = {
     'array_uintersect_variation3.phpt': "?",
     'array_unique_variation2.phpt': "?",
     'array_unique_variation8.phpt': "too many warnings?",
-    'array_unshift_error.phpt': "at least problem",
     'array_walk_object1.phpt': "?",
     'array_walk_objects.phpt': "?",
     'array_walk_variation7.phpt': "?",
