@@ -955,7 +955,7 @@ markers[string_test_dir] = {
     'stripos_variation10.phpt': "need to review",
     'stripos_variation11.phpt': "need to review",
     'stristr_variation2.phpt': "For an object it expects: Notice: Object of class sample could not be converted to int",
-    'strlen.phpt': "need to review",
+    'strlen.phpt': "Expects: Warning: strlen() expects parameter 1 to be string, array given got Notice instead",
     'strlen_variation1.phpt': "need to review",
     'strncasecmp_variation10.phpt': "need to review",
     'strncasecmp_variation11.phpt': "need to review",
