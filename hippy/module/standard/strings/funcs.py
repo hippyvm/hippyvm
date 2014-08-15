@@ -5,6 +5,7 @@ from rpython.rlib.rstring import StringBuilder
 from rpython.rlib import jit
 from rpython.rlib.unroll import unrolling_iterable
 from rpython.rlib import rmd5
+from rpython.rlib.objectmodel import newlist_hint
 from rpython.rlib.objectmodel import specialize
 from rpython.rlib.rsha import sha
 
@@ -1630,7 +1631,9 @@ def str_rot13(space, string):
 @wrap(['space', str])
 def str_shuffle(space, data):
     """Randomly shuffles a string."""
-    chars = list(data)
+    chars = newlist_hint(len(data))
+    for c in data:
+        chars.append(c)
     # TODO: refactor this logic as it is copied from array/funcs.py:shuffle.
     for i in xrange(len(chars) - 1, 0, -1):
         j = int(_random.random() * (i + 1))
