@@ -21,11 +21,15 @@ from rpython.rlib.rfloat import DTSF_CUT_EXP_0
 from rpython.rlib.rarithmetic import r_uint
 from hippy.objects.convert import strtol
 from rpython.rlib.rarithmetic import intmask, ovfcheck
+from rpython.rlib.rrandom import Random
 from hippy.module.standard.math.funcs import _bin
 from hippy.module.url import _urldecode
 
 # Side-effect: register the functions defined there:
 from hippy import localemodule as locale
+
+
+_random = Random()
 
 
 class ValidationError(ExitFunctionWithError):
@@ -1622,13 +1626,16 @@ def str_rot13(space, string):
     """Perform the rot13 transform on a string."""
     return space.newstr(_str_rot13(string))
 
-#
-#@wrap(['space', 'args_w'])
-#def str_shuffle(space, args_w):
-#    """Randomly shuffles a string."""
-#    raise NotImplementedError()
 
-#
+@wrap(['space', str])
+def str_shuffle(space, data):
+    """Randomly shuffles a string."""
+    chars = list(data)
+    # TODO: refactor this logic as it is copied from array/funcs.py:shuffle.
+    for i in xrange(len(chars) - 1, 0, -1):
+        j = int(_random.random() * (i + 1))
+        chars[i], chars[j] = chars[j], chars[i]
+    return space.newstr(''.join(chars))
 
 
 @wrap(['interp', str, Optional(int)])

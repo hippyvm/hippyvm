@@ -713,7 +713,7 @@ markers[posix_test_dir] = {
 
 # STRING
 markers[string_test_dir] = {
-    '004.phpt': slow,
+    '004.phpt': "Section EXPECTREGEX not handled",
     'bug40754.phpt': check_sign_only,
     'bug54454.phpt': check_sign_only,
     'chunk_split.phpt': slow,  # hangs on 64-bit
@@ -919,10 +919,6 @@ markers[string_test_dir] = {
     'sscanf_variation1.phpt': "not implemented",
     'sscanf_variation2.phpt': "not implemented",
     'str_getcsv_001.phpt': "not implemented",
-    'str_shuffle.phpt': "not implemented",
-    'str_shuffle_basic.phpt': "not implemented",
-    'str_shuffle_error.phpt': "not implemented",
-    'str_shuffle_variation1.phpt': "not implemented",
     'str_word_count.phpt': "not implemented",
     'str_word_count1.phpt': "not implemented",
     'strip_tags.phpt': "not implemented",
