@@ -265,7 +265,7 @@ markers[array_test_dir] = {
     'bug25708.phpt': "missing debug_zval_dump",
     'bug26458.phpt': "missing debug_zval_dump",
     'bug35821.phpt': "not implemented error",
-    'bug36975.phpt': "missing natcasesort",
+    'bug36975.phpt': "PHP quirk behavior",
     'bug45312.phpt': "not implemented error",
     'bug61730.phpt': "unexpected 'T_USE'",
 
