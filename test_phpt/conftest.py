@@ -695,12 +695,12 @@ markers[file_test_dir] = {
 
 # POSIX
 markers[posix_test_dir] = {
-    'posix_access.phpt': "?",
-    'posix_access_error_modes.phpt': "?",
-    'posix_access_safemode.phpt': "?",
+    'posix_access.phpt': "Expecting: Deprecated: Directive safe_mode is ...",  # Update the tests to PHP 5.4
+    'posix_access_error_modes.phpt': "Expecting: Deprecated: Directive safe_mode is ...",
+    'posix_access_safemode.phpt': "Expecting: Deprecated: Directive safe_mode is ...",
     'posix_kill_basic.phpt': "missing shell_exec()",
-    'posix_ttyname.phpt': "?",
-    'posix_ttyname_variation6.phpt': "?",
+    'posix_ttyname.phpt': "OSError: [Errno 25] Inappropriate ioctl for device",
+    'posix_ttyname_variation6.phpt': "Missing:  Error: 8 - Object of class classWithToString could not be converted to int",
     'posix_errno_variation2.phpt': 'missing shell_exec()',
     'posix_getgrgid.phpt': 'missing posix_getgrgid()',
     'posix_getgrgid_basic.phpt': 'missing posix_getgrgid()',
