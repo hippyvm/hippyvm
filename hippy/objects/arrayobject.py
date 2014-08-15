@@ -817,6 +817,7 @@ def array_var_export(dct_w, space, indent, recursion, w_reckey,
             index = try_convert_str_to_int(key)
             s = '%s%d =>' % (subindent, index)
         except ValueError:
+            key = key.replace('\\', '\\\\').replace("'", "\\'")
             s = '%s\'%s\' =>' % (subindent, key)
 
         acc.append(s)

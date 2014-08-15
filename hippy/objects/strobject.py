@@ -179,6 +179,7 @@ class W_StringObject(W_Object):
 
     def var_export(self, space, indent, recursion, suffix):
         s = self.unwrap()
+        s = s.replace('\\', '\\\\').replace("'", "\\'")
         return '%s\'%s\'%s' % (indent, s, suffix)
 
     def is_empty_value(self):

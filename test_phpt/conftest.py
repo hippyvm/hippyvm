@@ -387,8 +387,6 @@ markers[array_test_dir] = {
     'uasort_variation6.phpt': "?",
     'usort_variation6.phpt': "?",
     'uksort_variation1.phpt': "arg check order problem",
-
-    'bug25758.phpt': "?",
     'range_variation1.phpt': "in/float mix",
     'rsort_variation3.phpt': "in/float mix",
     'usort_variation7.phpt': "missing create_function()",
