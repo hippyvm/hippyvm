@@ -377,7 +377,6 @@ markers[array_test_dir] = {
     'rsort_basic.phpt': "wrong order of elems",
     'rsort_variation2.phpt': "wrong order of elems",
     'rsort_variation11.phpt': "wrong order of elems",
-    'shuffle_error.phpt': "?",
     'sort_variation2.phpt': "wrong order of elems",
     'sort_variation11.phpt': "?",
     'sort_variation9.phpt': "?",

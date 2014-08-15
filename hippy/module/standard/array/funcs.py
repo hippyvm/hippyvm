@@ -1922,7 +1922,7 @@ def rsort(space, w_ref, sort_type=0):
     return space.w_True
 
 
-@wrap(['space', 'reference'])
+@wrap(['space', 'reference'], error=False)
 def shuffle(space, w_ref):
     """ Shuffle an array """
     w_arr = w_ref.deref()
