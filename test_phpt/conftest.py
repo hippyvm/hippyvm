@@ -947,7 +947,6 @@ markers[string_test_dir] = {
     'vfprintf_variation1.phpt': "context",
     'wordwrap.phpt': "not implemented",
 
-    'bug63943.phpt': "need to review",
     'http_build_query_variation3.phpt': "need to review",
     'join_error.phpt': "Errors say implode() instead of join()",
     'join_variation2.phpt': "need to review",
