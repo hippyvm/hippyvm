@@ -1410,6 +1410,14 @@ def _add_data(builder, line_length, data, extra_length=0):
         return line_length + length
 
 
+def _to_hex(value):
+    # TODO: refactor this as it could be used in bin2hex. Although there they
+    # require lowercase digits.
+    encode = '0123456789ABCDEF'
+    hi, low = value // 16, value % 16
+    return encode[hi] + encode[low]
+
+
 @wrap(['space', str])
 def quoted_printable_encode(space, data):
     """Convert a 8 bit string to a quoted-printable string."""
@@ -1451,7 +1459,7 @@ def quoted_printable_encode(space, data):
                 extra_length += 3
             if value > 0xef:
                 extra_length += 3
-            line_length = _add_data(builder, line_length, '=%02X' % value,
+            line_length = _add_data(builder, line_length, '=' + _to_hex(value),
                                     extra_length=extra_length)
 
     if pending_cr:
