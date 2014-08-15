@@ -702,7 +702,7 @@ markers[posix_test_dir] = {
     'posix_ttyname.phpt': "OSError: [Errno 25] Inappropriate ioctl for device",
     'posix_ttyname_variation6.phpt': "Missing:  Error: 8 - Object of class classWithToString could not be converted to int",
     'posix_errno_variation2.phpt': 'missing shell_exec()',
-    #'posix_getgrgid_basic.phpt': 'Problems with the %a format in the test. Output looks good',
+    'posix_getgrgid_basic.phpt': 'Problems with the %a format in the test. Output looks good',
     'posix_getgrgid_macosx.phpt': 'Test should be skipped in platforms other than mac',
     'posix_ttyname_error_wrongparams.phpt': 'missing imagecreate()',
 }
