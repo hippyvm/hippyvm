@@ -1932,7 +1932,7 @@ def strpos(space, haystack, w_needle, offset=0):
         space.ec.warn("strpos(): " + exc.msg)
         return space.w_False
     if len(needle) == 0:
-        space.ec.warn("strpos(): Empty delimiter")
+        space.ec.warn("strpos(): Empty needle")
         return space.w_False
 
     result = haystack.find(needle, offset)

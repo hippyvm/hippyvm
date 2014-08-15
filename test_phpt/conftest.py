@@ -961,7 +961,6 @@ markers[string_test_dir] = {
     'strncasecmp_variation11.phpt': "need to review",
     'strncasecmp_variation4.phpt': "need to review",
     'strncmp_variation4.phpt': "need to review",
-    'strpos.phpt': "need to review",
     'strrchr_variation10.phpt': "need to review",
     'strrchr_variation11.phpt': "need to review",
     'strrpos_variation10.phpt': "need to review",
