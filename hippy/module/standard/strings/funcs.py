@@ -1361,17 +1361,105 @@ def vsprintf(space, w_obj, w_args):
         space.ec.warn("vsprintf(): " + e.msg)
         return space.w_False
 
-#
-#@wrap(['space', 'args_w'])
-#def quoted_printable_decode(space, args_w):
-#    """Convert a quoted-printable string to an 8 bit string."""
-#    raise NotImplementedError()
 
-#
-#@wrap(['space', 'args_w'])
-#def quoted_printable_encode(space, args_w):
-#    """Convert a 8 bit string to a quoted-printable string."""
-#    raise NotImplementedError()
+def _has_two_hex_digits(data):
+    return len(data) == 2 and is_hexdigit(data[0]) and is_hexdigit(data[1])
+
+
+@wrap(['space', str])
+def quoted_printable_decode(space, data):
+    """Convert a quoted-printable string to an 8 bit string."""
+    builder = StringBuilder(len(data))
+    i = 0
+    while i < len(data):
+        c = data[i]
+        if c == '=':
+            next_two_chars = data[i + 1: i + 3]
+            if _has_two_hex_digits(next_two_chars):
+                hex_char = int(next_two_chars, 16)
+                builder.append(chr(hex_char))
+                i += 3
+            else:
+                k = 1
+                # Skip spaces and tabs
+                while i + k < len(data) and data[i + k] in ' \t':
+                    k += 1
+                if data[i + k: i + k + 2] == '\r\n':
+                    i += k + 2
+                elif data[i + k] in '\n\r':
+                    i += k + 1
+                else:
+                    builder.append(c)
+                    i += 1
+        else:
+            builder.append(c)
+            i += 1
+
+    return space.newstr(builder.build())
+
+
+def _add_data(builder, line_length, data, extra_length=0):
+    max_length = 75
+    length = len(data)
+    if line_length + length + extra_length > max_length:
+        builder.append('=\r\n')
+        builder.append(data)
+        return length
+    else:
+        builder.append(data)
+        return line_length + length
+
+
+@wrap(['space', str])
+def quoted_printable_encode(space, data):
+    """Convert a 8 bit string to a quoted-printable string."""
+    builder = StringBuilder(int(3 * len(data) * (1 + 3.0 / 75)))
+    pending_cr = False
+    pending_space = False
+    line_length = 0
+    for c in data:
+        value = ord(c)
+        if pending_cr:
+            if c == '\n':
+                builder.append('\r\n')
+                line_length = 0
+                pending_cr = False
+                continue
+            else:
+                line_length = _add_data(builder, line_length, '=0D')
+        if pending_space:
+            if c == '\r':
+                line_length = _add_data(builder, line_length, '=20')
+            else:
+                line_length = _add_data(builder, line_length, ' ')
+        pending_cr = False
+        pending_space = False
+        if value == 61:
+            line_length = _add_data(builder, line_length, '=3D')
+        elif 33 <= value <= 126:
+            line_length = _add_data(builder, line_length, c)
+        elif c == '\r':
+            pending_cr = True
+        elif c == ' ':
+            pending_space = True
+        else:
+            # This hack is specific to PHP, so that the output is the same.
+            extra_length = 0
+            if value > 0x7f:
+                extra_length += 3
+            if value > 0xdf:
+                extra_length += 3
+            if value > 0xef:
+                extra_length += 3
+            line_length = _add_data(builder, line_length, '=%02X' % value,
+                                    extra_length=extra_length)
+
+    if pending_cr:
+        line_length = _add_data(builder, line_length, '=0D')
+    if pending_space:
+        line_length = _add_data(builder, line_length, ' ')
+
+    return space.newstr(builder.build())
 
 
 @wrap(['space', str])
