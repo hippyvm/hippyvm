@@ -872,13 +872,10 @@ def array_product(space, w_arr):
     return space.wrap(res)
 
 
-@wrap(['space', UniqueArray(accept_instance=False), 'args_w'])
-def array_push(space, w_arr, args_w):
+@wrap(['space', UniqueArray(accept_instance=False), W_Root, 'args_w'])
+def array_push(space, w_arr, w_value1, args_w):
     """ Push one or more elements onto the end of array """
-    if len(args_w) < 1:
-        space.ec.warn("array_push(): at least 2 parameters are required"
-                      ", 1 given")
-        return space.w_Null
+    w_arr.appenditem_inplace(space, w_value1)
     for w_arg in args_w:
         w_arr.appenditem_inplace(space, w_arg)
     return space.wrap(w_arr.arraylen())
