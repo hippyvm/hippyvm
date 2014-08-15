@@ -1508,6 +1508,9 @@ def str_pad(space, input, pad_length, pad_string=" ", pad_type=STR_PAD_RIGHT):
 @wrap(['space', str, int])
 def str_repeat(space, s, repeat):
     """Repeat a string."""
+    if repeat < 0:
+        space.ec.warn('str_repeat(): Second argument has to be greater than or equal to 0')
+        return space.w_Null
     return space.newstr(s * repeat)
 
 
