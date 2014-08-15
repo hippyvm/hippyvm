@@ -283,12 +283,9 @@ markers[array_test_dir] = {
     'array_intersect_variation4.phpt': "doesnt work properly",
     'array_intersect_variation8.phpt': "wrong order of elems",
     'array_intersect_variation9.phpt': "doesnt work properly",
-    'array_key_exists_object1.phpt': ("array_key_exists() expects"
-                                      "parameter 2 to be array"
-                                      " object given"),
-    'array_key_exists_object2.phpt': ("array_key_exists() expects "
-                                      "parameter 2 to be array,"
-                                      " object given"),
+    'array_key_exists_object1.phpt': ("var_dump format is different and one key"
+                                      "is reported as missing"),
+    'array_key_exists_object2.phpt': "var_dump format is different"
     'array_keys_variation_002.phpt': "doesnt work prop",
     'array_keys_variation_003.phpt': "doesnt work prop",
     'array_keys_variation_004.phpt': "doesnt work prop",
