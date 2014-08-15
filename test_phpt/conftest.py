@@ -949,7 +949,7 @@ markers[string_test_dir] = {
 
     'bug63943.phpt': "need to review",
     'http_build_query_variation3.phpt': "need to review",
-    'join_error.phpt': "need to review",
+    'join_error.phpt': "Errors say implode() instead of join()",
     'join_variation2.phpt': "need to review",
     'str_replace.phpt': "need to review",
     'stripos_variation10.phpt': "need to review",
