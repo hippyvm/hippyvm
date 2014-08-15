@@ -921,7 +921,8 @@ def levenshtein(space, num_args, str1='', str2='', w_cost_ins=None, cost_rep=1, 
                 c0 += cost_rep
             c1 = p1[j + 1] + cost_del
             c2 = p2[j] + cost_ins
-            p2[j + 1] = min(c0, c1, c2)
+            # Rpython only allow two arguments to min
+            p2[j + 1] = min(c0, min(c1, c2))
         p1, p2 = p2, p1
 
     return space.newint(p1[-1])
