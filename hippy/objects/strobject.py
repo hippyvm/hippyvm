@@ -179,6 +179,7 @@ class W_StringObject(W_Object):
 
     def var_export(self, space, indent, recursion, suffix):
         s = self.unwrap()
+        assert s is not None
         s = replace(replace(s, '\\', '\\\\'), "'", "\\'")
         return '%s\'%s\'%s' % (indent, s, suffix)
 
