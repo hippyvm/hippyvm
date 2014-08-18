@@ -265,7 +265,7 @@ markers[array_test_dir] = {
     'bug25708.phpt': "missing debug_zval_dump",
     'bug26458.phpt': "missing debug_zval_dump",
     'bug35821.phpt': "not implemented error",
-    'bug36975.phpt': "missing natcasesort",
+    'bug36975.phpt': "PHP quirk behavior",
     'bug45312.phpt': "not implemented error",
     'bug61730.phpt': "unexpected 'T_USE'",
 
@@ -283,12 +283,9 @@ markers[array_test_dir] = {
     'array_intersect_variation4.phpt': "doesnt work properly",
     'array_intersect_variation8.phpt': "wrong order of elems",
     'array_intersect_variation9.phpt': "doesnt work properly",
-    'array_key_exists_object1.phpt': ("array_key_exists() expects"
-                                      "parameter 2 to be array"
-                                      " object given"),
-    'array_key_exists_object2.phpt': ("array_key_exists() expects "
-                                      "parameter 2 to be array,"
-                                      " object given"),
+    'array_key_exists_object1.phpt': ("var_dump format is different and one key"
+                                      "is reported as missing"),
+    'array_key_exists_object2.phpt': "var_dump format is different",
     'array_keys_variation_002.phpt': "doesnt work prop",
     'array_keys_variation_003.phpt': "doesnt work prop",
     'array_keys_variation_004.phpt': "doesnt work prop",
@@ -303,9 +300,6 @@ markers[array_test_dir] = {
     'array_pad_variation2.phpt': "arg parse problem",
     'array_product_variation1.phpt': "instance unimplemented as_number",
     'array_product_variation4.phpt': "?",
-    'array_push_variation4.phpt': "?",
-    'array_push.phpt': "at least problem",
-    'array_push_error1.phpt': "at least problem",
     'array_push_error2.phpt': "XXX push item in array having key = sys.maxint should fail",
     'array_replace.phpt': "?",
     'array_search1.phpt': "?",
@@ -326,7 +320,6 @@ markers[array_test_dir] = {
     'array_uintersect_variation3.phpt': "?",
     'array_unique_variation2.phpt': "?",
     'array_unique_variation8.phpt': "too many warnings?",
-    'array_unshift_error.phpt': "at least problem",
     'array_walk_object1.phpt': "?",
     'array_walk_objects.phpt': "?",
     'array_walk_variation7.phpt': "?",
@@ -377,7 +370,6 @@ markers[array_test_dir] = {
     'rsort_basic.phpt': "wrong order of elems",
     'rsort_variation2.phpt': "wrong order of elems",
     'rsort_variation11.phpt': "wrong order of elems",
-    'shuffle_error.phpt': "?",
     'sort_variation2.phpt': "wrong order of elems",
     'sort_variation11.phpt': "?",
     'sort_variation9.phpt': "?",
@@ -388,8 +380,6 @@ markers[array_test_dir] = {
     'uasort_variation6.phpt': "?",
     'usort_variation6.phpt': "?",
     'uksort_variation1.phpt': "arg check order problem",
-
-    'bug25758.phpt': "?",
     'range_variation1.phpt': "in/float mix",
     'rsort_variation3.phpt': "in/float mix",
     'usort_variation7.phpt': "missing create_function()",
