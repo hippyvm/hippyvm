@@ -130,6 +130,14 @@ class TestBuiltin(BaseTestInterpreter):
         output = self.run("echo bin2hex('A b-1');")
         assert self.space.str_w(output[0]) == "4120622d31"
 
+    def test_hex2bin(self):
+        output = self.run('''
+        echo hex2bin('4120622d31');
+        echo hex2bin('6578616d706c65206865782064617461');
+        ''')
+        assert self.space.str_w(output[0]) == "A b-1"
+        assert self.space.str_w(output[1]) == "example hex data"
+
     def test_chr(self):
         output = self.run('''
         echo chr(97);

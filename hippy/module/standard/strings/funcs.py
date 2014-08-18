@@ -599,10 +599,20 @@ def fprintf(space, args_w):
 #    """Convert logical Hebrew text to visual text with newline conversion."""
 #    raise NotImplementedError()
 
-#@wrap(['space', 'args_w'])
-#def hex2bin(space, args_w):
-#    """Decodes a hexadecimally encoded binary string."""
-#    raise NotImplementedError()
+
+@wrap(['space', str])
+def hex2bin(space, data):
+    """Decodes a hexadecimally encoded binary string."""
+    if len(data) % 2 != 0:
+        space.ec.warn("hex2bin(): Hexadecimal input string must have an even length")
+        return space.w_False
+
+    builder = StringBuilder(len(data) / 2)
+    for i in xrange(0, len(data), 2):
+        char = chr(int(data[i:i+2], 16))
+        builder.append(char)
+
+    return space.newstr(builder.build())
 
 
 @wrap(['space',   str,   Optional(int),   Optional(str)])
