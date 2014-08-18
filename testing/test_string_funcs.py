@@ -130,6 +130,14 @@ class TestBuiltin(BaseTestInterpreter):
         output = self.run("echo bin2hex('A b-1');")
         assert self.space.str_w(output[0]) == "4120622d31"
 
+    def test_hex2bin(self):
+        output = self.run('''
+        echo hex2bin('4120622d31');
+        echo hex2bin('6578616d706c65206865782064617461');
+        ''')
+        assert self.space.str_w(output[0]) == "A b-1"
+        assert self.space.str_w(output[1]) == "example hex data"
+
     def test_chr(self):
         output = self.run('''
         echo chr(97);
@@ -489,7 +497,7 @@ class TestBuiltin(BaseTestInterpreter):
         output = self.run("echo stristr('abc', 'd');")
         assert self.space.is_w(output[0], self.space.w_False)
         output = self.run("echo stristr('a', '');", [
-            "Warning: stristr(): Empty delimiter"])
+            "Warning: stristr(): Empty needle"])
         assert self.space.is_w(output[0], self.space.w_False)
 
     def test_strlen(self):
@@ -572,7 +580,7 @@ class TestBuiltin(BaseTestInterpreter):
         assert self.space.is_w(output[0], self.space.w_False)
 
         output = self.run("echo strpos('a', '');", [
-            "Warning: strpos(): Empty delimiter"])
+            "Warning: strpos(): Empty needle"])
         assert self.space.is_w(output[0], self.space.w_False)
 
         output = self.run("echo strpos('a', '', 1, 2);", [
@@ -711,7 +719,7 @@ class TestBuiltin(BaseTestInterpreter):
         assert all([self.space.is_w(out, self.space.w_False) for out in output])
 
         output = self.run('''echo strstr('abc', '');''', [
-            "Warning: strstr(): Empty delimiter"])
+            "Warning: strstr(): Empty needle"])
         assert self.space.is_w(output[0], self.space.w_False)
 
     def test_strtr(self):

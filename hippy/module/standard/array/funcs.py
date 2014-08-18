@@ -872,13 +872,10 @@ def array_product(space, w_arr):
     return space.wrap(res)
 
 
-@wrap(['space', UniqueArray(accept_instance=False), 'args_w'])
-def array_push(space, w_arr, args_w):
+@wrap(['space', UniqueArray(accept_instance=False), W_Root, 'args_w'])
+def array_push(space, w_arr, w_value1, args_w):
     """ Push one or more elements onto the end of array """
-    if len(args_w) < 1:
-        space.ec.warn("array_push(): at least 2 parameters are required"
-                      ", 1 given")
-        return space.w_Null
+    w_arr.appenditem_inplace(space, w_value1)
     for w_arg in args_w:
         w_arr.appenditem_inplace(space, w_arg)
     return space.wrap(w_arr.arraylen())
@@ -1395,8 +1392,8 @@ def array_unique(space, w_arr, sort_type=0):
     return space.new_array_from_rdict(d)
 
 
-@wrap(['space', 'reference', 'args_w'])
-def array_unshift(space, w_ref, args_w):
+@wrap(['space', 'reference', W_Root, 'args_w'])
+def array_unshift(space, w_ref, w_value1, args_w):
     """ Prepend one or more elements to the beginning of an array """
     w_arr = w_ref.deref()
     if w_arr.tp != space.tp_array:
@@ -1404,7 +1401,10 @@ def array_unshift(space, w_ref, args_w):
                       "to be array, %s given"
                       % space.get_type_name(w_arr.tp))
         return space.w_Null
-    new_arr = space.new_array_from_list(args_w)
+    args = newlist_hint(len(args_w) + 1)
+    args.append(w_value1)
+    args.extend(args_w)
+    new_arr = space.new_array_from_list(args)
     with space.iter(w_arr) as w_arr_iter:
         while not w_arr_iter.done():
             w_key, w_val = w_arr_iter.next_item(space)
@@ -1922,7 +1922,7 @@ def rsort(space, w_ref, sort_type=0):
     return space.w_True
 
 
-@wrap(['space', 'reference'])
+@wrap(['space', 'reference'], error=False)
 def shuffle(space, w_ref):
     """ Shuffle an array """
     w_arr = w_ref.deref()
