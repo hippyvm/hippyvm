@@ -59,15 +59,17 @@ def _pack_string(pack_obj, fmtdesc, count, pad):
         if count != sys.maxint:
             pack_obj.result.extend(list(pad * (count - len(string))))
     else:
+        assert count > 0
         pack_obj.result.extend(list(string[0:count]))
 
 
 def pack_Z_nul_padded_string(pack_obj, fmtdesc, count):
     if pack_obj.arg_index >= len(pack_obj.arg_w):
         raise FormatException("not enough arguments")
-
+    c = count - 1
+    assert c > 0
     string = pack_obj.space.str_w(
-        pack_obj.arg_w[pack_obj.arg_index])[:count - 1]
+        pack_obj.arg_w[pack_obj.arg_index])[:c]
     pack_obj.arg_index += 1
 
     pack_obj.result.extend(list(string) + ['\x00'])
@@ -324,7 +326,7 @@ hex_digit = ['0', '1', '2', '3',
 
 def unpack_hex_string(unpack_obj, fmtdesc, count, name,
                       high_nibble_first=False):
-
+    import pdb; pdb.set_trace()
     data = []
     count = count / 2 + count % 2
 
@@ -365,9 +367,12 @@ def unpack_hex_string_high_nibble_first(unpack_obj, fmtdesc, count, name):
 def unpack_int(unpack_obj, fmtdesc, count, name):
     result = []
     for pos in range(count):
-
+        a = unpack_obj.string_index
+        b = unpack_obj.string_index+fmtdesc.size
+        assert a > 0
+        assert b > 0
         data = unpack_obj.string[
-            unpack_obj.string_index:unpack_obj.string_index+fmtdesc.size
+            a:b
         ]
 
         if not len(data) == fmtdesc.size:
@@ -477,121 +482,121 @@ def unpack_nullfill_to_absolute_position(unpack_obj, fmtdesc, count, name):
 
 fmt_table = {
     'a': {
-        'size' : 1,
-        'pack' : pack_nul_padded_string,
-        'unpack' : unpack_nul_padded_string
+        'size': 1,
+        'pack': pack_nul_padded_string,
+        'unpack': unpack_nul_padded_string
     },
     'A': {
-        'size' : 1,
-        'pack' : pack_space_padded_string,
-        'unpack' : unpack_space_padded_string
+        'size': 1,
+        'pack': pack_space_padded_string,
+        'unpack': unpack_space_padded_string
     },
     'h': {
-        'size' : 1,
-        'pack' : pack_hex_string_low_nibble_first,
-        'unpack' : unpack_hex_string_low_nibble_first
+        'size': 1,
+        'pack': pack_hex_string_low_nibble_first,
+        'unpack': unpack_hex_string_low_nibble_first
     },
     'Z': {
-        'size' : 1,
-        'pack' : pack_Z_nul_padded_string,
-        'unpack' : unpack_nul_padded_string_2
+        'size': 1,
+        'pack': pack_Z_nul_padded_string,
+        'unpack': unpack_nul_padded_string_2
     },
     'H': {
-        'size' : 1,
-        'pack' : pack_hex_string_high_nibble_first,
-        'unpack' : unpack_hex_string_high_nibble_first
+        'size': 1,
+        'pack': pack_hex_string_high_nibble_first,
+        'unpack': unpack_hex_string_high_nibble_first
     },
     'c': {
-        'size' : 1,
-        'pack' : pack_int,
-        'unpack' : unpack_int,
-        'signed' : True,
+        'size': 1,
+        'pack': pack_int,
+        'unpack': unpack_int,
+        'signed': True,
     },
     'C': {
-        'size' : 1,
-        'pack' : pack_int,
-        'unpack' : unpack_int,
+        'size': 1,
+        'pack': pack_int,
+        'unpack': unpack_int,
     },
     's': {
-        'size' : 2,
-        'pack' : pack_int,
-        'unpack' : unpack_int,
-        'signed' : True,
+        'size': 2,
+        'pack': pack_int,
+        'unpack': unpack_int,
+        'signed': True,
     },
     'S': {
-        'size' : 2,
-        'pack' : pack_int,
-        'unpack' : unpack_int,
+        'size': 2,
+        'pack': pack_int,
+        'unpack': unpack_int,
     },
     'n': {
-        'size' : 2,
-        'pack' : pack_int,
-        'unpack' : unpack_int,
+        'size': 2,
+        'pack': pack_int,
+        'unpack': unpack_int,
         'bigendian': True,
     },
     'v': {
-        'size' : 2,
-        'pack' : pack_int,
-        'unpack' : unpack_int,
+        'size': 2,
+        'pack': pack_int,
+        'unpack': unpack_int,
         'bigendian': False,
     },
     'i': {
-        'size' : sizeof_c_type('unsigned int'),
-        'pack' : pack_int,
-        'unpack' : unpack_int,
-        'signed' : True,
+        'size': sizeof_c_type('unsigned int'),
+        'pack': pack_int,
+        'unpack': unpack_int,
+        'signed': True,
     },
     'I': {
-        'size' : 4,
-        'pack' : pack_int,
-        'unpack' : unpack_int,
+        'size': 4,
+        'pack': pack_int,
+        'unpack': unpack_int,
     },
     'l': {
-        'size' : 4,
-        'pack' : pack_int,
-        'unpack' : unpack_int,
+        'size': 4,
+        'pack': pack_int,
+        'unpack': unpack_int,
         'signed': True
     },
     'L': {
-        'size' : 4,
-        'pack' : pack_int,
-        'unpack' : unpack_int,
+        'size': 4,
+        'pack': pack_int,
+        'unpack': unpack_int,
     },
     'N': {
-        'size' : 4,
-        'pack' : pack_int,
-        'unpack' : unpack_int,
+        'size': 4,
+        'pack': pack_int,
+        'unpack': unpack_int,
         'bigendian': True,
     },
     'V': {
-        'size' : 4,
-        'pack' : pack_int,
-        'unpack' : unpack_int,
+        'size': 4,
+        'pack': pack_int,
+        'unpack': unpack_int,
     },
     'f': {
-        'size' : sizeof_c_type('float'),
-        'pack' : pack_float,
-        'unpack' : unpack_float
+        'size': sizeof_c_type('float'),
+        'pack': pack_float,
+        'unpack': unpack_float
     },
     'd': {
-        'size' : sizeof_c_type('double'),
-        'pack' : pack_double,
-        'unpack' : unpack_double
+        'size': sizeof_c_type('double'),
+        'pack': pack_double,
+        'unpack': unpack_double
     },
     'x': {
-        'size' : 1,
-        'pack' : pack_nul_byte,
-        'unpack' : unpack_nul_byte
+        'size': 1,
+        'pack': pack_nul_byte,
+        'unpack': unpack_nul_byte
     },
     'X': {
-        'size' : 1,
-        'pack' : pack_back_up_one_byte,
-        'unpack' : unpack_back_up_one_byte
+        'size': 1,
+        'pack': pack_back_up_one_byte,
+        'unpack': unpack_back_up_one_byte
     },
     '@': {
-        'size' : 1,
-        'pack' : pack_nullfill_to_absolute_position,
-        'unpack' : unpack_nullfill_to_absolute_position
+        'size': 1,
+        'pack': pack_nullfill_to_absolute_position,
+        'unpack': unpack_nullfill_to_absolute_position
     },
 
 }
@@ -604,7 +609,7 @@ class Pack(object):
     def __init__(self, space, fmt, arg_w):
         self.space = space
         self.fmt = fmt
-        self.table = unroll_fmttable
+        # self.table = unroll_fmttable
 
         self.arg_w = arg_w
         self.arg_index = 0
@@ -616,19 +621,13 @@ class Pack(object):
         return size
 
     def _get_fmtdesc(self, char):
-        # for fmtdesc in self.table:
-        #     if char == fmtdesc.fmtchar:
-        #         return fmtdesc
-        try:
-            assert isinstance(char, str)
-            d = fmt_table[char]
-            return None
-            # return FmtDesc(char, d)
-        except KeyError:
-            return None
+        for fmtdesc in unroll_fmttable:
+            if char == fmtdesc.fmtchar:
+                return fmtdesc
 
     def interpret(self):
         results = []
+        rep = 0
         from rpython.rlib.rsre.rsre_re import finditer
         itr = finditer('((\S)(\d+|\*)?)', self.fmt)
         try:
@@ -636,14 +635,15 @@ class Pack(object):
                 _, char, repetitions = itr.next().groups()
                 fmtdesc = self._get_fmtdesc(char)
                 if repetitions is None:
-                    repetitions = 1
-                if repetitions == '*':
-                    repetitions = sys.maxint
-                results.append((fmtdesc, int(repetitions)))
+                    rep = 1
+                elif repetitions == '*':
+                    rep = sys.maxint
+                else:
+                    rep = int(repetitions)
+                results.append((fmtdesc, rep))
         except StopIteration:
             pass
         return results
-
 
     def build(self):
         self.fmt_interpreted = self.interpret()
@@ -676,31 +676,33 @@ class Unpack(object):
         self.string = string
         self.string_index = 0
 
-        self.table = unroll_fmttable
+        # self.table = unroll_fmttable
         self.result = []
 
     def _get_fmtdect(self, char):
-        for fmtdesc in self.table:
+        for fmtdesc in unroll_fmttable:
             if char == fmtdesc.fmtchar:
                 return fmtdesc
 
     def interpret(self):
         results = []
+        rep = 0
         from rpython.rlib.rsre.rsre_re import finditer
         itr = finditer('((\S)(\d+|\*)?((\/)|(([a-z]+)(\/)?))?)', self.fmt)
         try:
             while True:
                 _, char, repetitions, _, _, _, name, _ = itr.next().groups()
-                print char, repetitions, name
                 if char != '/':
                     fmtdesc = self._get_fmtdect(char)
                     if repetitions is None:
-                        repetitions = 1
-                    if repetitions == '*':
-                        repetitions = sys.maxint
-                    if name == '/':
-                        name = None
-                    results.append((fmtdesc, int(repetitions), name))
+                        rep = 1
+                    elif repetitions == '*':
+                        rep = sys.maxint
+                    else:
+                        rep = int(repetitions)
+                    # if name == '/':
+                    #     name = None
+                    results.append((fmtdesc, rep, name))
         except StopIteration:
             pass
         return results
