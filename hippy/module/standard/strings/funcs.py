@@ -1570,6 +1570,9 @@ def str_pad(space, input, pad_length, pad_string=" ", pad_type=STR_PAD_RIGHT):
 @wrap(['space', str, int])
 def str_repeat(space, s, repeat):
     """Repeat a string."""
+    if repeat < 0:
+        space.ec.warn('str_repeat(): Second argument has to be greater than or equal to 0')
+        return space.w_Null
     return space.newstr(s * repeat)
 
 
@@ -1792,7 +1795,7 @@ def stristr(space, haystack, w_needle, before_needle=False):
         space.ec.warn("stristr(): " + exc.msg)
         return space.w_False
     if len(needle) == 0:
-        space.ec.warn("stristr(): Empty delimiter")
+        space.ec.warn("stristr(): Empty needle")
         return space.w_False
     needle = locale.lower(needle)
     hay_lower = locale.lower(haystack)
@@ -1996,7 +1999,7 @@ def strpos(space, haystack, w_needle, offset=0):
         space.ec.warn("strpos(): " + exc.msg)
         return space.w_False
     if len(needle) == 0:
-        space.ec.warn("strpos(): Empty delimiter")
+        space.ec.warn("strpos(): Empty needle")
         return space.w_False
 
     result = haystack.find(needle, offset)
@@ -2126,7 +2129,7 @@ def strstr(space, haystack, w_needle, before_needle=False):
         space.ec.warn("strstr(): " + exc.msg)
         return space.w_False
     if len(needle) == 0:
-        space.ec.warn("strstr(): Empty delimiter")
+        space.ec.warn("strstr(): Empty needle")
         return space.w_False
     pos = haystack.find(needle)
     if pos < 0:
