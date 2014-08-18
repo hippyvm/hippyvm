@@ -2,6 +2,7 @@
 from rpython.rlib import jit
 from rpython.rlib.objectmodel import specialize, we_are_translated
 from rpython.rlib.rarithmetic import intmask
+from rpython.rlib.rstring import replace
 
 from hippy.objects.base import W_Object
 from hippy.objects.reference import W_Reference, VirtualReference
@@ -817,7 +818,7 @@ def array_var_export(dct_w, space, indent, recursion, w_reckey,
             index = try_convert_str_to_int(key)
             s = '%s%d =>' % (subindent, index)
         except ValueError:
-            key = key.replace('\\', '\\\\').replace("'", "\\'")
+            key = replace(replace(key, '\\', '\\\\'), "'", "\\'")
             s = '%s\'%s\' =>' % (subindent, key)
 
         acc.append(s)
