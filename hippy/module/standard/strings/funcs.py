@@ -879,13 +879,60 @@ def lcfirst(space, string):
     s = builder.build()
     return space.newstr(s)
 
-#
-#@wrap(['space', 'args_w'])
-#def levenshtein(space, args_w):
-#    """Calculate Levenshtein distance between two strings."""
-#    raise NotImplementedError()
 
-#
+@wrap(['space', 'num_args', Optional(str), Optional(str), Optional(W_Root), Optional(int), Optional(int)], check_num_args=False)
+def levenshtein(space, num_args, str1='', str2='', w_cost_ins=None, cost_rep=1, cost_del=1):
+    """Calculate Levenshtein distance between two strings."""
+    # Code based on ext/standard/levenshtein.c
+    # check_num_args is set to False because levenshtein always shows a custom
+    # warning message when the number of arguments is incorrect.
+    if num_args == 3:
+        space.ec.warn('levenshtein(): The general Levenshtein support is not there yet')
+        return space.newint(-1)
+    elif num_args not in (2, 5):
+        space.ec.warn('Wrong parameter count for levenshtein()')
+        return space.w_Null
+
+    cost_ins = 1
+    # levenshtein first shows the warning for the general function first and
+    # then checks if the argument is valid. So we have to do parse it manually
+    # here.
+    if num_args == 5:
+        try:
+            cost_ins = w_cost_ins.as_int_arg(space)
+        except ConvertError:
+            space.ec.warn('levenshtein() expects parameter 3 to be long, %s given' % w_cost_ins.tp)
+            return space.w_Null
+
+    if len(str1) > 255 or len(str2) > 255:
+        space.ec.warn('levenshtein(): Argument string(s) too long')
+        return space.newint(-1)
+
+    if not str1:
+        return space.newint(len(str2) * cost_ins)
+    if not str2:
+        return space.newint(len(str1) * cost_del)
+    if str1 == str2:
+        return space.newint(0)
+
+    p1 = range(0, (len(str2) + 1) * cost_ins, cost_ins)
+    p2 = [0] * (len(str2) + 1)
+
+    for i in xrange(len(str1)):
+        p2[0] = p1[0] + cost_del
+        for j in xrange(len(str2)):
+            c0 = p1[j]
+            if str1[i] != str2[j]:
+                c0 += cost_rep
+            c1 = p1[j + 1] + cost_del
+            c2 = p2[j] + cost_ins
+            # Rpython only allow two arguments to min
+            p2[j + 1] = min(c0, min(c1, c2))
+        p1, p2 = p2, p1
+
+    return space.newint(p1[-1])
+
+
 #@wrap(['space', 'args_w'])
 #def md5_file(space, args_w):
 #    """Calculates the md5 hash of a given file."""
