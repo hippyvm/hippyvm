@@ -818,8 +818,8 @@ def array_var_export(dct_w, space, indent, recursion, w_reckey,
             index = try_convert_str_to_int(key)
             s = '%s%d =>' % (subindent, index)
         except ValueError:
-            # XXX wird, does not translate :(
-            # key = replace(replace(key, '\\', '\\\\'), "'", "\\'")
+            assert key is not None
+            key = replace(replace(key, '\\', '\\\\'), "'", "\\'")
             s = '%s\'%s\' =>' % (subindent, key)
 
         acc.append(s)
