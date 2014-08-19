@@ -1,10 +1,11 @@
+from collections import OrderedDict
 from rpython.rlib.rsre.rsre_re import compile, M, IGNORECASE
 
 from rply import ParserGenerator
-from rply.token import BaseBox, SourcePosition
+from rply.token import BaseBox, SourcePosition, Token
 
 from hippy.constants import E_ALL
-from hippy.lexer import Token, BaseLexer
+from hippy.lexer import BaseLexer
 from hippy.sourceparser import BaseParser
 
 EXTENSIONS = ['session', 'standard', 'mysql', 'pcre', 'posix', 'Core',
@@ -74,13 +75,16 @@ class Config(object):
         self.ini[key] = w_value
 
 RULES = [
-    ('\[.*', "T_SECTION"),
+    ('^[ \t]*\[[^\n\r\[\]]*\]', "T_SECTION"),
     ("^[^=\n\r\t;|&$~(){}!\"\[]+", "TC_LABEL"),
+    ('(on|yes|true)(?=[^0-9a-z_])', "BOOL_TRUE"),
+    ('(null|off|no|false)(?=[^0-9a-z_])', "BOOL_FALSE"),
     ("[a-zA-Z_][a-zA-Z0-9_]*", "TC_CONSTANT"),
     ('"[^"]*"', "TC_CONSTANT_STRING"),
+    ("'[^']*'", "TC_CONSTANT_STRING"),
     ("=", "="),
-    ("[-]?([0-9]+|([0-9]*[\.][0-9]+)|([0-9]+[\.][0-9]*))", "NUMBER"),
-    ("[ \t]*(\r|\n|\r\n)", "END_OF_LINE"),
+    ("[-]?(([0-9]*[\.][0-9]+)|([0-9]+[\.][0-9]*)|[0-9]+)", "NUMBER"),
+    ("[ \t]*(;[^\n\r]*)?(\r|\n|\r\n|\Z)", "END_OF_LINE"),
     ("\|", "|"),
     ("&", "&"),
     ('!|~', '~'),
@@ -125,7 +129,7 @@ class IniLexer(BaseLexer):
                 end = m.end()
                 assert end >= 0
                 val = self.buf[self.pos:end]
-                tok = Token(token_type, val, SourcePosition(self.pos, self.lineno, 0))
+                tok = Token(token_type, val, SourcePosition(token_type, self.lineno, 0))
                 if token_type == "END_OF_LINE":
                     self.lineno += 1
                 self.pos = end
@@ -146,10 +150,12 @@ class IniReader(BaseParser):
                          cache_id='hippy_ini_parser',
                          precedence=PRECEDENCES)
 
-    def __init__(self, interp):
+    def __init__(self, interp, process_sections=False, raw=False):
         self.config = interp.config
         self.interp = interp
         self.space = interp.space
+        self.process_sections = process_sections
+        self.raw = raw
 
     @pg.production("statement_list : statement_list statement")
     def statement_list_more(self, p):
@@ -163,7 +169,7 @@ class IniReader(BaseParser):
     def statement_label(self, p):
         label = p[0].getstr().strip()
         w_val = p[4].getval()
-        self.config.set_ini_w(label, w_val)
+        self.config.set_ini_w(label, self.space.as_string(w_val))
 
     @pg.production("statement : END_OF_LINE")
     def statement_end_of_line(self, p):
@@ -177,14 +183,30 @@ class IniReader(BaseParser):
     def string_or_value_empty(self, p):
         return Value(self.space.wrap(""))
 
+    @pg.production("string_or_value : BOOL_TRUE")
+    def string_or_value_true(self, p):
+        if self.raw:
+            return Value(self.space.wrap(p[0].getstr()))
+        return Value(self.space.wrap("1"))
+
+    @pg.production("string_or_value : BOOL_FALSE")
+    def string_or_value_false(self, p):
+        if self.raw:
+            return Value(self.space.wrap(p[0].getstr()))
+        return Value(self.space.wrap(""))
+
     @pg.production("expr : expr or expr")
     def expr_expr_or_expr(self, p):
+        if self.raw:
+            return Value(self.space.wrap(p[0].getval().unwrap() + p[1].getstr() + p[2].getval().unwrap()))
         v_1 = self.space.int_w(p[0].getval())
         v_2 = self.space.int_w(p[2].getval())
         return Value(self.space.wrap(v_1 | v_2))
 
     @pg.production("expr : expr and expr")
     def expr_expr_and_expr(self, p):
+        if self.raw:
+            return Value(self.space.wrap(p[0].getval().unwrap() + p[1].getstr() + p[2].getval().unwrap()))
         v_1 = self.space.int_w(p[0].getval())
         v_2 = self.space.int_w(p[2].getval())
         return Value(self.space.wrap(v_1 & v_2))
@@ -195,6 +217,8 @@ class IniReader(BaseParser):
 
     @pg.production("subexpr : invert var_string_list")
     def subexpr_invert(self, p):
+        if self.raw:
+            return Value(self.space.wrap(p[0].getstr() + p[1].getval().unwrap()))
         v_1 = self.space.int_w(p[1].getval())
         return Value(self.space.wrap(~v_1))
 
@@ -204,14 +228,20 @@ class IniReader(BaseParser):
 
     @pg.production("or : ws | ws")
     def or_operator(self, p):
+        if self.raw:
+            return Token('RAW', p[0].getstr() + p[1].getstr() + p[2].getstr(), p[0].source_pos)
         return p[1]
 
     @pg.production("and : ws & ws")
     def and_operator(self, p):
+        if self.raw:
+            return Token('RAW', p[0].getstr() + p[1].getstr() + p[2].getstr(), p[0].source_pos)
         return p[1]
 
     @pg.production("invert : ~ ws")
     def and_operator(self, p):
+        if self.raw:
+            return Token('RAW', p[0].getstr() + p[1].getstr(), p[0].source_pos)
         return p[0]
 
     @pg.production("var_string_list : constant_string")
@@ -230,6 +260,8 @@ class IniReader(BaseParser):
 
     @pg.production("var_string_list : TC_CONSTANT")
     def var_string_list_tc_constant(self, p):
+        if self.raw:
+            return Value(self.space.wrap(p[0].getstr()))
         w_const = self.interp.locate_constant(p[0].getstr(), False)
         if w_const is None:
             return Value(self.space.wrap(p[0].getstr()))
@@ -237,10 +269,7 @@ class IniReader(BaseParser):
 
     @pg.production("constant_string : NUMBER")
     def constant_string_number(self, p):
-        try:
-            return Value(self.space.wrap(int(p[0].getstr())))
-        except ValueError:
-            return Value(self.space.wrap(float(p[0].getstr())))
+        return Value(self.space.wrap(p[0].getstr()))
 
     @pg.production('raw : TC_RAW')
     def raw_basic(self, p):
@@ -265,12 +294,47 @@ class IniReader(BaseParser):
     def ws(self, p):
         return p[0]
 
+    @pg.production("statement : T_SECTION")
+    def section(self, p):
+        if self.process_sections:
+            section = p[0].getstr().strip()
+            section = section[1:-1]
+            self.set_section(section)
+
+    def set_section(self, section):
+        pass
+
     parser = pg.build()
 
 ini_lexer = IniLexer()
-
 
 def load_ini(interp, buf):
     ini_reader = IniReader(interp)
     ini_lexer.input(buf)
     ini_reader.parser.parse(ini_lexer, ini_reader)
+
+
+class LocalIniReader(IniReader):
+    def __init__(self, interp, process_sections=False, raw=False):
+        self.interp = interp
+        self.space = interp.space
+        self.config = self
+        self.data = OrderedDict()
+        self._current_data = self.data
+        self.process_sections = process_sections
+        self.raw = raw
+
+    def set_ini_w(self, label, value):
+        self._current_data[label] = value
+
+    def set_section(self, section):
+        self.data[section] = OrderedDict()
+        self._current_data = self.data[section]
+
+
+def load_local_ini(interp, buf, process_sections, raw):
+    ini_reader = LocalIniReader(interp, process_sections, raw)
+    ini_lexer.input(buf)
+    ini_reader.parser.parse(ini_lexer, ini_reader)
+
+    return ini_reader.data

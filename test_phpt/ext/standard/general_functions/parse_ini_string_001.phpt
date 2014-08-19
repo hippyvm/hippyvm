@@ -90,7 +90,6 @@ Non_alpha16_quotes = "{}"
 Non_alpha17_quotes = "|"
 Non_alpha18_quotes = "~"
 Non_alpha19_quotes = "!"
-;Non_alpha20_quotes = "$"
 Non_alpha21_quotes = "()"
 
 [Non-alpha numerics in strings]

@@ -77,7 +77,7 @@ $ini = "[section1]\nname = value";
 var_dump(parse_ini_string($ini, true));
 
 /* #44842, labels starting with underscore */
-$ini = <<<'INI'
+$ini = <<<INI
 foo=bar1
 _foo=bar2
 foo_=bar3

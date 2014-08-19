@@ -1,5 +1,7 @@
 import os, sys
 from collections import OrderedDict
+from rply import ParsingError
+from hippy.config import load_local_ini
 from hippy.objects.base import W_Root
 from hippy.builtin import (
     wrap, Optional, FileResourceArg, FilenameArg, LongArg,
@@ -1256,7 +1258,34 @@ def _mkdir(space, dirname, mode=0777, recursive=False, w_ctx=None):
 
 """ move_uploaded_file - Moves an uploaded file to a new location """
 """ parse_ini_file - Parse a configuration file """
-""" parse_ini_string - Parse a configuration string """
+
+
+INI_SCANNER_NORMAL = 0
+INI_SCANNER_RAW = 1
+@wrap(['space', str, Optional(bool), Optional(int)], error=False)
+def parse_ini_string(space, ini, process_sections=False, scanner_mode=INI_SCANNER_NORMAL):
+    """Parse a configuration string."""
+    if scanner_mode not in (INI_SCANNER_NORMAL, INI_SCANNER_RAW):
+        space.ec.warn('Invalid scanner mode')
+        return space.w_False
+
+    interpreter = space.ec.interpreter
+    try:
+        raw = (scanner_mode == INI_SCANNER_RAW)
+        data = load_local_ini(interpreter, ini, process_sections, raw)
+    except ParsingError as e:
+        space.ec.warn('syntax error, unexpected \'%s\' in Unknown on line %s\n' % (e.source_pos.idx, e.source_pos.lineno))
+        return space.w_False
+
+    if process_sections:
+        new_data = OrderedDict()
+        for key, value in data.iteritems():
+            if isinstance(value, OrderedDict):
+                new_data[key] = space.new_array_from_rdict(value)
+            else:
+                new_data[key] = value
+        data = new_data
+    return space.new_array_from_rdict(data)
 
 
 @wrap(['space', str, Optional(W_Root)])
