@@ -133,13 +133,13 @@ Stack trace:
         output = self.run('''<?
         header("xyz")
         ?>''', capfd, cgi=True)
-        assert output == "\r\nContent-Type: text/html\r\nxyz\r\n\r\n"
+        assert output == "Content-Type: text/html\r\nxyz\r\n\r\n"
 
     def test_headers_replace(self, capfd):
         output = self.run('''<?
         header("Content-Type: text/css", true);
         ?>''', capfd, cgi=True)
-        assert output == "\r\nContent-Type: text/css\r\n\r\n"
+        assert output == "Content-Type: text/css\r\n\r\n"
 
     def test_hippy_ini_read(self, capfd):
         tmpdir = tempfile.mkdtemp()
