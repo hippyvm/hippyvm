@@ -139,15 +139,15 @@ class TestFileOps(BaseTestInterpreter):
         assert map(self.space.int_w, output) == [6, 6, 1, 6]
 
     def test_require_once_normalisation(self, tmpdir):
-        a = tmpdir.join('a.php')
-        b = tmpdir.join('b.php')
         subdir = tmpdir.mkdir('subdir')
+        a = subdir.join('a.php')
+        b = subdir.join('b.php')
         a.write('''<?php
-        require_once '../b.php';
+        require_once '../subdir/b.php';
         function foo() {}
         ?>''')
         b.write('''<?php
-        require_once '../a.php';
+        require_once '../subdir/a.php';
         ?>''')
         output = self.run("chdir('%s'); require_once '%s';" % (subdir, a))
         assert output == []

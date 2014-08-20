@@ -24,11 +24,11 @@ class BytecodeCache(object):
         if not exists(fname):
             for path in interp.include_path:
                 if exists(join(path, [fname])):
-                    return join(path, [fname])
+                    return abspath(join(path, [fname]))
         # this is stupid, but...
         actual_code_dir = dirname(interp.global_frame.bytecode.filename)
         if exists(join(actual_code_dir, [fname])):
-            return join(actual_code_dir, [fname])
+            return abspath(join(actual_code_dir, [fname]))
         return abspath(fname)
 
     def compile_file(self, fname, space):
