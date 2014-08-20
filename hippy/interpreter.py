@@ -659,8 +659,6 @@ class Interpreter(object):
     def send_headers(self):
         self.any_output = True
         if self.cgi:
-            if self.cgi not in [constants.CGI_FASTCGI, constants.CGI_SIMPLE]:
-                self._writestr("\r\n")
             if self.http_status_code != -1:
                 self._writestr('Status: %d\r\n' % self.http_status_code)
             for k in self.headers:
