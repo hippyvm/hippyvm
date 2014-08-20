@@ -26,7 +26,7 @@ def requires_locales(*locales):
         reason="This test requires locales: %s" % locale_string)
 
 interp = BaseTestInterpreter()
-interp.setup_method(None)
+interp.init_space()
 space = interp.space
 
 @requires_locales("fr_FR.ISO8859-1")

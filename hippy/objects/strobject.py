@@ -1,7 +1,7 @@
 import struct
 
 from rpython.rlib.objectmodel import compute_hash
-from rpython.rlib.rstring import StringBuilder
+from rpython.rlib.rstring import StringBuilder, replace
 from hippy.objects.base import W_Object
 from hippy.objects.reference import VirtualReference
 from hippy.objects.convert import convert_string_to_number, strtol
@@ -179,6 +179,8 @@ class W_StringObject(W_Object):
 
     def var_export(self, space, indent, recursion, suffix):
         s = self.unwrap()
+        assert s is not None
+        s = replace(replace(s, '\\', '\\\\'), "'", "\\'")
         return '%s\'%s\'%s' % (indent, s, suffix)
 
     def is_empty_value(self):

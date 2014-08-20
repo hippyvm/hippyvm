@@ -228,7 +228,6 @@ class Interpreter(object):
         self.topframeref = jit.vref_None
         self.error_handler = None
         space.ec.interpreter = self  # one interpreter at a time
-        space.ec.init_signals()
         self._autoloading = {}
         self.autoload_stack = []
         self.autoload_extensions = ['.inc', '.php']
