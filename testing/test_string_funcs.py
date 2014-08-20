@@ -1342,6 +1342,19 @@ ooooord.''']
 
         ]
 
+    def test_quoted_printable_decode(self):
+        output = self.run(r'''
+        echo quoted_printable_decode("=   \r\na");
+        echo quoted_printable_decode("=   \na");
+        echo quoted_printable_decode("=   xa");
+        echo quoted_printable_decode("=f foo");
+        echo quoted_printable_decode("=f");
+
+        ''')
+        assert [self.space.str_w(w_v) for w_v in output] == [
+            'a', 'a', '=   xa', '=f foo', '=f'
+        ]
+
     def test_crc32_basic(self):
         output = self.run('''
         $a = crc32('string_val1234');
