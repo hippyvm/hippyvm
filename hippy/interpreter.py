@@ -37,6 +37,7 @@ from rpython.rlib import jit
 from rpython.rlib import rpath, rsignal
 from rpython.rlib.unroll import unrolling_iterable
 from rpython.rlib.rfile import create_popen_file
+from rpython.rlib.rpath import exists, dirname, join, abspath
 
 from hippy.module.session import Session
 
@@ -1824,9 +1825,19 @@ class Interpreter(object):
             frame.push(self.space.w_False)
             return
 
+    def find_file(self, fname):
+        if not exists(fname):
+            for path in self.include_path:
+                if exists(join(path, [fname])):
+                    return abspath(join(path, [fname]))
+        code_dir = dirname(self.get_frame().bytecode.filename)
+        if exists(join(code_dir, [fname])):
+            return abspath(join(code_dir, [fname]))
+        return abspath(fname)
+
     def _include(self, frame, func_name, require=False, once=False):
         name = self.space.str_w(frame.pop())
-        fname = self.space.bytecode_cache.find_file(self, name)
+        fname = self.find_file(name)
         if once is True and fname in self.cached_files:
             frame.push(self.space.newint(1))
             return

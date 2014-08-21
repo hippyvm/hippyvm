@@ -805,7 +805,7 @@ def _fopen(space, fname, mode, w_use_include_path=False, w_ctx=None):
                           "valid path, string given"])
 
     if w_use_include_path:
-        fname = space.bytecode_cache._find_file(space.ec.interpreter, fname)
+        fname = space.ec.interpreter.find_file(fname)
 
     if mode.startswith("x"):
         if rpath.exists(fname):
