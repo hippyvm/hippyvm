@@ -123,6 +123,26 @@ class TestFileOps(BaseTestInterpreter):
             ''')
         assert output == []
 
+    def test_require_path(self, tmpdir):
+        on_path = tmpdir.mkdir('on_path')
+        on_path.join('a.php').write('''<?php
+        return 'on_path';
+        ''')
+        some_dir = tmpdir.mkdir('some_dir')
+        some_dir.join('a.php').write('''<?php
+        return 'some_dir';
+        ''')
+        output = self.run("""
+        set_include_path('%s');
+        chdir('%s');
+        $dir = include 'a.php'; // uses include_path
+        echo $dir;
+        $dir = include './a.php'; // relative to CWD
+        echo $dir;
+        """ % (on_path, some_dir))
+        assert map(self.space.str_w, output) == ['on_path', 'some_dir']
+
+
     def test_require_once(self, tmpdir):
         f = tmpdir.join('x.php')
         f.write('''<?php

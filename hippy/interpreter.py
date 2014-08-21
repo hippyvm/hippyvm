@@ -1826,10 +1826,11 @@ class Interpreter(object):
             return
 
     def find_file(self, fname):
-        if not exists(fname):
-            for path in self.include_path:
-                if exists(join(path, [fname])):
-                    return abspath(join(path, [fname]))
+        """Resolve a file name relative to the include_path and to
+        the location of the current code"""
+        for path in self.include_path:
+            if exists(join(path, [fname])):
+                return abspath(join(path, [fname]))
         code_dir = dirname(self.get_frame().bytecode.filename)
         if exists(join(code_dir, [fname])):
             return abspath(join(code_dir, [fname]))
@@ -1837,7 +1838,12 @@ class Interpreter(object):
 
     def _include(self, frame, func_name, require=False, once=False):
         name = self.space.str_w(frame.pop())
-        fname = self.find_file(name)
+        use_path = not (name.startswith('/') or name.startswith('./') or
+                        name.startswith('../'))
+        if use_path:
+            fname = self.find_file(name)
+        else:
+            fname = abspath(name)
         if once is True and fname in self.cached_files:
             frame.push(self.space.newint(1))
             return
