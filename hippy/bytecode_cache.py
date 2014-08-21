@@ -9,16 +9,10 @@ TIMEOUT = 1.0
 class BytecodeCache(object):
     def __init__(self, timeout=TIMEOUT):
         self.cached_files = {}
-        self.cached_filenames = {}
         self.timeout = timeout
 
     def find_file(self, interp, fname):
-        try:
-            return self.cached_filenames[fname]
-        except KeyError:
-            actual_name = self._find_file(interp, fname)
-            self.cached_filenames[fname] = actual_name
-            return actual_name
+        return self._find_file(interp, fname)
 
     def _find_file(self, interp, fname):
         if not exists(fname):

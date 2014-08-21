@@ -138,7 +138,7 @@ class TestFileOps(BaseTestInterpreter):
         ''' % locals())
         assert map(self.space.int_w, output) == [6, 6, 1, 6]
 
-    def test_require_once_normalisation(self, tmpdir):
+    def test_require_normalisation_1(self, tmpdir):
         subdir = tmpdir.mkdir('subdir')
         a = subdir.join('a.php')
         b = subdir.join('b.php')
@@ -151,6 +151,27 @@ class TestFileOps(BaseTestInterpreter):
         ?>''')
         output = self.run("chdir('%s'); require_once '%s';" % (subdir, a))
         assert output == []
+
+    def test_require_normalisation_2(self, tmpdir):
+        dir1 = tmpdir.mkdir('dir1')
+        a1 = dir1.join('a.php')
+        dir2 = tmpdir.mkdir('dir2')
+        a2 = dir2.join('a.php')
+        a1.write('''<?php
+        return 'in dir1';
+        ?>''')
+        a2.write('''<?php
+        return 'in dir2';
+        ?>''')
+        output = self.run('''
+        chdir('%s');
+        $a = require_once 'a.php';
+        echo $a;
+        chdir('%s');
+        $a = require_once 'a.php';
+        echo $a;
+        ''' % (dir1, dir2))
+        assert map(self.space.str_w, output) == ['in dir1', 'in dir2']
 
     def test_include(self, tmpdir):
         f = tmpdir.join('x.php')

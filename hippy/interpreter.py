@@ -791,6 +791,7 @@ class Interpreter(object):
             self.setup()
         frame = Frame(self, bytecode, is_global_level=True)
         frame.load_from_scope(self.globals)
+        old_global_frame = self.global_frame
         self.global_frame = frame
         if top_main:
             try:
@@ -810,6 +811,7 @@ class Interpreter(object):
                     self.flush_buffers()
         else:
             w_result = self.interpret(frame)
+            self.global_frame = old_global_frame
         return w_result
 
     def run_local_include(self, bytecode, parent_frame):
@@ -1824,7 +1826,6 @@ class Interpreter(object):
 
     def _include(self, frame, func_name, require=False, once=False):
         name = self.space.str_w(frame.pop())
-        #print "INCLUDE", name
         fname = self.space.bytecode_cache.find_file(self, name)
         if once is True and fname in self.cached_files:
             frame.push(self.space.newint(1))
