@@ -288,7 +288,7 @@ class IniReader(BaseParser):
 
     @pg.production("ws : ")
     def whitespace_empty(self, p):
-        return Token('H_WHITESPACE', '', SourcePosition(0, 0, 0))
+        return Token('H_WHITESPACE', '', SourcePosition('H_WHITESPACE', 0, 0))
 
     @pg.production("ws : H_WHITESPACE")
     def ws(self, p):
