@@ -367,7 +367,7 @@ markers[array_test_dir] = {
     'ksort_variation2.phpt': "wrong order of elems",
     'ksort_variation8.phpt': "wrong odred of elems",
     'ksort_variation9.phpt': "wrong order of elems",
-    'locale_sort.phpt': 'Does not sort correctly',
+    'locale_sort.phpt': 'Xfail: requires the locale to be available',
     'prev_error3.phpt': "FatalError: Argument 1 for prev() must be a variable",
     'range_variation.phpt': "parser problem",
     'rsort_basic.phpt': "wrong order of elems",
