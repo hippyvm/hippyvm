@@ -210,9 +210,9 @@ class W_InstanceObject(W_Object):
         dct_w = self.get_instance_attrs()
         clean_dct_w = OrderedDict()
         for key, value in dct_w.iteritems():
-            if '\x00' in key:
-                print type(key), key.rfind('\x00') + 1, key[key.rfind('\x00') + 1:]
-                key = key[key.rfind('\x00') + 1:]
+            last_null_pos = key.rfind('\x00')
+            if last_null_pos >= 0:
+                key = key[last_null_pos + 1:]
             clean_dct_w[key] = value
 
         return array_var_export(clean_dct_w, space,
