@@ -415,10 +415,8 @@ markers[class_object_test_dir] = {
 markers[math_test_dir] = {
     "bug28228.phpt": "bullshit NULL as string arg",
     'bug45712.phpt': "the test is wrong (asks for inf != inf)",
+    'tan_basiclong_64bit.phpt': 'Xfail: It produces a different result on Travis',
 }
-
-if IS_TRAVIS:
-    markers[math_test_dir]['tan_basiclong_64bit.phpt'] = 'It produces a different result on Travis'
 
 
 # DIR
@@ -705,10 +703,9 @@ markers[posix_test_dir] = {
     'posix_getgrgid_basic.phpt': 'Problems with the %a format in the test. Output looks good',
     'posix_getgrgid_macosx.phpt': 'Test should be skipped in platforms other than mac',
     'posix_ttyname_error_wrongparams.phpt': 'missing imagecreate()',
+    'posix_mkfifo_safemode.phpt': 'Xfail: On Travis and other setups it is possible to create a fifo in /tmp (probably there is only one user)',
 }
 
-if IS_TRAVIS:
-    markers[posix_test_dir]['posix_mkfifo_safemode.phpt'] = 'On Travis it is possible to create a fifo in /tmp (probably there is only one user)'
 
 # STRING
 markers[string_test_dir] = {
@@ -3070,6 +3067,8 @@ def phpt_test(dir, file_name):
         except:
             if marker is None:
                 raise      # the test is supposed not to fail, but did
+            elif marker.lower().startswith('xfail:'):
+                py.test.xfail(marker)
             else:
                 py.test.skip(marker)     # failed as expected
     finally:
