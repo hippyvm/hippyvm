@@ -1754,7 +1754,6 @@ markers[Zend_test_dir] = {
     'bug38779.phpt': "undefined stream_wrapper_register()",
     'bug38779_1.phpt': "undefined stream_wrapper_register()",
     'bug39018.phpt': "?",
-    'bug39542.phpt': "Cannot redeclare __autoload()",
     'bug40509.phpt': "?",
     'bug40621.phpt': "strict vs fatal error",
     'bug40705.phpt': "?",

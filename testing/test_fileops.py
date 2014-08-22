@@ -123,6 +123,26 @@ class TestFileOps(BaseTestInterpreter):
             ''')
         assert output == []
 
+    def test_require_path(self, tmpdir):
+        on_path = tmpdir.mkdir('on_path')
+        on_path.join('a.php').write('''<?php
+        return 'on_path';
+        ''')
+        some_dir = tmpdir.mkdir('some_dir')
+        some_dir.join('a.php').write('''<?php
+        return 'some_dir';
+        ''')
+        output = self.run("""
+        set_include_path('%s');
+        chdir('%s');
+        $dir = include 'a.php'; // uses include_path
+        echo $dir;
+        $dir = include './a.php'; // relative to CWD
+        echo $dir;
+        """ % (on_path, some_dir))
+        assert map(self.space.str_w, output) == ['on_path', 'some_dir']
+
+
     def test_require_once(self, tmpdir):
         f = tmpdir.join('x.php')
         f.write('''<?php
@@ -138,19 +158,40 @@ class TestFileOps(BaseTestInterpreter):
         ''' % locals())
         assert map(self.space.int_w, output) == [6, 6, 1, 6]
 
-    def test_require_once_normalisation(self, tmpdir):
-        a = tmpdir.join('a.php')
-        b = tmpdir.join('b.php')
+    def test_require_normalisation_1(self, tmpdir):
         subdir = tmpdir.mkdir('subdir')
+        a = subdir.join('a.php')
+        b = subdir.join('b.php')
         a.write('''<?php
-        require_once '../b.php';
+        require_once '../subdir/b.php';
         function foo() {}
         ?>''')
         b.write('''<?php
-        require_once '../a.php';
+        require_once '../subdir/a.php';
         ?>''')
         output = self.run("chdir('%s'); require_once '%s';" % (subdir, a))
         assert output == []
+
+    def test_require_normalisation_2(self, tmpdir):
+        dir1 = tmpdir.mkdir('dir1')
+        a1 = dir1.join('a.php')
+        dir2 = tmpdir.mkdir('dir2')
+        a2 = dir2.join('a.php')
+        a1.write('''<?php
+        return 'in dir1';
+        ?>''')
+        a2.write('''<?php
+        return 'in dir2';
+        ?>''')
+        output = self.run('''
+        chdir('%s');
+        $a = require_once 'a.php';
+        echo $a;
+        chdir('%s');
+        $a = require_once 'a.php';
+        echo $a;
+        ''' % (dir1, dir2))
+        assert map(self.space.str_w, output) == ['in dir1', 'in dir2']
 
     def test_include(self, tmpdir):
         f = tmpdir.join('x.php')
