@@ -208,7 +208,14 @@ class W_InstanceObject(W_Object):
     def var_export(self, space, indent, recursion, suffix):
         header = '%s::__set_state(array' % (self.getclass().name)
         dct_w = self.get_instance_attrs()
-        return array_var_export(dct_w, space,
+        clean_dct_w = OrderedDict()
+        for key, value in dct_w.iteritems():
+            if '\x00' in key:
+                print type(key), key.rfind('\x00') + 1, key[key.rfind('\x00') + 1:]
+                key = key[key.rfind('\x00') + 1:]
+            clean_dct_w[key] = value
+
+        return array_var_export(clean_dct_w, space,
                                 indent, recursion,
                                 self, header, suffix=suffix, prefix='')
 
