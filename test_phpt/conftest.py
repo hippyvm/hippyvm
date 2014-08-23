@@ -367,7 +367,7 @@ markers[array_test_dir] = {
     'ksort_variation2.phpt': "wrong order of elems",
     'ksort_variation8.phpt': "wrong odred of elems",
     'ksort_variation9.phpt': "wrong order of elems",
-    'locale_sort.phpt': 'Xfail: requires the locale to be available',
+    'locale_sort.phpt': 'Xfail: requires the locale fr_FR.ISO-8859-1 to be available',
     'prev_error3.phpt': "FatalError: Argument 1 for prev() must be a variable",
     'range_variation.phpt': "parser problem",
     'rsort_basic.phpt': "wrong order of elems",
@@ -688,8 +688,11 @@ markers[file_test_dir] = {
 }
 
 if IS_TRAVIS:
-    markers[file_test_dir]['get_current_user.phpt'] = 'Fails with OSError: [Errno 25] Inappropriate ioctl for device on Travis'
-    markers[file_test_dir]['fwrite_variation3.phpt'] = 'On Travis ftell returns incorrectly after writing'
+    markers[file_test_dir].update({
+        'get_current_user.phpt': 'Fails with OSError: [Errno 25] Inappropriate ioctl for device on Travis',
+        'fwrite_variation3.phpt': 'On Travis ftell returns incorrectly after writing',
+        'disk_free_space_basic.phpt': 'Xfail: sometimes fail on Travis',
+    })
 
 # POSIX
 markers[posix_test_dir] = {
@@ -3067,8 +3070,6 @@ def phpt_test(dir, file_name):
         except:
             if marker is None:
                 raise      # the test is supposed not to fail, but did
-            elif marker.lower().startswith('xfail:'):
-                py.test.xfail(marker)
             else:
                 py.test.skip(marker)     # failed as expected
     finally:
@@ -3115,7 +3116,7 @@ def phpt_test(dir, file_name):
         else:
             py.test.skip(marker)     # failed as expected
     else:
-        if marker is None:
+        if marker is None or marker.lower().startswith('xfail:'):
             pass       # everything is passing
         else:
             raise Exception("the test '%s' was supposed to fail, but didn't"
