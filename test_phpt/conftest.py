@@ -280,7 +280,6 @@ markers[array_test_dir] = {
     'array_fill_object_2_4.phpt': "order of class members",
     'array_filter_variation7.phpt': "missing create_function()",
 
-    'array_intersect_1.phpt': "class elems repr",
     'array_intersect_assoc_variation9.phpt': 'too many notices',
     'array_intersect_variation4.phpt': "doesnt work properly",
     'array_intersect_variation8.phpt': "wrong order of elems",
@@ -716,7 +715,6 @@ markers[string_test_dir] = {
     'bug40754.phpt': check_sign_only,
     'bug54454.phpt': check_sign_only,
     'chunk_split.phpt': slow,  # hangs on 64-bit
-    'explode.phpt': "problem with var_export()",
     'implode.phpt': "$php_errormsg",
     'htmlentities22.phpt': "named constant in default args",
     'setlocale_error.phpt': ("not implemented: (deprecated) "
@@ -763,7 +761,7 @@ markers[string_test_dir] = {
     'bug29119.phpt': "not implemented",
     'bug35817.phpt': "not implemented",
     'bug36148.phpt': "not implemented",
-    'bug37262.phpt': "not implemented",
+    'bug37262.phpt': "Call to undefined function create_function()",
     'bug38322.phpt': "not implemented",
     'bug38770.phpt': "not implemented",
     'bug40432.phpt': "not implemented",
@@ -952,8 +950,6 @@ markers[string_test_dir] = {
 
 # GENERAL
 markers[general_test_dir] = {
-    'bug42272.phpt': ("Bug #42272 (var_export()"
-                      " incorrectly escapes char(0))"),
     'bug47027.phpt': "Missing ArrayObject class",
     'bug60227_4.phpt': 'SKIP: Unknown phpt section header: EXPECTHEADERS',
     'bug60227_3.phpt': 'SKIP: Unknown phpt section header: EXPECTHEADERS',
@@ -963,9 +959,7 @@ markers[general_test_dir] = {
                                      "abstract base class"),
     'debug_zval_dump_v.phpt': ("NotImplementedError: "
                                "abstract base class"),
-    'var_export_basic4.phpt': "problem with strings",
-    'var_export_basic6.phpt': ("missing static_scalar : T_ARRAY "
-                               "( static_array_pair_list )"),
+    'var_export_basic6.phpt': "var_dump reports different lengths",
     'type.phpt': "?",
     'gettype_settype_basic.phpt': "?",
     'parse_ini_file.phpt': "parsing",
@@ -1766,7 +1760,6 @@ markers[Zend_test_dir] = {
     'bug38779.phpt': "undefined stream_wrapper_register()",
     'bug38779_1.phpt': "undefined stream_wrapper_register()",
     'bug39018.phpt': "?",
-    'bug39542.phpt': "Cannot redeclare __autoload()",
     'bug40509.phpt': "?",
     'bug40621.phpt': "strict vs fatal error",
     'bug40705.phpt': "?",
@@ -2385,8 +2378,8 @@ markers['ext/reflection'] = {
     'bug48757.phpt': '?',
     'bug49074.phpt': '?',
     'bug49719.phpt': '?',
-    'bug51905.phpt': '?',
-    'bug51911.phpt': '?',
+    'bug51905.phpt': 'Call to undefined method ReflectionParameter::isDefaultValueAvailable()',
+    'bug51911.phpt': 'Call to undefined method ReflectionParameter::isDefaultValueAvailable()',
     'bug52057.phpt': '?',
     'bug52854.phpt': '?',
     'bug53366.phpt': '?',
