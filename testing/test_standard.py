@@ -15,3 +15,11 @@ class TestStandardModule(BaseTestInterpreter):
         assert self.unwrap(output[2]) == "''\\'''"
         assert self.unwrap(output[3]) == "'x'\\''y\"z'"
         assert self.unwrap(output[4]) == "'\\'"
+
+    def test_shell_exec(self):
+        output = self.run('''
+        echo shell_exec('doesnotexist');
+        echo shell_exec('echo 0');
+        ''')
+        assert output[0] == self.space.w_Null
+        assert self.space.str_w(output[1]) == "0\n"

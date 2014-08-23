@@ -687,10 +687,8 @@ markers[posix_test_dir] = {
     'posix_access.phpt': "Expecting: Deprecated: Directive safe_mode is ...",  # Update the tests to PHP 5.4
     'posix_access_error_modes.phpt': "Expecting: Deprecated: Directive safe_mode is ...",
     'posix_access_safemode.phpt': "Expecting: Deprecated: Directive safe_mode is ...",
-    'posix_kill_basic.phpt': "missing shell_exec()",
     'posix_ttyname.phpt': "OSError: [Errno 25] Inappropriate ioctl for device",
     'posix_ttyname_variation6.phpt': "Missing:  Error: 8 - Object of class classWithToString could not be converted to int",
-    'posix_errno_variation2.phpt': 'missing shell_exec()',
     'posix_getgrgid_basic.phpt': 'Problems with the %a format in the test. Output looks good',
     'posix_getgrgid_macosx.phpt': 'Test should be skipped in platforms other than mac',
     'posix_ttyname_error_wrongparams.phpt': 'missing imagecreate()',
@@ -2812,7 +2810,6 @@ markers[spl_test_dir] = {
     'SplDoublyLinkedList_top_pass_null.phpt': "?",
     'SplDoublyLinkedList_unshift_missing_parameter.phpt': "?",
     'SplFileInfo_getGroup_error.phpt': "No frames for builtin methods",
-    'SplFileInfo_getInode_basic.phpt': "Missing shell_exec()",
     'SplFileInfo_getInode_error.phpt': "No frames for builtin methods",
     'SplFileInfo_getOwner_error.phpt': "No frames for builtin methods",
     'SplFileInfo_getPerms_error.phpt': "No frames for builtin methods",
