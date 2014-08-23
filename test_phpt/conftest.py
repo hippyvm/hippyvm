@@ -387,7 +387,6 @@ markers[array_test_dir] = {
     'usort_variation7.phpt': "missing create_function()",
     'uasort_variation7.phpt': "missing create_function()",
     'unexpected_array_mod_bug.phpt': "dont now how to find if w_arr was modified",
-    'var_export2.phpt': 'Strings with null bytes are escaped incorrectly',
 }
 
 markers[class_object_test_dir] = {
