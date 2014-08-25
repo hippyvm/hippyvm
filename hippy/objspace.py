@@ -108,13 +108,13 @@ class ObjSpace(object):
     (tp_int, tp_float, tp_str, tp_array, tp_null, tp_bool,
      tp_object, tp_file_res, tp_dir_res, tp_stream_context,
      tp_mysql_link, tp_mysql_result,
-     tp_constant, tp_delayed_class_const, tp_xmlparser_res) = range(15)
+     tp_constant, tp_delayed_class_const, tp_xmlparser_res, tp_mcrypt_res) = range(16)
 
     # in the same order as the types above
     TYPENAMES = ["integer", "double", "string", "array", "NULL", "boolean",
                  "object", "resource", "resource", "resource",
                  "resource", "resource", "constant", "delayed constant",
-                 "resource"]
+                 "resource", "resource"]
 
     w_True = w_True
     w_False = w_False
@@ -957,6 +957,10 @@ if is_optional_extension_enabled("mysql"):
 if is_optional_extension_enabled("xml"):
     from ext_module.xml.xmlparser import XMLParserResource
     XMLParserResource.tp = ObjSpace.tp_xmlparser_res
+
+if is_optional_extension_enabled("mcrypt"):
+    from ext_module.mcrypt.mcrypt_resource import W_McryptResource
+    W_McryptResource.tp = ObjSpace.tp_mcrypt_res
 
 W_Constant.tp = ObjSpace.tp_constant
 DelayedClassConstant.tp = ObjSpace.tp_delayed_class_const
