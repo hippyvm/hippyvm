@@ -62,6 +62,11 @@ class ExecutionContext(object):
         self.initialized = True
         rsignal.pypysig_setflag(signal.SIGINT)
 
+    def clear_signals(self):
+        rsignal.pypysig_getaddr_occurred().c_value = 0
+        rsignal.pypysig_default(signal.SIGINT)
+        self.initialized = False
+
     def notice(self, msg):
         self.interpreter.notice(msg)
 

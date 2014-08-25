@@ -36,8 +36,7 @@ class BaseTestInterpreter(object):
     def warnings(self, expected_warnings=None):
         return self.engine.warnings(expected_warnings)
 
-    def setup_method(self, method):
-        self.env_copy = os.environ.copy()
+    def init_space(self):
         self.space = ObjSpace()
         if option.runappdirect:
             self.engine = self.DirectRunner(self.space)
@@ -45,7 +44,12 @@ class BaseTestInterpreter(object):
             self.engine = self.Engine(self.space)
             self.engine.Interpreter = self.interpreter
 
-    def teardown_method(self, method):
+
+    @py.test.yield_fixture(autouse=True)
+    def setup_interp(self):
+        self.env_copy = os.environ.copy()
+        self.init_space()
+        yield
         os.environ = self.env_copy
         self.engine = None
         self.space = None
