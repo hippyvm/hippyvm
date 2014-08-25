@@ -1,4 +1,3 @@
-
 from testing.test_interpreter import BaseTestInterpreter
 
 class TestStandardModule(BaseTestInterpreter):
@@ -23,3 +22,20 @@ class TestStandardModule(BaseTestInterpreter):
         ''')
         assert output[0] == self.space.w_Null
         assert self.space.str_w(output[1]) == "0\n"
+
+    def test_exec(self):
+        output = self.run('''
+        echo exec('doesnotexist');
+        echo exec('echo a && echo b');
+        ''')
+        assert output[0] == self.space.wrap('')
+        assert self.space.str_w(output[1]) == "b"
+
+    def test_exec_error(self):
+        with self.warnings([
+                'Warning: exec(): Cannot execute a blank command']):
+            output = self.run('''
+            echo exec('');
+            echo exec(123);
+            ''')
+        assert output == [self.space.w_False, self.space.wrap('')]
