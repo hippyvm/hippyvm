@@ -424,6 +424,8 @@ markers[dir_test_dir] = {
 
 # FILE
 markers[file_test_dir] = {
+    'bug26615.phpt': 'SKIP: requires TEST_PHP_EXECUTABLE in env',
+    'bug26938.phpt': 'SKIP: requires TEST_PHP_EXECUTABLE in env',
     '001.phpt': "?",
     '004.phpt': "missing mkd5_file()",
     'bug12556.phpt': "?",
@@ -435,8 +437,6 @@ markers[file_test_dir] = {
     'bug45303.phpt': "nightmare...",
     'bug52624.phpt': "nightmare...",
     'bug22414.phpt': "missing passthru()",
-    'bug26615.phpt': "missing exec()",
-    'bug26938.phpt': "missing exec()",
     'bug27508.phpt': "missing stream_wrapper_register()",
     'bug27619.phpt': "?",
     'bug30362.phpt': "missing stream_get_line()",
@@ -1664,6 +1664,7 @@ markers[Zend_test_dir] = {
     'bug40236.phpt': 'TEST_PHP_EXECUTABLE in env, should only run with -A',
     'bug48408.phpt': slow,
     'bug48409.phpt': slow,
+    'bug60978.phpt': 'SKIP: requires TEST_PHP_EXECUTABLE in env',
     'closure_021.phpt': slow,
     'exception_007.phpt': slow,
     '001.phpt': 'missing warnings around calling functions with wrong number '
@@ -1871,7 +1872,6 @@ markers[Zend_test_dir] = {
     'bug60825.phpt': "?",
     'bug60909_1.phpt': "missing register_shutdown_function()",
     'bug60909_2.phpt': "missing register_shutdown_function()",
-    'bug60978.phpt': "missing exec()",
     'bug61087.phpt': "missing parse_ini_file()",
     'bug61225.phpt': "unexpected T_STRING",
     'bug61273.phpt': "call_user_func_array()",
