@@ -50,8 +50,9 @@ def parse_phpt(fname):
     st = None
     IGNORED = 999
     state = {'TEST': -1, 'FILE': 0, 'FILEEOF': 0, 'EXPECT': 1, 'EXPECTF': 1,
-             'SKIPIF': 5, 'INI': 2, 'CLEAN': 3, 'CREDITS': IGNORED, 'GET': 6,
-             'POST': 7, 'COOKIE': 8, 'XFAIL': 9, 'DESCRIPTION': IGNORED}
+             'SKIPIF': 5, 'INI': 2, 'CLEAN': 3, 'CREDITS': IGNORED,
+             'CREDIT': IGNORED, 'GET': 6, 'POST': 7, 'COOKIE': 8,
+             'XFAIL': 9, 'DESCRIPTION': IGNORED}
     with open(fname) as f:
         lines = f.readlines()
     for l in lines:
@@ -245,6 +246,7 @@ pcre_test_dir = 'ext/pcre'
 hash_test_dir = 'ext/hash'
 spl_test_dir = 'ext/spl'
 Zend_test_dir = 'Zend'
+mcrypt_test_dir = 'ext/mcrypt'
 
 os.environ["MYSQL_TEST_HOST"] = "localhost"
 os.environ["MYSQL_TEST_USER"] = "root"
@@ -2992,6 +2994,17 @@ markers[hash_test_dir] = {
     'snefru.phpt':  slow,
     'tiger.phpt':  slow,
     'whirlpool.phpt':  slow,
+}
+
+markers[mcrypt_test_dir] = {
+    'bug55169.phpt': 'create_iv missing',
+    'mcrypt_decrypt_variation4.phpt': 'missing obj to str cast one warn level 8',
+    'mcrypt_ecb_variation4.phpt': 'missing obj to str cast one warn level 8',
+    'mcrypt_encrypt_variation4.phpt': 'missing obj to str cast one warn level 8',
+    'mcrypt_filters.phpt': 'missing stream filters',
+    'mcrypt_get_cipher_name.phpt': 'missing',
+    'mcrypt_rijndael128_128BitKey.phpt': '?',
+    'mcrypt_rijndael128_256BitKey.phpt': '?',
 }
 
 prerequisites = {hash_test_dir: "hash", mysql_test_dir: "mysql"}
