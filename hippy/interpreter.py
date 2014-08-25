@@ -87,6 +87,8 @@ if is_optional_extension_enabled("hash"):
 if is_optional_extension_enabled("xml"):
     import ext_module.xml.interface
 
+if is_optional_extension_enabled("mcrypt"):
+    import ext_module.mcrypt.funcs
 
 
 def get_printable_location(pc, bytecode, contextclass=None):
