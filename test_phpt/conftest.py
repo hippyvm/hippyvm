@@ -208,7 +208,7 @@ def matches_line(php, hippy, check_sign_only=False):
     php = php.replace("%u|b%", "")
     rphp = re.escape(php)
     rphp = rphp.replace('\%e', '.*')
-    rphp = rphp.replace('\%x', '^[0-9A-F]+$')
+    rphp = rphp.replace('\%x', '[0-9a-fA-F]+')
     rphp = rphp.replace('\%s', '.*')
     rphp = rphp.replace('\%a', '.*')
     rphp = rphp.replace('\%f', '.*')
@@ -2984,11 +2984,10 @@ markers[mcrypt_test_dir] = {
     'mcrypt_encrypt_variation4.phpt': 'missing obj to str cast one warn level 8',
     'mcrypt_filters.phpt': 'missing stream filters',
     'mcrypt_get_cipher_name.phpt': 'missing',
-    'mcrypt_rijndael128_128BitKey.phpt': '?',
-    'mcrypt_rijndael128_256BitKey.phpt': '?',
 }
 
 prerequisites = {hash_test_dir: "hash", mysql_test_dir: "mysql"}
+
 
 class PHPTest(Item):
     def runtest(self):
