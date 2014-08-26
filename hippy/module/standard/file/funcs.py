@@ -1274,7 +1274,7 @@ def parse_ini_string(space, ini, process_sections=False, scanner_mode=INI_SCANNE
         raw = (scanner_mode == INI_SCANNER_RAW)
         data = load_local_ini(interpreter, ini, process_sections, raw)
     except ParsingError as e:
-        space.ec.warn('syntax error, unexpected \'%s\' in Unknown on line %s\n' % (e.source_pos.idx, e.source_pos.lineno))
+        space.ec.warn("syntax error, unexpected '=' in Unknown on line %s\n" % (e.source_pos))
         return space.w_False
 
     if process_sections:

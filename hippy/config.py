@@ -2,10 +2,10 @@ from collections import OrderedDict
 from rpython.rlib.rsre.rsre_re import compile, M, IGNORECASE
 
 from rply import ParserGenerator
-from rply.token import BaseBox, SourcePosition, Token
+from rply.token import BaseBox, SourcePosition
 
 from hippy.constants import E_ALL
-from hippy.lexer import BaseLexer
+from hippy.lexer import Token, BaseLexer
 from hippy.sourceparser import BaseParser
 
 EXTENSIONS = ['session', 'standard', 'mysql', 'pcre', 'posix', 'Core',
@@ -129,7 +129,7 @@ class IniLexer(BaseLexer):
                 end = m.end()
                 assert end >= 0
                 val = self.buf[self.pos:end]
-                tok = Token(token_type, val, SourcePosition(token_type, self.lineno, 0))
+                tok = Token(token_type, val, SourcePosition(self.pos, self.lineno, 0))
                 if token_type == "END_OF_LINE":
                     self.lineno += 1
                 self.pos = end
@@ -288,7 +288,7 @@ class IniReader(BaseParser):
 
     @pg.production("ws : ")
     def whitespace_empty(self, p):
-        return Token('H_WHITESPACE', '', SourcePosition('H_WHITESPACE', 0, 0))
+        return Token('H_WHITESPACE', '', SourcePosition(0, 0, 0))
 
     @pg.production("ws : H_WHITESPACE")
     def ws(self, p):
