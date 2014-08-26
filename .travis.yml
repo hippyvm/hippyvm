@@ -17,6 +17,8 @@ before_install:
   - sudo apt-get install -y librhash-dev
   - sudo apt-get install -y libbz2-dev
   - sudo apt-get install -y php5-cli
+  # Some locale tests require fr_FR.ISO-8859-1
+  - sudo apt-get install -y language-pack-fr
 
 install:
   - wget https://bitbucket.org/pypy/pypy/get/default.tar.gz
@@ -25,12 +27,6 @@ install:
 
 script:
   - ./travis.sh
-
-matrix:
-  fast_finish: true
-  allow_failures:
-    - env: TESTDIR="test_phpt/ext/ -k 'not standard'"
-    - env: TESTDIR=test_phpt/ext/standard/
 
 notifications:
   irc:

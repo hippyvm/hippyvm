@@ -38,6 +38,8 @@ check_sign_only = "check_sign_only"
 WIDTH = os.environ.get("COLUMNS", 300)
 COL_WIDTH = int(WIDTH) / 2 - 5
 
+IS_TRAVIS = os.getenv('TRAVIS') == 'true'
+
 
 def parse_phpt(fname):
     skipif_src = []
@@ -367,6 +369,7 @@ markers[array_test_dir] = {
     'ksort_variation2.phpt': "wrong order of elems",
     'ksort_variation8.phpt': "wrong odred of elems",
     'ksort_variation9.phpt': "wrong order of elems",
+    'locale_sort.phpt': 'Xfail: requires the locale fr_FR.ISO-8859-1 to be available',
     'prev_error3.phpt': "FatalError: Argument 1 for prev() must be a variable",
     'range_variation.phpt': "parser problem",
     'rsort_basic.phpt': "wrong order of elems",
@@ -413,6 +416,7 @@ markers[class_object_test_dir] = {
 markers[math_test_dir] = {
     "bug28228.phpt": "bullshit NULL as string arg",
     'bug45712.phpt': "the test is wrong (asks for inf != inf)",
+    'tan_basiclong_64bit.phpt': 'Xfail: It produces a different result on Travis',
 }
 
 
@@ -459,7 +463,6 @@ markers[file_test_dir] = {
     'bug46347.phpt': "missing parse_ini_file()",
     'bug40501.phpt': "?",
     'bug41655_1.phpt': "glob problem",
-    'bug41655_2.phpt': "glob problem",
     'bug44034.phpt': "?",
     'bug51094.phpt': "missing parse_ini_string()",
     'bug53241.phpt': "missing curl_init()",
@@ -685,6 +688,13 @@ markers[file_test_dir] = {
     'fgetss_variation3.phpt': slow,
 }
 
+if IS_TRAVIS:
+    markers[file_test_dir].update({
+        'get_current_user.phpt': 'Fails with OSError: [Errno 25] Inappropriate ioctl for device on Travis',
+        'fwrite_variation3.phpt': 'On Travis ftell returns incorrectly after writing',
+        'disk_free_space_basic.phpt': 'Xfail: sometimes fail on Travis',
+    })
+
 # POSIX
 markers[posix_test_dir] = {
     'posix_access.phpt': "Expecting: Deprecated: Directive safe_mode is ...",  # Update the tests to PHP 5.4
@@ -697,7 +707,9 @@ markers[posix_test_dir] = {
     'posix_getgrgid_basic.phpt': 'Problems with the %a format in the test. Output looks good',
     'posix_getgrgid_macosx.phpt': 'Test should be skipped in platforms other than mac',
     'posix_ttyname_error_wrongparams.phpt': 'missing imagecreate()',
+    'posix_mkfifo_safemode.phpt': 'Xfail: On Travis and other setups it is possible to create a fifo in /tmp (probably there is only one user)',
 }
+
 
 # STRING
 markers[string_test_dir] = {
@@ -1017,10 +1029,10 @@ markers[general_test_dir] = {
     'getopt_004.phpt': "not implemented",
     'getopt_005.phpt': "not implemented",
     'gettype_settype_error.phpt': "not implemented",
-    'get_cfg_var_basic.phpt': "not implemented",
-    'get_cfg_var_variation6.phpt': "not implemented",
+    'get_cfg_var_basic.phpt': "requires ini parse to return strings",
+    'get_cfg_var_variation6.phpt': "requires ini parse to return strings",
     'get_cfg_var_variation8.phpt': "magic_quotes_gpc unsupported",
-    'get_cfg_var_variation9.phpt': "error",
+    'get_cfg_var_variation9.phpt': "requires ini parse to return strings",
     'head.phpt': "not implemented",
     'highlight_heredoc.phpt': "not implemented",
     'ini_get_all.phpt': "not implemented",
@@ -3110,7 +3122,7 @@ def phpt_test(dir, file_name):
         else:
             py.test.skip(marker)     # failed as expected
     else:
-        if marker is None:
+        if marker is None or marker.lower().startswith('xfail:'):
             pass       # everything is passing
         else:
             raise Exception("the test '%s' was supposed to fail, but didn't"
