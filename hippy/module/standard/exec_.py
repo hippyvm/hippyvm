@@ -72,6 +72,27 @@ def passthru(interp, cmd, r_return_var=None):
     return space.newstr(last_line)
 
 
+@wrap(['interp', str, Optional('reference')], error=False)
+def system(interp, cmd, r_return_var=None):
+    space = interp.space
+    if not cmd:
+        raise ExitFunctionWithError('Cannot execute a blank command')
+    try:
+        pfile = create_popen_file(cmd, 'r')
+    except OSError:
+        raise ExitFunctionWithError('Unable to fork [%s]' % cmd, w_Null)
+    last_line = ''
+    while True:
+        line = pfile.readline()
+        if not line:
+            break
+        interp.writestr(line, buffer=True)
+        last_line = line
+    exitcode = pfile.close()
+    if r_return_var is not None:
+        r_return_var.store(space.wrap(exitcode))
+    return space.newstr(last_line.rstrip())
+
 
 @wrap(['interp', str])
 def shell_exec(interp, cmd):
