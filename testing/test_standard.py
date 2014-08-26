@@ -39,3 +39,11 @@ class TestStandardModule(BaseTestInterpreter):
             echo exec(123);
             ''')
         assert output == [self.space.w_False, self.space.wrap('')]
+
+    def test_exec_2(self):
+        output = self.run('''
+        $arr = array('foo');
+        echo exec('echo a && echo b', $arr);
+        echo $arr;
+        ''')
+        assert map(self.space.str_w, output[1].as_list_w()) == ['foo', 'a', 'b']

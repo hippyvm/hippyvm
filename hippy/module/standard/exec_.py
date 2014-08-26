@@ -44,7 +44,7 @@ def exec_(interp, cmd, r_output=None, r_return_var=None):
             break
         last_line = line.rstrip()
         if w_output:
-            w_output.appenditem_inplace(space, last_line)
+            w_output.appenditem_inplace(space, space.newstr(last_line))
     exitcode = pfile.close()
     if r_return_var is not None:
         r_return_var.store(space.wrap(exitcode))
