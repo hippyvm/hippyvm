@@ -51,10 +51,26 @@ def exec_(interp, cmd, r_output=None, r_return_var=None):
     return space.newstr(last_line)
 
 
-@wrap(['interp', str])
-def passthru(interp, cmd):
-    interp.warn("passthru not implemented")
-    return interp.space.w_False
+@wrap(['interp', str, Optional('reference')], error=False)
+def passthru(interp, cmd, r_return_var=None):
+    space = interp.space
+    if not cmd:
+        raise ExitFunctionWithError('Cannot execute a blank command')
+    try:
+        pfile = create_popen_file(cmd, 'r')
+    except OSError:
+        raise ExitFunctionWithError('Unable to fork [%s]' % cmd, w_Null)
+    last_line = ''
+    while True:
+        line = pfile.read()
+        if not line:
+            break
+        interp.writestr(line, buffer=False)
+    exitcode = pfile.close()
+    if r_return_var is not None:
+        r_return_var.store(space.wrap(exitcode))
+    return space.newstr(last_line)
+
 
 
 @wrap(['interp', str])
