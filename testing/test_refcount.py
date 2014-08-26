@@ -5,15 +5,14 @@ from testing.test_interpreter import BaseTestInterpreter
 
 class TestRefCount(BaseTestInterpreter):
 
-    def setup_method(self, meth):
-        super(TestRefCount, self).setup_method(self)
+    @py.test.yield_fixture(autouse=True)
+    def note_copies(self):
         def note_making_a_copy(array):
             self.space.ec.interpreter.writestr(array.var_dump(self.space, indent='', recursion={}))
-        self._old_func = W_Root.__dict__['_note_making_a_copy']
+        old_func = W_Root.__dict__['_note_making_a_copy']
         W_Root._note_making_a_copy = note_making_a_copy
-
-    def teardown_method(self, meth):
-        W_Root._note_making_a_copy = self._old_func
+        yield
+        W_Root._note_making_a_copy = old_func
 
     def test_no_copies(self):
         output = self.run("$a = array(5, 6, 7);")

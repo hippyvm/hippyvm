@@ -821,6 +821,11 @@ def warn_not_valid_mysql_result(space, funcname, arg_num, res_id, given_tp):
                           (funcname, res_id), w_False)
 
 
+def warn_not_mcrypt_res(space, funcname, arg_num, res_id, given_tp):
+    raise WrongParameters("%s(): %d is not a valid MCrypt resource" %
+                          (funcname, res_id), w_False)
+
+
 def warn_could_not_convert_to_str(space, w_obj):
     klass = w_obj.getclass(space).name
     space.ec.catchable_fatal("Object of class %s could not be "

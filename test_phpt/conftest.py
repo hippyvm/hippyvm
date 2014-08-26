@@ -50,8 +50,9 @@ def parse_phpt(fname):
     st = None
     IGNORED = 999
     state = {'TEST': -1, 'FILE': 0, 'FILEEOF': 0, 'EXPECT': 1, 'EXPECTF': 1,
-             'SKIPIF': 5, 'INI': 2, 'CLEAN': 3, 'CREDITS': IGNORED, 'GET': 6,
-             'POST': 7, 'COOKIE': 8, 'XFAIL': 9, 'DESCRIPTION': IGNORED}
+             'SKIPIF': 5, 'INI': 2, 'CLEAN': 3, 'CREDITS': IGNORED,
+             'CREDIT': IGNORED, 'GET': 6, 'POST': 7, 'COOKIE': 8,
+             'XFAIL': 9, 'DESCRIPTION': IGNORED}
     with open(fname) as f:
         lines = f.readlines()
     for l in lines:
@@ -245,6 +246,7 @@ pcre_test_dir = 'ext/pcre'
 hash_test_dir = 'ext/hash'
 spl_test_dir = 'ext/spl'
 Zend_test_dir = 'Zend'
+mcrypt_test_dir = 'ext/mcrypt'
 
 os.environ["MYSQL_TEST_HOST"] = "localhost"
 os.environ["MYSQL_TEST_USER"] = "root"
@@ -278,7 +280,6 @@ markers[array_test_dir] = {
     'array_fill_object_2_4.phpt': "order of class members",
     'array_filter_variation7.phpt': "missing create_function()",
 
-    'array_intersect_1.phpt': "class elems repr",
     'array_intersect_assoc_variation9.phpt': 'too many notices',
     'array_intersect_variation4.phpt': "doesnt work properly",
     'array_intersect_variation8.phpt': "wrong order of elems",
@@ -450,7 +451,7 @@ markers[file_test_dir] = {
     'bug38450_3.phpt': "missing stream_wrapper_register()",
     'bug39551.phpt': "missing stream_bucket_new()",
     'bug39538.phpt': "?",
-    'bug43008.phpt': "iconv extension not available",
+    'bug43008.phpt': "missing urlencode()",
     'bug43216.phpt': "missing stream_is_local()",
     'bug43522.phpt': "missing stream_get_line()",
     'bug44607.phpt': "missing stream_get_line()",
@@ -703,7 +704,6 @@ markers[string_test_dir] = {
     'bug40754.phpt': check_sign_only,
     'bug54454.phpt': check_sign_only,
     'chunk_split.phpt': slow,  # hangs on 64-bit
-    'explode.phpt': "problem with var_export()",
     'implode.phpt': "$php_errormsg",
     'htmlentities22.phpt': "named constant in default args",
     'setlocale_error.phpt': ("not implemented: (deprecated) "
@@ -750,8 +750,7 @@ markers[string_test_dir] = {
     'bug29119.phpt': "not implemented",
     'bug35817.phpt': "not implemented",
     'bug36148.phpt': "not implemented",
-    'bug36306.phpt': "not implemented",
-    'bug37262.phpt': "not implemented",
+    'bug37262.phpt': "Call to undefined function create_function()",
     'bug38322.phpt': "not implemented",
     'bug38770.phpt': "not implemented",
     'bug40432.phpt': "not implemented",
@@ -781,13 +780,10 @@ markers[string_test_dir] = {
     # 'bug61374.phpt': "not implemented",
     'bug61764.phpt': "not implemented",
     'bug62443.phpt': "not implemented",
-    'bug62462.phpt': "not implemented",
-    'bug64879.phpt': "not implemented",
     'convert_cyr_string.phpt': "not implemented",
     'convert_cyr_string_basic.phpt': "not implemented",
     'convert_cyr_string_error.phpt': "not implemented",
     'convert_cyr_string_variation1.phpt': "not implemented",
-    'crc32.phpt': "not implemented",
     'crypt.phpt': "not implemented",
     'crypt_blowfish.phpt': "not implemented",
     'crypt_blowfish_variation1.phpt': "not implemented",
@@ -879,11 +875,6 @@ markers[string_test_dir] = {
     'parse_str_basic4.phpt': "not implemented",
     # 'parse_str_error1.phpt': "not implemented",
     'php_strip_whitespace.phpt': "not implemented",
-    'quoted_printable_decode_basic.phpt': "not implemented",
-    'quoted_printable_decode_error.phpt': "not implemented",
-    'quoted_printable_decode_variation1.phpt': "not implemented",
-    'quoted_printable_encode_001.phpt': "not implemented",
-    'quoted_printable_encode_002.phpt': "not implemented",
     'setlocale_variation2.phpt': "not implemented",
     'sha1.phpt': 'sha1_file not implemented',
     'sha1_file.phpt': "not implemented",
@@ -948,8 +939,6 @@ markers[string_test_dir] = {
 
 # GENERAL
 markers[general_test_dir] = {
-    'bug42272.phpt': ("Bug #42272 (var_export()"
-                      " incorrectly escapes char(0))"),
     'bug47027.phpt': "Missing ArrayObject class",
     'bug60227_4.phpt': 'SKIP: Unknown phpt section header: EXPECTHEADERS',
     'bug60227_3.phpt': 'SKIP: Unknown phpt section header: EXPECTHEADERS',
@@ -959,10 +948,7 @@ markers[general_test_dir] = {
                                      "abstract base class"),
     'debug_zval_dump_v.phpt': ("NotImplementedError: "
                                "abstract base class"),
-    'var_export_basic4.phpt': "problem with strings",
-    'var_export_basic6.phpt': ("missing static_scalar : T_ARRAY "
-                               "( static_array_pair_list )"),
-    'var_export_basic9.phpt': "?",
+    'var_export_basic6.phpt': "var_dump reports different lengths",
     'type.phpt': "?",
     'gettype_settype_basic.phpt': "?",
     'parse_ini_file.phpt': "parsing",
@@ -972,9 +958,7 @@ markers[general_test_dir] = {
     'call_user_func_array_variation_003.phpt': "?",
     'call_user_func_array_variation_001.phpt': "missing call_user_func_array()",
 
-    '002.phpt': "not implemented",
     '004.phpt': "not implemented",
-    '006.phpt': "not implemented",
     '010.phpt': "not implemented",
     'bug27678.phpt': "not implemented",
     'bug29038.phpt': "not implemented",
@@ -1765,7 +1749,6 @@ markers[Zend_test_dir] = {
     'bug38779.phpt': "undefined stream_wrapper_register()",
     'bug38779_1.phpt': "undefined stream_wrapper_register()",
     'bug39018.phpt': "?",
-    'bug39542.phpt': "Cannot redeclare __autoload()",
     'bug40509.phpt': "?",
     'bug40621.phpt': "strict vs fatal error",
     'bug40705.phpt': "?",
@@ -2384,8 +2367,8 @@ markers['ext/reflection'] = {
     'bug48757.phpt': '?',
     'bug49074.phpt': '?',
     'bug49719.phpt': '?',
-    'bug51905.phpt': '?',
-    'bug51911.phpt': '?',
+    'bug51905.phpt': 'Call to undefined method ReflectionParameter::isDefaultValueAvailable()',
+    'bug51911.phpt': 'Call to undefined method ReflectionParameter::isDefaultValueAvailable()',
     'bug52057.phpt': '?',
     'bug52854.phpt': '?',
     'bug53366.phpt': '?',
@@ -2992,6 +2975,17 @@ markers[hash_test_dir] = {
     'snefru.phpt':  slow,
     'tiger.phpt':  slow,
     'whirlpool.phpt':  slow,
+}
+
+markers[mcrypt_test_dir] = {
+    'bug55169.phpt': 'create_iv missing',
+    'mcrypt_decrypt_variation4.phpt': 'missing obj to str cast one warn level 8',
+    'mcrypt_ecb_variation4.phpt': 'missing obj to str cast one warn level 8',
+    'mcrypt_encrypt_variation4.phpt': 'missing obj to str cast one warn level 8',
+    'mcrypt_filters.phpt': 'missing stream filters',
+    'mcrypt_get_cipher_name.phpt': 'missing',
+    'mcrypt_rijndael128_128BitKey.phpt': '?',
+    'mcrypt_rijndael128_256BitKey.phpt': '?',
 }
 
 prerequisites = {hash_test_dir: "hash", mysql_test_dir: "mysql"}
