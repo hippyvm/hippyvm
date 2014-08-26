@@ -2986,7 +2986,9 @@ markers[mcrypt_test_dir] = {
     'mcrypt_get_cipher_name.phpt': 'missing',
 }
 
-prerequisites = {hash_test_dir: "hash", mysql_test_dir: "mysql"}
+prerequisites = {hash_test_dir: "hash",
+                 mysql_test_dir: "mysql",
+                 mcrypt_test_dir: "mcrypt"}
 
 
 class PHPTest(Item):
