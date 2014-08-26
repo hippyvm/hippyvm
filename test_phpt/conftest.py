@@ -208,6 +208,7 @@ def matches_line(php, hippy, check_sign_only=False):
     php = php.replace("%u|b%", "")
     rphp = re.escape(php)
     rphp = rphp.replace('\%e', '.*')
+    rphp = rphp.replace('\%x', '^[0-9A-F]+$')
     rphp = rphp.replace('\%s', '.*')
     rphp = rphp.replace('\%a', '.*')
     rphp = rphp.replace('\%f', '.*')
@@ -2978,7 +2979,6 @@ markers[hash_test_dir] = {
 }
 
 markers[mcrypt_test_dir] = {
-    'bug55169.phpt': 'create_iv missing',
     'mcrypt_decrypt_variation4.phpt': 'missing obj to str cast one warn level 8',
     'mcrypt_ecb_variation4.phpt': 'missing obj to str cast one warn level 8',
     'mcrypt_encrypt_variation4.phpt': 'missing obj to str cast one warn level 8',
