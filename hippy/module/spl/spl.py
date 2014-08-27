@@ -7,7 +7,8 @@ from hippy.objects.resources.file_resource import W_FileResource
 from hippy.objects.resources.dir_resource import W_DirResource
 from hippy.error import PHPException
 from hippy.builtin_klass import (def_class, k_RuntimeException,
-    k_LogicException, k_UnexpectedValueException, GetterSetterWrapper)
+    k_LogicException, k_UnexpectedValueException, GetterSetterWrapper,
+    k_SeekableIterator, k_RecursiveIterator)
 from hippy.module.standard.file.funcs import (_is_dir, _is_file, _is_link,
     _is_executable, _is_readable, _is_writable, _filetype, _fseek, _fstat,
     _fopen, _basename, FopenError)
@@ -756,7 +757,7 @@ SplFileObjectClass = def_class(
         ('READ_AHEAD', W_IntObject(SFO_READ_AHEAD)),
         ('SKIP_EMPTY', W_IntObject(SFO_SKIP_EMPTY)),
         ('READ_CSV', W_IntObject(SFO_READ_CSV))],
-    implements=["RecursiveIterator", "SeekableIterator"],
+    implements=[k_RecursiveIterator, k_SeekableIterator],
     instance_class=W_SplFileObject,
     extends=k_SplFileInfo,)
 
@@ -1093,7 +1094,7 @@ k_DirectoryIterator = def_class(
      di_getctime,
      di_getmtime,
      di_tostring],
-    implements=["SeekableIterator"],
+    implements=[k_SeekableIterator],
     instance_class=W_DirectoryIterator,
     extends=k_SplFileInfo,)
 
@@ -1216,7 +1217,7 @@ k_FilesystemIterator = def_class(
         ('SKIP_DOTS', W_IntObject(FI_SKIP_DOTS)),
         ('UNIX_PATHS', W_IntObject(FI_UNIX_PATHS)),
         ('OTHER_MODE_MASK', W_IntObject(FI_OTHER_MODE_MASK))],
-    implements=['SeekableIterator'],
+    implements=[k_SeekableIterator],
     instance_class=W_FilesystemIterator,
     extends=k_DirectoryIterator,)
 
@@ -1311,6 +1312,6 @@ k_RecursiveDirectoryIterator = def_class(
      rdi_get_children,
      rdi_get_subpath,
      rdi_get_subpathname, ],
-    implements=['SeekableIterator', 'RecursiveIterator'],
+    implements=[k_SeekableIterator, k_RecursiveIterator],
     instance_class=W_RecursiveDirectoryIterator,
     extends=k_FilesystemIterator,)

@@ -637,10 +637,8 @@ def def_class(name, methods=[], properties=[], constants=[],
 class BuiltinClass(ClassBase):
     def __init__(self, name,
                  methods=[], properties=[], constants=[], instance_class=None,
-                 flags=0, implements=[], extends=None, is_iterator=False, is_array_access=False):
-        implements = [(intf if isinstance(intf, BuiltinClass) else
-            all_builtin_classes[intf]) for intf in implements]
-
+                 flags=0, implements=[], extends=None, is_iterator=False,
+                 is_array_access=False):
         ClassBase.__init__(self, name)
 
         self.immediate_parents = []
