@@ -7,8 +7,8 @@ from hippy.objects.resources.file_resource import W_FileResource
 from hippy.objects.resources.dir_resource import W_DirResource
 from hippy.error import PHPException
 from hippy.builtin_klass import (def_class, k_RuntimeException,
-    k_LogicException, k_UnexpectedValueException, GetterSetterWrapper,
-    k_SeekableIterator, k_RecursiveIterator)
+    k_LogicException, k_UnexpectedValueException, GetterSetterWrapper)
+from hippy.module.spl.interface import k_SeekableIterator, k_RecursiveIterator
 from hippy.module.standard.file.funcs import (_is_dir, _is_file, _is_link,
     _is_executable, _is_readable, _is_writable, _filetype, _fseek, _fstat,
     _fopen, _basename, FopenError)
