@@ -431,6 +431,8 @@ markers[dir_test_dir] = {
 
 # FILE
 markers[file_test_dir] = {
+    'bug26615.phpt': 'SKIP: requires TEST_PHP_EXECUTABLE in env',
+    'bug26938.phpt': 'SKIP: requires TEST_PHP_EXECUTABLE in env',
     '001.phpt': "?",
     '004.phpt': "missing mkd5_file()",
     'bug12556.phpt': "?",
@@ -441,9 +443,7 @@ markers[file_test_dir] = {
     'bug45303.phpt': "nightmare...",
     'bug45303.phpt': "nightmare...",
     'bug52624.phpt': "nightmare...",
-    'bug22414.phpt': "missing passthru()",
-    'bug26615.phpt': "missing exec()",
-    'bug26938.phpt': "missing exec()",
+    'bug22414.phpt': "missing md5_file()",
     'bug27508.phpt': "missing stream_wrapper_register()",
     'bug27619.phpt': "?",
     'bug30362.phpt': "missing stream_get_line()",
@@ -469,7 +469,7 @@ markers[file_test_dir] = {
     'bug53848.phpt': "?",
     'bug63512.phpt': "missing parse_ini_string()",
     'directory_wrapper_fstat_basic.phpt': "?",
-    'clearstatcache_001.phpt': "missing passthru()",
+    'clearstatcache_001.phpt': "?",
     'copy_variation4.phpt': "imo whole expect is wrong",
     'copy_variation3.phpt': "imo whole expect is wrong",
     'fgetc_variation1.phpt': "compile None",
@@ -700,10 +700,8 @@ markers[posix_test_dir] = {
     'posix_access.phpt': "Expecting: Deprecated: Directive safe_mode is ...",  # Update the tests to PHP 5.4
     'posix_access_error_modes.phpt': "Expecting: Deprecated: Directive safe_mode is ...",
     'posix_access_safemode.phpt': "Expecting: Deprecated: Directive safe_mode is ...",
-    'posix_kill_basic.phpt': "missing shell_exec()",
     'posix_ttyname.phpt': "OSError: [Errno 25] Inappropriate ioctl for device",
     'posix_ttyname_variation6.phpt': "Missing:  Error: 8 - Object of class classWithToString could not be converted to int",
-    'posix_errno_variation2.phpt': 'missing shell_exec()',
     'posix_getgrgid_basic.phpt': 'Problems with the %a format in the test. Output looks good',
     'posix_getgrgid_macosx.phpt': 'Test should be skipped in platforms other than mac',
     'posix_ttyname_error_wrongparams.phpt': 'missing imagecreate()',
@@ -721,10 +719,6 @@ markers[string_test_dir] = {
     'htmlentities22.phpt': "named constant in default args",
     'setlocale_error.phpt': ("not implemented: (deprecated) "
                              "category names as strings"),
-    'setlocale_basic1.phpt': ("?"),
-    'setlocale_basic2.phpt': ("?"),
-    'setlocale_basic3.phpt': ("?"),
-    'setlocale_variation1.phpt': ("?"),
     'setlocale_variation4.phpt': ("expects en_US as "
                                   "default system locale"),
     'setlocale_variation5.phpt': ("expects en_US as "
@@ -888,7 +882,6 @@ markers[string_test_dir] = {
     'parse_str_basic4.phpt': "not implemented",
     # 'parse_str_error1.phpt': "not implemented",
     'php_strip_whitespace.phpt': "not implemented",
-    'setlocale_variation2.phpt': "not implemented",
     'sha1.phpt': 'sha1_file not implemented',
     'sha1_file.phpt': "not implemented",
     'show_source_basic.phpt': "not implemented",
@@ -999,8 +992,6 @@ markers[general_test_dir] = {
     'bug48768.phpt': "not implemented",
     'bug49056.phpt': "not implemented",
     'bug49692.phpt': "not implemented",
-    'bug49847.phpt': "not implemented",
-    'bug50732.phpt': "not implemented",
     'bug52138.phpt': "not implemented",
     'bug55371.phpt': "not implemented",
     'bug60723.phpt': "not implemented",
@@ -1681,6 +1672,7 @@ markers[Zend_test_dir] = {
     'bug40236.phpt': 'TEST_PHP_EXECUTABLE in env, should only run with -A',
     'bug48408.phpt': slow,
     'bug48409.phpt': slow,
+    'bug60978.phpt': 'SKIP: requires TEST_PHP_EXECUTABLE in env',
     'closure_021.phpt': slow,
     'exception_007.phpt': slow,
     '001.phpt': 'missing warnings around calling functions with wrong number '
@@ -1888,7 +1880,6 @@ markers[Zend_test_dir] = {
     'bug60825.phpt': "?",
     'bug60909_1.phpt': "missing register_shutdown_function()",
     'bug60909_2.phpt': "missing register_shutdown_function()",
-    'bug60978.phpt': "missing exec()",
     'bug61087.phpt': "missing parse_ini_file()",
     'bug61225.phpt': "unexpected T_STRING",
     'bug61273.phpt': "call_user_func_array()",
@@ -2827,7 +2818,6 @@ markers[spl_test_dir] = {
     'SplDoublyLinkedList_top_pass_null.phpt': "?",
     'SplDoublyLinkedList_unshift_missing_parameter.phpt': "?",
     'SplFileInfo_getGroup_error.phpt': "No frames for builtin methods",
-    'SplFileInfo_getInode_basic.phpt': "Missing shell_exec()",
     'SplFileInfo_getInode_error.phpt': "No frames for builtin methods",
     'SplFileInfo_getOwner_error.phpt': "No frames for builtin methods",
     'SplFileInfo_getPerms_error.phpt': "No frames for builtin methods",
