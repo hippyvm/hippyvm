@@ -704,10 +704,6 @@ markers[string_test_dir] = {
     'htmlentities22.phpt': "named constant in default args",
     'setlocale_error.phpt': ("not implemented: (deprecated) "
                              "category names as strings"),
-    'setlocale_basic1.phpt': ("?"),
-    'setlocale_basic2.phpt': ("?"),
-    'setlocale_basic3.phpt': ("?"),
-    'setlocale_variation1.phpt': ("?"),
     'setlocale_variation4.phpt': ("expects en_US as "
                                   "default system locale"),
     'setlocale_variation5.phpt': ("expects en_US as "
@@ -871,7 +867,6 @@ markers[string_test_dir] = {
     'parse_str_basic4.phpt': "not implemented",
     # 'parse_str_error1.phpt': "not implemented",
     'php_strip_whitespace.phpt': "not implemented",
-    'setlocale_variation2.phpt': "not implemented",
     'sha1.phpt': 'sha1_file not implemented',
     'sha1_file.phpt': "not implemented",
     'show_source_basic.phpt': "not implemented",
@@ -982,8 +977,6 @@ markers[general_test_dir] = {
     'bug48768.phpt': "not implemented",
     'bug49056.phpt': "not implemented",
     'bug49692.phpt': "not implemented",
-    'bug49847.phpt': "not implemented",
-    'bug50732.phpt': "not implemented",
     'bug52138.phpt': "not implemented",
     'bug55371.phpt': "not implemented",
     'bug60723.phpt': "not implemented",
