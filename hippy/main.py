@@ -136,7 +136,7 @@ def main(filename, rest_of_args, cgi, gcdump, debugger_pipes=(-1, -1),
         print 'Could not open input file: %s' % filename
         return 2
     except Exception as e:
-        print 'Got exception %s with message %s' % (e.__class__.__main__, e)
+        print 'Got exception %s with message %s' % (e.__class__.__name__, e)
         return 2
     #
     if bench_mode:
