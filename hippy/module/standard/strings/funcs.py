@@ -692,7 +692,7 @@ def hex2bin(space, data):
     builder = StringBuilder(len(data) / 2)
     for i in xrange(0, len(data), 2):
         try:
-            char = chr(int(data[i:i+2], 16))
+            char = chr(hexdigit(data[i]) << 4 | hexdigit(data[i + 1]))
         except ValueError:
             return space.w_False
         builder.append(char)
