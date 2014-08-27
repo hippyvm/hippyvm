@@ -693,7 +693,7 @@ def hex2bin(space, data):
     for i in xrange(0, len(data), 2):
         try:
             char = chr(hexdigit(data[i]) << 4 | hexdigit(data[i + 1]))
-        except ValueError:
+        except AssertionError:
             return space.w_False
         builder.append(char)
 
