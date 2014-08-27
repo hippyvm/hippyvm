@@ -640,6 +640,13 @@ class BuiltinClass(ClassBase):
                  flags=0, implements=[], extends=None, is_iterator=False,
                  is_array_access=False):
         ClassBase.__init__(self, name)
+        for func in methods:
+            meth = Method(func, func.flags, self)
+            self.methods[meth.get_identifier()] = meth
+        for prop in properties:
+            self._make_property(prop, w_Null)
+        for name, w_value in constants:
+            self.constants_w[name] = w_value
 
         self.immediate_parents = []
         if extends is not None:
@@ -663,14 +670,6 @@ class BuiltinClass(ClassBase):
             self.immediate_parents.append(self.parentclass)
         else:
             self.custom_instance_class = instance_class
-
-        for func in methods:
-            meth = Method(func, func.flags, self)
-            self.methods[meth.get_identifier()] = meth
-        for prop in properties:
-            self._make_property(prop, w_Null)
-        for name, w_value in constants:
-            self.constants_w[name] = w_value
 
         self.access_flags = flags
         self.base_interface_names = [intf.name for intf in implements]
