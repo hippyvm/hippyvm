@@ -69,16 +69,20 @@ def _tuple_literal(names):
     else:
         return '()'
 
+
 def handle_as_warning(interp, message):
     raise WrongParameters(message)
+
 
 def handle_as_exception(interp, message):
     from hippy.builtin_klass import k_Exception
     raise PHPException(k_Exception.call_args(
         interp, [interp.space.wrap(message)]))
 
+
 def handle_as_void(interp, message):
     raise ExitSilently()
+
 
 def argument_not(interp, _type, funcname, arg_num, given_tp, handler):
     message = "%s() expects parameter %d to be %s, %s given" % \
@@ -629,45 +633,44 @@ class BuiltinFunctionBuilder(object):
 
         source = self.make_source(check_num_args)
         d = {
-             'fname': self.funcname,
+            'fname': self.funcname,
+            'argument_not': argument_not,
+            'arguments_exactly': arguments_exactly,
+            'error_handler': error_handler,
 
-             'argument_not': argument_not,
-             'arguments_exactly': arguments_exactly,
-             'error_handler': error_handler,
+            'warn_exactly': warn_exactly,
+            'warn_not_array': warn_not_array,
 
-             'warn_exactly': warn_exactly,
-             'warn_not_array': warn_not_array,
+            'warn_not_file_resource': warn_not_file_resource,
+            'warn_not_valid_file_resource': warn_not_valid_file_resource,
 
-             'warn_not_file_resource': warn_not_file_resource,
-             'warn_not_valid_file_resource': warn_not_valid_file_resource,
+            'warn_not_resource': warn_not_resource,
+            'warn_not_valid_resource': warn_not_valid_resource,
 
-             'warn_not_resource': warn_not_resource,
-             'warn_not_valid_resource': warn_not_valid_resource,
+            'warn_not_stream_context': warn_not_stream_context,
+            'warn_not_valid_stream_context': warn_not_valid_stream_context,
 
-             'warn_not_stream_context': warn_not_stream_context,
-             'warn_not_valid_stream_context': warn_not_valid_stream_context,
+            'warn_not_mysql_link': warn_not_mysql_link,
+            'warn_not_valid_mysql_link': warn_not_valid_mysql_link,
 
-             'warn_not_mysql_link': warn_not_mysql_link,
-             'warn_not_valid_mysql_link': warn_not_valid_mysql_link,
+            'warn_not_mysql_result': warn_not_mysql_result,
+            'warn_not_valid_mysql_result': warn_not_valid_mysql_result,
 
-             'warn_not_mysql_result': warn_not_mysql_result,
-             'warn_not_valid_mysql_result': warn_not_valid_mysql_result,
-
-             'warn_not': warn_not,
-             'warn_could_not_convert_to_str': warn_could_not_convert_to_str,
-             'warn_at_least': warn_at_least,
-             'warn_at_most': warn_at_most,
-
-             'check_reference': check_reference,
-             'unroll_safe': jit.unroll_safe,
-             'W_FileResource': W_FileResource,
-             'W_DirResource': W_DirResource,
-             'W_ArrayObject': W_ArrayObject,
-             'W_InstanceObject': W_InstanceObject,
-             'FatalError': FatalError,
-             'ConvertError': ConvertError,
-             'ExitSilently': ExitSilently,
-            }
+            'warn_not': warn_not,
+            'warn_could_not_convert_to_str': warn_could_not_convert_to_str,
+            'warn_at_least': warn_at_least,
+            'warn_at_most': warn_at_most,
+            'warn_not_mcrypt_res': warn_not_mcrypt_res,
+            'check_reference': check_reference,
+            'unroll_safe': jit.unroll_safe,
+            'W_FileResource': W_FileResource,
+            'W_DirResource': W_DirResource,
+            'W_ArrayObject': W_ArrayObject,
+            'W_InstanceObject': W_InstanceObject,
+            'FatalError': FatalError,
+            'ConvertError': ConvertError,
+            'ExitSilently': ExitSilently,
+        }
 
         from hippy.hippyoption import is_optional_extension_enabled
         if is_optional_extension_enabled("mysql"):
@@ -818,6 +821,11 @@ def warn_not_mysql_result(space, funcname, arg_num, res_id, given_tp):
 
 def warn_not_valid_mysql_result(space, funcname, arg_num, res_id, given_tp):
     raise WrongParameters("%s(): %d is not a valid MySQL result resource" %
+                          (funcname, res_id), w_False)
+
+
+def warn_not_mcrypt_res(space, funcname, arg_num, res_id, given_tp):
+    raise WrongParameters("%s(): %d is not a valid MCrypt resource" %
                           (funcname, res_id), w_False)
 
 
