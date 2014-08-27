@@ -2106,10 +2106,10 @@ class SourceParser(BaseParser):
         if len(s) > 20:
             s = s[:17] + "..."
         if token.name == s:
-            message = ("syntax error, unexpected \'%s\', in %s" %
+            message = ("syntax error, unexpected \'%s\' in %s" %
                           (s, self.filename))
         else:
-            message = ("syntax error, unexpected \'%s\' (%s), in %s" %
+            message = ("syntax error, unexpected \'%s\' (%s) in %s" %
                           (s, token.name, self.filename))
         raise ParseError(message, token.getsourcepos())
 

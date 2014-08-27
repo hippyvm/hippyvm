@@ -1980,6 +1980,7 @@ markers[Zend_test_dir] = {
     'exception_handler_004.phpt': "?",
     'exception_handler_006.phpt': "?",
     'fr47160.phpt': "?",
+    'function_arguments_002.php': 'PHP syntax error say what token it was expecting',
     'gc_001.phpt': "?",
     'gc_002.phpt': "?",
     'gc_003.phpt': "?",
