@@ -21,6 +21,7 @@ from hippy.objspace import getspace
 from hippy.error import ExplicitExitException, InterpreterError, SignalReceived
 from hippy.config import load_ini
 from hippy.sourceparser import ParseError
+from hippy.lexer import LexerError
 from rpython.rlib.rgc import dump_rpy_heap
 from rpython.rlib.objectmodel import we_are_translated
 from rpython.rlib import rpath
@@ -125,8 +126,17 @@ def main(filename, rest_of_args, cgi, gcdump, debugger_pipes=(-1, -1),
 
     try:
         bc = space.bytecode_cache.compile_file(absname, space)
-    except:
-        print "Error opening %s" % filename
+    except ParseError as e:
+        print 'Parse error:  %s' % e
+        return 2
+    except LexerError as e:
+        print 'Parse error:  %s on line %d' % (e.message, e.source_pos + 1)
+        return 2
+    except IOError as e:
+        print 'Could not open input file: %s' % filename
+        return 2
+    except Exception as e:
+        print 'Got exception %s with message %s' % (e.__class__.__name__, e)
         return 2
     #
     if bench_mode:
