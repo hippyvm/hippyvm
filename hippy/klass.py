@@ -640,6 +640,7 @@ class BuiltinClass(ClassBase):
                  flags=0, implements=[], extends=None, is_iterator=False,
                  is_array_access=False):
         ClassBase.__init__(self, name)
+        self._init_instance_class(extends, instance_class)
         for func in methods:
             meth = Method(func, func.flags, self)
             self.methods[meth.get_identifier()] = meth
@@ -656,20 +657,11 @@ class BuiltinClass(ClassBase):
             if self.constructor_method is None:
                 self.constructor_method = extends.constructor_method
 
-            if instance_class is None:
-                self.custom_instance_class = extends.custom_instance_class
-            else:
-                assert extends.custom_instance_class is None or issubclass(
-                    instance_class, extends.custom_instance_class)
-                self.custom_instance_class = instance_class
-
             for method in extends.methods.itervalues():
                 self._inherit_method(method)
             for p in extends.properties.itervalues():
                 self._inherit_property(p)
             self.immediate_parents.append(self.parentclass)
-        else:
-            self.custom_instance_class = instance_class
 
         self.access_flags = flags
         self.base_interface_names = [intf.name for intf in implements]
@@ -699,6 +691,17 @@ class BuiltinClass(ClassBase):
         for base in self.immediate_parents:
             for parent_id in base.all_parents:
                 self.all_parents[parent_id] = None
+
+    def _init_instance_class(self, extends, instance_class):
+        if extends is not None:
+            if instance_class is None:
+                self.custom_instance_class = extends.custom_instance_class
+            else:
+                assert extends.custom_instance_class is None or issubclass(
+                    instance_class, extends.custom_instance_class)
+                self.custom_instance_class = instance_class
+        else:
+            self.custom_instance_class = instance_class
 
 
 class ClassDeclaration(AbstractFunction, AccessMixin):
