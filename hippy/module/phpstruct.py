@@ -55,27 +55,27 @@ def _pack_string(pack_obj, fmtdesc, count, pad):
     pack_obj.arg_index += 1
 
     if len(string) < count:
-        pack_obj.result.extend(list(string))
+        pack_obj.result.append(string)
         if count != sys.maxint:
-            pack_obj.result.extend(list(pad * (count - len(string))))
+            pack_obj.result.append(pad * (count - len(string)))
     else:
-        assert count > 0
-        pack_obj.result.extend(list(string[0:count]))
+        assert count >= 0
+        pack_obj.result.append(string[0:count])
 
 
 def pack_Z_nul_padded_string(pack_obj, fmtdesc, count):
     if pack_obj.arg_index >= len(pack_obj.arg_w):
         raise FormatException("not enough arguments")
     c = count - 1
-    assert c > 0
+    assert c >= 0
     string = pack_obj.space.str_w(
         pack_obj.arg_w[pack_obj.arg_index])[:c]
     pack_obj.arg_index += 1
 
-    pack_obj.result.extend(list(string) + ['\x00'])
+    pack_obj.result.append(string + '\x00')
 
     if len(pack_obj.result) < count:
-        pack_obj.result.extend(list('\x00' * (count - len(string) - 1)))
+        pack_obj.result.append('\x00' * (count - len(string) - 1))
 
 
 def pack_nul_padded_string(pack_obj, fmtdesc, count):
@@ -216,7 +216,7 @@ def pack_double(pack_obj, fmtdesc, count):
 def pack_nul_byte(pack_obj, fmtdesc, count):
 
     if count == sys.maxint:
-        raise FormatException(pack_obj.space, "'*' ignored")
+        raise FormatException("'*' ignored")
 
     for _ in range(count):
         pack_obj.result.append(chr(0x00))
@@ -241,7 +241,7 @@ def pack_nullfill_to_absolute_position(pack_obj, fmtdesc, count):
         raise FormatException("'*' ignored")
 
     if len(pack_obj.result) <= pack_obj.arg_index:
-        pack_obj.result.extend(list(chr(0x00) * count))
+        pack_obj.result.append(chr(0x00) * count)
     else:
         lenght_diff = count - len(pack_obj.result)
         if lenght_diff > 0:
@@ -268,7 +268,8 @@ def unpack_nul_padded_string(unpack_obj, fmtdesc, count, name):
         data.append(unpack_obj.string[unpack_obj.string_index])
         unpack_obj.string_index += 1
 
-    unpack_obj.result.append(('1%s' % name, "".join(data)))
+    unpack_obj.result.append(
+        UnpackContainer('1%s' % name, "".join(data), 0))
 
 
 def unpack_space_padded_string(unpack_obj, fmtdesc, count, name):
@@ -293,7 +294,8 @@ def unpack_space_padded_string(unpack_obj, fmtdesc, count, name):
         else:
             break
 
-    unpack_obj.result.append(('1%s' % name, "".join(data)))
+    unpack_obj.result.append(
+        UnpackContainer('1%s' % name, "".join(data), 0))
 
 
 def unpack_nul_padded_string_2(unpack_obj, fmtdesc, count, name):
@@ -315,7 +317,8 @@ def unpack_nul_padded_string_2(unpack_obj, fmtdesc, count, name):
 
         data.append(element)
 
-    unpack_obj.result.append(('1%s' % name, "".join(data)))
+    unpack_obj.result.append(
+        UnpackContainer('1%s' % name, "".join(data), 0))
 
 
 hex_digit = ['0', '1', '2', '3',
@@ -326,10 +329,8 @@ hex_digit = ['0', '1', '2', '3',
 
 def unpack_hex_string(unpack_obj, fmtdesc, count, name,
                       high_nibble_first=False):
-    import pdb; pdb.set_trace()
     data = []
     count = count / 2 + count % 2
-
     for _ in range(count):
 
         if unpack_obj.string_index >= len(unpack_obj.string):
@@ -344,7 +345,7 @@ def unpack_hex_string(unpack_obj, fmtdesc, count, name,
 
         nibbles = element % 16, element / 16
         if high_nibble_first:
-            nibbles = nibbles[::-1]
+            nibbles = element / 16, element % 16
 
         nibbles_digits = hex_digit[nibbles[0]], hex_digit[nibbles[1]]
 
@@ -353,7 +354,8 @@ def unpack_hex_string(unpack_obj, fmtdesc, count, name,
         else:
             data.append(nibbles_digits[0])
 
-    unpack_obj.result.append(("1%s" % name, "".join(data)))
+    unpack_obj.result.append(
+        UnpackContainer("1%s" % name, "".join(data), 0))
 
 
 def unpack_hex_string_low_nibble_first(unpack_obj, fmtdesc, count, name):
@@ -365,12 +367,11 @@ def unpack_hex_string_high_nibble_first(unpack_obj, fmtdesc, count, name):
 
 
 def unpack_int(unpack_obj, fmtdesc, count, name):
-    result = []
     for pos in range(count):
         a = unpack_obj.string_index
         b = unpack_obj.string_index+fmtdesc.size
-        assert a > 0
-        assert b > 0
+        assert a >= 0
+        assert b >= 0
         data = unpack_obj.string[
             a:b
         ]
@@ -397,10 +398,12 @@ def unpack_int(unpack_obj, fmtdesc, count, name):
                 if fmtdesc.signed and i == fmtdesc.size - 1 and byte > 128:
                     byte -= 256
                 value |= byte << i*8
-
-        result.append((("%s%s" % (name, pos+1)), intmask(value)))
-
-    unpack_obj.result.extend(result)
+        if name is not None:
+            unpack_obj.result.append(
+                UnpackContainer("%s%d" % (name, pos + 1), None, intmask(value)))
+        else:
+            unpack_obj.result.append(
+                UnpackContainer("%d" % (pos + 1), None, intmask(value)))
 
 
 def unpack_signed_char(unpack_obj, fmtdesc, count):
@@ -411,9 +414,12 @@ def unpack_float(unpack_obj, fmtdesc, count, name):
 
     result = []
     for pos in range(count):
-
+        a = unpack_obj.string_index
+        b = unpack_obj.string_index+fmtdesc.size
+        assert a >= 0
+        assert b >= 0
         data = unpack_obj.string[
-            unpack_obj.string_index:unpack_obj.string_index+fmtdesc.size
+            a:b
         ]
 
         if not len(data) == fmtdesc.size:
@@ -426,12 +432,13 @@ def unpack_float(unpack_obj, fmtdesc, count, name):
         unpack_obj.string_index += fmtdesc.size
 
         p = rffi.cast(rffi.CCHARP, float_buf)
-
-        for i, element in enumerate(data[fmtdesc.size*-1:]):
+        assert fmtdesc.size >= 0
+        for i, element in enumerate(data[:fmtdesc.size]):
             p[i] = element
 
         floatval = float_buf[0]
-        result.append((("%s%s" % (name, pos+1)), float(floatval)))
+        result.append(
+            UnpackContainer("%s%s" % (name, pos+1), None, float(floatval)))
 
     unpack_obj.result.extend(result)
 
@@ -441,8 +448,12 @@ def unpack_double(unpack_obj, fmtdesc, count, name):
     result = []
     for pos in range(count):
 
+        a = unpack_obj.string_index
+        b = unpack_obj.string_index+fmtdesc.size
+        assert a >= 0
+        assert b >= 0
         data = unpack_obj.string[
-            unpack_obj.string_index:unpack_obj.string_index+fmtdesc.size
+            a:b
         ]
 
         if not len(data) == fmtdesc.size:
@@ -455,17 +466,18 @@ def unpack_double(unpack_obj, fmtdesc, count, name):
         unpack_obj.string_index += fmtdesc.size
 
         p = rffi.cast(rffi.CCHARP, double_buf)
-
-        for i, element in enumerate(data[fmtdesc.size*-1:]):
+        assert fmtdesc.size >= 0
+        for i, element in enumerate(data[:fmtdesc.size]):
             p[i] = element
 
         value = double_buf[0]
-        result.append((("%s%s" % (name, pos+1)), value))
+        result.append(
+            UnpackContainer("%s%s" % (name, pos+1), None, value))
 
     unpack_obj.result.extend(result)
 
 
-def unpack_nul_byte(space, data, result, fmtdesc, count):
+def unpack_nul_byte(unpack_obj, fmtdesc, count, name):
      # Do nothing with input, just skip it
     pass
 
@@ -669,6 +681,13 @@ class Pack(object):
         return "".join(self.result)
 
 
+class UnpackContainer(object):
+    def __init__(self, name, str_value, num_value):
+        self.name = name
+        self.str_value = str_value
+        self.num_value = num_value
+
+
 class Unpack(object):
 
     def __init__(self, fmt, string):
@@ -676,7 +695,7 @@ class Unpack(object):
         self.string = string
         self.string_index = 0
 
-        # self.table = unroll_fmttable
+        self.table = unroll_fmttable
         self.result = []
 
     def _get_fmtdect(self, char):
@@ -707,61 +726,6 @@ class Unpack(object):
             pass
         return results
 
-
-    # def interpret2(self):
-    #     results = []
-
-    #     index = 0
-    #     repetitions = 1
-    #     fmt = self.fmt
-    #     while index < len(fmt):
-
-    #         format_name_elements = []
-    #         format_name = ""
-
-    #         element = fmt[index]
-    #         index += 1
-
-    #         if element.isspace():
-    #             continue
-
-    #         repetitions = None
-    #         if index < len(fmt):
-    #             assert index >= 0
-    #             while index < len(fmt) and fmt[index].isdigit():
-
-    #                 if repetitions is None:
-    #                     repetitions = 0
-
-    #                 repetitions = repetitions * 10
-    #                 repetitions = repetitions + (
-    #                     ord(fmt[index]) - ord('0'))
-
-    #                 index += 1
-
-    #             if repetitions is None and fmt[index] == '*':
-    #                 repetitions = sys.maxint
-    #                 index += 1
-
-    #         if repetitions is None:
-    #             repetitions = 1
-
-    #         while index < len(fmt) and fmt[index] != '/':
-    #             format_name_elements.append(fmt[index])
-    #             index += 1
-
-    #         format_name = "".join(format_name_elements)
-
-    #         if index < len(fmt) and fmt[index] == '/':
-    #             index += 1
-
-    #         for fmtdesc in self.table:
-    #             if element == fmtdesc.fmtchar:
-    #                 results.append((fmtdesc, repetitions, format_name))
-    #                 break
-    #     import pdb; pdb.set_trace()
-    #     return results
-
     def build(self):
         self.fmt_interpreted = self.interpret()
 
@@ -779,13 +743,17 @@ def pack(space, formats, args_w):
     return space.newstr(results)
 
 
-# @wrap(['space', StringArg(None), StringArg(None)])
 def _unpack(space, formats, string):
     try:
         results = Unpack(formats, string).build()
     except FormatException as e:
         space.ec.warn("unpack(): Type %s: %s" % (e.char, e.message))
         return space.w_False
+    pairs = []
+    for uc in results:
+        if uc.str_value:
+            pairs.append((space.wrap(uc.name), space.wrap(uc.str_value)))
+        else:
+            pairs.append((space.wrap(uc.name), space.wrap(uc.num_value)))
 
-    return space.new_array_from_pairs(
-        [(space.wrap(k), space.wrap(v)) for k, v in results])
+    return space.new_array_from_pairs(pairs)
