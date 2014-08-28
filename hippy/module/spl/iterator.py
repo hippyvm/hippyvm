@@ -2,6 +2,7 @@ from hippy.klass import def_class
 from hippy.builtin import wrap_method, ThisUnwrapper
 from hippy.objects.instanceobject import W_InstanceObject
 from hippy.module.spl.interface import k_OuterIterator
+from hippy.module.spl.arrayiter import k_ArrayIterator
 
 
 class W_IteratorIterator(W_InstanceObject):
@@ -50,3 +51,16 @@ k_IteratorIterator = def_class(
      ii_rewind, ii_valid],
     implements=[k_OuterIterator],
     instance_class=W_IteratorIterator)
+
+
+@wrap_method(['interp', ThisUnwrapper(W_IteratorIterator)],
+             name='AppendIterator::__construct')
+def ai_construct(interp, this):
+    this.inner = k_ArrayIterator.call_args(interp, [])
+
+
+k_AppendIterator = def_class(
+    'AppendIterator',
+    [ai_construct],
+    extends=k_IteratorIterator,
+    implements=[k_OuterIterator])
