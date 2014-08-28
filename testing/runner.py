@@ -7,6 +7,12 @@ from hippy.interpreter import Interpreter
 from hippy.error import FatalError, ExplicitExitException
 from hippy.objects.base import W_Root
 
+# Check for the php executable -- this is a prerequisite.
+# If we catch this now, then we can avoid obscure errors later on.
+from distutils.spawn import find_executable
+if find_executable("php") is None:
+    raise RuntimeError("I could not find the 'php' executable!")
+
 def preparse(source):
     """Preparse the source a bit so traceback starts with the
     correct number of whitespaces."""

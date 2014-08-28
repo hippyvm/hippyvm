@@ -6,11 +6,11 @@ from hippy.builtin_klass import GetterSetterWrapper
 
 
 
-class W_ReflectionFunctionAbstractObject(W_InstanceObject):
+class W_ReflectionFunctionAbstract(W_InstanceObject):
     pass
 
 
-@wrap_method(['interp', ThisUnwrapper(W_ReflectionFunctionAbstractObject)],
+@wrap_method(['interp', ThisUnwrapper(W_ReflectionFunctionAbstract)],
              name='ReflectionFunctionAbstract::getName')
 def get_name(interp, this):
     return _get_name(interp, this)
@@ -36,5 +36,5 @@ ReflectionFunctionAbstract = def_class(
      GetterSetterWrapper(_get_name, _set_name, "name", consts.ACC_PUBLIC)],
     [],
     flags=consts.ACC_ABSTRACT,
-    instance_class=W_ReflectionFunctionAbstractObject
+    instance_class=W_ReflectionFunctionAbstract
 )

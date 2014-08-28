@@ -6,17 +6,17 @@ from hippy.builtin import wrap_method, ThisUnwrapper
 from hippy.builtin_klass import GetterSetterWrapper
 from hippy.objects.closureobject import W_ClosureObject
 
-from hippy.module.reflections.parameter import ReflectionParameter
+from hippy.module.reflections.parameter import k_ReflectionParameter
 
 from hippy.module.reflections.function_abstract import (
-    ReflectionFunctionAbstract, W_ReflectionFunctionAbstractObject
+    ReflectionFunctionAbstract, W_ReflectionFunctionAbstract
 )
 
 
 IS_DEPRECATED = 262144
 
 
-class W_ReflectionFunctionObject(W_ReflectionFunctionAbstractObject):
+class W_ReflectionFunction(W_ReflectionFunctionAbstract):
     pass
 
 
@@ -52,7 +52,7 @@ class NameWrapper(Wrapper):
         parameters = []
         for i in range(len(args)):
             parameters.append((self.space.wrap(i),
-                ReflectionParameter.call_args(
+                k_ReflectionParameter.call_args(
                     self.interp,
                     [self.space.wrap(self.name), self.space.wrap(i)]
                 )
@@ -62,7 +62,7 @@ class NameWrapper(Wrapper):
 
 
 
-@wrap_method(['interp', ThisUnwrapper(W_ReflectionFunctionObject), W_Root],
+@wrap_method(['interp', ThisUnwrapper(W_ReflectionFunction), W_Root],
              name='ReflectionFunction::__construct')
 def construct(interp, this, function):
     if isinstance(function, W_ClosureObject):
@@ -71,20 +71,20 @@ def construct(interp, this, function):
         this.ref_fun = NameWrapper(interp, function)
 
 
-@wrap_method(['interp', ThisUnwrapper(W_ReflectionFunctionAbstractObject)],
+@wrap_method(['interp', ThisUnwrapper(W_ReflectionFunction)],
              name='ReflectionFunction::getName')
 def get_name(interp, this):
     return this.ref_fun.get_name()
 
 
 
-@wrap_method(['interp', ThisUnwrapper(W_ReflectionFunctionAbstractObject)],
+@wrap_method(['interp', ThisUnwrapper(W_ReflectionFunction)],
              name='ReflectionFunction::getParameters')
 def get_parameters(interp, this):
     return this.ref_fun.get_parameters()
 
 
-@wrap_method(['interp', ThisUnwrapper(W_ReflectionFunctionAbstractObject)],
+@wrap_method(['interp', ThisUnwrapper(W_ReflectionFunction)],
              name='ReflectionFunction::getDocComment')
 def get_doc_comment(interp, this):
     return interp.space.wrap("")
@@ -105,6 +105,6 @@ def_class(
      get_parameters],
     [GetterSetterWrapper(_get_name, _set_name, "name", consts.ACC_PUBLIC)],
     [('IS_DEPRECATED', W_IntObject(IS_DEPRECATED))],
-    instance_class=W_ReflectionFunctionObject,
+    instance_class=W_ReflectionFunction,
     extends=ReflectionFunctionAbstract
 )

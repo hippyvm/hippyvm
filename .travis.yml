@@ -3,6 +3,13 @@ python:
   - "2.7"
 cache: apt
 
+env:
+  - TRANSLATE=true
+  - TESTDIR=testing/
+  - TESTDIR=test_phpt/[^e]*/
+  - TESTDIR="test_phpt/ext/ -k 'not standard'"
+  - TESTDIR=test_phpt/ext/standard/
+
 before_install:
   - sudo apt-get update -qq
   - sudo apt-get install -y libmysqlclient-dev
@@ -10,6 +17,8 @@ before_install:
   - sudo apt-get install -y librhash-dev
   - sudo apt-get install -y libbz2-dev
   - sudo apt-get install -y php5-cli
+  # Some locale tests require fr_FR.ISO-8859-1
+  - sudo apt-get install -y language-pack-fr
 
 install:
   - wget https://bitbucket.org/pypy/pypy/get/default.tar.gz

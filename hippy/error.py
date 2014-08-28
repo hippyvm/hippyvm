@@ -91,3 +91,7 @@ class VisibilityError(Exception):
         return 'VisibilityError(%r, %r, %r, %r)' % (self.visibility,
                                                     self.klass, self.name,
                                                     self.contextclass)
+
+
+class SignalReceived(Exception):
+    pass

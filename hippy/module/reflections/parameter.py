@@ -7,11 +7,11 @@ from hippy.builtin import wrap_method, ThisUnwrapper
 from hippy.builtin_klass import GetterSetterWrapper
 
 
-class W_ReflectionParameterObject(W_InstanceObject):
+class W_ReflectionParameter(W_InstanceObject):
     pass
 
 
-@wrap_method(['interp', ThisUnwrapper(W_ReflectionParameterObject), W_Root, int],
+@wrap_method(['interp', ThisUnwrapper(W_ReflectionParameter), W_Root, int],
              name='ReflectionParameter::__construct')
 def construct(interp, this, function, parameter):
 
@@ -33,7 +33,7 @@ def construct(interp, this, function, parameter):
         this.ref_parameter = signature.args[parameter]
 
 
-@wrap_method(['interp', ThisUnwrapper(W_ReflectionParameterObject)],
+@wrap_method(['interp', ThisUnwrapper(W_ReflectionParameter)],
              name='ReflectionParameter::getName')
 def get_name(interp, this):
     return _get_name(interp, this)
@@ -46,11 +46,11 @@ def _set_name(interp, this, w_value):
     pass
 
 
-ReflectionParameter = def_class(
+k_ReflectionParameter = def_class(
     'ReflectionParameter',
     [construct,
      get_name],
     [GetterSetterWrapper(_get_name, _set_name, "name", consts.ACC_PUBLIC)],
     [],
-    instance_class=W_ReflectionParameterObject
+    instance_class=W_ReflectionParameter
 )

@@ -7,7 +7,10 @@ from hippy.objects.intobject import W_IntObject
 from hippy.builtin_klass import GetterSetterWrapper
 from hippy.objects.instanceobject import W_InstanceObject
 from hippy.objects.strobject import W_ConstStringObject
-from hippy.builtin import wrap_method, ThisUnwrapper
+from hippy.builtin import wrap_method, ThisUnwrapper, Optional
+from hippy.module.reflections.property import (
+    IS_PUBLIC, IS_PROTECTED, IS_PRIVATE, IS_STATIC, W_ReflectionProperty,
+    k_ReflectionProperty)
 
 
 IS_IMPLICIT_ABSTRACT = 16
@@ -24,7 +27,7 @@ class ReflectionData(object):
         self.doc = doc
 
 
-class W_ReflectionObject(W_InstanceObject):
+class W_ReflectionClass(W_InstanceObject):
     refl_klass = None
 
     def get_refl_klass(self, interp):
@@ -34,7 +37,7 @@ class W_ReflectionObject(W_InstanceObject):
         return self.refl_klass
 
 
-@wrap_method(['interp', ThisUnwrapper(W_ReflectionObject), W_Root],
+@wrap_method(['interp', ThisUnwrapper(W_ReflectionClass), W_Root],
              name='ReflectionClass::__construct')
 def reflection_class_construct(interp, this, klass):
     space = interp.space
@@ -47,33 +50,39 @@ def reflection_class_construct(interp, this, klass):
         this.refl_klass = klass.getclass()
 
 
-@wrap_method(['interp', ThisUnwrapper(W_ReflectionObject), 'args_w'],
+@wrap_method(['interp', ThisUnwrapper(W_ReflectionClass), 'args_w'],
              name='ReflectionClass::newInstance')
 def reflection_class_new_instance(interp, this, args_w):
     return this.get_refl_klass(interp).call_args(interp, args_w)
 
 
-@wrap_method(['interp', ThisUnwrapper(W_ReflectionObject), W_Root],
+@wrap_method(['interp', ThisUnwrapper(W_ReflectionClass), W_Root],
              name='ReflectionClass::newInstanceArgs')
 def reflection_class_new_instance_args(interp, this, w_arr):
     args_w = interp.space.as_array(w_arr).as_list_w()
     return this.get_refl_klass(interp).call_args(interp, args_w)
 
 
-@wrap_method(['interp', ThisUnwrapper(W_ReflectionObject), str],
+@wrap_method(['interp', ThisUnwrapper(W_ReflectionClass), str],
+             name='ReflectionClass::hasConstant')
+def reflection_class_has_constant(interp, this, name):
+    return interp.space.wrap(name.lower() in this.refl_klass.constants_w.keys())
+
+
+@wrap_method(['interp', ThisUnwrapper(W_ReflectionClass), str],
              name='ReflectionClass::getConstant')
 def reflection_class_get_constant(interp, this, name):
     return this.refl_klass.lookup_w_constant(interp.space, name)
 
 
-@wrap_method(['interp', ThisUnwrapper(W_ReflectionObject)],
+@wrap_method(['interp', ThisUnwrapper(W_ReflectionClass)],
              name='ReflectionClass::getConstants')
 def reflection_class_get_constants(interp, this):
     items = [(interp.space.wrap(k), v) for k, v in this.refl_klass.constants_w.items()]
     return interp.space.new_array_from_pairs(items)
 
 
-@wrap_method(['interp', ThisUnwrapper(W_ReflectionObject)],
+@wrap_method(['interp', ThisUnwrapper(W_ReflectionClass)],
              name='ReflectionClass::getConstructor')
 def reflection_class_get_constructor(interp, this):
     return interp._class_get('ReflectionMethod').call_args(
@@ -82,7 +91,7 @@ def reflection_class_get_constructor(interp, this):
     )
 
 
-@wrap_method(['interp', ThisUnwrapper(W_ReflectionObject)],
+@wrap_method(['interp', ThisUnwrapper(W_ReflectionClass)],
              name='ReflectionClass::getDefaultProperties')
 def reflection_class_get_default_properties(interp, this):
     space = interp.space
@@ -93,21 +102,21 @@ def reflection_class_get_default_properties(interp, this):
     )
 
 
-@wrap_method(['interp', ThisUnwrapper(W_ReflectionObject)],
+@wrap_method(['interp', ThisUnwrapper(W_ReflectionClass)],
              name='ReflectionClass::getDocComment')
 def reflection_class_get_doc_comment(interp, this):
     doc = this.refl_klass.decl.reflection.doc
     return interp.space.wrap(doc)
 
 
-@wrap_method(['interp', ThisUnwrapper(W_ReflectionObject)],
+@wrap_method(['interp', ThisUnwrapper(W_ReflectionClass)],
              name='ReflectionClass::getEndLine')
 def reflection_class_get_end_line(interp, this):
     endline = this.refl_klass.decl.reflection.endline
     return interp.space.wrap(endline)
 
 
-@wrap_method(['interp', ThisUnwrapper(W_ReflectionObject)],
+@wrap_method(['interp', ThisUnwrapper(W_ReflectionClass)],
              name='ReflectionClass::getInterfaceNames')
 def reflection_class_get_interface_names(interp, this):
     klass = this.refl_klass
@@ -118,7 +127,7 @@ def reflection_class_get_interface_names(interp, this):
     )
 
 
-@wrap_method(['interp', ThisUnwrapper(W_ReflectionObject), str],
+@wrap_method(['interp', ThisUnwrapper(W_ReflectionClass), str],
              name='ReflectionClass::getMethod')
 def reflection_class_get_method(interp, this, name):
     return interp._class_get('ReflectionMethod').call_args(
@@ -126,7 +135,7 @@ def reflection_class_get_method(interp, this, name):
     )
 
 
-@wrap_method(['interp', ThisUnwrapper(W_ReflectionObject)],
+@wrap_method(['interp', ThisUnwrapper(W_ReflectionClass)],
              name='ReflectionClass::getMethods')
 def reflection_class_get_methods(interp, this):
     reflection_method_klass = interp._class_get('ReflectionMethod')
@@ -141,7 +150,7 @@ def reflection_class_get_methods(interp, this):
     return interp.space.new_array_from_list(methods)
 
 
-@wrap_method(['interp', ThisUnwrapper(W_ReflectionObject)],
+@wrap_method(['interp', ThisUnwrapper(W_ReflectionClass)],
              name='ReflectionClass::getModifiers')
 def reflection_class_get_modifiers(interp, this):
     methods = this.refl_klass.methods.values()
@@ -162,56 +171,93 @@ def reflection_class_get_modifiers(interp, this):
     return interp.space.wrap(bits)
 
 
-@wrap_method(['interp', ThisUnwrapper(W_ReflectionObject)],
+@wrap_method(['interp', ThisUnwrapper(W_ReflectionClass)],
              name='ReflectionClass::getName')
 def reflection_class_get_name(interp, this):
     return interp.space.wrap(this.refl_klass.name)
 
 
-@wrap_method(['interp', ThisUnwrapper(W_ReflectionObject)],
+@wrap_method(['interp', ThisUnwrapper(W_ReflectionClass)],
              name='ReflectionClass::getStartLine')
 def reflection_class_get_start_line(interp, this):
     startline = this.refl_klass.decl.reflection.startline
     return interp.space.wrap(startline)
 
 
-@wrap_method(['interp', ThisUnwrapper(W_ReflectionObject)],
+@wrap_method(['interp', ThisUnwrapper(W_ReflectionClass)],
              name='ReflectionClass::getExtension')
 def reflection_class_get_extension(interp, this):
     raise NotImplementedError
 
-@wrap_method(['interp', ThisUnwrapper(W_ReflectionObject)],
+@wrap_method(['interp', ThisUnwrapper(W_ReflectionClass)],
              name='ReflectionClass::getExtensionName')
 def reflection_class_get_extension_name(interp, this):
     raise NotImplementedError
 
 
-@wrap_method(['interp', ThisUnwrapper(W_ReflectionObject)],
+@wrap_method(['interp', ThisUnwrapper(W_ReflectionClass)],
              name='ReflectionClass::getInterfaces')
 def reflection_class_get_interfaces(interp, this):
     raise NotImplementedError
 
 
-@wrap_method(['interp', ThisUnwrapper(W_ReflectionObject)],
+@wrap_method(['interp', ThisUnwrapper(W_ReflectionClass)],
              name='ReflectionClass::getNamespaceName')
 def reflection_class_get_namespace_name(interp, this):
     raise NotImplementedError
 
 
-@wrap_method(['interp', ThisUnwrapper(W_ReflectionObject)],
+@wrap_method(['interp', ThisUnwrapper(W_ReflectionClass)],
              name='ReflectionClass::getFileName')
 def reflection_class_get_file_name(interp, this):
     filename = rpath.realpath(this.refl_klass.decl.reflection.filename)
     return interp.space.wrap(filename)
 
 
-@wrap_method(['interp', ThisUnwrapper(W_ReflectionObject)],
-             name='ReflectionClass::getproperties')
-def reflection_class_get_properties(interp, this):
-    raise NotImplementedError
+@wrap_method(['interp', ThisUnwrapper(W_ReflectionClass)],
+             name='ReflectionClass::getStaticProperties')
+def reflection_class_get_static_properties(interp, this):
+    static_property_values = []
+    for k, v in this.refl_klass.properties.items():
+        if v.is_static():
+            static_property_values.append(v.value)
+    return interp.space.new_array_from_list(static_property_values)
 
 
-@wrap_method(['interp', ThisUnwrapper(W_ReflectionObject), str],
+@wrap_method(['interp', ThisUnwrapper(W_ReflectionClass), Optional(int)],
+             name='ReflectionClass::getProperties')
+def reflection_class_get_properties(interp, this, flags=0):
+    properties = []
+    for name in this.refl_klass.properties.keys():
+        reflection_prop = k_ReflectionProperty.call_args(
+            interp, [interp.space.wrap(this.refl_klass.name),
+                     interp.space.wrap(name)])
+        assert isinstance(reflection_prop, W_ReflectionProperty)
+        prop_flags = reflection_prop.flags
+        if flags == 0:
+            properties.append(reflection_prop)
+
+        elif flags & prop_flags:
+            properties.append(reflection_prop)
+
+    return interp.space.new_array_from_list(properties)
+
+
+@wrap_method(['interp', ThisUnwrapper(W_ReflectionClass), str],
+             name='ReflectionClass::hasProperty')
+def reflection_class_has_property(interp, this, name):
+    return interp.space.wrap(name.lower() in this.refl_klass.properties)
+
+
+@wrap_method(['interp', ThisUnwrapper(W_ReflectionClass), str],
+             name='ReflectionClass::getProperty')
+def reflection_class_get_property(interp, this, name):
+    return interp._class_get('ReflectionProperty').call_args(
+        interp, [interp.space.wrap(this.refl_klass.name),
+                 interp.space.wrap(name)])
+
+
+@wrap_method(['interp', ThisUnwrapper(W_ReflectionClass), str],
              name='ReflectionClass::isSubclassOf')
 def reflection_class_is_subclass_of(interp, this, name):
     return interp.space.wrap(
@@ -219,7 +265,7 @@ def reflection_class_is_subclass_of(interp, this, name):
     )
 
 
-@wrap_method(['interp', ThisUnwrapper(W_ReflectionObject)],
+@wrap_method(['interp', ThisUnwrapper(W_ReflectionClass)],
              name='ReflectionClass::isInstantiable')
 def reflection_class_is_instantiable(interp, this):
 
@@ -238,13 +284,13 @@ def reflection_class_is_instantiable(interp, this):
     return interp.space.w_True
 
 
-@wrap_method(['interp', ThisUnwrapper(W_ReflectionObject), str],
+@wrap_method(['interp', ThisUnwrapper(W_ReflectionClass), str],
              name='ReflectionClass::hasMethod')
 def reflection_class_has_method(interp, this, name):
     return interp.space.wrap(name.lower() in this.refl_klass.methods)
 
 
-@wrap_method(['interp', ThisUnwrapper(W_ReflectionObject)],
+@wrap_method(['interp', ThisUnwrapper(W_ReflectionClass)],
              name='ReflectionClass::isAbstract')
 def reflection_class_is_abstract(interp, this):
     return interp.space.wrap(this.refl_klass.is_abstract())
@@ -262,6 +308,7 @@ def_class(
     [reflection_class_construct,
      reflection_class_new_instance,
      reflection_class_new_instance_args,
+     reflection_class_has_constant,
      reflection_class_get_constant,
      reflection_class_get_constants,
      reflection_class_get_constructor,
@@ -279,7 +326,10 @@ def_class(
      reflection_class_get_extension,
      reflection_class_get_extension_name,
      reflection_class_get_namespace_name,
+     reflection_class_get_static_properties,
      reflection_class_get_properties,
+     reflection_class_get_property,
+     reflection_class_has_property,
      reflection_class_is_subclass_of,
      reflection_class_is_instantiable,
      reflection_class_has_method,
@@ -288,5 +338,5 @@ def_class(
     [('IS_IMPLICIT_ABSTRACT', W_IntObject(IS_IMPLICIT_ABSTRACT)),
      ('IS_EXPLICIT_ABSTRACT', W_IntObject(IS_EXPLICIT_ABSTRACT)),
      ('IS_FINAL', W_IntObject(IS_FINAL))],
-    instance_class=W_ReflectionObject
+    instance_class=W_ReflectionClass
 )

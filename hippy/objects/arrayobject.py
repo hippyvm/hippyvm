@@ -2,10 +2,12 @@
 from rpython.rlib import jit
 from rpython.rlib.objectmodel import specialize, we_are_translated
 from rpython.rlib.rarithmetic import intmask
+from rpython.rlib.rstring import replace
 
 from hippy.objects.base import W_Object
 from hippy.objects.reference import W_Reference, VirtualReference
 from hippy.objects.convert import force_float_to_int_in_any_way
+from hippy.objects.strobject import string_var_export
 from hippy.error import ConvertError
 from collections import OrderedDict
 from rpython.rlib.rstring import StringBuilder
@@ -812,9 +814,6 @@ def array_var_export(dct_w, space, indent, recursion, w_reckey,
         # case where atrrib is protected...
         if key.startswith('\x00') and len(key) > 1:
             key = key[3:]
-        # case where key is \x00 .....
-        if key == '\x00':
-            key = '\' . \"\\0\" . \''
         if w_value is w_reckey:
             # space.ec.error("Nesting level too deep - recursive dependency?")
             space.ec.warn("var_export does not handle circular references")
@@ -824,7 +823,8 @@ def array_var_export(dct_w, space, indent, recursion, w_reckey,
             index = try_convert_str_to_int(key)
             s = '%s%d =>' % (subindent, index)
         except ValueError:
-            s = '%s\'%s\' =>' % (subindent, key)
+            key = string_var_export(key)
+            s = '%s%s =>' % (subindent, key)
 
         acc.append(s)
         if isinstance(w_value, W_ArrayObject):

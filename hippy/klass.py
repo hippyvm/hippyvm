@@ -51,7 +51,6 @@ def normalize_access(access_flags):
 
 class ClassBase(AbstractFunction, AccessMixin):
     access_flags = 0
-    extends_name = None
     base_interface_names = None
     constructor_method = None
     method__clone = None
@@ -278,6 +277,18 @@ class ClassBase(AbstractFunction, AccessMixin):
             return name[i+1:]
         else:
             return None
+
+    def get_methods(self, contextclass):
+        '''Returns a list of accessible method names for the given context.'''
+        methods = []
+        for method_name, method in self.methods.iteritems():
+            try:
+                self._visibility_check(method, method_name, contextclass)
+                methods.append(method.get_name())
+            except VisibilityError:
+                pass
+
+        return methods
 
     def lookup_staticmember(self, name, contextclass, check_visibility):
         property = self._lookup_property(name, contextclass, check_visibility)
@@ -628,37 +639,10 @@ def def_class(name, methods=[], properties=[], constants=[],
 class BuiltinClass(ClassBase):
     def __init__(self, name,
                  methods=[], properties=[], constants=[], instance_class=None,
-                 flags=0, implements=[], extends=None, is_iterator=False, is_array_access=False):
-        if extends is not None and not isinstance(extends, BuiltinClass):
-            extends = all_builtin_classes[extends]
-        implements = [(intf if isinstance(intf, BuiltinClass) else
-            all_builtin_classes[intf]) for intf in implements]
-
+                 flags=0, implements=[], extends=None, is_iterator=False,
+                 is_array_access=False):
         ClassBase.__init__(self, name)
-
-        self.immediate_parents = []
-        if extends is not None:
-            self.parentclass = extends
-            self.extends_name = extends.name
-
-            if self.constructor_method is None:
-                self.constructor_method = extends.constructor_method
-
-            if instance_class is None:
-                self.custom_instance_class = extends.custom_instance_class
-            else:
-                assert extends.custom_instance_class is None or issubclass(
-                    instance_class, extends.custom_instance_class)
-                self.custom_instance_class = instance_class
-
-            for method in extends.methods.itervalues():
-                self._inherit_method(method)
-            for p in extends.properties.itervalues():
-                self._inherit_property(p)
-            self.immediate_parents.append(self.parentclass)
-        else:
-            self.custom_instance_class = instance_class
-
+        self._init_instance_class(extends, instance_class)
         for func in methods:
             meth = Method(func, func.flags, self)
             self.methods[meth.get_identifier()] = meth
@@ -666,6 +650,18 @@ class BuiltinClass(ClassBase):
             self._make_property(prop, w_Null)
         for name, w_value in constants:
             self.constants_w[name] = w_value
+
+        self.immediate_parents = []
+        if extends is not None:
+            self.parentclass = extends
+            if self.constructor_method is None:
+                self.constructor_method = extends.constructor_method
+
+            for method in extends.methods.itervalues():
+                self._inherit_method(method)
+            for p in extends.properties.itervalues():
+                self._inherit_property(p)
+            self.immediate_parents.append(self.parentclass)
 
         self.access_flags = flags
         self.base_interface_names = [intf.name for intf in implements]
@@ -695,6 +691,17 @@ class BuiltinClass(ClassBase):
         for base in self.immediate_parents:
             for parent_id in base.all_parents:
                 self.all_parents[parent_id] = None
+
+    def _init_instance_class(self, extends, instance_class):
+        if extends is not None:
+            if instance_class is None:
+                self.custom_instance_class = extends.custom_instance_class
+            else:
+                assert extends.custom_instance_class is None or issubclass(
+                    instance_class, extends.custom_instance_class)
+                self.custom_instance_class = instance_class
+        else:
+            self.custom_instance_class = instance_class
 
 
 class ClassDeclaration(AbstractFunction, AccessMixin):
