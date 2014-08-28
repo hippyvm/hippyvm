@@ -51,7 +51,6 @@ def normalize_access(access_flags):
 
 class ClassBase(AbstractFunction, AccessMixin):
     access_flags = 0
-    base_interface_names = None
     constructor_method = None
     method__clone = None
     method__get = None
@@ -674,7 +673,6 @@ class BuiltinClass(ClassBase):
             self.immediate_parents.append(self.parentclass)
 
         self.access_flags = flags
-        self.base_interface_names = [intf.name for intf in implements]
         self.is_iterator = is_iterator
         self.is_array_access = is_array_access
 
