@@ -691,10 +691,9 @@ def hex2bin(space, data):
 
     builder = StringBuilder(len(data) / 2)
     for i in xrange(0, len(data), 2):
-        try:
-            char = chr(hexdigit(data[i]) << 4 | hexdigit(data[i + 1]))
-        except ValueError:
+        if not is_hexdigit(data[i]) or not is_hexdigit(data[i + 1]):
             return space.w_False
+        char = chr(hexdigit(data[i]) << 4 | hexdigit(data[i + 1]))
         builder.append(char)
 
     return space.newstr(builder.build())
@@ -1509,10 +1508,6 @@ def vsprintf(space, w_obj, w_args):
         return space.w_False
 
 
-def _has_two_hex_digits(data):
-    return len(data) == 2 and is_hexdigit(data[0]) and is_hexdigit(data[1])
-
-
 @wrap(['space', str])
 def quoted_printable_decode(space, data):
     """Convert a quoted-printable string to an 8 bit string."""
@@ -1522,8 +1517,9 @@ def quoted_printable_decode(space, data):
         c = data[i]
         if c == '=':
             next_two_chars = data[i + 1: i + 3]
-            if _has_two_hex_digits(next_two_chars):
-                hex_char = int(next_two_chars, 16)
+            if (i + 2 < len(data) and
+                    is_hexdigit(data[i + 1]) and is_hexdigit(data[i + 2])):
+                hex_char = hexdigit(data[i + 1]) << 4 | hexdigit(data[i + 2])
                 builder.append(chr(hex_char))
                 i += 3
             else:
