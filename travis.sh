@@ -8,14 +8,8 @@ declare -a STEPS=(
     'python pypy/rpython/bin/rpython targethippy.py'
 );
 
-
-for var in "${STEPS[@]}"
-do
-    echo -e "\n\e[32m#### $var ####\e[0m\n"
-    $var
-    if [ $? != 0 ]
-    then
-	exit 1
-    fi
-
-done
+if [[ "$TRANSLATE" == "true" ]]; then
+    python pypy/rpython/bin/rpython targethippy.py
+else
+    eval "py.test $TESTDIR -v"
+fi

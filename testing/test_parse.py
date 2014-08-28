@@ -1405,7 +1405,7 @@ class TestParser(object):
     def test_minus_static_decl(self):
         r = parse("class A { var $x = -1; }")
         assert r == Block([ClassBlock('A', 0x0, None, [], Block([
-            PropertyDecl("x", ConstantInt(-1), 1)]))])
+            PropertyDecl("x", ConstantInt(-1))]))])
 
     def test_lambda_function(self):
         r = parse("$x = function($a) {};")
@@ -1460,6 +1460,14 @@ ENDOFHEREDOC;
 """)
         assert r == Block([Stmt(Print(
             ConstantStr("This is a heredoc test.", 1)))])
+
+    def test_heredoc_with_dollar(self):
+        r = parse("""print <<<ENDOFHEREDOC
+This is a heredoc with quoted dollar "$".
+ENDOFHEREDOC;
+""")
+        assert r == Block([Stmt(Print(
+            ConstantStr("This is a heredoc with quoted dollar \"$\".", 1)))])
 
     def test_index_function_result(self):
         r = parse('f()[0][1];')

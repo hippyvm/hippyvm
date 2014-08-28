@@ -5,9 +5,9 @@ from hippy.builtin import wrap_method, ThisUnwrapper
 from hippy.builtin_klass import GetterSetterWrapper
 from hippy.error import PHPException
 
-from hippy.module.reflections.parameter import ReflectionParameter
+from hippy.module.reflections.parameter import k_ReflectionParameter
 from hippy.module.reflections.function_abstract import (
-    ReflectionFunctionAbstract, W_ReflectionFunctionAbstractObject
+    ReflectionFunctionAbstract, W_ReflectionFunctionAbstract
 )
 
 IS_STATIC = 1
@@ -18,7 +18,7 @@ IS_ABSTRACT = 2
 IS_FINAL = 4
 
 
-class W_ReflectionMethodObject(W_ReflectionFunctionAbstractObject):
+class W_ReflectionMethodObject(W_ReflectionFunctionAbstract):
     pass
 
 
@@ -57,7 +57,7 @@ def is_static(interp, this):
     return interp.space.wrap(this.ref_method.is_static())
 
 
-@wrap_method(['interp', ThisUnwrapper(W_ReflectionFunctionAbstractObject)],
+@wrap_method(['interp', ThisUnwrapper(W_ReflectionMethodObject)],
              name='ReflectionMethod::getParameters')
 def get_parameters(interp, this):
     space = interp.space
@@ -72,14 +72,14 @@ def get_parameters(interp, this):
         ])
         parameters.append((
             space.wrap(i),
-            ReflectionParameter.call_args(interp, [arg, space.wrap(i)])
+            k_ReflectionParameter.call_args(interp, [arg, space.wrap(i)])
         ))
 
     return space.new_array_from_pairs(parameters)
 
 
 
-@wrap_method(['interp', ThisUnwrapper(W_ReflectionFunctionAbstractObject)],
+@wrap_method(['interp', ThisUnwrapper(W_ReflectionMethodObject)],
              name='ReflectionMethod::getDocComment')
 def get_doc_comment(interp, this):
     return interp.space.wrap("")

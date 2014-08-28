@@ -119,11 +119,17 @@ def show_source():
     return NotImplementedError()
 
 
-@wrap(['interp', int])
+@wrap(['interp', int], error=False)
 def sleep(interp, seconds):
     """ Delay execution"""
+    if seconds < 0:
+        interp.warn("sleep(): Number of seconds must be greater than or equal to 0")
+        return interp.space.w_False
+
     import time
     time.sleep(seconds)
+    # TODO: when a signal is received and a handler is defined, the remaining
+    # number of seconds as float should be returned.
     return interp.space.newint(0)
 
 
@@ -175,6 +181,12 @@ def unpack(space, formats, string):
     return _unpack(space, formats, string)
 
 
-def usleep():
+@wrap(['interp', int])
+def usleep(interp, microseconds):
     """ Delay execution in microseconds"""
-    return NotImplementedError()
+    if microseconds < 0:
+        interp.warn("usleep(): Number of microseconds must be greater than or equal to 0")
+        return interp.space.w_False
+
+    import time
+    time.sleep(microseconds / 1000000.0)

@@ -37,6 +37,7 @@ from rpython.rlib import jit
 from rpython.rlib import rpath, rsignal
 from rpython.rlib.unroll import unrolling_iterable
 from rpython.rlib.rfile import create_popen_file
+from rpython.rlib.rpath import exists, dirname, join, abspath
 
 from hippy.module.session import Session
 
@@ -87,6 +88,8 @@ if is_optional_extension_enabled("hash"):
 if is_optional_extension_enabled("xml"):
     import ext_module.xml.interface
 
+if is_optional_extension_enabled("mcrypt"):
+    import ext_module.mcrypt.funcs
 
 
 def get_printable_location(pc, bytecode, contextclass=None):
@@ -228,7 +231,6 @@ class Interpreter(object):
         self.topframeref = jit.vref_None
         self.error_handler = None
         space.ec.interpreter = self  # one interpreter at a time
-        space.ec.init_signals()
         self._autoloading = {}
         self.autoload_stack = []
         self.autoload_extensions = ['.inc', '.php']
@@ -660,8 +662,6 @@ class Interpreter(object):
     def send_headers(self):
         self.any_output = True
         if self.cgi:
-            if self.cgi != constants.CGI_FASTCGI:
-                self._writestr("\r\n")
             if self.http_status_code != -1:
                 self._writestr('Status: %d\r\n' % self.http_status_code)
             for k in self.headers:
@@ -792,6 +792,7 @@ class Interpreter(object):
             self.setup()
         frame = Frame(self, bytecode, is_global_level=True)
         frame.load_from_scope(self.globals)
+        old_global_frame = self.global_frame
         self.global_frame = frame
         if top_main:
             try:
@@ -811,6 +812,7 @@ class Interpreter(object):
                     self.flush_buffers()
         else:
             w_result = self.interpret(frame)
+            self.global_frame = old_global_frame
         return w_result
 
     def run_local_include(self, bytecode, parent_frame):
@@ -1823,10 +1825,25 @@ class Interpreter(object):
             frame.push(self.space.w_False)
             return
 
+    def find_file(self, fname):
+        """Resolve a file name relative to the include_path and to
+        the location of the current code"""
+        for path in self.include_path:
+            if exists(join(path, [fname])):
+                return abspath(join(path, [fname]))
+        code_dir = dirname(self.get_frame().bytecode.filename)
+        if exists(join(code_dir, [fname])):
+            return abspath(join(code_dir, [fname]))
+        return abspath(fname)
+
     def _include(self, frame, func_name, require=False, once=False):
         name = self.space.str_w(frame.pop())
-        #print "INCLUDE", name
-        fname = self.space.bytecode_cache.find_file(self, name)
+        use_path = not (name.startswith('/') or name.startswith('./') or
+                        name.startswith('../'))
+        if use_path:
+            fname = self.find_file(name)
+        else:
+            fname = abspath(name)
         if once is True and fname in self.cached_files:
             frame.push(self.space.newint(1))
             return
