@@ -31,6 +31,7 @@ class GlobalImmutCacheVersion(object): pass
 
 
 class GlobalImmutCache(object):
+    _immutable_fields_ = ['version?']
 
     def __init__(self, space, initdict={}, force_lowcase=True):
         self.space = space
