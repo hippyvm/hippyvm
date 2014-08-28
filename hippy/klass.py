@@ -51,7 +51,6 @@ def normalize_access(access_flags):
 
 class ClassBase(AbstractFunction, AccessMixin):
     access_flags = 0
-    extends_name = None
     base_interface_names = None
     constructor_method = None
     method__clone = None
@@ -652,8 +651,6 @@ class BuiltinClass(ClassBase):
         self.immediate_parents = []
         if extends is not None:
             self.parentclass = extends
-            self.extends_name = extends.name
-
             if self.constructor_method is None:
                 self.constructor_method = extends.constructor_method
 
