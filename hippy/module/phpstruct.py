@@ -666,6 +666,12 @@ class Pack(object):
 
         self.result = []
 
+        # do not count X as argument that require input from arg_w
+        valid_args = 0
+        for fmtdesc, repetitions in self.fmt_interpreted:
+            if fmtdesc.fmtchar != 'X':
+                valid_args += 1
+
         for fmtdesc, repetitions in self.fmt_interpreted:
 
             try:
@@ -674,7 +680,7 @@ class Pack(object):
                 self.space.ec.warn(
                     "pack(): Type %s: %s" % (fmtdesc.fmtchar, e.message)
                 )
-        if self.arg_index < len(self.arg_w):
+        if valid_args < len(self.arg_w):
             self.space.ec.warn(
                 "pack(): %s "
                 "arguments unused" % (len(self.arg_w) - self.arg_index)
