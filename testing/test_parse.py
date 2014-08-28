@@ -1566,3 +1566,13 @@ ENDOFHEREDOC;
 
         r = parse_doublequoted("xyz ${a} asd$")
         assert r == DoubleQuotedStr([ConstantStr("xyz "), NamedVariable("a"), ConstantStr(" asd$")])
+
+    def test_parse_error_no_token_name(self):
+        with raises(ParseError) as excinfo:
+            parse('$foo=;')
+        assert excinfo.value.message == "syntax error, unexpected ';' in <input>"
+
+    def test_parse_error_with_token_name(self):
+        with raises(ParseError) as excinfo:
+            parse('1->2;')
+        assert excinfo.value.message == "syntax error, unexpected '->' (T_OBJECT_OPERATOR) in <input>"
