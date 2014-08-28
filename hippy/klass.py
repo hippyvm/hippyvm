@@ -619,6 +619,16 @@ class ClassBase(AbstractFunction, AccessMixin):
         return result
 
 
+def _get_instance_class(extends, instance_class):
+    if extends is not None:
+        if instance_class is None:
+            return extends.custom_instance_class
+        else:
+            return instance_class
+    else:
+        return instance_class
+
+
 all_builtin_classes = OrderedDict()
 
 
@@ -627,6 +637,7 @@ def def_class(name, methods=[], properties=[], constants=[],
         is_iterator=False, is_array_access=False):
     if name in all_builtin_classes:
         raise ValueError("Class '%s' has already been defined" % name)
+    instance_class = _get_instance_class(extends, instance_class)
     cls = BuiltinClass(name, methods, properties, constants, instance_class,
             flags, implements, extends, is_iterator, is_array_access)
     all_builtin_classes[name] = cls
@@ -639,7 +650,9 @@ class BuiltinClass(ClassBase):
                  flags=0, implements=[], extends=None, is_iterator=False,
                  is_array_access=False):
         ClassBase.__init__(self, name)
-        self._init_instance_class(extends, instance_class)
+        assert (extends is None or extends.custom_instance_class is None or
+                issubclass(instance_class, extends.custom_instance_class))
+        self.custom_instance_class = instance_class
         for func in methods:
             meth = Method(func, func.flags, self)
             self.methods[meth.get_identifier()] = meth
@@ -688,17 +701,6 @@ class BuiltinClass(ClassBase):
         for base in self.immediate_parents:
             for parent_id in base.all_parents:
                 self.all_parents[parent_id] = None
-
-    def _init_instance_class(self, extends, instance_class):
-        if extends is not None:
-            if instance_class is None:
-                self.custom_instance_class = extends.custom_instance_class
-            else:
-                assert extends.custom_instance_class is None or issubclass(
-                    instance_class, extends.custom_instance_class)
-                self.custom_instance_class = instance_class
-        else:
-            self.custom_instance_class = instance_class
 
 
 class ClassDeclaration(AbstractFunction, AccessMixin):
