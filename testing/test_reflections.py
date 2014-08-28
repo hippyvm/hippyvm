@@ -1,4 +1,6 @@
 import pytest
+from hippy.objects.strobject import W_ConstStringObject
+from hippy.objects.intobject import W_IntObject
 from testing.test_interpreter import BaseTestInterpreter, hippy_fail
 
 
@@ -53,6 +55,20 @@ class TestReflectionClass(BaseTestInterpreter):
         assert self.space.int_w(output[1]) == 13
         assert self.space.int_w(output[2]) == 14
 
+    def test_has_constant(self):
+        output = self.run('''
+        class Foo {
+            const c1 = 1;
+        }
+
+        $class = new ReflectionClass("Foo");
+
+        echo $class->hasConstant("c1");
+        echo $class->hasConstant("c2");
+        ''')
+        assert output[0] == self.space.w_True
+        assert output[1] == self.space.w_False
+
     def test_get_constant(self):
 
         output = self.run("""
@@ -84,6 +100,22 @@ class TestReflectionClass(BaseTestInterpreter):
 
         assert output[0].dct_w.keys() == ['VALUE_1', 'VALUE_2']
         assert output[0].dct_w.values() == [self.space.wrap("1"), self.space.wrap("2")]
+
+    def test_get_static_properties(self):
+        output = self.run('''
+        class Apple {
+            public $foo = 'Rotten';
+            public static $color = 'Red';
+        }
+
+        $class = new ReflectionClass('Apple');
+        $static_props = $class->getStaticProperties();
+        foreach ($static_props as $prop) {
+            echo $prop;
+        }
+        ''')
+        assert len(output) == 1
+        assert self.space.str_w(output[0]) == 'Red'
 
     def test_get_default_properties(self):
 
@@ -118,7 +150,7 @@ class TestReflectionClass(BaseTestInterpreter):
 
     def test_get_doc_comment(self):
         pytest.xfail("Not implemented")
-        
+
         output = self.run("""
             /**
             * A test class
@@ -475,6 +507,61 @@ class TestReflectionClass(BaseTestInterpreter):
         assert output[4] == self.space.w_True
         assert output[5] == self.space.w_False
 
+    def test_has_property(self):
+        output = self.run('''
+        class Foo {
+            public    $p1;
+            protected $p2;
+            private   $p3;
+
+        }
+
+        $obj = new ReflectionClass(new Foo());
+
+        echo $obj->hasProperty("p1");
+        echo $obj->hasProperty("p2");
+        echo $obj->hasProperty("p3");
+        echo $obj->hasProperty("p4");
+        ''')
+        assert output[0] == self.space.w_True
+        assert output[1] == self.space.w_True
+        assert output[2] == self.space.w_True
+        assert output[3] == self.space.w_False
+
+
+    def test_get_properties(self):
+        output = self.run('''
+
+        class Foo {
+            public    $foo  = 1;
+            protected $bar  = 2;
+            private   $baz  = 3;
+        }
+
+        $foo = new Foo();
+
+        $reflect = new ReflectionClass($foo);
+        $props   = $reflect->getProperties(ReflectionProperty::IS_PUBLIC | ReflectionProperty::IS_PROTECTED);
+
+        foreach ($props as $prop) {
+            echo $prop->getName();
+        }
+        ''')
+        assert len(output) == 2
+        assert self.space.str_w(output[0]) == 'foo'
+        assert self.space.str_w(output[1]) == 'bar'
+
+    def test_get_property(self):
+        output = self.run('''
+        $class = new ReflectionClass('ReflectionClass');
+        $property = $class->getProperty('name');
+
+        echo get_class($property);
+        echo $property->getName();
+        ''')
+        assert self.space.str_w(output[0]) == 'ReflectionProperty'
+        assert self.space.str_w(output[1]) == 'name'
+
 
 class TestReflectionMethod(BaseTestInterpreter):
 
@@ -819,6 +906,34 @@ class TestReflectionProperty(BaseTestInterpreter):
 
         ''')
         assert self.space.str_w(output[0]) == "Cannot access non-public member String::length"
+
+    def test_from_object(self):
+        output = self.run('''
+        class String
+        {
+            public $length = 5;
+        }
+        $obj = new String();
+        $prop = new ReflectionProperty($obj, 'length');
+        echo $prop->class;
+        ''')
+        assert output == [W_ConstStringObject("String")]
+
+    def test_from_object_dynamic(self):
+        output = self.run('''
+        class String
+        {
+            public $length = 5;
+        }
+        $obj = new String();
+        $obj->x = 1;
+        $prop = new ReflectionProperty($obj, 'x');
+        echo $prop->getValue($obj);
+        $obj2 = new String();
+        echo $prop->getValue($obj2);
+        ''')
+        assert output == [W_IntObject(1), self.space.w_Null]
+
 
     @hippy_fail(reason="setAccessible not implemented")
     def test_accessible_private(self):

@@ -7,6 +7,7 @@ from hippy.builtin import wrap, W_Root, Optional
 from hippy.klass import W_BoundMethod
 from hippy.objects.instanceobject import W_InstanceObject
 from hippy.error import VisibilityError
+from rpython.rlib import jit
 
 
 @wrap(['space', W_Root, Optional(bool), Optional('reference')])
@@ -85,6 +86,14 @@ def call_user_func(interp, callback_func, args_w):
     return interp.call(callback_func, args_w)
 
 
+@jit.look_inside_iff(lambda space, w_args, no_args:
+                     jit.isconstant(no_args) and no_args <= 10)
+def _collect_arguments(space, w_args, no_args):
+    args_w = []
+    for item in range(no_args):
+        args_w.append(space.getitem(w_args, space.wrap(item)))
+    return args_w
+
 @wrap(['interp', 'callback', W_Root])
 def call_user_func_array(interp, callback_func, w_args):
     space = interp.space
@@ -92,9 +101,7 @@ def call_user_func_array(interp, callback_func, w_args):
         interp.warn("call_user_func_array() expects parameter 2 to be array")
         return space.w_Null
     no_args = space.arraylen(w_args)
-    args_w = []
-    for item in range(no_args):
-        args_w.append(space.getitem(w_args, space.wrap(item)))
+    args_w = _collect_arguments(space, w_args, no_args)
     return interp.call(callback_func, args_w)
 
 

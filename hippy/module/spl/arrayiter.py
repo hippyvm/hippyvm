@@ -1,5 +1,5 @@
-from hippy.builtin_klass import wrap_method
-from hippy.builtin import ThisUnwrapper, Optional
+from hippy.builtin_klass import k_Iterator
+from hippy.builtin import ThisUnwrapper, Optional, wrap_method
 from hippy.klass import def_class
 from hippy.objects.base import W_Root
 from hippy.objects.instanceobject import W_InstanceObject
@@ -44,14 +44,14 @@ def ArrayIterator_valid():
     pass
 
 
-k_ArrayIterator = def_class('ArrayIterator', [
-        ArrayIterator_construct,
-        ArrayIterator_current,
-        ArrayIterator_next,
-        ArrayIterator_key,
-        ArrayIterator_rewind,
-        ArrayIterator_valid],
+k_ArrayIterator = def_class(
+    'ArrayIterator',
+    [ArrayIterator_construct,
+     ArrayIterator_current,
+     ArrayIterator_next,
+     ArrayIterator_key,
+     ArrayIterator_rewind,
+     ArrayIterator_valid],
     [('storage', consts.ACC_PRIVATE)],
     instance_class=W_ApplevelArrayIterator,
-    implements=["Iterator"]
-)
+    implements=[k_Iterator])

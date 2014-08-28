@@ -3,7 +3,7 @@ from rpython.rlib.objectmodel import specialize
 
 class HippyOptionError(Exception): pass
 
-OPTIONAL_EXTS = ["mysql", "hash", "fastcgi", "xml"]
+OPTIONAL_EXTS = ["mysql", "hash", "fastcgi", "xml", "mcrypt"]
 
 optexts_descriptions = [
         BoolOption("allexts", "Enable all extensions",
@@ -26,12 +26,15 @@ top_hippy_optiondescription = \
             BoolOption("translating", "Are we translating?", default=False),
             hippy_optiondescription])
 
+
 OPTIONS = Config(top_hippy_optiondescription) # default config
+
 
 def set_options(config):
     import sys
     thismod = sys.modules[__name__]
     setattr(thismod, "OPTIONS", config)
+
 
 def enable_all_optional_extensions():
     for extname in OPTIONAL_EXTS:
@@ -50,9 +53,3 @@ def is_optional_extension_enabled(extname):
         return getattr(OPTIONS.optexts, extname) and on_import_path
     except AttributeError:
         raise HippyOptionError("No optional extension named '%s'" % extname)
-
-
-
-
-
-

@@ -8,6 +8,7 @@ from hippy.objects.resources.dir_resource import W_DirResource
 from hippy.error import PHPException
 from hippy.builtin_klass import (def_class, k_RuntimeException,
     k_LogicException, k_UnexpectedValueException, GetterSetterWrapper)
+from hippy.module.spl.interface import k_SeekableIterator, k_RecursiveIterator
 from hippy.module.standard.file.funcs import (_is_dir, _is_file, _is_link,
     _is_executable, _is_readable, _is_writable, _filetype, _fseek, _fstat,
     _fopen, _basename, FopenError)
@@ -112,8 +113,7 @@ def get_group(interp, this):
     except OSError:
         raise PHPException(k_RuntimeException.call_args(
             interp, [interp.space.wrap(
-                "SplFileInfo::getGroup(): stat failed for %s" % filename
-                )]))
+                "SplFileInfo::getGroup(): stat failed for %s" % filename)]))
 
 
 def _get_inode(interp, filename):
@@ -322,10 +322,10 @@ def openfile(interp, this, open_mode='r', use_include_path=False, w_ctx=None):
     if open_mode == '':
         raise PHPException(k_RuntimeException.call_args(
             interp, [interp.space.wrap(
-                    "SplFileInfo::openFile(): Invalid parameters")]))
+                "SplFileInfo::openFile(): Invalid parameters")]))
 
     args = [interp.space.wrap(this.file_name), interp.space.wrap(open_mode),
-             interp.space.wrap(use_include_path)]
+            interp.space.wrap(use_include_path)]
     if w_ctx:
         if not interp.space.is_resource(w_ctx):
             raise PHPException(k_RuntimeException.call_args(
@@ -362,8 +362,8 @@ def _set_filename(interp, this, value):
     raise NotImplementedError()
 
 
-SplFileInfoClass = def_class(
-        'SplFileInfo',
+k_SplFileInfo = def_class(
+    'SplFileInfo',
     methods=[construct,
              spl_toString,
              get_basename,
@@ -393,8 +393,7 @@ SplFileInfoClass = def_class(
                                     "pathName", consts.ACC_PRIVATE),
                 GetterSetterWrapper(_get_filename, _set_filename,
                                     "fileName", consts.ACC_PRIVATE), ],
-        instance_class=W_SplFileInfo
-        )
+    instance_class=W_SplFileInfo)
 
 
 SFO_DROP_NEW_LINE = 1
@@ -439,15 +438,14 @@ def sfo_construct(interp, this, filename, open_mode='r',
     if os.path.isdir(filename):
         raise PHPException(k_LogicException.call_args(
             interp, [interp.space.wrap(
-                "Cannot use SplFileObject with directories"
-                )]))
+                "Cannot use SplFileObject with directories")]))
     try:
         this.w_res = _fopen(interp.space, filename, this.open_mode,
                             use_include_path, w_ctx)
         if this.w_res == interp.space.w_False:
             raise PHPException(k_RuntimeException.call_args(
                 interp, [interp.space.wrap(
-                "SplFileObject::__construct(): Failed to open stream")]))
+                    "SplFileObject::__construct(): Failed to open stream")]))
     except FopenError as e:
         raise PHPException(k_RuntimeException.call_args(interp,
             [interp.space.wrap(e.reasons.pop())]))
@@ -753,15 +751,15 @@ SplFileObjectClass = def_class(
                 GetterSetterWrapper(_get_delimiter, _set_delimiter,
                                     "delimiter", consts.ACC_PRIVATE),
                 GetterSetterWrapper(_get_enclosure, _set_enclosure,
-                                    "enclosure", consts.ACC_PRIVATE),],
+                                    "enclosure", consts.ACC_PRIVATE)],
     constants=[
         ('DROP_NEW_LINE', W_IntObject(SFO_DROP_NEW_LINE)),
         ('READ_AHEAD', W_IntObject(SFO_READ_AHEAD)),
         ('SKIP_EMPTY', W_IntObject(SFO_SKIP_EMPTY)),
         ('READ_CSV', W_IntObject(SFO_READ_CSV))],
-    implements=["RecursiveIterator", "SeekableIterator"],
+    implements=[k_RecursiveIterator, k_SeekableIterator],
     instance_class=W_SplFileObject,
-    extends='SplFileInfo',)
+    extends=k_SplFileInfo,)
 
 
 class W_DirectoryIterator(W_SplFileInfo):
@@ -782,8 +780,7 @@ def di_construct(interp, this, path):
     if path == "":
         raise PHPException(k_RuntimeException.call_args(
             interp, [interp.space.wrap(
-                "Directory name must not be empty."
-                )]))
+                "Directory name must not be empty.")]))
     this.path = path
     this.file_name = path
     this.index = 0
@@ -803,7 +800,7 @@ def di_construct(interp, this, path):
         raise PHPException(k_RuntimeException.call_args(
             interp, [interp.space.wrap(
                 "DirectoryIterator::__construct(): error while opening stream"
-                )]))
+            )]))
 
 
 @wrap_method(['interp', ThisUnwrapper(W_DirectoryIterator)],
@@ -1066,7 +1063,7 @@ def di_getmtime(interp, this):
         return interp.space.w_False
 
 
-DirectoryIteratorClass = def_class(
+k_DirectoryIterator = def_class(
     'DirectoryIterator',
     [di_construct,
      di_current,
@@ -1097,9 +1094,9 @@ DirectoryIteratorClass = def_class(
      di_getctime,
      di_getmtime,
      di_tostring],
-    implements=["SeekableIterator"],
+    implements=[k_SeekableIterator],
     instance_class=W_DirectoryIterator,
-    extends='SplFileInfo',)
+    extends=k_SplFileInfo,)
 
 
 FI_CURRENT_AS_PATHNAME = 32
@@ -1167,7 +1164,7 @@ def fi_current(interp, this):
         return interp.space.newstr(pathname)
     else:
         filename = _di_pathname(this)
-        file_info = SplFileInfoClass.call_args(interp,
+        file_info = k_SplFileInfo.call_args(interp,
                 [interp.space.wrap(filename)])
         return file_info
 
@@ -1186,40 +1183,43 @@ def fi_key(interp, this):
 @wrap_method(['interp', ThisUnwrapper(W_FilesystemIterator)],
              name='FilesystemIterator::getFlags')
 def fi_get_flags(interp, this):
-    flags = this.flags & (FI_KEY_MODE_MASK | FI_CURRENT_MODE_MASK | FI_OTHER_MODE_MASK)
+    flags = this.flags & (FI_KEY_MODE_MASK | FI_CURRENT_MODE_MASK |
+                          FI_OTHER_MODE_MASK)
     return interp.space.newint(flags)
 
 
 @wrap_method(['interp', ThisUnwrapper(W_FilesystemIterator), int],
              name='FilesystemIterator::setFlags')
 def fi_set_flags(interp, this, flags):
-    this.flags &= ~(FI_KEY_MODE_MASK | FI_CURRENT_MODE_MASK | FI_OTHER_MODE_MASK)
-    this.flags |= ((FI_KEY_MODE_MASK | FI_CURRENT_MODE_MASK | FI_OTHER_MODE_MASK) & flags)
+    this.flags &= ~(FI_KEY_MODE_MASK | FI_CURRENT_MODE_MASK |
+                    FI_OTHER_MODE_MASK)
+    this.flags |= ((FI_KEY_MODE_MASK | FI_CURRENT_MODE_MASK |
+                    FI_OTHER_MODE_MASK) & flags)
 
 
-FilesystemIteratorClass = def_class(
-        'FilesystemIterator',
-        [fi_construct,
-         fi_current,
-         fi_key,
-         fi_get_flags,
-         fi_set_flags],
-        constants=[
-            ('CURRENT_AS_PATHNAME', W_IntObject(FI_CURRENT_AS_PATHNAME)),
-            ('CURRENT_AS_FILEINFO', W_IntObject(FI_CURRENT_AS_FILEINFO)),
-            ('CURRENT_AS_SELF', W_IntObject(FI_CURRENT_AS_SELF)),
-            ('CURRENT_MODE_MASK', W_IntObject(FI_CURRENT_MODE_MASK)),
-            ('KEY_AS_PATHNAME', W_IntObject(FI_KEY_AS_PATHNAME)),
-            ('KEY_AS_FILENAME', W_IntObject(FI_KEY_AS_FILENAME)),
-            ('FOLLOW_SYMLINKS', W_IntObject(FI_FOLLOW_SYMLINKS)),
-            ('KEY_MODE_MASK', W_IntObject(FI_KEY_MODE_MASK)),
-            ('NEW_CURRENT_AND_KEY', W_IntObject(FI_NEW_CURRENT_AND_KEY)),
-            ('SKIP_DOTS', W_IntObject(FI_SKIP_DOTS)),
-            ('UNIX_PATHS', W_IntObject(FI_UNIX_PATHS)),
-            ('OTHER_MODE_MASK', W_IntObject(FI_OTHER_MODE_MASK)),],
-        implements=['SeekableIterator'],
-        instance_class=W_FilesystemIterator,
-        extends='DirectoryIterator',)
+k_FilesystemIterator = def_class(
+    'FilesystemIterator',
+    [fi_construct,
+        fi_current,
+        fi_key,
+        fi_get_flags,
+        fi_set_flags],
+    constants=[
+        ('CURRENT_AS_PATHNAME', W_IntObject(FI_CURRENT_AS_PATHNAME)),
+        ('CURRENT_AS_FILEINFO', W_IntObject(FI_CURRENT_AS_FILEINFO)),
+        ('CURRENT_AS_SELF', W_IntObject(FI_CURRENT_AS_SELF)),
+        ('CURRENT_MODE_MASK', W_IntObject(FI_CURRENT_MODE_MASK)),
+        ('KEY_AS_PATHNAME', W_IntObject(FI_KEY_AS_PATHNAME)),
+        ('KEY_AS_FILENAME', W_IntObject(FI_KEY_AS_FILENAME)),
+        ('FOLLOW_SYMLINKS', W_IntObject(FI_FOLLOW_SYMLINKS)),
+        ('KEY_MODE_MASK', W_IntObject(FI_KEY_MODE_MASK)),
+        ('NEW_CURRENT_AND_KEY', W_IntObject(FI_NEW_CURRENT_AND_KEY)),
+        ('SKIP_DOTS', W_IntObject(FI_SKIP_DOTS)),
+        ('UNIX_PATHS', W_IntObject(FI_UNIX_PATHS)),
+        ('OTHER_MODE_MASK', W_IntObject(FI_OTHER_MODE_MASK))],
+    implements=[k_SeekableIterator],
+    instance_class=W_FilesystemIterator,
+    extends=k_DirectoryIterator,)
 
 
 class W_RecursiveDirectoryIterator(W_FilesystemIterator):
@@ -1286,7 +1286,7 @@ def rdi_get_children(interp, this):
     else:
         if this.w_dir_res.index < this.w_dir_res.no_of_items:
             filename = _di_pathname(this)
-            sub_dir_iter = RecursiveDirectoryIteratorClass.call_args(interp,
+            sub_dir_iter = k_RecursiveDirectoryIterator.call_args(interp,
                     [interp.space.wrap(filename)])
             return sub_dir_iter
         else:
@@ -1305,14 +1305,13 @@ def rdi_get_subpathname(interp, this):
     raise NotImplementedError
 
 
-RecursiveDirectoryIteratorClass = def_class(
-        'RecursiveDirectoryIterator',
-        [rdi_construct,
-         rdi_has_children,
-         rdi_get_children,
-         rdi_get_subpath,
-         rdi_get_subpathname,
-        ],
-        implements=['SeekableIterator', 'RecursiveIterator'],
-        instance_class=W_RecursiveDirectoryIterator,
-        extends='FilesystemIterator',)
+k_RecursiveDirectoryIterator = def_class(
+    'RecursiveDirectoryIterator',
+    [rdi_construct,
+     rdi_has_children,
+     rdi_get_children,
+     rdi_get_subpath,
+     rdi_get_subpathname, ],
+    implements=[k_SeekableIterator, k_RecursiveIterator],
+    instance_class=W_RecursiveDirectoryIterator,
+    extends=k_FilesystemIterator,)

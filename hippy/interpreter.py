@@ -7,7 +7,7 @@ from hippy.consts import BYTECODE_HAS_ARG, BYTECODE_NAMES,\
     BINOP_LIST, BINOP_BITWISE, RETURN
 from hippy.function import AbstractFunction
 from hippy.error import (IllegalInstruction, FatalError, PHPException,
-                         ExplicitExitException, VisibilityError)
+                         ExplicitExitException, VisibilityError, SignalReceived)
 from hippy.lexer import LexerError
 from hippy.sourceparser import ParseError
 from hippy.phpcompiler import compile_php
@@ -34,9 +34,10 @@ from hippy.module.standard.glob import php_glob
 from hippy.module.spl import spl
 from rpython.rlib.objectmodel import we_are_translated
 from rpython.rlib import jit
-from rpython.rlib import rpath
+from rpython.rlib import rpath, rsignal
 from rpython.rlib.unroll import unrolling_iterable
 from rpython.rlib.rfile import create_popen_file
+from rpython.rlib.rpath import exists, dirname, join, abspath
 
 from hippy.module.session import Session
 
@@ -87,6 +88,8 @@ if is_optional_extension_enabled("hash"):
 if is_optional_extension_enabled("xml"):
     import ext_module.xml.interface
 
+if is_optional_extension_enabled("mcrypt"):
+    import ext_module.mcrypt.funcs
 
 
 def get_printable_location(pc, bytecode, contextclass=None):
@@ -278,6 +281,14 @@ class Interpreter(object):
 
     def unregister_fd(self, w_fd):
         del self.open_fd[w_fd.res_id]
+
+    def handle_signal_if_necessary(self):
+        n = rsignal.pypysig_getaddr_occurred().c_value
+        if n < 0:
+            n = rsignal.pypysig_poll()
+            if n < 0:
+                rsignal.pypysig_getaddr_occurred().c_value = 0
+                raise SignalReceived()
 
     def _class_get(self, class_name):
         kls = self.space.global_class_cache.locate(class_name)
@@ -651,8 +662,6 @@ class Interpreter(object):
     def send_headers(self):
         self.any_output = True
         if self.cgi:
-            if self.cgi != constants.CGI_FASTCGI:
-                self._writestr("\r\n")
             if self.http_status_code != -1:
                 self._writestr('Status: %d\r\n' % self.http_status_code)
             for k in self.headers:
@@ -783,6 +792,7 @@ class Interpreter(object):
             self.setup()
         frame = Frame(self, bytecode, is_global_level=True)
         frame.load_from_scope(self.globals)
+        old_global_frame = self.global_frame
         self.global_frame = frame
         if top_main:
             try:
@@ -802,6 +812,7 @@ class Interpreter(object):
                     self.flush_buffers()
         else:
             w_result = self.interpret(frame)
+            self.global_frame = old_global_frame
         return w_result
 
     def run_local_include(self, bytecode, parent_frame):
@@ -1195,6 +1206,7 @@ class Interpreter(object):
 
     def JUMP_BACK_IF_TRUE(self, bytecode, frame, space, arg, pc):
         if space.is_true(frame.pop()):
+            self.handle_signal_if_necessary()
             driver.can_enter_jit(pc=arg, bytecode=bytecode, frame=frame,
                              self=self, contextclass=frame.get_contextclass())
             return arg
@@ -1222,6 +1234,7 @@ class Interpreter(object):
         return arg
 
     def JUMP_BACKWARD(self, bytecode, frame, space, arg, pc):
+        self.handle_signal_if_necessary()
         driver.can_enter_jit(pc=arg, bytecode=bytecode, frame=frame,
                              self=self, contextclass=frame.get_contextclass())
         return arg
@@ -1320,7 +1333,7 @@ class Interpreter(object):
 
 
     def GETFUNC(self, bytecode, frame, space, arg, pc):
-        w_name = frame.pop().deref()
+        w_name = frame.pop().deref()            
         func = self.getfunc(w_name, frame.w_this, frame.get_contextclass())
         assert func is not None
         frame.push(func)
@@ -1810,22 +1823,37 @@ class Interpreter(object):
             frame.push(self.space.w_False)
             return
 
+    def find_file(self, fname):
+        """Resolve a file name relative to the include_path and to
+        the location of the current code"""
+        for path in self.include_path:
+            if exists(join(path, [fname])):
+                return abspath(join(path, [fname]))
+        code_dir = dirname(self.get_frame().bytecode.filename)
+        if exists(join(code_dir, [fname])):
+            return abspath(join(code_dir, [fname]))
+        return abspath(fname)
+
     def _include(self, frame, func_name, require=False, once=False):
         name = self.space.str_w(frame.pop())
-        #print "INCLUDE", name
-        fname = self.space.bytecode_cache.find_file(self, name)
+        use_path = not (name.startswith('/') or name.startswith('./') or
+                        name.startswith('../'))
+        if use_path:
+            fname = self.find_file(name)
+        else:
+            fname = abspath(name)
         if once is True and fname in self.cached_files:
             frame.push(self.space.newint(1))
             return
         try:
             bc = self.compile_file(fname)
         except OSError as exc:
-            self._report_include_warning(frame, func_name, fname, exc,
+            self._report_include_warning(frame, func_name, name, exc,
                                          require)
             return
         except IOError as exc:
             if not we_are_translated():
-                self._report_include_warning(frame, func_name, fname, exc,
+                self._report_include_warning(frame, func_name, name, exc,
                                              require)
                 return
             assert False # dead code

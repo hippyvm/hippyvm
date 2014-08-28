@@ -2,6 +2,7 @@ from hippy.builtin import wrap, Optional, LongArg, BoolArg, StringArg
 from collections import OrderedDict
 from hippy.objects.base import W_Root
 from hippy.objects.instanceobject import W_InstanceObject, demangle_property
+from hippy.objects.resources.resource import W_Resource
 from rpython.rlib.rarithmetic import intmask
 from rpython.rlib.rstring import StringBuilder
 from hippy.module import serialize as serialize_mod
@@ -201,7 +202,8 @@ def is_object(space, w_obj):
 @wrap(['space', W_Root], error=False)
 def is_resource(space, w_obj):
     """ Finds whether a variable is a resource"""
-    return space.wrap(space.is_resource(w_obj))
+    result = isinstance(w_obj, W_Resource) and w_obj.is_valid()
+    return space.wrap(result)
 
 
 @wrap(['space', W_Root])

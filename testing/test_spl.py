@@ -301,16 +301,23 @@ class TestSplFileInfo(BaseTestInterpreter):
         assert output[1] == self.space.w_False
 
     def test_is_executable(self):
+        from distutils.spawn import find_executable
+        sh_exec_path = find_executable("sh")
+        sh_dir_path = os.path.dirname(sh_exec_path)
+
         output = self.run('''
-        $info = new SplFileInfo('/usr/bin/php');
+        // sh should be executable.
+        $info = new SplFileInfo('%s');
         echo $info->isExecutable();
 
-        $info = new SplFileInfo('/usr/bin');
+        // And the dir it is in.
+        $info = new SplFileInfo('%s');
         echo $info->isExecutable();
 
-        $info = new SplFileInfo('foo');
+        // check nonexistant path is not executable.
+        $info = new SplFileInfo('/.non/exist/ever');
         echo $info->isExecutable();
-        ''')
+        ''' % (sh_exec_path, sh_dir_path))
         assert output[0] == self.space.w_True
         assert output[1] == self.space.w_True
         assert output[2] == self.space.w_False
