@@ -55,12 +55,14 @@ def _pack_string(pack_obj, fmtdesc, count, pad):
     pack_obj.arg_index += 1
 
     if len(string) < count:
-        pack_obj.result.append(string)
+        for c in string:
+            pack_obj.result.append(c)
         if count != sys.maxint:
             pack_obj.result.append(pad * (count - len(string)))
     else:
         assert count >= 0
-        pack_obj.result.append(string[0:count])
+        for c in string[:count]:
+            pack_obj.result.append(c)
 
 
 def pack_Z_nul_padded_string(pack_obj, fmtdesc, count):
@@ -71,8 +73,9 @@ def pack_Z_nul_padded_string(pack_obj, fmtdesc, count):
     string = pack_obj.space.str_w(
         pack_obj.arg_w[pack_obj.arg_index])[:c]
     pack_obj.arg_index += 1
-
-    pack_obj.result.append(string + '\x00')
+    for c in string:
+        pack_obj.result.append(c)
+    pack_obj.result.append('\x00')
 
     if len(pack_obj.result) < count:
         pack_obj.result.append('\x00' * (count - len(string) - 1))
@@ -671,7 +674,6 @@ class Pack(object):
                 self.space.ec.warn(
                     "pack(): Type %s: %s" % (fmtdesc.fmtchar, e.message)
                 )
-
         if self.arg_index < len(self.arg_w):
             self.space.ec.warn(
                 "pack(): %s "
