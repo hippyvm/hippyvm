@@ -1461,6 +1461,14 @@ ENDOFHEREDOC;
         assert r == Block([Stmt(Print(
             ConstantStr("This is a heredoc test.", 1)))])
 
+    def test_heredoc_with_dollar(self):
+        r = parse("""print <<<ENDOFHEREDOC
+This is a heredoc with quoted dollar "$".
+ENDOFHEREDOC;
+""")
+        assert r == Block([Stmt(Print(
+            ConstantStr("This is a heredoc with quoted dollar \"$\".", 1)))])
+
     def test_index_function_result(self):
         r = parse('f()[0][1];')
         assert r == Block([Stmt(GetItem(GetItem(
