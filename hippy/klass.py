@@ -9,7 +9,8 @@ from hippy.objects.strobject import W_StringObject
 from hippy import consts
 from hippy.objects.nullobject import w_Null
 from hippy.mapdict import Terminator
-from hippy.builtin import ThisUnwrapper, handle_as_warning, new_function
+from hippy.builtin import (
+    BuiltinFunction, ThisUnwrapper, handle_as_warning, new_function)
 from rpython.rlib import jit
 from rpython.rlib.objectmodel import we_are_translated
 from rpython.rlib.unroll import unrolling_iterable
@@ -124,6 +125,8 @@ class ClassBase(AbstractFunction, AccessMixin):
         all_methods = self._collect_all_methods()
         abstract_methods = []
         for m in all_methods:
+            if not we_are_translated() and m is None:
+                continue
             if m.is_abstract():
                 abstract_methods.append("%s::%s" % (
                     m.getclass().name, m.get_name()))
@@ -653,9 +656,8 @@ class BuiltinClass(ClassBase):
         assert (extends is None or extends.custom_instance_class is None or
                 issubclass(instance_class, extends.custom_instance_class))
         self.custom_instance_class = instance_class
-        for func in methods:
-            meth = Method(func, func.flags, self)
-            self.methods[meth.get_identifier()] = meth
+        for method_spec in methods:
+            self.declare_method(method_spec)
         for prop in properties:
             self._make_property(prop, w_Null)
         for name, w_value in constants:
@@ -701,16 +703,27 @@ class BuiltinClass(ClassBase):
             for parent_id in base.all_parents:
                 self.all_parents[parent_id] = None
 
+    def declare_method(self, method_spec):
+        if isinstance(method_spec, str):
+            self.methods[method_spec.lower()] = None
+        elif isinstance(method_spec, BuiltinFunction):
+            meth = Method(method_spec, method_spec.flags, self)
+            self.methods[meth.get_identifier()] = meth
+        else:
+            raise TypeError("Invalid method declaration: %s" % method_spec)
+
     def def_method(self, signature, name, error=None, flags=0,
                    error_handler=handle_as_warning, check_num_args=True):
-        assert '::' in name   # should be "Class::method"
         try:
             i = signature.index('this')
             signature[i] = ThisUnwrapper(self.instance_class)
         except ValueError:
             pass
+
         def inner(ll_func):
-            func = new_function(ll_func, signature, name, error,
+            fname = name or ll_func.__name__
+            fullname = self.name + "::" + fname
+            func = new_function(ll_func, signature, fullname, error,
                             error_handler, check_num_args)
             method = Method(func, flags, self)
             meth_id = method.get_identifier()

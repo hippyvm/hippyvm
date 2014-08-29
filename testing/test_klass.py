@@ -70,6 +70,11 @@ def test_BuiltinClass_implements():
     with py.test.raises(ClassDeclarationError):
         BuiltinClass('Test', [], implements=[k_IFoo])
 
+def test_BuiltinClass_dummy_method():
+    k_Test = BuiltinClass('Test', ['foo'])
+    assert k_Test.methods['foo'] is None
+
+
 @py.test.mark.xfail(reason='not yet')
 def test_subclass_builtin():
     class W_BaseStuff(W_InstanceObject):
