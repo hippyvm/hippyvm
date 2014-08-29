@@ -8,7 +8,7 @@ from hippy.objspace import getspace
 from hippy.interpreter import Interpreter
 from hippy.builtin import wrap_method
 from hippy.builtin_klass import new_abstract_method, GetterSetterWrapper
-from hippy.klass import BuiltinClass, ClassDeclarationError
+from hippy.klass import BuiltinClass, ClassDeclarationError, all_builtin_classes
 
 def test_BuiltinClass():
     k_Test = BuiltinClass('Test')
@@ -45,11 +45,13 @@ def test_BuiltinClass_extends_custom():
     assert k_Test.custom_instance_class is W_Test
     assert k_Test.methods.keys() == ['foo']
     assert k_Test.methods['foo'] is k_Base.methods['foo']
+    k_Test.validate()
 
     class W_Test2(W_Test):
         pass
     k_Test2 = BuiltinClass('Test2', extends=k_Test, instance_class=W_Test2)
     assert k_Test2.custom_instance_class is W_Test2
+    k_Test2.validate()
 
     class W_Test3(W_InstanceObject):
         pass
@@ -66,9 +68,11 @@ def test_BuiltinClass_implements():
         return W_IntObject(42)
     k_Foo = BuiltinClass('Foo', [Foo], implements=[k_IFoo])
     assert k_IFoo in k_Foo.immediate_parents
+    k_Foo.validate()
 
     with py.test.raises(ClassDeclarationError):
-        BuiltinClass('Test', [], implements=[k_IFoo])
+        k_Test = BuiltinClass('Test', [], implements=[k_IFoo])
+        k_Test.validate()
 
 def test_BuiltinClass_dummy_method():
     k_Test = BuiltinClass('Test', ['foo', 'bar'])
@@ -98,6 +102,14 @@ def test_def_method():
             return x
     assert (excinfo.value.message ==
             "Duplicate implementation for method Test::FoO()!")
+
+def test_def_method_ctor():
+    k_Test = BuiltinClass('Test', ['__construct'])
+
+    @k_Test.def_method([str])
+    def __construct(x):
+        return x
+    assert k_Test.constructor_method.method_func.runner.ll_func is __construct
 
 
 def test_subclass_builtin():
@@ -136,6 +148,12 @@ def test_subclass_builtin():
     names = []
     w_obj.enum_properties(interp, names, [])
     assert '\0BaseStuff\0name' in names
+
+
+def test_validate_builtin_classes():
+    assert len(all_builtin_classes) > 20  # make sure we've actually loaded the classes
+    for klass in all_builtin_classes.itervalues():
+        klass.validate()
 
 
 class TestKlass(BaseTestInterpreter):

@@ -96,6 +96,8 @@ class ClassBase(AbstractFunction, AccessMixin):
             method = self.methods[self.get_identifier()]
         else:
             return
+        if method is None:
+            return
         if method.is_static():
             raise CompilerError("Constructor %s cannot be static" %
                                 (method.repr()))
@@ -125,8 +127,6 @@ class ClassBase(AbstractFunction, AccessMixin):
         all_methods = self._collect_all_methods()
         abstract_methods = []
         for m in all_methods:
-            if not we_are_translated() and m is None:
-                continue
             if m.is_abstract():
                 abstract_methods.append("%s::%s" % (
                     m.getclass().name, m.get_name()))
@@ -138,9 +138,6 @@ class ClassBase(AbstractFunction, AccessMixin):
         meth_id = parent_method.get_identifier()
         if meth_id not in self.methods:
             self.methods[meth_id] = parent_method
-        else:
-            method = self.methods[meth_id]
-            self._check_inheritance(method, parent_method)
 
     def _check_inheritance(self, method, parent_method):
         if parent_method.is_final():
@@ -683,7 +680,6 @@ class BuiltinClass(ClassBase):
 
         for intf in implements:
             self.immediate_parents.append(intf)
-        self._check_abstract_methods()
         for name in magic_methods_unrolled:
             if name in self.methods:
                 method = self.methods[name]
@@ -735,12 +731,31 @@ class BuiltinClass(ClassBase):
                 raise ValueError(
                     "Duplicate implementation for method %s!" % method.repr())
             self.methods[meth_id] = method
+            if meth_id == '__construct':
+                self.constructor_method = method
             return ll_func
         return inner
 
     @property
     def instance_class(self):
         return self.custom_instance_class or W_InstanceObject
+
+    def validate(self):
+        """Check that the class is valid wrt. inheritance, interfaces, etc.
+
+        Only for testing.
+        """
+        for name, method in self.methods.iteritems():
+            if not isinstance(method, Method):
+                raise ValueError("Invalid method object for %s::%s: %s" %
+                                 (self.name, name, method))
+        self._check_abstract_methods()
+        if self.parentclass is not None:
+            for parent_method in self.parentclass.methods.itervalues():
+                meth_id = parent_method.get_identifier()
+                method = self.methods[meth_id]
+                if method is not parent_method:
+                    self._check_inheritance(method, parent_method)
 
 
 class ClassDeclaration(AbstractFunction, AccessMixin):
