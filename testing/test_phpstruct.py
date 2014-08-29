@@ -379,6 +379,11 @@ class TestUnpack(BaseTestInterpreter):
             _type(a[1]) for a in o.pop(0).as_pair_list(self.space)
         ]
 
+    def _next_arr(self, o, _type):
+        return [
+            [_type(a[0]), _type(a[1])] for a in o.pop(0).as_pair_list(self.space)
+        ]
+
     def test_a_nul_padded_string(self):
         output = self.run("""
             echo unpack("a", "string");
@@ -680,3 +685,29 @@ class TestUnpack(BaseTestInterpreter):
         assert self._next(output, self.space.str_w) == ['r']
         assert self._next(output, self.space.str_w) == ['i']
         assert self._next(output, self.space.str_w) == ['ing']
+
+    def test_return_array_keys(self):
+
+        output = self.run("""
+            echo unpack("c2chars/nint", "\x04\x00\xa0\x00");
+            echo unpack("c2/nint", "\x04\x00\xa0\x00");
+            echo unpack("c2/n3int", "\x04\x00\xa0\x00\xa0\x00\xa0\x00");
+        """)
+        assert self._next_arr(output, self.space.str_w) == [
+            ['chars1', '4'],
+            ['chars2', '0'],
+            ['int', '40960']
+        ]
+        assert self._next_arr(output, self.space.str_w) == [
+            ['1', '4'],
+            ['2', '0'],
+            ['int', '40960']
+        ]
+
+        assert self._next_arr(output, self.space.str_w) == [
+            ['1', '4'],
+            ['2', '0'],
+            ['int1', '40960'],
+            ['int2', '40960'],
+            ['int3', '40960']
+        ]

@@ -264,15 +264,13 @@ def unpack_nul_padded_string(unpack_obj, fmtdesc, count, name):
 
         if unpack_obj.string_index >= len(unpack_obj.string):
             raise FormatException(
-                "not enough input, need %s, have %s" % (count, len(data)),
-                fmtdesc.fmtchar
-            )
+                "Type %s: not enough input, need %s, have %s" % (
+                    fmtdesc.fmtchar, count, len(data)),
+                fmtdesc.fmtchar)
 
         data.append(unpack_obj.string[unpack_obj.string_index])
         unpack_obj.string_index += 1
-
-    unpack_obj.result.append(
-        UnpackContainer('1%s' % name, "".join(data), 0))
+    unpack_obj.result_append(name, count, 0, "".join(data), 0)
 
 
 def unpack_space_padded_string(unpack_obj, fmtdesc, count, name):
@@ -282,9 +280,9 @@ def unpack_space_padded_string(unpack_obj, fmtdesc, count, name):
 
         if unpack_obj.string_index >= len(unpack_obj.string):
             raise FormatException(
-                "not enough input, need %s, have %s" % (count, len(data)),
-                fmtdesc.fmtchar
-            )
+                "Type %s: not enough input, need %s, have %s" % (
+                    fmtdesc.fmtchar, count, len(data)),
+                fmtdesc.fmtchar)
 
         element = unpack_obj.string[unpack_obj.string_index]
         unpack_obj.string_index += 1
@@ -296,21 +294,18 @@ def unpack_space_padded_string(unpack_obj, fmtdesc, count, name):
             data.pop()
         else:
             break
-
-    unpack_obj.result.append(
-        UnpackContainer('1%s' % name, "".join(data), 0))
+    unpack_obj.result_append(name, count, 0, "".join(data), 0)
 
 
 def unpack_nul_padded_string_2(unpack_obj, fmtdesc, count, name):
-
     data = []
     for _ in range(count):
 
         if unpack_obj.string_index >= len(unpack_obj.string):
             raise FormatException(
-                "not enough input, need %s, have %s" % (count, len(data)),
-                fmtdesc.fmtchar
-            )
+                "Type %s: not enough input, need %s, have %s" % (
+                    fmtdesc.fmtchar, count, len(data)),
+                fmtdesc.fmtchar)
 
         element = unpack_obj.string[unpack_obj.string_index]
         unpack_obj.string_index += 1
@@ -320,8 +315,7 @@ def unpack_nul_padded_string_2(unpack_obj, fmtdesc, count, name):
 
         data.append(element)
 
-    unpack_obj.result.append(
-        UnpackContainer('1%s' % name, "".join(data), 0))
+    unpack_obj.result_append(name, count, 0, "".join(data), 0)
 
 
 hex_digit = ['0', '1', '2', '3',
@@ -332,15 +326,16 @@ hex_digit = ['0', '1', '2', '3',
 
 def unpack_hex_string(unpack_obj, fmtdesc, count, name,
                       high_nibble_first=False):
+    # import pdb; pdb.set_trace()
     data = []
     count = count / 2 + count % 2
     for _ in range(count):
 
         if unpack_obj.string_index >= len(unpack_obj.string):
             raise FormatException(
-                "not enough input, need %s, have %s" % (count, len(data)),
-                fmtdesc.fmtchar
-            )
+                "Type %s: not enough input, need %s, have %s" % (
+                    fmtdesc.fmtchar, count, len(data)),
+                fmtdesc.fmtchar)
 
         element = ord(unpack_obj.string[unpack_obj.string_index])
 
@@ -349,16 +344,15 @@ def unpack_hex_string(unpack_obj, fmtdesc, count, name,
         nibbles = element % 16, element / 16
         if high_nibble_first:
             nibbles = element / 16, element % 16
-
+        # import pdb; pdb.set_trace()
         nibbles_digits = hex_digit[nibbles[0]], hex_digit[nibbles[1]]
+        data.append('%s%s' % nibbles_digits)
 
-        if nibbles[-1]:
-            data.append('%s%s' % nibbles_digits)
-        else:
-            data.append(nibbles_digits[0])
-
-    unpack_obj.result.append(
-        UnpackContainer("1%s" % name, "".join(data), 0))
+    _, repetitions, _ = unpack_obj.fmt_interpreted[0]
+    to_append = "".join(data)
+    assert repetitions >= 0
+    to_append = to_append[:repetitions]
+    unpack_obj.result_append(name, count, 0, to_append, 0)
 
 
 def unpack_hex_string_low_nibble_first(unpack_obj, fmtdesc, count, name):
@@ -371,6 +365,7 @@ def unpack_hex_string_high_nibble_first(unpack_obj, fmtdesc, count, name):
 
 def unpack_int(unpack_obj, fmtdesc, count, name):
     for pos in range(count):
+        # import pdb; pdb.set_trace()
         a = unpack_obj.string_index
         b = unpack_obj.string_index+fmtdesc.size
         assert a >= 0
@@ -381,10 +376,9 @@ def unpack_int(unpack_obj, fmtdesc, count, name):
 
         if not len(data) == fmtdesc.size:
             raise FormatException(
-                "not enough input, "
-                "need %s, have %s" % (fmtdesc.size, len(data)),
-                fmtdesc.fmtchar
-            )
+                "Type %s: not enough input, need %s, have %s" % (
+                    fmtdesc.fmtchar, count, len(data)),
+                fmtdesc.fmtchar)
 
         unpack_obj.string_index += fmtdesc.size
         value = 0
@@ -401,12 +395,7 @@ def unpack_int(unpack_obj, fmtdesc, count, name):
                 if fmtdesc.signed and i == fmtdesc.size - 1 and byte > 128:
                     byte -= 256
                 value |= byte << i*8
-        if name is not None:
-            unpack_obj.result.append(
-                UnpackContainer("%s%d" % (name, pos + 1), None, intmask(value)))
-        else:
-            unpack_obj.result.append(
-                UnpackContainer("%d" % (pos + 1), None, intmask(value)))
+        unpack_obj.result_append(name, count, pos+1, None, intmask(value))
 
 
 def unpack_signed_char(unpack_obj, fmtdesc, count):
@@ -414,8 +403,6 @@ def unpack_signed_char(unpack_obj, fmtdesc, count):
 
 
 def unpack_float(unpack_obj, fmtdesc, count, name):
-
-    result = []
     for pos in range(count):
         a = unpack_obj.string_index
         b = unpack_obj.string_index+fmtdesc.size
@@ -427,10 +414,9 @@ def unpack_float(unpack_obj, fmtdesc, count, name):
 
         if not len(data) == fmtdesc.size:
             raise FormatException(
-                "not enough input, "
-                "need %s, have %s" % (fmtdesc.size, len(data)),
-                fmtdesc.fmtchar
-            )
+                "Type %s: not enough input, need %s, have %s" % (
+                    fmtdesc.fmtchar, count, len(data)),
+                fmtdesc.fmtchar)
 
         unpack_obj.string_index += fmtdesc.size
 
@@ -440,15 +426,10 @@ def unpack_float(unpack_obj, fmtdesc, count, name):
             p[i] = element
 
         floatval = float_buf[0]
-        result.append(
-            UnpackContainer("%s%s" % (name, pos+1), None, float(floatval)))
-
-    unpack_obj.result.extend(result)
+        unpack_obj.result_append(name, count, pos+1, None, float(floatval))
 
 
 def unpack_double(unpack_obj, fmtdesc, count, name):
-
-    result = []
     for pos in range(count):
 
         a = unpack_obj.string_index
@@ -461,10 +442,9 @@ def unpack_double(unpack_obj, fmtdesc, count, name):
 
         if not len(data) == fmtdesc.size:
             raise FormatException(
-                "not enough input, "
-                "need %s, have %s" % (fmtdesc.size, len(data)),
-                fmtdesc.fmtchar
-            )
+                "Type %s: not enough input, need %s, have %s" % (
+                    fmtdesc.fmtchar, count, len(data)),
+                fmtdesc.fmtchar)
 
         unpack_obj.string_index += fmtdesc.size
 
@@ -474,10 +454,7 @@ def unpack_double(unpack_obj, fmtdesc, count, name):
             p[i] = element
 
         value = double_buf[0]
-        result.append(
-            UnpackContainer("%s%s" % (name, pos+1), None, value))
-
-    unpack_obj.result.extend(result)
+        unpack_obj.result_append(name, count, pos+1, None, value)
 
 
 def unpack_nul_byte(unpack_obj, fmtdesc, count, name):
@@ -710,6 +687,14 @@ class Unpack(object):
         for fmtdesc in unroll_fmttable:
             if char == fmtdesc.fmtchar:
                 return fmtdesc
+        raise FormatException("Invalid format type %s" % char)
+
+    def result_append(self, name, count, pos, str_val, num_value):
+        if name:
+            if count > 1:
+                name += str(pos)
+        self.result.append(
+            UnpackContainer(name, str_val, num_value))
 
     def interpret(self):
         results = []
@@ -727,8 +712,6 @@ class Unpack(object):
                         rep = sys.maxint
                     else:
                         rep = int(repetitions)
-                    # if name == '/':
-                    #     name = None
                     results.append((fmtdesc, rep, name))
         except StopIteration:
             pass
@@ -739,9 +722,9 @@ class Unpack(object):
 
         for fmtdesc, repetitions, name in self.fmt_interpreted:
             if repetitions == sys.maxint:
+                # import pdb; pdb.set_trace()
                 repetitions = len(self.string) - self.string_index
-
-            fmtdesc.unpack(self, fmtdesc, repetitions, name)
+            fmtdesc.unpack(self,  fmtdesc,  repetitions,  name)
         return self.result
 
 
@@ -755,13 +738,17 @@ def _unpack(space, formats, string):
     try:
         results = Unpack(formats, string).build()
     except FormatException as e:
-        space.ec.warn("unpack(): Type %s: %s" % (e.char, e.message))
+        space.ec.warn("unpack(): %s" % (e.message))
+
         return space.w_False
     pairs = []
-    for uc in results:
+    for i, uc in enumerate(results):
+        name = uc.name
+        if name is None:
+            name = i + 1
         if uc.str_value:
-            pairs.append((space.wrap(uc.name), space.wrap(uc.str_value)))
+            pairs.append((space.wrap(name), space.wrap(uc.str_value)))
         else:
-            pairs.append((space.wrap(uc.name), space.wrap(uc.num_value)))
+            pairs.append((space.wrap(name), space.wrap(uc.num_value)))
 
     return space.new_array_from_pairs(pairs)

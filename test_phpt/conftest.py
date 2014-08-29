@@ -266,7 +266,7 @@ markers[array_test_dir] = {
     '002.phpt': "T_LIST parser problem",
     '007.phpt': "?",
     '008.phpt': "?",
-    'bug24766.phpt': "missing unpack",
+    'bug24766.phpt': "missing debug_zval_dump",
     'bug25708.phpt': "missing debug_zval_dump",
     'bug26458.phpt': "missing debug_zval_dump",
     'bug35821.phpt': "not implemented error",
@@ -899,8 +899,7 @@ markers[string_test_dir] = {
     'strip_tags_variation7.phpt': "not implemented",
     'strip_tags_variation8.phpt': "not implemented",
     'strip_tags_variation9.phpt': "not implemented",
-    'unpack.phpt': "not implemented",
-    'unpack_error.phpt': "not implemented",
+    'unpack_error.phpt': "Invalid format type Z????",
     'vfprintf_error4.phpt': "warning issue",
     'vfprintf_variation1.phpt': "context",
     'wordwrap.phpt': "not implemented",
@@ -1307,7 +1306,6 @@ markers[network_test_dir] = {
 }
 
 markers[url_test_dir] = {
-    'base64_encode_basic_001.phpt': 'missing pack()',
     'get_headers_error_001.phpt': 'get_headers not implemented',
     'get_headers_error_002.phpt': 'get_headers not implemented',
 }
@@ -1432,7 +1430,7 @@ markers[serialize_test_dir] = {
     'bug62836_2.phpt': 'does not work yet',
     'bug64354_3.phpt': 'does not work yet',
     'incomplete_class.phpt': 'does not work yet',
-    'precision.phpt': 'missing unpack',
+    # 'precision.phpt': 'missing unpack',
     'serialization_miscTypes_001.phpt': 'only 32bit',
     'serialization_objects_001.phpt': 'does not work yet',
     'serialization_objects_002.phpt': 'does not work yet',
