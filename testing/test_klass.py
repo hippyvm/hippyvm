@@ -100,7 +100,6 @@ def test_def_method():
             "Duplicate implementation for method Test::FoO()!")
 
 
-@py.test.mark.xfail(reason='not yet')
 def test_subclass_builtin():
     class W_BaseStuff(W_InstanceObject):
         def setup(self, interp):
@@ -108,6 +107,7 @@ def test_subclass_builtin():
 
     class W_DerivedStuff(W_BaseStuff):
         def setup(self, interp):
+            W_BaseStuff.setup(self, interp)
             self.name2 = 'derived'
 
     def get_name(interp, this):
@@ -133,8 +133,9 @@ def test_subclass_builtin():
         instance_class=W_DerivedStuff)
     interp = Interpreter(getspace())
     w_obj = k_DerivedStuff.call_args(interp, [])
-    assert '\0BaseStuff\0name' in [
-        name for name, w_ in w_obj.iterproperties(interp)]
+    names = []
+    w_obj.enum_properties(interp, names, [])
+    assert '\0BaseStuff\0name' in names
 
 
 class TestKlass(BaseTestInterpreter):
