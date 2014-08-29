@@ -712,7 +712,7 @@ class BuiltinClass(ClassBase):
         else:
             raise TypeError("Invalid method declaration: %s" % method_spec)
 
-    def def_method(self, signature, name, error=None, flags=0,
+    def def_method(self, signature, name=None, error=None, flags=0,
                    error_handler=handle_as_warning, check_num_args=True):
         try:
             i = signature.index('this')
@@ -727,7 +727,13 @@ class BuiltinClass(ClassBase):
                             error_handler, check_num_args)
             method = Method(func, flags, self)
             meth_id = method.get_identifier()
-            assert meth_id in self.methods
+            if not meth_id in self.methods:
+                raise ValueError(
+                    "Unknown method %s was not declared in the class "
+                    "definition" % method.repr())
+            if self.methods[meth_id] is not None:
+                raise ValueError(
+                    "Duplicate implementation for method %s!" % method.repr())
             self.methods[meth_id] = method
             return ll_func
         return inner

@@ -71,8 +71,33 @@ def test_BuiltinClass_implements():
         BuiltinClass('Test', [], implements=[k_IFoo])
 
 def test_BuiltinClass_dummy_method():
-    k_Test = BuiltinClass('Test', ['foo'])
+    k_Test = BuiltinClass('Test', ['foo', 'bar'])
     assert k_Test.methods['foo'] is None
+
+def test_def_method():
+    k_Test = BuiltinClass('Test', ['foo', 'Bar'])
+
+    @k_Test.def_method([str])
+    def Foo(x):
+        return x
+    assert k_Test.methods['foo'].repr() == 'Test::Foo()'
+
+    @k_Test.def_method([str], name='bar')
+    def xxx(x):
+        return x
+    assert k_Test.methods['bar'].repr() == 'Test::bar()'
+
+    with py.test.raises(ValueError):
+        @k_Test.def_method([str])
+        def Baz(x):
+            return x
+
+    with py.test.raises(ValueError) as excinfo:
+        @k_Test.def_method([str])
+        def FoO(x):
+            return x
+    assert (excinfo.value.message ==
+            "Duplicate implementation for method Test::FoO()!")
 
 
 @py.test.mark.xfail(reason='not yet')
