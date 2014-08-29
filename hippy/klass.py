@@ -9,6 +9,7 @@ from hippy.objects.strobject import W_StringObject
 from hippy import consts
 from hippy.objects.nullobject import w_Null
 from hippy.mapdict import Terminator
+from hippy.builtin import ThisUnwrapper, handle_as_warning, new_function
 from rpython.rlib import jit
 from rpython.rlib.objectmodel import we_are_translated
 from rpython.rlib.unroll import unrolling_iterable
@@ -699,6 +700,28 @@ class BuiltinClass(ClassBase):
         for base in self.immediate_parents:
             for parent_id in base.all_parents:
                 self.all_parents[parent_id] = None
+
+    def def_method(self, signature, name, error=None, flags=0,
+                   error_handler=handle_as_warning, check_num_args=True):
+        assert '::' in name   # should be "Class::method"
+        try:
+            i = signature.index('this')
+            signature[i] = ThisUnwrapper(self.instance_class)
+        except ValueError:
+            pass
+        def inner(ll_func):
+            func = new_function(ll_func, signature, name, error,
+                            error_handler, check_num_args)
+            method = Method(func, flags, self)
+            meth_id = method.get_identifier()
+            assert meth_id in self.methods
+            self.methods[meth_id] = method
+            return ll_func
+        return inner
+
+    @property
+    def instance_class(self):
+        return self.custom_instance_class or W_InstanceObject
 
 
 class ClassDeclaration(AbstractFunction, AccessMixin):
