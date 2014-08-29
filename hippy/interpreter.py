@@ -481,7 +481,7 @@ class Interpreter(object):
             name = name[1:]
         func = self.space.global_function_cache.locate(name)
         if func is None:
-            return None 
+            return None
         assert isinstance(func, AbstractFunction)
         return func
 
