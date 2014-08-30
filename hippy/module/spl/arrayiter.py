@@ -44,7 +44,7 @@ def count(interp, this):
 @k_ArrayIterator.def_method(['interp', 'this'])
 def current(interp, this):
     w_arr = this._get_storage(interp)
-    return w_arr._current(interp.space)
+    return w_arr._current()
 
 
 @k_ArrayIterator.def_method([])

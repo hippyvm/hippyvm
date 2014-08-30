@@ -8,6 +8,7 @@ from hippy.objects.base import W_Object
 from hippy.objects.reference import W_Reference, VirtualReference
 from hippy.objects.convert import force_float_to_int_in_any_way
 from hippy.objects.strobject import string_var_export
+from hippy.objects.boolobject import w_False
 from hippy.error import ConvertError
 from collections import OrderedDict
 from rpython.rlib.rstring import StringBuilder
@@ -294,7 +295,7 @@ class W_ArrayObject(W_Object):
     def _each(self, space):
         raise NotImplementedError("abstract")
 
-    def _current(self, space):
+    def _current(self):
         raise NotImplementedError("abstract")
 
     def _key(self, space):
@@ -429,12 +430,12 @@ class W_ListArrayObject(W_ArrayObject):
     def get_rdict_from_array(self):
         return self.as_rdict()
 
-    def _current(self, space):
+    def _current(self):
         index = self.current_idx
         if 0 <= index < len(self.lst_w):
             return self.lst_w[index]
         else:
-            return space.w_False
+            return w_False
 
     def _key(self, space):
         index = self.current_idx
@@ -634,13 +635,13 @@ class W_RDictArrayObject(W_ArrayObject):
     def _keylist_changed(self):
         self._keylist = None
 
-    def _current(self, space):
+    def _current(self):
         keylist = self._getkeylist()
         index = self.current_idx
         if 0 <= index < len(keylist):
             return self.dct_w[keylist[index]]
         else:
-            return space.w_False
+            return w_False
 
     def _key(self, space):
         keylist = self._getkeylist()
