@@ -2384,7 +2384,7 @@ markers[spl_test_dir] = {
     'array_009.phpt': "Missing RecursiveIteratorIterator",
     'array_010.phpt': "Missing ArrayObject",
     'array_011.phpt': "Missing LimitIterator",
-    'array_012.phpt': "Missing ArrayIterator",
+    #'array_012.phpt': "Missing ArrayIterator",
     'array_013.phpt': "?",
     'array_014.phpt': "Missing ArrayIterator",
     'array_015.phpt': "Missing ArrayObject",
