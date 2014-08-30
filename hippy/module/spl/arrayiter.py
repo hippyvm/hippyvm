@@ -47,21 +47,25 @@ def current(interp, this):
     return w_arr._current()
 
 
-@k_ArrayIterator.def_method([])
-def next():
-    pass
+@k_ArrayIterator.def_method(['interp', 'this'])
+def next(interp, this):
+    w_arr = this._get_storage(interp)
+    return w_arr.next()
 
 
-@k_ArrayIterator.def_method([])
-def key():
-    pass
+@k_ArrayIterator.def_method(['interp', 'this'])
+def key(interp, this):
+    w_arr = this._get_storage(interp)
+    return w_arr._key(interp.space)
 
 
-@k_ArrayIterator.def_method([])
-def rewind():
-    pass
+@k_ArrayIterator.def_method(['interp', 'this'])
+def rewind(interp, this):
+    w_arr = this._get_storage(interp)
+    w_arr.current_idx = 0
 
 
-@k_ArrayIterator.def_method([])
-def valid():
-    pass
+@k_ArrayIterator.def_method(['interp', 'this'])
+def valid(interp, this):
+    w_arr = this._get_storage(interp)
+    return interp.space.wrap(w_arr.current_idx < w_arr.arraylen())

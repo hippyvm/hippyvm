@@ -1784,13 +1784,7 @@ def natcasesort(interp, w_ref):
 @wrap(['space', 'unique_array'])
 def next(space, w_arr):
     """ Advance the internal array pointer of an array """
-    length = w_arr.arraylen()
-    current_idx = w_arr.current_idx + 1
-    if current_idx >= length:
-        w_arr.current_idx = length
-        return space.w_False
-    w_arr.current_idx = current_idx
-    return w_arr._current()
+    return w_arr.next()
 
 
 @wrap(['space', 'unique_array'])

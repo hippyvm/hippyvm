@@ -298,6 +298,16 @@ class W_ArrayObject(W_Object):
     def _current(self):
         raise NotImplementedError("abstract")
 
+    def next(self):
+        length = self.arraylen()
+        current_idx = self.current_idx + 1
+        if current_idx >= length:
+            self.current_idx = length
+            return w_False
+        self.current_idx = current_idx
+        return self._current()
+
+
     def _key(self, space):
         raise NotImplementedError("abstract")
 
