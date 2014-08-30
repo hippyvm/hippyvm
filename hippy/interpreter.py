@@ -1334,7 +1334,7 @@ class Interpreter(object):
 
 
     def GETFUNC(self, bytecode, frame, space, arg, pc):
-        w_name = frame.pop().deref()
+        w_name = frame.pop().deref()            
         func = self.getfunc(w_name, frame.w_this, frame.get_contextclass())
         assert func is not None
         frame.push(func)
