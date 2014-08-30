@@ -2,13 +2,16 @@ from hippy.builtin_klass import k_Iterator
 from hippy.builtin import Optional
 from hippy.klass import def_class
 from hippy.objects.base import W_Root
+from hippy.objects.arrayobject import W_ArrayObject
 from hippy.objects.instanceobject import W_InstanceObject
 from hippy import consts
 
 
 class W_ArrayIterator(W_InstanceObject):
     def _get_storage(self, interp):
-        return self.getattr(interp, "storage", k_ArrayIterator)
+        w_arr = self.getattr(interp, "storage", k_ArrayIterator)
+        assert isinstance(w_arr, W_ArrayObject)
+        return w_arr
 
 
 k_ArrayIterator = def_class(
