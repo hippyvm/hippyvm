@@ -38,6 +38,8 @@ check_sign_only = "check_sign_only"
 WIDTH = os.environ.get("COLUMNS", 300)
 COL_WIDTH = int(WIDTH) / 2 - 5
 
+IS_TRAVIS = os.getenv('TRAVIS') == 'true'
+
 
 def parse_phpt(fname):
     skipif_src = []
@@ -50,8 +52,9 @@ def parse_phpt(fname):
     st = None
     IGNORED = 999
     state = {'TEST': -1, 'FILE': 0, 'FILEEOF': 0, 'EXPECT': 1, 'EXPECTF': 1,
-             'SKIPIF': 5, 'INI': 2, 'CLEAN': 3, 'CREDITS': IGNORED, 'GET': 6,
-             'POST': 7, 'COOKIE': 8, 'XFAIL': 9, 'DESCRIPTION': IGNORED}
+             'SKIPIF': 5, 'INI': 2, 'CLEAN': 3, 'CREDITS': IGNORED,
+             'CREDIT': IGNORED, 'GET': 6, 'POST': 7, 'COOKIE': 8,
+             'XFAIL': 9, 'DESCRIPTION': IGNORED}
     with open(fname) as f:
         lines = f.readlines()
     for l in lines:
@@ -207,6 +210,7 @@ def matches_line(php, hippy, check_sign_only=False):
     php = php.replace("%u|b%", "")
     rphp = re.escape(php)
     rphp = rphp.replace('\%e', '.*')
+    rphp = rphp.replace('\%x', '[0-9a-fA-F]+')
     rphp = rphp.replace('\%s', '.*')
     rphp = rphp.replace('\%a', '.*')
     rphp = rphp.replace('\%f', '.*')
@@ -245,6 +249,7 @@ pcre_test_dir = 'ext/pcre'
 hash_test_dir = 'ext/hash'
 spl_test_dir = 'ext/spl'
 Zend_test_dir = 'Zend'
+mcrypt_test_dir = 'ext/mcrypt'
 
 os.environ["MYSQL_TEST_HOST"] = "localhost"
 os.environ["MYSQL_TEST_USER"] = "root"
@@ -265,7 +270,7 @@ markers[array_test_dir] = {
     'bug25708.phpt': "missing debug_zval_dump",
     'bug26458.phpt': "missing debug_zval_dump",
     'bug35821.phpt': "not implemented error",
-    'bug36975.phpt': "missing natcasesort",
+    'bug36975.phpt': "PHP quirk behavior",
     'bug45312.phpt': "not implemented error",
     'bug61730.phpt': "unexpected 'T_USE'",
 
@@ -278,17 +283,13 @@ markers[array_test_dir] = {
     'array_fill_object_2_4.phpt': "order of class members",
     'array_filter_variation7.phpt': "missing create_function()",
 
-    'array_intersect_1.phpt': "class elems repr",
     'array_intersect_assoc_variation9.phpt': 'too many notices',
     'array_intersect_variation4.phpt': "doesnt work properly",
     'array_intersect_variation8.phpt': "wrong order of elems",
     'array_intersect_variation9.phpt': "doesnt work properly",
-    'array_key_exists_object1.phpt': ("array_key_exists() expects"
-                                      "parameter 2 to be array"
-                                      " object given"),
-    'array_key_exists_object2.phpt': ("array_key_exists() expects "
-                                      "parameter 2 to be array,"
-                                      " object given"),
+    'array_key_exists_object1.phpt': ("var_dump format is different and one key"
+                                      "is reported as missing"),
+    'array_key_exists_object2.phpt': "var_dump format is different",
     'array_keys_variation_002.phpt': "doesnt work prop",
     'array_keys_variation_003.phpt': "doesnt work prop",
     'array_keys_variation_004.phpt': "doesnt work prop",
@@ -303,9 +304,6 @@ markers[array_test_dir] = {
     'array_pad_variation2.phpt': "arg parse problem",
     'array_product_variation1.phpt': "instance unimplemented as_number",
     'array_product_variation4.phpt': "?",
-    'array_push_variation4.phpt': "?",
-    'array_push.phpt': "at least problem",
-    'array_push_error1.phpt': "at least problem",
     'array_push_error2.phpt': "XXX push item in array having key = sys.maxint should fail",
     'array_replace.phpt': "?",
     'array_search1.phpt': "?",
@@ -326,7 +324,6 @@ markers[array_test_dir] = {
     'array_uintersect_variation3.phpt': "?",
     'array_unique_variation2.phpt': "?",
     'array_unique_variation8.phpt': "too many warnings?",
-    'array_unshift_error.phpt': "at least problem",
     'array_walk_object1.phpt': "?",
     'array_walk_objects.phpt': "?",
     'array_walk_variation7.phpt': "?",
@@ -372,12 +369,12 @@ markers[array_test_dir] = {
     'ksort_variation2.phpt': "wrong order of elems",
     'ksort_variation8.phpt': "wrong odred of elems",
     'ksort_variation9.phpt': "wrong order of elems",
+    'locale_sort.phpt': 'Xfail: requires the locale fr_FR.ISO-8859-1 to be available',
     'prev_error3.phpt': "FatalError: Argument 1 for prev() must be a variable",
     'range_variation.phpt': "parser problem",
     'rsort_basic.phpt': "wrong order of elems",
     'rsort_variation2.phpt': "wrong order of elems",
     'rsort_variation11.phpt': "wrong order of elems",
-    'shuffle_error.phpt': "?",
     'sort_variation2.phpt': "wrong order of elems",
     'sort_variation11.phpt': "?",
     'sort_variation9.phpt': "?",
@@ -388,8 +385,6 @@ markers[array_test_dir] = {
     'uasort_variation6.phpt': "?",
     'usort_variation6.phpt': "?",
     'uksort_variation1.phpt': "arg check order problem",
-
-    'bug25758.phpt': "?",
     'range_variation1.phpt': "in/float mix",
     'rsort_variation3.phpt': "in/float mix",
     'usort_variation7.phpt': "missing create_function()",
@@ -399,12 +394,6 @@ markers[array_test_dir] = {
 
 markers[class_object_test_dir] = {
     'get_class_error_001.phpt': "bad return value on failures",
-    'get_class_methods_basic_001.phpt': "undefined get_class_methods()",
-    'get_class_methods_basic_002.phpt': "undefined get_class_methods()",
-    'get_class_methods_basic_003.phpt': "undefined get_class_methods()",
-    'get_class_methods_error_001.phpt': "undefined get_class_methods()",
-    'get_class_methods_variation_001.phpt': "undefined get_class_methods()",
-    'get_class_methods_variation_002.phpt': "undefined get_class_methods()",
     'get_class_vars_variation2.phpt': "undefined get_class_vars()",
     'get_declared_classes_basic_001.phpt': "works,  problem with %s regexp in output",
     'get_declared_interfaces_basic_001.phpt': "works,  problem with %s regexp in output",
@@ -427,6 +416,7 @@ markers[class_object_test_dir] = {
 markers[math_test_dir] = {
     "bug28228.phpt": "bullshit NULL as string arg",
     'bug45712.phpt': "the test is wrong (asks for inf != inf)",
+    'tan_basiclong_64bit.phpt': 'Xfail: It produces a different result on Travis',
 }
 
 
@@ -441,6 +431,8 @@ markers[dir_test_dir] = {
 
 # FILE
 markers[file_test_dir] = {
+    'bug26615.phpt': 'SKIP: requires TEST_PHP_EXECUTABLE in env',
+    'bug26938.phpt': 'SKIP: requires TEST_PHP_EXECUTABLE in env',
     '001.phpt': "?",
     '004.phpt': "missing mkd5_file()",
     'bug12556.phpt': "?",
@@ -451,9 +443,7 @@ markers[file_test_dir] = {
     'bug45303.phpt': "nightmare...",
     'bug45303.phpt': "nightmare...",
     'bug52624.phpt': "nightmare...",
-    'bug22414.phpt': "missing passthru()",
-    'bug26615.phpt': "missing exec()",
-    'bug26938.phpt': "missing exec()",
+    'bug22414.phpt': "missing md5_file()",
     'bug27508.phpt': "missing stream_wrapper_register()",
     'bug27619.phpt': "?",
     'bug30362.phpt': "missing stream_get_line()",
@@ -473,20 +463,18 @@ markers[file_test_dir] = {
     'bug46347.phpt': "missing parse_ini_file()",
     'bug40501.phpt': "?",
     'bug41655_1.phpt': "glob problem",
-    'bug41655_2.phpt': "glob problem",
     'bug44034.phpt': "?",
     'bug51094.phpt': "missing parse_ini_string()",
     'bug53241.phpt': "missing curl_init()",
     'bug53848.phpt': "?",
     'bug63512.phpt': "missing parse_ini_string()",
     'directory_wrapper_fstat_basic.phpt': "?",
-    'clearstatcache_001.phpt': "missing passthru()",
+    'clearstatcache_001.phpt': "?",
     'copy_variation4.phpt': "imo whole expect is wrong",
     'copy_variation3.phpt': "imo whole expect is wrong",
     'fgetc_variation1.phpt': "compile None",
 
     'php_fd_wrapper_03.phpt': "HW: creating array_from empty...",
-    # 'popen_pclose_error.phpt': 'popen not rpython',
 
     'fopen_variation14.phpt': "remote  host file access..?",
     'fopen_variation15.phpt': "remote  host file access..?",
@@ -524,7 +512,6 @@ markers[file_test_dir] = {
     'fgetcsv_variation29.phpt': "not implemented",
     'fgetcsv_variation30.phpt': "not implemented",
     'fgetcsv_variation31.phpt': "not implemented",
-    # 'fgets_socket_variation1.phpt': "missing stream_socket_server()",
     'fgets_socket_variation2.phpt': "error binding",
     'fgetss.phpt': "not implemented",
     'fgetss1.phpt': "not implemented",
@@ -699,39 +686,37 @@ markers[file_test_dir] = {
     'fgetss_variation3.phpt': slow,
 }
 
+if IS_TRAVIS:
+    markers[file_test_dir].update({
+        'get_current_user.phpt': 'Fails with OSError: [Errno 25] Inappropriate ioctl for device on Travis',
+        'fwrite_variation3.phpt': 'On Travis ftell returns incorrectly after writing',
+        'disk_free_space_basic.phpt': 'Xfail: sometimes fail on Travis',
+    })
+
 # POSIX
 markers[posix_test_dir] = {
-    'posix_access.phpt': "?",
-    'posix_access_error_modes.phpt': "?",
-    'posix_access_safemode.phpt': "?",
-    'posix_kill_basic.phpt': "missing shell_exec()",
-    'posix_ttyname.phpt': "?",
-    'posix_ttyname_variation6.phpt': "?",
-    'posix_errno_variation2.phpt': 'missing shell_exec()',
-    'posix_getgrgid.phpt': 'missing posix_getgrgid()',
-    'posix_getgrgid_basic.phpt': 'missing posix_getgrgid()',
-    'posix_getgrgid_error.phpt': 'missing posix_getgrgid()',
-    'posix_getgrgid_macosx.phpt': 'missing posix_getgrgid()',
-    'posix_getgrgid_variation.phpt': 'missing posix_getgrgid()',
-    'posix_getgrgid_wrongparams.phpt': 'missing posix_getgrgid()',
+    'posix_access.phpt': "Expecting: Deprecated: Directive safe_mode is ...",  # Update the tests to PHP 5.4
+    'posix_access_error_modes.phpt': "Expecting: Deprecated: Directive safe_mode is ...",
+    'posix_access_safemode.phpt': "Expecting: Deprecated: Directive safe_mode is ...",
+    'posix_ttyname.phpt': "OSError: [Errno 25] Inappropriate ioctl for device",
+    'posix_ttyname_variation6.phpt': "Missing:  Error: 8 - Object of class classWithToString could not be converted to int",
+    'posix_getgrgid_basic.phpt': 'Problems with the %a format in the test. Output looks good',
+    'posix_getgrgid_macosx.phpt': 'Test should be skipped in platforms other than mac',
     'posix_ttyname_error_wrongparams.phpt': 'missing imagecreate()',
+    'posix_mkfifo_safemode.phpt': 'Xfail: On Travis and other setups it is possible to create a fifo in /tmp (probably there is only one user)',
 }
+
 
 # STRING
 markers[string_test_dir] = {
-    '004.phpt': slow,
+    '004.phpt': "Section EXPECTREGEX not handled",
     'bug40754.phpt': check_sign_only,
     'bug54454.phpt': check_sign_only,
     'chunk_split.phpt': slow,  # hangs on 64-bit
-    'explode.phpt': "problem with var_export()",
     'implode.phpt': "$php_errormsg",
     'htmlentities22.phpt': "named constant in default args",
     'setlocale_error.phpt': ("not implemented: (deprecated) "
                              "category names as strings"),
-    'setlocale_basic1.phpt': ("?"),
-    'setlocale_basic2.phpt': ("?"),
-    'setlocale_basic3.phpt': ("?"),
-    'setlocale_variation1.phpt': ("?"),
     'setlocale_variation4.phpt': ("expects en_US as "
                                   "default system locale"),
     'setlocale_variation5.phpt': ("expects en_US as "
@@ -748,21 +733,16 @@ markers[string_test_dir] = {
     'wordwrap_variation2.phpt': ("unimplemented corner "
                                  "case when width < 0"),
 
-    # 'sprintf_variation23.phpt': 'resource problem',
-    # 'sprintf_variation36.phpt': 'resource problem',
     'sprintf_variation52.phpt': 'some problem',
 
     '005.phpt': "not implemented",
     '006.phpt': "not implemented",
     '007.phpt': "not implemented",
-    # 'bug21338.phpt': "not implemented",
     'bug21453.phpt': "not implemented",
     'bug21730.phpt': "not implemented",
     'bug21744.phpt': "not implemented",
     'bug22008.phpt': "not implemented",
     'bug23650.phpt': "not implemented",
-    # 'bug24208.phpt': "not implemented",
-    # 'bug25707.phpt': "not implemented",
     'bug26817.phpt': "not implemented",
     'bug26819.phpt': "not implemented",
     'bug27295.phpt': "not implemented",
@@ -770,18 +750,13 @@ markers[string_test_dir] = {
     'bug29119.phpt': "not implemented",
     'bug35817.phpt': "not implemented",
     'bug36148.phpt': "not implemented",
-    'bug36306.phpt': "not implemented",
-    'bug37262.phpt': "not implemented",
+    'bug37262.phpt': "Call to undefined function create_function()",
     'bug38322.phpt': "not implemented",
     'bug38770.phpt': "not implemented",
     'bug40432.phpt': "not implemented",
-    # 'bug40637.phpt': "not implemented",
-    # 'bug40704.phpt': "not implemented",
     'bug42107.phpt': "not implemented",
-    # 'bug43927.phpt': "not implemented",
     'bug44242.phpt': "not implemented",
     'bug44703.phpt': "not implemented",
-    # 'bug45485.phpt': "not implemented",
     'bug46578.phpt': "not implemented",
     'bug47322.phpt': "not implemented",
     'bug47443.phpt': "not implemented",
@@ -798,17 +773,12 @@ markers[string_test_dir] = {
     'bug54721.phpt': "not implemented",
     'bug55674.phpt': "not implemented",
     'bug55871.phpt': "not implemented",
-    # 'bug61374.phpt': "not implemented",
-    'bug61660.phpt': "not implemented",
     'bug61764.phpt': "not implemented",
     'bug62443.phpt': "not implemented",
-    'bug62462.phpt': "not implemented",
-    'bug64879.phpt': "not implemented",
     'convert_cyr_string.phpt': "not implemented",
     'convert_cyr_string_basic.phpt': "not implemented",
     'convert_cyr_string_error.phpt': "not implemented",
     'convert_cyr_string_variation1.phpt': "not implemented",
-    'crc32.phpt': "not implemented",
     'crypt.phpt': "not implemented",
     'crypt_blowfish.phpt': "not implemented",
     'crypt_blowfish_variation1.phpt': "not implemented",
@@ -842,7 +812,6 @@ markers[string_test_dir] = {
     'hebrevc_variation2.phpt': "not implemented",
     'highlight_file.phpt': "not implemented",
     'html_entity_decode1.phpt': "not implemented",
-    # 'html_entity_decode2.phpt': "not implemented",
     'html_entity_decode3.phpt': "not implemented",
     'html_entity_decode_cp866.phpt': "not implemented",
     'html_entity_decode_html4.phpt': "not implemented",
@@ -886,7 +855,6 @@ markers[string_test_dir] = {
     'http_build_query_error.phpt': "not implemented",
     'http_build_query_variation1.phpt': "not implemented",
     'http_build_query_variation2.phpt': "not implemented",
-    'levenshtein.phpt': "not implemented",
     'md5_file.phpt': "not implemented",
     'metaphone.phpt': "not implemented",
     'money_format_basic1.phpt': "not implemented",
@@ -899,14 +867,7 @@ markers[string_test_dir] = {
     'parse_str_basic2.phpt': "not implemented",
     'parse_str_basic3.phpt': "not implemented",
     'parse_str_basic4.phpt': "not implemented",
-    # 'parse_str_error1.phpt': "not implemented",
     'php_strip_whitespace.phpt': "not implemented",
-    'quoted_printable_decode_basic.phpt': "not implemented",
-    'quoted_printable_decode_error.phpt': "not implemented",
-    'quoted_printable_decode_variation1.phpt': "not implemented",
-    'quoted_printable_encode_001.phpt': "not implemented",
-    'quoted_printable_encode_002.phpt': "not implemented",
-    'setlocale_variation2.phpt': "not implemented",
     'sha1.phpt': 'sha1_file not implemented',
     'sha1_file.phpt': "not implemented",
     'show_source_basic.phpt': "not implemented",
@@ -914,9 +875,6 @@ markers[string_test_dir] = {
     'show_source_variation2.phpt': "not implemented",
     'similar_text_basic.phpt': "not implemented",
     'similar_text_error.phpt': "not implemented",
-    'soundex.phpt': "not implemented",
-    'soundex_basic.phpt': "not implemented",
-    'soundex_error.phpt': "not implemented",
     'sscanf_basic1.phpt': "not implemented",
     'sscanf_basic2.phpt': "not implemented",
     'sscanf_basic3.phpt': "not implemented",
@@ -928,62 +886,46 @@ markers[string_test_dir] = {
     'sscanf_variation1.phpt': "not implemented",
     'sscanf_variation2.phpt': "not implemented",
     'str_getcsv_001.phpt': "not implemented",
-    'str_shuffle.phpt': "not implemented",
-    'str_shuffle_basic.phpt': "not implemented",
-    'str_shuffle_error.phpt': "not implemented",
-    'str_shuffle_variation1.phpt': "not implemented",
     'str_word_count.phpt': "not implemented",
     'str_word_count1.phpt': "not implemented",
     'strip_tags.phpt': "not implemented",
-    # 'strip_tags_basic1.phpt': "not implemented",
     'strip_tags_basic2.phpt': "not implemented",
-    # 'strip_tags_error.phpt': "not implemented",
-    # 'strip_tags_variation1.phpt': "not implemented",
     'strip_tags_variation10.phpt': "not implemented",
     'strip_tags_variation11.phpt': "not implemented",
     'strip_tags_variation2.phpt': "not implemented",
-    # 'strip_tags_variation3.phpt': "not implemented",
     'strip_tags_variation4.phpt': "not implemented",
     'strip_tags_variation5.phpt': "not implemented",
     'strip_tags_variation6.phpt': "not implemented",
     'strip_tags_variation7.phpt': "not implemented",
     'strip_tags_variation8.phpt': "not implemented",
     'strip_tags_variation9.phpt': "not implemented",
-    # 'trim.phpt': "not implemented",
     'unpack.phpt': "not implemented",
     'unpack_error.phpt': "not implemented",
     'vfprintf_error4.phpt': "warning issue",
     'vfprintf_variation1.phpt': "context",
     'wordwrap.phpt': "not implemented",
 
-    'bug63943.phpt': "need to review",
     'http_build_query_variation3.phpt': "need to review",
-    'join_error.phpt': "need to review",
+    'join_error.phpt': "Errors say implode() instead of join()",
     'join_variation2.phpt': "need to review",
-    'str_repeat.phpt': "need to review",
     'str_replace.phpt': "need to review",
     'stripos_variation10.phpt': "need to review",
     'stripos_variation11.phpt': "need to review",
-    'stristr_error.phpt': "need to review",
-    'stristr_variation2.phpt': "need to review",
-    'strlen.phpt': "need to review",
+    'stristr_variation2.phpt': "For an object it expects: Notice: Object of class sample could not be converted to int",
+    'strlen.phpt': "Expects: Warning: strlen() expects parameter 1 to be string, array given got Notice instead",
     'strlen_variation1.phpt': "need to review",
     'strncasecmp_variation10.phpt': "need to review",
     'strncasecmp_variation11.phpt': "need to review",
     'strncasecmp_variation4.phpt': "need to review",
     'strncmp_variation4.phpt': "need to review",
-    'strpos.phpt': "need to review",
     'strrchr_variation10.phpt': "need to review",
     'strrchr_variation11.phpt': "need to review",
     'strrpos_variation10.phpt': "need to review",
     'strrpos_variation11.phpt': "need to review",
-    'strstr.phpt': "need to review",
 }
 
 # GENERAL
 markers[general_test_dir] = {
-    'bug42272.phpt': ("Bug #42272 (var_export()"
-                      " incorrectly escapes char(0))"),
     'bug47027.phpt': "Missing ArrayObject class",
     'bug60227_4.phpt': 'SKIP: Unknown phpt section header: EXPECTHEADERS',
     'bug60227_3.phpt': 'SKIP: Unknown phpt section header: EXPECTHEADERS',
@@ -993,10 +935,7 @@ markers[general_test_dir] = {
                                      "abstract base class"),
     'debug_zval_dump_v.phpt': ("NotImplementedError: "
                                "abstract base class"),
-    'var_export_basic4.phpt': "problem with strings",
-    'var_export_basic6.phpt': ("missing static_scalar : T_ARRAY "
-                               "( static_array_pair_list )"),
-    'var_export_basic9.phpt': "?",
+    'var_export_basic6.phpt': "var_dump reports different lengths",
     'type.phpt': "?",
     'gettype_settype_basic.phpt': "?",
     'parse_ini_file.phpt': "parsing",
@@ -1006,16 +945,12 @@ markers[general_test_dir] = {
     'call_user_func_array_variation_003.phpt': "?",
     'call_user_func_array_variation_001.phpt': "missing call_user_func_array()",
 
-    '002.phpt': "not implemented",
-    '003.phpt': "not implemented",
     '004.phpt': "not implemented",
-    '006.phpt': "not implemented",
     '010.phpt': "not implemented",
     'bug27678.phpt': "not implemented",
     'bug29038.phpt': "not implemented",
     'bug32647.phpt': "not implemented",
     'bug34794.phpt': "not implemented",
-    # 'bug35229.phpt': "not implemented",
     'bug39322.phpt': "not implemented",
     'bug40398.phpt': "not implemented",
     'bug40752.phpt': "not implemented",
@@ -1037,8 +972,6 @@ markers[general_test_dir] = {
     'bug48768.phpt': "not implemented",
     'bug49056.phpt': "not implemented",
     'bug49692.phpt': "not implemented",
-    'bug49847.phpt': "not implemented",
-    'bug50732.phpt': "not implemented",
     'bug52138.phpt': "not implemented",
     'bug55371.phpt': "not implemented",
     'bug60723.phpt': "not implemented",
@@ -1058,19 +991,17 @@ markers[general_test_dir] = {
     'get_extension_funcs_error.phpt': "not implemented",
     'get_extension_funcs_variation.phpt': "not implemented",
     'get_loaded_extensions_basic.phpt': "not implemented",
-    # 'get_magic_quotes_gpc.phpt': "not implemented",
     'get_magic_quotes_runtime.phpt': "not implemented",
-    # 'getmypid_basic.phpt': "not implemented",
     'getopt.phpt': "not implemented",
     'getopt_002.phpt': "not implemented",
     'getopt_003.phpt': "not implemented",
     'getopt_004.phpt': "not implemented",
     'getopt_005.phpt': "not implemented",
     'gettype_settype_error.phpt': "not implemented",
-    'get_cfg_var_basic.phpt': "not implemented",
-    'get_cfg_var_variation6.phpt': "not implemented",
+    'get_cfg_var_basic.phpt': "requires ini parse to return strings",
+    'get_cfg_var_variation6.phpt': "requires ini parse to return strings",
     'get_cfg_var_variation8.phpt': "magic_quotes_gpc unsupported",
-    'get_cfg_var_variation9.phpt': "error",
+    'get_cfg_var_variation9.phpt': "requires ini parse to return strings",
     'head.phpt': "not implemented",
     'highlight_heredoc.phpt': "not implemented",
     'ini_get_all.phpt': "not implemented",
@@ -1090,10 +1021,6 @@ markers[general_test_dir] = {
     'proc_open02.phpt': "not implemented",
     'set_magic_quotes_runtime_basic.phpt': "not implemented",
     'set_magic_quotes_runtime_error.phpt': "not implemented",
-    # 'sleep_basic.phpt': "not implemented",
-    'sleep_error.phpt': "not implemented",
-    'usleep_basic.phpt': "not implemented",
-    'usleep_error.phpt': "not implemented",
     'var_dump_64bit.phpt': "not implemented",
 }
 
@@ -1148,7 +1075,6 @@ markers[classes_test_dir] = {
     'array_access_011.phpt': "ArrayAccess: Operator implementation fix required",
     'array_access_012.phpt': "ArrayAccess: Fix ++ to raise notice for indirect modification of overloaded element",
     'arrayobject_001.phpt': "need review",
-    'autoload_002.phpt': "missing get_class_methods()",
     'autoload_005.phpt': "__destruct()",
     'autoload_010.phpt': "__autoload() is called twice",
     'autoload_011.phpt': "__autoload() is called twice",
@@ -1223,8 +1149,6 @@ markers[lang_test_dir] = {
     'bug22510.phpt': "unexpected T_LIST",
     'bug22690.phpt': "missing create_function()",
     'bug23624.phpt': "does not compile",
-    # 'bug23922.phpt': "$this when not in object context",
-    # 'bug24396.phpt': "does not parse",
     'bug24403.phpt': "problem in preg_replace()",
     'bug24658.phpt': "error wording",
     'bug24908.phpt': "?",
@@ -1321,7 +1245,6 @@ markers[security_test_dir] = {
 }
 
 markers[strings_test_dir] = {
-    # '001.phpt': "missing strtok()",
     '002.phpt': "problem with php://stdout",
     '004.phpt': "undefined function highlight_string()",
     'bug26703.phpt': "undefined function highlight_string()",
@@ -1351,7 +1274,7 @@ markers[mysql_test_dir] = {
     'mysql_query_load_data_openbasedir.phpt': "not finished",
     'mysql_result.phpt': '?',
     'mysql_sql_safe_mode.phpt': "?",
-    'mysql_stat.phpt': "missing soundex()",
+    # 'mysql_stat.phpt': "missing soundex()",
     'mysql_trace_mode.phpt': 'missing mysql_escape_string()',
 }
 
@@ -1406,7 +1329,6 @@ markers[session_test_dir] = {
     'bug36459.phpt': 'not implemented',
     'bug41600.phpt': 'not implemented',
     'bug42596.phpt': 'not implemented',
-    # 'bug51338.phpt': 'not implemented',
     'bug53141.phpt': 'not implemented',
     'bug55688.phpt': 'not implemented',
     'bug60634_error_1.phpt': 'not implemented',
@@ -1675,8 +1597,6 @@ markers[date_test_dir] = {
     "gmdate_variation9.phpt": "not implemented",
     "idate_variation5.phpt": "not implemented",
     "idate_variation6.phpt": "not implemented",
-    # "microtime_basic.phpt": "not implemented",
-    # "microtime_error.phpt": "not implemented",
     "oo_001.phpt": "not implemented",
     "rfc-datetime_and_daylight_saving_time-type2.phpt": "not implemented",
     "strtotime3-64bit.phpt": "not implemented",
@@ -1701,7 +1621,6 @@ markers[pcre_test_dir] = {
     '004.phpt': 'flag e unsupported',
     '006.phpt': 'backtrack_limit setting via --INI-- not working?',
     'backtrack_limit.phpt': 'in-progress',
-    # 'bug27103.phpt': 'htmlentities unimplemented',
     'bug44191.phpt': 'preg_grep() unimplemented',
     'bug44925.phpt': 'preg_grep() unimplemented',
     'bug52732.phpt': 'SKIP: hangs',
@@ -1724,6 +1643,7 @@ markers[Zend_test_dir] = {
     'bug40236.phpt': 'TEST_PHP_EXECUTABLE in env, should only run with -A',
     'bug48408.phpt': slow,
     'bug48409.phpt': slow,
+    'bug60978.phpt': 'SKIP: requires TEST_PHP_EXECUTABLE in env',
     'closure_021.phpt': slow,
     'exception_007.phpt': slow,
     '001.phpt': 'missing warnings around calling functions with wrong number '
@@ -1772,7 +1692,6 @@ markers[Zend_test_dir] = {
     'bug30922.phpt': "missing fatal error",
     'bug30998.phpt': "?",
     'bug32290.phpt': "call_user_func_array()",
-    'bug32296.phpt': "undefined get_class_methods()",
     'bug32322.phpt': "?",
     'bug32596.phpt': "?",
     'bug32660.phpt': "?",
@@ -1805,9 +1724,7 @@ markers[Zend_test_dir] = {
     'bug38624.phpt': "stack trace",
     'bug38779.phpt': "undefined stream_wrapper_register()",
     'bug38779_1.phpt': "undefined stream_wrapper_register()",
-    'bug38942.phpt': "undefined get_class_methods()",
     'bug39018.phpt': "?",
-    'bug39542.phpt': "Cannot redeclare __autoload()",
     'bug40509.phpt': "?",
     'bug40621.phpt': "strict vs fatal error",
     'bug40705.phpt': "?",
@@ -1840,7 +1757,6 @@ markers[Zend_test_dir] = {
     'bug43344_8.phpt': "notice should be a fatal",
     'bug43344_9.phpt': "notice should be a fatal",
     'bug43450.phpt': slow,
-    'bug43483.phpt': "undefined get_class_methods()",
     'bug43703.phpt': "?",
     'bug43918.phpt': "missing SimpleXMLElement",
     'bug44141.phpt': "Call to private X::__construct()",
@@ -1883,7 +1799,7 @@ markers[Zend_test_dir] = {
     'bug50174.phpt': "missing ReflectionMethod",
     'bug50261.phpt': "?",
     'bug50383.phpt': "$exc->getTrace()",
-    'bug50810.phpt': "missing method_exists()",
+    'bug50810.phpt': "Fails in a method calling property_exists()",
     'bug51394.phpt': "stack trace",
     'bug51421.phpt': "signature check for ctor",
     'bug51822.phpt': "?",
@@ -1935,7 +1851,6 @@ markers[Zend_test_dir] = {
     'bug60825.phpt': "?",
     'bug60909_1.phpt': "missing register_shutdown_function()",
     'bug60909_2.phpt': "missing register_shutdown_function()",
-    'bug60978.phpt': "missing exec()",
     'bug61087.phpt': "missing parse_ini_file()",
     'bug61225.phpt': "unexpected T_STRING",
     'bug61273.phpt': "call_user_func_array()",
@@ -2065,6 +1980,7 @@ markers[Zend_test_dir] = {
     'exception_handler_004.phpt': "?",
     'exception_handler_006.phpt': "?",
     'fr47160.phpt': "?",
+    'function_arguments_002.phpt': 'PHP syntax error say what token it was expecting',
     'gc_001.phpt': "?",
     'gc_002.phpt': "?",
     'gc_003.phpt': "?",
@@ -2096,9 +2012,7 @@ markers[Zend_test_dir] = {
     'gc_030.phpt': "?",
     'gc_031.phpt': "?",
     'gc_032.phpt': "?",
-    'get_class_methods_001.phpt': "?",
-    'get_class_methods_002.phpt': "?",
-    'get_class_methods_003.phpt': "?",
+    'get_class_methods_002.phpt': "Missing: Strict Standards: Redefining already defined constructor for class B in %s on line %d",
     'get_class_vars_001.phpt': "?",
     'get_class_vars_002.phpt': "?",
     'get_class_vars_003.phpt': "?",
@@ -2429,8 +2343,8 @@ markers['ext/reflection'] = {
     'bug48757.phpt': '?',
     'bug49074.phpt': '?',
     'bug49719.phpt': '?',
-    'bug51905.phpt': '?',
-    'bug51911.phpt': '?',
+    'bug51905.phpt': 'Call to undefined method ReflectionParameter::isDefaultValueAvailable()',
+    'bug51911.phpt': 'Call to undefined method ReflectionParameter::isDefaultValueAvailable()',
     'bug52057.phpt': '?',
     'bug52854.phpt': '?',
     'bug53366.phpt': '?',
@@ -2541,7 +2455,6 @@ markers[spl_test_dir] = {
     'bug38325.phpt': "?",
     'bug38618.phpt': "?",
     'bug40036.phpt': "?",
-    # 'bug40091.phpt': "?",
     'bug40442.phpt': "?",
     'bug40872.phpt': "?",
     'bug41528.phpt': "?",
@@ -2550,7 +2463,6 @@ markers[spl_test_dir] = {
     'bug41828.phpt': "Missing RecursiveIteratorIterator",
     'bug42654.phpt': "?",
     'bug42703.phpt': "?",
-    # 'bug44144.phpt': "?",
     'bug44615.phpt': "?",
     'bug45216.phpt': "Missing SplFileObject::fgetss",
     'bug45614.phpt': "?",
@@ -2562,7 +2474,6 @@ markers[spl_test_dir] = {
     'bug46115.phpt': "?",
     'bug46160.phpt': "?",
     'bug48361.phpt': "?",
-    # 'bug48493.phpt': "?",
     'bug49263.phpt': "?",
     'bug49723.phpt': "?",
     'bug49972.phpt': "?",
@@ -2821,11 +2732,9 @@ markers[spl_test_dir] = {
     'spl_autoload_006.phpt': "?",
     'spl_autoload_007.phpt': "?",
     'spl_autoload_008.phpt': "?",
-    # 'spl_autoload_010.phpt': "?",
     'spl_autoload_011.phpt': "?",
     'spl_autoload_012.phpt': "?",
     'spl_autoload_013.phpt': "?",
-    # 'spl_autoload_014.phpt': "?",
     'spl_caching_iterator_constructor_flags.phpt': "?",
     'spl_cachingiterator_setFlags_basic.phpt': "?",
     'spl_cachingiterator___toString_basic.phpt': "?",
@@ -2876,7 +2785,6 @@ markers[spl_test_dir] = {
     'SplDoublyLinkedList_top_pass_null.phpt': "?",
     'SplDoublyLinkedList_unshift_missing_parameter.phpt': "?",
     'SplFileInfo_getGroup_error.phpt': "No frames for builtin methods",
-    'SplFileInfo_getInode_basic.phpt': "Missing shell_exec()",
     'SplFileInfo_getInode_error.phpt': "No frames for builtin methods",
     'SplFileInfo_getOwner_error.phpt': "No frames for builtin methods",
     'SplFileInfo_getPerms_error.phpt': "No frames for builtin methods",
@@ -3039,7 +2947,18 @@ markers[hash_test_dir] = {
     'whirlpool.phpt':  slow,
 }
 
-prerequisites = {hash_test_dir: "hash", mysql_test_dir: "mysql"}
+markers[mcrypt_test_dir] = {
+    'mcrypt_decrypt_variation4.phpt': 'missing obj to str cast one warn level 8',
+    'mcrypt_ecb_variation4.phpt': 'missing obj to str cast one warn level 8',
+    'mcrypt_encrypt_variation4.phpt': 'missing obj to str cast one warn level 8',
+    'mcrypt_filters.phpt': 'missing stream filters',
+    'mcrypt_get_cipher_name.phpt': 'missing',
+}
+
+prerequisites = {hash_test_dir: "hash",
+                 mysql_test_dir: "mysql",
+                 mcrypt_test_dir: "mcrypt"}
+
 
 class PHPTest(Item):
     def runtest(self):
@@ -3160,7 +3079,7 @@ def phpt_test(dir, file_name):
         else:
             py.test.skip(marker)     # failed as expected
     else:
-        if marker is None:
+        if marker is None or marker.lower().startswith('xfail:'):
             pass       # everything is passing
         else:
             raise Exception("the test '%s' was supposed to fail, but didn't"

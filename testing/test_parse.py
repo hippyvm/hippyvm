@@ -1461,6 +1461,14 @@ ENDOFHEREDOC;
         assert r == Block([Stmt(Print(
             ConstantStr("This is a heredoc test.", 1)))])
 
+    def test_heredoc_with_dollar(self):
+        r = parse("""print <<<ENDOFHEREDOC
+This is a heredoc with quoted dollar "$".
+ENDOFHEREDOC;
+""")
+        assert r == Block([Stmt(Print(
+            ConstantStr("This is a heredoc with quoted dollar \"$\".", 1)))])
+
     def test_index_function_result(self):
         r = parse('f()[0][1];')
         assert r == Block([Stmt(GetItem(GetItem(
@@ -1566,3 +1574,13 @@ ENDOFHEREDOC;
 
         r = parse_doublequoted("xyz ${a} asd$")
         assert r == DoubleQuotedStr([ConstantStr("xyz "), NamedVariable("a"), ConstantStr(" asd$")])
+
+    def test_parse_error_no_token_name(self):
+        with raises(ParseError) as excinfo:
+            parse('$foo=;')
+        assert excinfo.value.message == "syntax error, unexpected ';' in <input>"
+
+    def test_parse_error_with_token_name(self):
+        with raises(ParseError) as excinfo:
+            parse('1->2;')
+        assert excinfo.value.message == "syntax error, unexpected '->' (T_OBJECT_OPERATOR) in <input>"

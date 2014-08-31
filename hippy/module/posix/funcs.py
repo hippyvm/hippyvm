@@ -3,7 +3,7 @@ import posix
 from hippy.builtin import LongArg, wrap, Optional, FilenameArg
 from hippy.objects.base import W_Root
 from hippy.objects.resources import W_Resource
-from hippy.rpwd import getpwnam, getpwuid, initgroups
+from hippy.rpwd import getpwnam, getpwuid, initgroups, getgrgid, getgrnam
 from rpython.rtyper.lltypesystem import rffi, lltype
 from rpython.rlib import rposix
 from rpython.rlib.rarithmetic import intmask
@@ -75,8 +75,36 @@ def posix_getgid(space):
     """ posix_getgid - Return the real group ID of the current process """
     return space.newint(os.getgid())
 
-""" posix_getgrgid - Return info about a group by group id """
-""" posix_getgrnam - Return info about a group by name """
+
+def _build_group_info(space, res):
+    members = []
+    for member in rffi.charpp2liststr(res.c_gr_mem):
+        members.append(space.newstr(member))
+
+    return space.new_array_from_pairs([
+        (space.newstr("name"), space.newstr(rffi.charp2str(res.c_gr_name))),
+        (space.newstr("passwd"), space.newstr(rffi.charp2str(res.c_gr_passwd))),
+        (space.newstr("members"), space.new_array_from_list(members)),
+        (space.newstr("gid"), space.newint(intmask(res.c_gr_gid))),
+    ])
+
+
+@wrap(['space', int], error=False)
+def posix_getgrgid(space, gid):
+    """Return info about a group by group id."""
+    res = getgrgid(gid)
+    if not res:
+        return space.newbool(False)
+    return _build_group_info(space, res)
+
+
+@wrap(['space', str], error=False)
+def posix_getgrnam(space, name):
+    """Return info about a group by name."""
+    res = getgrnam(rffi.str2charp(name))
+    if not res:
+        return space.newbool(False)
+    return _build_group_info(space, res)
 
 
 @wrap(['space'])

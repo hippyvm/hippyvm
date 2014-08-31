@@ -794,7 +794,7 @@ def _parse_wrapper(fname):
     return fname, read_filters, write_filters
 
 
-def _fopen(space, fname, mode, w_use_include_path=False, w_ctx=None):
+def _fopen(space, fname, mode, use_include_path=False, w_ctx=None):
     fname, read_filters, write_filters = _parse_wrapper(fname)
 
     if fname == "" or fname is None:
@@ -804,8 +804,8 @@ def _fopen(space, fname, mode, w_use_include_path=False, w_ctx=None):
         raise FopenError(["expects parameter 1 to be a "
                           "valid path, string given"])
 
-    if w_use_include_path:
-        fname = space.bytecode_cache._find_file(space.ec.interpreter, fname)
+    if use_include_path:
+        fname = space.ec.interpreter.find_file(fname)
 
     if mode.startswith("x"):
         if rpath.exists(fname):
@@ -827,7 +827,7 @@ def _fopen(space, fname, mode, w_use_include_path=False, w_ctx=None):
 
 @wrap(['space', FilenameArg(False), str, Optional(BoolArg(False)),
        Optional(StreamContextArg(False))], error=False)
-def fopen(space, fname, mode, w_use_include_path=False, w_ctx=None):
+def fopen(space, fname, mode, use_include_path=False, w_ctx=None):
     """ fopen - Opens file or URL """
     if not is_in_basedir(space, 'fopen', fname):
         space.ec.warn("fopen(%s): failed to open stream: "
@@ -835,7 +835,7 @@ def fopen(space, fname, mode, w_use_include_path=False, w_ctx=None):
         return space.w_False
 
     try:
-        return _fopen(space, fname, mode, w_use_include_path, w_ctx)
+        return _fopen(space, fname, mode, use_include_path, w_ctx)
     except FopenError as e:
         for r in e.reasons:
             space.ec.warn("fopen(%s): %s" % (fname, r))
