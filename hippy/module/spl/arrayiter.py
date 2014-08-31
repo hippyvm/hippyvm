@@ -78,7 +78,7 @@ def append(interp, this, w_newval):
     this.w_arr.appenditem_inplace(interp.space, w_newval)
 
 
-@k_ArrayObject.def_method(['interp', 'this', W_Root])
+@k_ArrayObject.def_method(['interp', 'this'])
 @k_ArrayIterator.def_method(['interp', 'this'])
 def count(interp, this):
     return interp.space.wrap(this.w_arr.arraylen())
