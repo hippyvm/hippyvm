@@ -345,7 +345,6 @@ markers[array_test_dir] = {
     'bug31213.phpt': "?",
     'bug32021.phpt': "?",
     'bug33940.phpt': "?",
-    'bug40191.phpt': "?",
     'bug42177.phpt': "?",
     'bug42233.phpt': "?",
     'bug43495.phpt': "?",
@@ -1710,7 +1709,6 @@ markers[Zend_test_dir] = {
     'bug35470.phpt': "does not parse",
     'bug35655.phpt': "undefined highlight_string()",
     'bug36071.phpt': "problem in Interpreter.CLONE",
-    'bug36214.phpt': "missing ArrayObject",
     'bug36303.phpt': "?",
     'bug36513.phpt': "missing strip_tags",
     'bug36759.phpt': "__destruct()",
@@ -2030,7 +2028,6 @@ markers[Zend_test_dir] = {
     'halt03.phpt': "?",
     'halt_compiler2.phpt': "?",
     'halt_compiler3.phpt': "?",
-    'indirect_method_call_005.phpt': "?",
     'instanceof_001.phpt': "missing create_function()",
     'inter_007.phpt': "?",
     'is_a.phpt': "?",
@@ -2130,7 +2127,6 @@ markers[Zend_test_dir] = {
     'unset_cv03.phpt': "missing notice",
     'unset_cv05.phpt': "session_start()",
     'unset_cv09.phpt': "missing notice",
-    'unset_cv10.phpt': "missing ArrayObject",
 
 }
 
