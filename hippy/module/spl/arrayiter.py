@@ -10,6 +10,9 @@ from hippy import consts
 class W_SplArray(W_InstanceObject):
     w_arr = None
 
+    def get_rdict_array(self, space):
+        return self.w_arr
+
 def _get_storage(interp, this):
     return this.w_arr
 
