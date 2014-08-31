@@ -160,7 +160,7 @@ k_Iterator = def_class('Iterator',
 )
 
 
-ArrayAccess = def_class('ArrayAccess', [
+k_ArrayAccess = def_class('ArrayAccess', [
     new_abstract_method(["interp"], name="ArrayAccess::offsetExists"),
     new_abstract_method(["interp"], name="ArrayAccess::offsetGet"),
     new_abstract_method(["interp"], name="ArrayAccess::offsetSet"),
