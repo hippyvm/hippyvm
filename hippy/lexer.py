@@ -1,6 +1,6 @@
 import py
 
-from rpython.rlib import rpath
+from hippy import rpath
 from rpython.rlib.parsing.regexparse import parse_regex
 from rpython.rlib.parsing import regex
 from rpython.rlib.parsing.lexer import LexingDFARunner

@@ -23,7 +23,7 @@ from hippy.config import load_ini
 from hippy.sourceparser import ParseError
 from rpython.rlib.rgc import dump_rpy_heap
 from rpython.rlib.objectmodel import we_are_translated
-from rpython.rlib import rpath
+from hippy import rpath
 
 # Needs to be a separate func so flowspace doesn't say import cannot succeed
 # when there is no fastcgi module source around.
