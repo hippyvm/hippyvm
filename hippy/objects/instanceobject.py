@@ -440,6 +440,10 @@ class W_InstanceObject(W_Object):
         klass = self.getclass()
         if klass.is_iterator:
             return W_InstanceIterator(space, self)
+        elif klass.is_iterable:
+            interp = space.ec.interpreter
+            w_iterator = interp.getmeth(self, 'getIterator').call_args(interp, [])
+            return w_iterator.create_iter(space)
         items_w = []
         attrs = self.map.get_all_attrs()
         for attr in attrs:

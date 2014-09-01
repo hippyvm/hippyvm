@@ -66,6 +66,7 @@ class ClassBase(AbstractFunction, AccessMixin):
     custom_instance_class = None
     is_iterator = False
     is_array_access = False
+    is_iterable = False
     immediate_parents = None
     parentclass = None
     _all_nonstatic_special_properties = None    # lazy
@@ -680,15 +681,18 @@ class BuiltinClass(ClassBase):
                 method = self.methods[name]
                 setattr(self, 'method' + name, method)
 
-        if self.immediate_parents:
-            for parent in self.immediate_parents:
-                if parent.is_iterator:
-                    self.is_iterator = True
-                    break
-            for parent in self.immediate_parents:
-                if parent.is_array_access:
-                    self.is_array_access = True
-                    break
+        for parent in self.immediate_parents:
+            if parent.is_iterator:
+                self.is_iterator = True
+                break
+        for parent in self.immediate_parents:
+            if parent.is_iterable:
+                self.is_iterable = True
+                break
+        for parent in self.immediate_parents:
+            if parent.is_array_access:
+                self.is_array_access = True
+                break
         # XXXX to discuss
         for base in self.immediate_parents:
             for parent_id in base.all_parents:
@@ -965,10 +969,14 @@ class UserClass(ClassBase):
             if parent.is_iterator:
                 self.is_iterator = True
                 break
-            for parent in self.immediate_parents:
-                if parent.is_array_access:
-                    self.is_array_access = True
-                    break
+        for parent in immediate_parents:
+            if parent.is_iterable:
+                self.is_iterable = True
+                break
+        for parent in self.immediate_parents:
+            if parent.is_array_access:
+                self.is_array_access = True
+                break
 
         self.decl = decl
 
