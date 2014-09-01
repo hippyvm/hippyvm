@@ -52,6 +52,7 @@ class W_ExceptionObject(W_InstanceObject):
 def new_exception(interp, this, message='', code=0, w_previous=None):
     space = interp.space
     this.setattr(interp, 'file', space.wrap(this.traceback[0][0]), k_Exception)
+    this.setattr(interp, 'line', space.wrap(this.traceback[0][2]), k_Exception)
     this.setattr(interp, 'message', space.wrap(message), k_Exception)
     this.setattr(interp, 'code', space.wrap(code), k_Exception)
     if w_previous is None:
