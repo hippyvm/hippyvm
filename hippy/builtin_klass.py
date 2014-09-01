@@ -148,6 +148,9 @@ def new_abstract_method(args, **kwds):
         interp.fatal("Cannot call abstract method %s()" % (name,))
     return wrap_method(args, **kwds)(method)
 
+k_Traversable = def_class('Traversable', [],
+    flags=consts.ACC_INTERFACE | consts.ACC_ABSTRACT)
+
 
 k_Iterator = def_class('Iterator',
     [new_abstract_method(["interp"], name="Iterator::current"),
@@ -155,8 +158,15 @@ k_Iterator = def_class('Iterator',
      new_abstract_method(["interp"], name="Iterator::key"),
      new_abstract_method(["interp"], name="Iterator::rewind"),
      new_abstract_method(["interp"], name="Iterator::valid")],
-    flags=consts.ACC_INTERFACE | consts.ACC_ABSTRACT)
+    flags=consts.ACC_INTERFACE | consts.ACC_ABSTRACT,
+    extends=k_Traversable)
 k_Iterator.is_iterator = True
+
+k_IteratorAggregate = def_class('IteratorAggregate',
+    [new_abstract_method(["interp"], name="IteratorAggregate::getIterator")],
+    flags=consts.ACC_INTERFACE | consts.ACC_ABSTRACT,
+    extends=k_Traversable)
+k_IteratorAggregate.is_iterable = True
 
 
 k_ArrayAccess = def_class('ArrayAccess', [
