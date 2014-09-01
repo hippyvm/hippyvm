@@ -11,7 +11,9 @@ class W_SplArray(W_InstanceObject):
     w_arr = None
 
     def get_rdict_array(self, space):
-        return self.w_arr
+        res = self.w_arr
+        assert isinstance(res, W_ArrayObject)
+        return res
 
 def _get_storage(interp, this):
     return this.w_arr
@@ -51,7 +53,7 @@ def __construct(interp, this, w_arr=None):
 @k_ArrayObject.def_method(['interp', 'this', W_Root])
 @k_ArrayIterator.def_method(['interp', 'this', W_Root])
 def offsetExists(interp, this, w_index):
-    return this.w_arr.isset_index(interp.space, w_index)
+    return interp.space.newbool(this.w_arr.isset_index(interp.space, w_index))
 
 
 @k_ArrayObject.def_method(['interp', 'this', W_Root])
@@ -91,7 +93,7 @@ def current(interp, this):
 
 @k_ArrayIterator.def_method(['interp', 'this'])
 def next(interp, this):
-    return this.w_arr.next()
+    return this.w_arr.next(interp.space)
 
 
 @k_ArrayIterator.def_method(['interp', 'this'])
@@ -101,9 +103,13 @@ def key(interp, this):
 
 @k_ArrayIterator.def_method(['interp', 'this'])
 def rewind(interp, this):
-    this.w_arr.current_idx = 0
+    w_arr = this.w_arr
+    assert isinstance(w_arr, W_ArrayObject)
+    w_arr.current_idx = 0
 
 
 @k_ArrayIterator.def_method(['interp', 'this'])
 def valid(interp, this):
-    return interp.space.wrap(this.w_arr.current_idx < this.w_arr.arraylen())
+    w_arr = this.w_arr
+    assert isinstance(w_arr, W_ArrayObject)
+    return interp.space.newbool(w_arr.current_idx < w_arr.arraylen())

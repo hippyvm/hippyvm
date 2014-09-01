@@ -298,7 +298,7 @@ class W_ArrayObject(W_Object):
     def _current(self):
         raise NotImplementedError("abstract")
 
-    def next(self):
+    def next(self, space):
         length = self.arraylen()
         current_idx = self.current_idx + 1
         if current_idx >= length:
