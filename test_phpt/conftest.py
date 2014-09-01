@@ -1675,7 +1675,7 @@ markers[Zend_test_dir] = {
     'bug20240.phpt': "undefined register_shutdown_function()",
     'bug24773.phpt': "missing fatal",
     'bug26166.phpt': "missing fatal",
-    'bug26229.phpt': "missing IteratorAggregate",
+    #'bug26229.phpt': "missing IteratorAggregate",
     'bug28377.phpt': "undefined debug_backtrace()",
     'bug28444.phpt': "string conversion",
     'bug29015.phpt': "?",

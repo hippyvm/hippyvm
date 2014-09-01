@@ -1,5 +1,6 @@
 from collections import OrderedDict
-from hippy.error import ConvertError, VisibilityError, OffsetError
+from hippy.error import (
+    ConvertError, VisibilityError, OffsetError, PHPException)
 from hippy.objects.base import W_Object
 from hippy.objects.reference import W_Reference, VirtualReference
 from hippy.objects.iterator import W_InstanceIterator
@@ -443,6 +444,12 @@ class W_InstanceObject(W_Object):
         elif klass.is_iterable:
             interp = space.ec.interpreter
             w_iterator = interp.getmeth(self, 'getIterator').call_args(interp, [])
+            if not (isinstance(w_iterator, W_InstanceObject) and
+                    w_iterator.klass.is_subclass_of_class_or_intf_name('Traversable')):
+                from hippy.builtin_klass import k_Exception
+                raise PHPException(k_Exception.call_args(interp, [space.wrap(
+                    "Objects returned by array_iterator::getIterator() must "
+                    "be traversable or implement interface Iterator")]))
             return w_iterator.create_iter(space)
         items_w = []
         attrs = self.map.get_all_attrs()
