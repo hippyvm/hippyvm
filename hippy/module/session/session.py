@@ -1,6 +1,6 @@
 from rpython.rlib.rstring import StringBuilder
 from rpython.rlib import rmd5
-from rpython.rlib import rpath
+from hippy import rpath
 from rpython.rlib.objectmodel import we_are_translated
 from hippy.module.serialize import SerializerMemo, unserialize_returning_dict
 from rpython.rlib.rstring import assert_str0

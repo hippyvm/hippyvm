@@ -1,5 +1,4 @@
-from rpython.rlib import rpath
-
+from hippy import rpath
 from hippy import consts
 from hippy.klass import def_class
 from hippy.objects.base import W_Root

@@ -32,12 +32,13 @@ from hippy.astcompiler import compile_ast
 from hippy.module.standard.directory import php_dir
 from hippy.module.standard.glob import php_glob
 from hippy.module.spl import spl
+from hippy import rpath
 from rpython.rlib.objectmodel import we_are_translated
 from rpython.rlib import jit
-from rpython.rlib import rpath, rsignal
+from rpython.rlib import rsignal
 from rpython.rlib.unroll import unrolling_iterable
 from rpython.rlib.rfile import create_popen_file
-from rpython.rlib.rpath import exists, dirname, join, abspath
+from hippy.rpath import exists, dirname, join, abspath
 
 from hippy.module.session import Session
 

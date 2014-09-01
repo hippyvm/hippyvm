@@ -2,7 +2,7 @@
 import os
 import time
 from hippy.phpcompiler import compile_php
-from rpython.rlib.rpath import abspath
+from hippy.rpath import abspath
 
 TIMEOUT = 1.0
 

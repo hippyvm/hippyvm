@@ -11,7 +11,7 @@ from hippy.sort import _sort
 from rpython.rlib.rstring import StringBuilder
 from rpython.rlib.objectmodel import we_are_translated
 from rpython.rlib import rfile # for side effects
-from rpython.rlib import rpath
+from hippy import rpath
 from rpython.rlib.rfile import create_popen_file
 
 
