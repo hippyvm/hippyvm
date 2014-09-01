@@ -633,13 +633,12 @@ all_builtin_classes = OrderedDict()
 
 
 def def_class(name, methods=[], properties=[], constants=[],
-        instance_class=None, flags=0, implements=[], extends=None,
-        is_iterator=False, is_array_access=False):
+        instance_class=None, flags=0, implements=[], extends=None):
     if name in all_builtin_classes:
         raise ValueError("Class '%s' has already been defined" % name)
     instance_class = _get_instance_class(extends, instance_class)
     cls = BuiltinClass(name, methods, properties, constants, instance_class,
-            flags, implements, extends, is_iterator, is_array_access)
+            flags, implements, extends)
     all_builtin_classes[name] = cls
     return cls
 
@@ -647,8 +646,7 @@ def def_class(name, methods=[], properties=[], constants=[],
 class BuiltinClass(ClassBase):
     def __init__(self, name,
                  methods=[], properties=[], constants=[], instance_class=None,
-                 flags=0, implements=[], extends=None, is_iterator=False,
-                 is_array_access=False):
+                 flags=0, implements=[], extends=None):
         ClassBase.__init__(self, name)
         assert (extends is None or extends.custom_instance_class is None or
                 issubclass(instance_class, extends.custom_instance_class))
@@ -673,9 +671,6 @@ class BuiltinClass(ClassBase):
             self.immediate_parents.append(self.parentclass)
 
         self.access_flags = flags
-        self.is_iterator = is_iterator
-        self.is_array_access = is_array_access
-
         self._init_constructor()
 
         for intf in implements:

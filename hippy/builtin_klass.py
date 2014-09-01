@@ -155,9 +155,8 @@ k_Iterator = def_class('Iterator',
      new_abstract_method(["interp"], name="Iterator::key"),
      new_abstract_method(["interp"], name="Iterator::rewind"),
      new_abstract_method(["interp"], name="Iterator::valid")],
-    flags=consts.ACC_INTERFACE | consts.ACC_ABSTRACT,
-    is_iterator=True
-)
+    flags=consts.ACC_INTERFACE | consts.ACC_ABSTRACT)
+k_Iterator.is_iterator = True
 
 
 k_ArrayAccess = def_class('ArrayAccess', [
@@ -165,8 +164,8 @@ k_ArrayAccess = def_class('ArrayAccess', [
     new_abstract_method(["interp"], name="ArrayAccess::offsetGet"),
     new_abstract_method(["interp"], name="ArrayAccess::offsetSet"),
     new_abstract_method(["interp"], name="ArrayAccess::offsetUnset"),],
-    flags=consts.ACC_INTERFACE | consts.ACC_ABSTRACT,
-    is_array_access=True)
+    flags=consts.ACC_INTERFACE | consts.ACC_ABSTRACT)
+k_ArrayAccess.is_array_access = True
 
 
 def_class('Reflector',
