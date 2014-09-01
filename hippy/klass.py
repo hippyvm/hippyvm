@@ -161,6 +161,25 @@ class ClassBase(AbstractFunction, AccessMixin):
                 "Cannot make static method %s non static in class %s" %
                 (parent_method.repr(), method.getclass().name))
 
+    def _init_protocol_flags(self):
+        """Handle the builtin interfaces with special meaning in the core"""
+        for parent in self.immediate_parents:
+            if parent.is_iterator:  # implements Iterator
+                self.is_iterator = True
+                break
+        for parent in self.immediate_parents:
+            if parent.is_iterable:  # implements IteratorAggregate
+                self.is_iterable = True
+                break
+        for parent in self.immediate_parents:
+            if parent.is_array_access:  # implements ArrayAccess
+                self.is_array_access = True
+                break
+        if self.is_iterator and self.is_iterable:
+            raise ClassDeclarationError(
+                "Class %s cannot implement both Iterator and IteratorAggregate"
+                " at the same time" % self.name)
+
     def _make_property(self, prop, w_initial_value):
         if isinstance(prop, tuple):
             name, access_flags = prop
@@ -681,18 +700,8 @@ class BuiltinClass(ClassBase):
                 method = self.methods[name]
                 setattr(self, 'method' + name, method)
 
-        for parent in self.immediate_parents:
-            if parent.is_iterator:
-                self.is_iterator = True
-                break
-        for parent in self.immediate_parents:
-            if parent.is_iterable:
-                self.is_iterable = True
-                break
-        for parent in self.immediate_parents:
-            if parent.is_array_access:
-                self.is_array_access = True
-                break
+        self._init_protocol_flags()
+
         # XXXX to discuss
         for base in self.immediate_parents:
             for parent_id in base.all_parents:
@@ -962,22 +971,10 @@ class UserClass(ClassBase):
         #
         try:
             self._check_abstract_methods()
+            self._init_protocol_flags()
         except ClassDeclarationError as e:
             interp.fatal(e.msg)
         self._init_magic_methods(interp)
-        for parent in immediate_parents:
-            if parent.is_iterator:
-                self.is_iterator = True
-                break
-        for parent in immediate_parents:
-            if parent.is_iterable:
-                self.is_iterable = True
-                break
-        for parent in self.immediate_parents:
-            if parent.is_array_access:
-                self.is_array_access = True
-                break
-
         self.decl = decl
 
     def init_parent(self, interp, extends_name):
