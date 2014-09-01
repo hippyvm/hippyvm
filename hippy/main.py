@@ -84,9 +84,6 @@ def entry_point(argv):
             fname = arg
             break
         i += 1
-    if not fname and not fastcgi:
-        print "php filename required"
-        return 1
     if fastcgi:
         if bench_mode:
             print "can't specify --bench and --server"
@@ -97,6 +94,9 @@ def entry_point(argv):
             return 1
         else:
             return _run_fastcgi_server(server_port)
+    if not fname:
+        print "php filename required"
+        return 1
     else:
         rest_of_args = []
         for k in range(i + 1, len(argv)):
