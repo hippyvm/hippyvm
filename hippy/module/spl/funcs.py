@@ -1,5 +1,4 @@
-from rpython.rlib import rpath
-
+from hippy import rpath
 from hippy.builtin import wrap, Optional, BoolArg, StringArg
 from hippy.objects.closureobject import W_ClosureObject
 from hippy.objects.strobject import W_StringObject

@@ -2,7 +2,7 @@ import sys, struct
 
 from rply.token import BaseBox
 from rply import ParsingError
-from rpython.rlib import rpath
+from hippy import rpath
 from rpython.rlib.objectmodel import we_are_translated
 from hippy import consts
 from hippy.error import InterpreterError

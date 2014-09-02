@@ -2,7 +2,7 @@ import os
 from hippy.objects.resources import W_Resource
 from rpython.rlib.rStringIO import RStringIO
 from rpython.rlib.rfile import RFile
-from rpython.rlib.objectmodel import import_from_mixin
+from rpython.rlib.objectmodel import import_from_mixin, enforceargs
 from collections import OrderedDict
 
 
@@ -71,6 +71,7 @@ class W_FileResource(W_Resource):
         except IOError:
             return False
 
+    @enforceargs(None, str, None)
     def do_filter(self, data, direction):
         from hippy.module.standard.strings.funcs import _str_rot13
         from hippy.module.standard.strings.funcs import _chunk_split
@@ -111,11 +112,13 @@ class W_FileResource(W_Resource):
 
     def read(self, size=1024):
         data = self.resource.read(size)
+        assert data is not None
         data = self.do_filter(data, READ)
         if len(data) < size:
             self.eof = True
         return data
 
+    @enforceargs(None, str, int)
     def write(self, data, length):
         if length <= 0:
             return 0
@@ -124,6 +127,7 @@ class W_FileResource(W_Resource):
         self.cur_line_no += towrite.count(os.linesep)
         return min(length, len(data))
 
+    @enforceargs(None, str)
     def writeall(self, data):
         towrite = self.do_filter(data, WRITE)
         self.resource.write(towrite)
@@ -131,6 +135,7 @@ class W_FileResource(W_Resource):
 
     def passthru(self):
         res = self.resource.read(-1)
+        assert res is not None
         res = self.do_filter(res, READ)
         self.space.ec.interpreter.writestr(res)
         return len(res)

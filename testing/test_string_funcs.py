@@ -1530,3 +1530,11 @@ ooooord.''']
 
         assert [self.space.is_w(o, self.space.w_Null) for o in output] == [True] * 2
 
+    def test_hex2bin_invalid_data(self):
+        output = self.run('''
+        echo hex2bin('xx');
+        echo hex2bin('0123456789abcdefxx');
+
+        ''')
+
+        assert [output[0].boolval, output[1].boolval] == [False] * 2

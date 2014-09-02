@@ -21,9 +21,10 @@ from hippy.objspace import getspace
 from hippy.error import ExplicitExitException, InterpreterError, SignalReceived
 from hippy.config import load_ini
 from hippy.sourceparser import ParseError
+from hippy.lexer import LexerError
 from rpython.rlib.rgc import dump_rpy_heap
 from rpython.rlib.objectmodel import we_are_translated
-from rpython.rlib import rpath
+from hippy import rpath
 
 # Needs to be a separate func so flowspace doesn't say import cannot succeed
 # when there is no fastcgi module source around.
@@ -85,9 +86,6 @@ def mk_entry_point(pyspace=None):
                 fname = arg
                 break
             i += 1
-        if not fname and not fastcgi:
-            print "php filename required"
-            return 1
         if fastcgi:
             if bench_mode:
                 print "can't specify --bench and --server"
@@ -98,6 +96,9 @@ def mk_entry_point(pyspace=None):
                 return 1
             else:
                 return _run_fastcgi_server(server_port)
+        if not fname:
+            print "php filename required"
+            return 1
         else:
             rest_of_args = []
             for k in range(i + 1, len(argv)):
@@ -131,8 +132,17 @@ def main(filename, rest_of_args, cgi, gcdump, debugger_pipes=(-1, -1),
 
     try:
         bc = space.bytecode_cache.compile_file(absname, space)
-    except:
-        print "Error opening %s" % filename
+    except ParseError as e:
+        print 'Parse error:  %s' % e
+        return 2
+    except LexerError as e:
+        print 'Parse error:  %s on line %d' % (e.message, e.source_pos + 1)
+        return 2
+    except IOError as e:
+        print 'Could not open input file: %s' % filename
+        return 2
+    except Exception as e:
+        print 'Got exception: %s' % e
         return 2
     #
     if bench_mode:
