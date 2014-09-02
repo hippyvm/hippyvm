@@ -9,7 +9,7 @@ from rpython.rlib import jit
 
 
 class ImmutCell(object):
-    _immutable_fields_ = ['constant_value', 'is_builtin']
+    _immutable_fields_ = ['constant_value', 'is_builtin', 'constant_value_is_currently_declared?']
 
     _class_key = (None, None, None)
 

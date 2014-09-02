@@ -48,9 +48,11 @@ class AbstractAttribute(object):
             i += 1
         return l
 
+    @jit.unroll_safe
     def get_storage(self, old_storage):
         res = [None] * self.get_next_index()
-        res[:len(old_storage)] = old_storage
+        for i in range(jit.promote(len(old_storage))):
+            res[i] = old_storage[i]
         return res
 
 class Attribute(AbstractAttribute):

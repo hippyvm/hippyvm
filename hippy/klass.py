@@ -767,6 +767,7 @@ class ClassDeclaration(AbstractFunction, AccessMixin):
     extends_name = None
     base_interface_names = None
     ctor_id = None
+    _immutable_fields_ = ['_immut_cell?']
 
     def __init__(self, name, reflection=None):
         self.name = name

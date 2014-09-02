@@ -227,7 +227,7 @@ class W_InstanceObject(W_Object):
         return "instance(%s: %s)" % (self.getclass().name, ', '.join(items))
 
     def add_attribute(self, name):
-        self.map = self.map.add_attribute(name)
+        self.map = jit.promote(self.map).add_attribute(name)
         self.storage_w = self.map.get_storage(self.storage_w)
         return self.map
 
