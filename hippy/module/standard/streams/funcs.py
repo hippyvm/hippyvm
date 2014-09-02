@@ -1,5 +1,4 @@
-from rpython.rlib import rpath
-
+from hippy import rpath
 from hippy.objects.resources.file_resource import W_FileResource
 from hippy.objects.base import W_Root
 from hippy.builtin import (

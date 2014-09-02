@@ -29,7 +29,8 @@ k_ReflectionParameter = def_class(
 def __construct(interp, this, function, parameter):
     if isinstance(function, W_ConstStringObject):
         name = interp.space.str_w(function)
-        function = interp.lookup_function(name)
+        function  = interp.lookup_function(name)
+        assert function is not None
         signature = function.get_signature()
         this.ref_parameter = signature.args[parameter]
     else:

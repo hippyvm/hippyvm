@@ -991,9 +991,7 @@ def microtime(space,   is_float=False):
 
 @wrap(['interp', str])
 def function_exists(interp, funcname):
-    try:
-        interp.lookup_function(funcname)
-    except KeyError:
+    if interp.lookup_function(funcname) is None:
         return interp.space.w_False
     return interp.space.w_True
 

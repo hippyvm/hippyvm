@@ -12,7 +12,7 @@ from hippy.module.spl.interface import k_SeekableIterator, k_RecursiveIterator
 from hippy.module.standard.file.funcs import (_is_dir, _is_file, _is_link,
     _is_executable, _is_readable, _is_writable, _filetype, _fseek, _fstat,
     _fopen, _basename, FopenError)
-from rpython.rlib import rpath
+from hippy import rpath
 from hippy import consts
 
 

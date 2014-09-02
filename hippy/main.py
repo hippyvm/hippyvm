@@ -24,7 +24,7 @@ from hippy.sourceparser import ParseError
 from hippy.lexer import LexerError
 from rpython.rlib.rgc import dump_rpy_heap
 from rpython.rlib.objectmodel import we_are_translated
-from rpython.rlib import rpath
+from hippy import rpath
 
 # Needs to be a separate func so flowspace doesn't say import cannot succeed
 # when there is no fastcgi module source around.
@@ -84,9 +84,6 @@ def entry_point(argv):
             fname = arg
             break
         i += 1
-    if not fname and not fastcgi:
-        print "php filename required"
-        return 1
     if fastcgi:
         if bench_mode:
             print "can't specify --bench and --server"
@@ -97,6 +94,9 @@ def entry_point(argv):
             return 1
         else:
             return _run_fastcgi_server(server_port)
+    if not fname:
+        print "php filename required"
+        return 1
     else:
         rest_of_args = []
         for k in range(i + 1, len(argv)):
@@ -136,7 +136,7 @@ def main(filename, rest_of_args, cgi, gcdump, debugger_pipes=(-1, -1),
         print 'Could not open input file: %s' % filename
         return 2
     except Exception as e:
-        print 'Got exception %s with message %s' % (e.__class__.__name__, e)
+        print 'Got exception: %s' % e
         return 2
     #
     if bench_mode:
