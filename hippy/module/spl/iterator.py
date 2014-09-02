@@ -1,5 +1,6 @@
 from hippy.klass import def_class
 from hippy.builtin import wrap_method, ThisUnwrapper
+from hippy.objects.base import W_Root
 from hippy.objects.instanceobject import W_InstanceObject
 from hippy.module.spl.interface import k_OuterIterator
 from hippy.module.spl.arrayiter import k_ArrayIterator
@@ -11,8 +12,10 @@ class W_IteratorIterator(W_InstanceObject):
 
 @wrap_method(['interp', ThisUnwrapper(W_IteratorIterator), 'object'],
              name='IteratorIterator::__construct')
-def ii_construct(interp, this, iterator):
-    this.inner = iterator
+def ii_construct(interp, this, w_iterator):
+    if w_iterator.klass.is_iterable:
+        w_iterator = interp.getmeth(w_iterator, 'getIterator').call_args(interp, [])
+    this.inner = w_iterator
 
 
 @wrap_method(['interp', ThisUnwrapper(W_IteratorIterator)],
@@ -53,14 +56,23 @@ k_IteratorIterator = def_class(
     instance_class=W_IteratorIterator)
 
 
-@wrap_method(['interp', ThisUnwrapper(W_IteratorIterator)],
-             name='AppendIterator::__construct')
-def ai_construct(interp, this):
-    this.inner = k_ArrayIterator.call_args(interp, [])
+class W_AppendIterator(W_IteratorIterator):
+    w_iterators = None
 
 
 k_AppendIterator = def_class(
     'AppendIterator',
-    [ai_construct],
+    ['__construct', 'append'],
     extends=k_IteratorIterator,
     implements=[k_OuterIterator])
+
+
+@k_AppendIterator.def_method(['interp', 'this'])
+def __construct(interp, this):
+    this.w_iterators = k_ArrayIterator.call_args(interp, [])
+    this.inner = this.w_iterators
+
+@k_AppendIterator.def_method(['interp', 'this', W_Root])
+def append(interp, this, w_iterator):
+    interp.getmeth(this.w_iterators, 'append').call_args(interp, [w_iterator])
+    this.inner = w_iterator
