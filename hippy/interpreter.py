@@ -484,12 +484,12 @@ class Interpreter(object):
 
     def lookup_function(self, name):
         if not name:
-            raise KeyError
+            return None
         if name[0] == '\\':
             name = name[1:]
         func = self.space.global_function_cache.locate(name)
         if func is None:
-            return None 
+            return None
         assert isinstance(func, AbstractFunction)
         return func
 
@@ -1040,9 +1040,8 @@ class Interpreter(object):
         w_name = frame.pop().deref()
         name = space.str_w(w_name)
         w_base_name = frame.pop().deref()
-        try:
-            const = self.lookup_constant(name)
-        except KeyError:
+        const = self.lookup_constant(name)
+        if const is None:
             base_name = space.str_w(w_base_name)
             const = self.locate_constant(base_name)
         frame.push(const)
