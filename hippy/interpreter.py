@@ -20,7 +20,7 @@ from hippy.objects.arrayobject import (
 from hippy.objects.closureobject import W_ClosureObject, new_closure
 from hippy.objects.instanceobject import W_InstanceObject
 from hippy.objects.strobject import W_StringObject
-from hippy.builtin_klass import W_ExceptionObject
+from hippy.builtin_klass import W_ExceptionObject, k_Exception
 from hippy.klass import ClassDeclaration, ClassBase, get_interp_decl_key
 from hippy.function import Function
 from hippy.frame import Frame, CatchBlock, Unsilence
@@ -752,6 +752,10 @@ class Interpreter(object):
 
     def deprecated(self, msg):
         self.handle_error(constants.E_DEPRECATED, msg)
+
+    def throw(self, msg, klass=k_Exception):
+        # cf. usage note for fatal()
+        raise Throw(klass.call_args(self, [self.space.newstr(msg)]))
 
     def fallback_handle_exception(self, w_exc):
         assert isinstance(w_exc, W_ExceptionObject)
