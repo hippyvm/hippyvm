@@ -1,4 +1,5 @@
-from hippy.builtin_klass import k_Iterator, GetterSetterWrapper, k_ArrayAccess
+from hippy.builtin_klass import (
+    k_Iterator, GetterSetterWrapper, k_ArrayAccess, k_IteratorAggregate)
 from hippy.builtin import Optional
 from hippy.klass import def_class
 from hippy.objects.base import W_Root
@@ -25,10 +26,11 @@ def _set_storage(interp, this, w_arr):
 k_ArrayObject = def_class(
     'ArrayObject',
     ['__construct', 'offsetExists', 'offsetGet', 'offsetSet', 'offsetUnset',
-     'append', 'count'],
+     'append', 'count',
+     'getIterator'],
     [GetterSetterWrapper(_get_storage, _set_storage, 'storage', consts.ACC_PRIVATE)],
     instance_class=W_SplArray,
-    implements=[k_ArrayAccess])
+    implements=[k_IteratorAggregate, k_ArrayAccess])
 
 
 k_ArrayIterator = def_class(
@@ -84,6 +86,11 @@ def append(interp, this, w_newval):
 @k_ArrayIterator.def_method(['interp', 'this'])
 def count(interp, this):
     return interp.space.wrap(this.w_arr.arraylen())
+
+
+@k_ArrayObject.def_method(['interp', 'this'])
+def getIterator(interp, this):
+    return k_ArrayIterator.call_args(interp, [this])
 
 
 @k_ArrayIterator.def_method(['interp', 'this'])
