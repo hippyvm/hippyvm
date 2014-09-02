@@ -116,9 +116,7 @@ class PHPLexerWrapper(LexerWrapper):
         #
         # hack: copies the end position to a constant
         if self.interp is not None:
-            try:
-                self.interp.lookup_constant('__COMPILER_HALT_OFFSET__')
-            except KeyError:
+            if self.interp.lookup_constant('__COMPILER_HALT_OFFSET__') is None:
                 if self.mode == MODE_LITERAL:
                     endpos = self.startindex
                 else:
