@@ -47,7 +47,7 @@ from collections import OrderedDict
 from rpython.rlib import jit
 from rpython.rlib.objectmodel import newlist_hint
 from hippy.error import (InterpreterError, ExplicitExitException,
-                         ConvertError, FatalError, PHPException,
+                         ConvertError, FatalError, Throw,
                          VisibilityError)
 from hippy.objects.base import W_Root
 from hippy.objects.reference import W_Reference
@@ -76,7 +76,7 @@ def handle_as_warning(interp, message):
 
 def handle_as_exception(interp, message):
     from hippy.builtin_klass import k_Exception
-    raise PHPException(k_Exception.call_args(
+    raise Throw(k_Exception.call_args(
         interp, [interp.space.wrap(message)]))
 
 

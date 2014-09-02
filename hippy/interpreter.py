@@ -6,7 +6,7 @@ from hippy.hippyoption import is_optional_extension_enabled
 from hippy.consts import BYTECODE_HAS_ARG, BYTECODE_NAMES,\
     BINOP_LIST, BINOP_BITWISE, RETURN
 from hippy.function import AbstractFunction
-from hippy.error import (IllegalInstruction, FatalError, PHPException,
+from hippy.error import (IllegalInstruction, FatalError, Throw,
                          ExplicitExitException, VisibilityError, SignalReceived)
 from hippy.lexer import LexerError
 from hippy.sourceparser import ParseError
@@ -799,11 +799,11 @@ class Interpreter(object):
             try:
                 try:
                     w_result = self.interpret(frame)
-                except PHPException as e:
+                except Throw as e:
                     if self.w_exception_handler is not None:
                         try:
                             self.call(self.w_exception_handler, [e.w_exc])
-                        except PHPException as e2:
+                        except Throw as e2:
                             self.fallback_handle_exception(e2.w_exc)
                     else:
                         self.fallback_handle_exception(e.w_exc)
@@ -910,7 +910,7 @@ class Interpreter(object):
                         bc_impl = getattr(self, name)
                         try:
                             pc = bc_impl(bytecode, frame, space, arg, pc)
-                        except PHPException as e:
+                        except Throw as e:
                             pc = self.handle_exception(frame, e)
                         break
                 else:
@@ -920,7 +920,7 @@ class Interpreter(object):
                 bc_impl = getattr(self, BYTECODE_NAMES[next_instr])
                 try:
                     pc = bc_impl(bytecode, frame, space, arg, pc)
-                except PHPException as e:
+                except Throw as e:
                     pc = self.handle_exception(frame, e)
 
     def enter(self, frame):
@@ -1334,7 +1334,7 @@ class Interpreter(object):
 
 
     def GETFUNC(self, bytecode, frame, space, arg, pc):
-        w_name = frame.pop().deref()            
+        w_name = frame.pop().deref()
         func = self.getfunc(w_name, frame.w_this, frame.get_contextclass())
         assert func is not None
         frame.push(func)
@@ -1899,7 +1899,7 @@ class Interpreter(object):
         if not isinstance(w_exc, W_ExceptionObject):
             self.fatal("Exceptions must be valid objects derived from "
                     "the Exception base class")
-        raise PHPException(w_exc)
+        raise Throw(w_exc)
 
     def POPEN(self, bytecode, frame, space, arg, pc):
         cmd = space.str_w(frame.pop().deref())

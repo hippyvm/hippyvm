@@ -36,12 +36,13 @@ class ExplicitExitException(Exception):
         self.message = message
 
 
-class PHPException(Exception):
+class Throw(Exception):
     def __init__(self, w_exc):
         from hippy.objects.instanceobject import W_InstanceObject
 
         assert isinstance(w_exc, W_InstanceObject)
         self.w_exc = w_exc
+PHPException = Throw  # deprecated alias
 
 
 def _contextname(contextclass):
