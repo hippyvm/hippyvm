@@ -2,9 +2,11 @@
 from rpython.rlib import jit
 
 class AbstractAttribute(object):
-    _attrs_ = ["transition_cache"]
+    _attrs_ = ["klass", "transition_cache"]
+    _immutable_fields_ = ["klass"]
 
-    def __init__(self):
+    def __init__(self, klass):
+        self.klass = klass
         self.transition_cache = {}
 
     @jit.elidable
@@ -73,7 +75,7 @@ class Attribute(AbstractAttribute):
     _attrs_ = ['index', 'name', 'next']
 
     def __init__(self, name, index, next):
-        AbstractAttribute.__init__(self)
+        AbstractAttribute.__init__(self, next.klass)
         self.name = name
         self.index = index
         self.next = next

@@ -74,7 +74,7 @@ def get_object_vars(interp, frame, w_obj):
     o = OrderedDict()
     dct_w = w_obj.get_instance_attrs()
     for k, w_v in dct_w.iteritems():
-        key1 = w_obj.klass.check_access_and_demangle_property(
+        key1 = w_obj.getclass().check_access_and_demangle_property(
             k, contextclass)
         if key1 is not None:
             o[key1] = w_v

@@ -440,7 +440,7 @@ class ObjSpace(object):
     def gettypename(self, w_obj):
         w_obj = w_obj.deref()
         if isinstance(w_obj, W_InstanceObject):
-            return 'instance of ' + w_obj.klass.name
+            return 'instance of ' + w_obj.getclassname()
         else:
             return self.TYPENAMES[w_obj.tp].lower()
 
@@ -751,7 +751,7 @@ class ObjSpace(object):
     def getclassintfname(self, w_obj):
         w_obj = w_obj.deref()
         if isinstance(w_obj, W_InstanceObject):
-            classname = w_obj.klass.get_identifier()
+            classname = w_obj.getclass().get_identifier()
             return classname
         else:
             class_or_interface_name = self.str_w(w_obj)

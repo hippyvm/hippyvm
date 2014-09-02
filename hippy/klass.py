@@ -79,7 +79,7 @@ class ClassBase(AbstractFunction, AccessMixin):
         self.properties = OrderedDict()
         self.methods = OrderedDict()
         self.all_parents = {self.get_identifier(): None}  # classes and intfs
-        self.base_map = Terminator()
+        self.base_map = Terminator(self)
         self.initial_storage_w = None
 
     def __repr__(self):
@@ -416,7 +416,7 @@ class ClassBase(AbstractFunction, AccessMixin):
         if not method.is_static():
             if context_w_this is None:
                 self._static_call_warning(interp, method, "")
-            elif not self.is_parent_of(context_w_this.klass):
+            elif not self.is_parent_of(context_w_this.getclass()):
                 self._static_call_warning(interp, method,
                     ", assuming $this from incompatible context")
         return method

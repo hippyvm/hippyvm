@@ -20,7 +20,7 @@ class CatchBlock(ExceptionHandler):
 
     def match(self, w_exc):
         assert isinstance(w_exc, W_ExceptionObject)
-        klass = w_exc.klass
+        klass = w_exc.getclass()
         return klass.is_subclass_of_class_or_intf_name(self.exc_class)
 
     @jit.unroll_safe

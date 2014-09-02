@@ -102,7 +102,7 @@ class BaseTestInterpreter(object):
         return True
 
     def is_object(self, w_obj, expected_clsname, properties):
-        clsname = w_obj.klass.name
+        clsname = w_obj.getclassname()
         d = w_obj.get_instance_attrs()
         assert clsname == expected_clsname, "bad class name\n%s" % output
         for (key, w_value), (expected_name, w_expected_value) in \

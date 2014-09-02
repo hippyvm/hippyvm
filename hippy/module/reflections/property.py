@@ -94,7 +94,7 @@ def __construct(interp, this, w_class, property_name):
             msg = "Class %s does not exist" % class_name
             interp.throw(msg, klass=k_ReflectionException)
     elif isinstance(w_class, W_InstanceObject):
-        klass = w_class.klass
+        klass = w_class.getclass()
         class_name = klass.name
     else:
         msg = ("The parameter class is expected to be either a string "

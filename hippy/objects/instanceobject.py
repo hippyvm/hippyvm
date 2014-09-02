@@ -100,18 +100,20 @@ def dump_property(name, access):
 
 
 class W_InstanceObject(W_Object):
-    _attrs_ = ('klass', 'map', 'storage_w', 'instance_number', 'w_rdict_array')
+    _attrs_ = ('map', 'storage_w', 'instance_number', 'w_rdict_array')
     instance_number = 0
     w_rdict_array = None     # lazily built W_RDictArrayObject
 
     def __init__(self, klass, initial_storage):
-        self.klass = klass
         map = klass.base_map
         self.map = map
         self.storage_w = initial_storage
 
     def getclass(self):
-        return jit.hint(self.klass, promote=True)
+        return jit.hint(self.map, promote=True).klass
+
+    def getclassname(self):
+        return self.getclass().name
 
     def setup(self, interp):
         pass
@@ -146,12 +148,12 @@ class W_InstanceObject(W_Object):
 
     def as_number(self, space):
         space.ec.notice("Object of class %s could not be converted to int" %
-                        self.klass.name)
+                        self.getclassname())
         return space.newint(1)
 
     def float_w(self, space):
         space.ec.notice("Object of class %s could not be converted "
-                        "to double" % self.klass.name)
+                        "to double" % self.getclassname())
         return 1.
 
     def enum_properties(self, interp, out_names, out_values_w):
@@ -171,7 +173,7 @@ class W_InstanceObject(W_Object):
             return '%s*RECURSION*\n' % indent
         s = StringBuilder()
         recursion[self] = None
-        header = 'object(%s)#%d ' % (self.getclass().name,
+        header = 'object(%s)#%d ' % (self.getclassname(),
                                      self.get_instance_number())
         orig_indent = indent
         if indent.endswith('&'):
@@ -206,7 +208,7 @@ class W_InstanceObject(W_Object):
 
 
     def var_export(self, space, indent, recursion, suffix):
-        header = '%s::__set_state(array' % (self.getclass().name)
+        header = '%s::__set_state(array' % (self.getclassname())
         dct_w = self.get_instance_attrs()
         clean_dct_w = OrderedDict()
         for key, value in dct_w.iteritems():
@@ -224,7 +226,7 @@ class W_InstanceObject(W_Object):
         dct_w = self.get_instance_attrs()
         for key, w_value in dct_w.items():
             items.append('%s=>%s' % (key, w_value.dump()))
-        return "instance(%s: %s)" % (self.getclass().name, ', '.join(items))
+        return "instance(%s: %s)" % (self.getclassname(), ', '.join(items))
 
     def add_attribute(self, name):
         self.map = map= jit.promote(self.map).add_attribute(name)
@@ -456,7 +458,7 @@ class W_InstanceObject(W_Object):
 
     def _msg_misuse_as_array(self, space, compat=True):
         raise space.ec.fatal('Cannot use object of type %s as array' %
-                             self.getclass().name)
+                             self.getclassname())
 
     def getitem(self, space, w_arg, give_notice=False):
         if self.getclass().is_array_access:
@@ -474,7 +476,7 @@ class W_InstanceObject(W_Object):
             else:
                 if not isinstance(w_res, W_InstanceObject):
                     interp.notice("Indirect modification of overloaded element"
-                                  " of %s has no effect" % (self.getclass().name,))
+                                  " of %s has no effect" % (self.getclassname(),))
                 return W_Reference(w_res)
 
     def hasitem(self, space, w_index):

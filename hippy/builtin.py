@@ -1007,7 +1007,7 @@ def property_exists(interp, w_obj, property_name):
     if not property_name:
         return interp.space.w_False
     if isinstance(w_obj, W_InstanceObject):
-        klass = w_obj.klass
+        klass = w_obj.getclass()
         result = (property_name in klass.properties or
                   w_obj.map.lookup(property_name) is not None)
         return interp.space.newbool(result)

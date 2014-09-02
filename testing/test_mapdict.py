@@ -3,7 +3,7 @@ from hippy.mapdict import Terminator
 
 class TestMapdictDirect(object):
     def test_simple(self):
-        t = Terminator()
+        t = Terminator(None)
         assert t.lookup("name") is None
         new_attr = t.add_attribute("name")
         a1 = new_attr.lookup("name")
@@ -18,14 +18,14 @@ class TestMapdictDirect(object):
         assert a2.index == 0
 
     def test_getallkeys(self):
-        t = Terminator()
+        t = Terminator(None)
         a = t.add_attribute("a")
         a = a.add_attribute("b")
         a = a.add_attribute("c")
         assert a.get_all_keys() == ["a", "b", "c"]
 
     def test_delattr(self):
-        t = Terminator()
+        t = Terminator(None)
         a = t.add_attribute("a")
         a1 = a.add_attribute("b")
         a2 = a1.add_attribute("c")
@@ -36,7 +36,7 @@ class TestMapdictDirect(object):
         assert a3.lookup("c").index == 1
 
     def test_delattr_2(self):
-        t = Terminator()
+        t = Terminator(None)
         a = t.add_attribute("a")
         a1 = a.add_attribute("b")
         a2 = a1.add_attribute("c")

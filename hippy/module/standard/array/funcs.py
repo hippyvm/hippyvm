@@ -1561,7 +1561,7 @@ def _count_recursive(space, w_arr, references=None):
 def count(interp, w_arr, recursive=0):
     """Count all elements in an array, or something in an object"""
     if isinstance(w_arr, W_InstanceObject):
-        k = w_arr.klass
+        k = w_arr.getclass()
         if k.is_subclass_of_class_or_intf_name('Countable'):
             return k.methods['count'].method_func.call_args(
                 interp.space.ec.interpreter, [], w_this=w_arr, thisclass=k)

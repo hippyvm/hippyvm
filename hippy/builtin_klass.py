@@ -56,7 +56,7 @@ def new_exception(interp, this, message='', code=0, w_previous=None):
     this.setattr(interp, 'code', space.wrap(code), k_Exception)
     if w_previous is None:
         w_previous = space.w_Null
-    elif not k_Exception.is_parent_of(w_previous.klass):
+    elif not k_Exception.is_parent_of(w_previous.getclass()):
         interp.fatal("Wrong parameters for "
                      "Exception([string $exception [, long $code [, "
                      "Exception $previous = NULL]]])")
@@ -97,7 +97,7 @@ def exc_getLine(interp, this):
 @wrap_method(['interp', ThisUnwrapper(W_ExceptionObject)],
              name='Exception::__toString')
 def exc___toString(interp, this):
-    name = this.klass.name
+    name = this.getclass().name
     space = interp.space
     message = space.str_w(this.getattr(interp, 'message', k_Exception))
     file = space.str_w(this.getattr(interp, 'file', k_Exception))
