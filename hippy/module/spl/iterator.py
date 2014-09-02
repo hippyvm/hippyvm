@@ -1,7 +1,9 @@
+from hippy.error import PHPException
 from hippy.klass import def_class
 from hippy.builtin import wrap_method, ThisUnwrapper
 from hippy.objects.base import W_Root
 from hippy.objects.instanceobject import W_InstanceObject
+from hippy.builtin_klass import k_LogicException
 from hippy.module.spl.interface import k_OuterIterator
 from hippy.module.spl.arrayiter import k_ArrayIterator
 
@@ -58,13 +60,20 @@ k_IteratorIterator = def_class(
 
 class W_AppendIterator(W_IteratorIterator):
     w_iterators = None
+    def check_state(self, interp):
+        if self.w_iterators is None:
+            raise PHPException(k_LogicException.call_args(interp, [interp.space.wrap(
+                "The object is in an invalid state as the parent constructor "
+                "was not called")]))
+
 
 
 k_AppendIterator = def_class(
     'AppendIterator',
     ['__construct', 'append'],
     extends=k_IteratorIterator,
-    implements=[k_OuterIterator])
+    implements=[k_OuterIterator],
+    instance_class=W_AppendIterator)
 
 
 @k_AppendIterator.def_method(['interp', 'this'])
@@ -74,5 +83,6 @@ def __construct(interp, this):
 
 @k_AppendIterator.def_method(['interp', 'this', W_Root])
 def append(interp, this, w_iterator):
+    this.check_state(interp)
     interp.getmeth(this.w_iterators, 'append').call_args(interp, [w_iterator])
     this.inner = w_iterator
