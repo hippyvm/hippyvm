@@ -16,7 +16,6 @@ class TestMapdictDirect(object):
         assert a3.lookup("xyz") is None
         assert a3.index == 1
         assert a2.index == 0
-        assert t.index == 0
 
     def test_getallkeys(self):
         t = Terminator()

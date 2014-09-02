@@ -210,8 +210,8 @@ class ClassBase(AbstractFunction, AccessMixin):
         for p in self.properties.itervalues():
             if not p.is_static() and not p.is_special and p.klass is self:
                 w_val = p.value.eval_static(space)
-                self.base_map = self.base_map.add_attribute(p.mangle_name())
-                assert self.base_map.index == len(l)
+                self.base_map = map = self.base_map.add_attribute(p.mangle_name())
+                assert map.index == len(l)
                 l.append(w_val)
         if self.parentclass is not None:
             parent = self.parentclass
