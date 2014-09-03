@@ -51,6 +51,11 @@ class TestParseDoubleQuote(object):
                                             ConstantInt(3))])
         assert parse_doublequoted("a{$x[3]}") == expected
 
+    def test_brackets_bug(self):
+        expected = DoubleQuotedStr([NamedVariable("x"),
+                                    ConstantStr("{")])
+        assert parse_doublequoted("$x{") == expected
+
     def test_interpolated_str_re(self):
         r = parse_doublequoted("^(?:$langtag|$privateUse)$")
         expected = DoubleQuotedStr([ConstantStr("^(?:"),
