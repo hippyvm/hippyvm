@@ -1447,6 +1447,9 @@ class Interpreter(object):
     def call(self, callable, args_w):
         return callable.call_args(self, args_w)
 
+    def call_method(self, w_obj, method_name, args_w):
+        return self.getmeth(w_obj, method_name).call_args(self, args_w)
+
     @jit.unroll_safe
     def CALL(self, bytecode, frame, space, arg, pc):
         func = frame.pop()

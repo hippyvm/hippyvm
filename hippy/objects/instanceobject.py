@@ -461,17 +461,14 @@ class W_InstanceObject(W_Object):
     def getitem(self, space, w_arg, give_notice=False):
         if self.klass.is_array_access:
             interp = space.ec.interpreter
-            w_meth = interp.getmeth(self, 'offsetGet')
-            w_res = w_meth.call_args(interp, [w_arg])
-            return w_res
+            return interp.call_method(self, 'offsetGet', [w_arg])
         else:
             self._msg_misuse_as_array(space)
 
     def _lookup_item_ref(self, space, w_arg):
         if self.klass.is_array_access:
             interp = space.ec.interpreter
-            w_meth = interp.getmeth(self, 'offsetGet')
-            w_res = w_meth.call_args(interp, [w_arg])
+            w_res = interp.call_method(self, 'offsetGet', [w_arg])
             if isinstance(w_res, W_Reference):
                 return w_res
             else:
@@ -483,8 +480,7 @@ class W_InstanceObject(W_Object):
     def hasitem(self, space, w_index):
         if self.klass.is_array_access:
             interp = space.ec.interpreter
-            w_meth = interp.getmeth(self, 'offsetExists')
-            w_res = w_meth.call_args(interp, [w_index])
+            w_res = interp.call_method(self, 'offsetExists', [w_index])
             return w_res.is_true(space)
         else:
             return False
@@ -492,8 +488,7 @@ class W_InstanceObject(W_Object):
     def setitem2_maybe_inplace(self, space, w_arg, w_value, unique_item=False):
         if self.klass.is_array_access:
             interp = space.ec.interpreter
-            w_meth = interp.getmeth(self, 'offsetSet')
-            w_meth.call_args(interp, [w_arg, w_value])
+            interp.call_method(self, 'offsetSet', [w_arg, w_value])
             return self, w_value
         else:
             space.ec.warn(self._msg_misuse_as_array(space))
@@ -502,8 +497,7 @@ class W_InstanceObject(W_Object):
     def _setitem_ref(self, space, w_arg, w_ref):
         if self.klass.is_array_access:
             interp = space.ec.interpreter
-            w_meth = interp.getmeth(self, 'offsetSet')
-            w_meth.call_args(interp, [w_arg, w_ref])
+            interp.call_method(self, 'offsetSet', [w_arg, w_ref])
             return self
         else:
             space.ec.warn(self._msg_misuse_as_array(space))
@@ -520,8 +514,7 @@ class W_InstanceObject(W_Object):
     def _unsetitem(self, space, w_arg):
         if self.klass.is_array_access:
             interp = space.ec.interpreter
-            w_meth = interp.getmeth(self, 'offsetUnset')
-            w_meth.call_args(interp, [w_arg])
+            interp.call_method(self, 'offsetUnset', [w_arg])
             return self
         else:
             space.ec.hippy_warn(self._msg_misuse_as_array(space, False))
