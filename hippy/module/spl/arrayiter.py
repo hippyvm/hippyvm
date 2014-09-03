@@ -66,9 +66,12 @@ def offsetGet(interp, this, w_index):
 @k_ArrayObject.def_method(['interp', 'this', W_Root, W_Root])
 @k_ArrayIterator.def_method(['interp', 'this', W_Root, W_Root])
 def offsetSet(interp, this, w_index, w_newval):
-    w_arr, _ = this.w_arr.setitem2_maybe_inplace(interp.space,
-                                                 w_index, w_newval)
-    this.w_arr = w_arr
+    if w_index == interp.space.w_Null:
+        this.w_arr.appenditem_inplace(interp.space, w_newval)
+    else:
+        w_arr, _ = this.w_arr.setitem2_maybe_inplace(interp.space,
+                                                    w_index, w_newval)
+        this.w_arr = w_arr
 
 
 @k_ArrayObject.def_method(['interp', 'this', W_Root])
