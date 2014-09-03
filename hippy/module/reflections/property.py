@@ -99,9 +99,7 @@ def __construct(interp, this, w_class, property_name):
     else:
         msg = ("The parameter class is expected to be either a string "
                "or an object")
-        interp.throw(msg, klass=k_ReflectionException)
-        raise PHPException(k_ReflectionException.call_args(
-            interp, [space.wrap(msg)]))
+        raise interp.throw(msg, klass=k_ReflectionException)
 
     this.class_name = class_name
     this.name = property_name
