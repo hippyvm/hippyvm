@@ -412,7 +412,7 @@ class Interpreter(object):
                 if len(l2) != 2:
                     # XXX issue a warning?
                     continue
-                d[l2[0]] = space.wrap(l2[1])
+                d[l2[0]] = space.wrap(hippy.module.url._rawurldecode(l2[1]))
             return space.new_array_from_rdict(d)
         return space.w_Null
 
