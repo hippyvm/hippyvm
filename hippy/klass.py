@@ -1,6 +1,6 @@
 from hippy.function import AbstractFunction
 from hippy.ast import AccessMixin, CompilerError, DelayedObject
-from hippy.error import PHPException, VisibilityError, InterpreterError
+from hippy.error import Throw, VisibilityError, InterpreterError
 from hippy.objects.reference import W_Reference
 from hippy.objects.instanceobject import (
     W_InstanceObject, LOOKUP_SETATTR, LOOKUP_GETATTR, LOOKUP_HASATTR,
@@ -610,7 +610,7 @@ class ClassBase(AbstractFunction, AccessMixin):
             w_res = method.method_func.call_args(space.ec.interpreter, [],
                                                 w_this=w_obj,
                                                 thisclass=self)
-        except PHPException:
+        except Throw:
             raise space.ec.fatal("Method %s::__toString() must not "
                                  "throw an exception" % self.name)
         if not isinstance(w_res, W_StringObject):

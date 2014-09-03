@@ -6,7 +6,7 @@ from hippy.hippyoption import is_optional_extension_enabled
 from hippy.consts import BYTECODE_HAS_ARG, BYTECODE_NAMES,\
     BINOP_LIST, BINOP_BITWISE, RETURN
 from hippy.function import AbstractFunction
-from hippy.error import (IllegalInstruction, FatalError, PHPException,
+from hippy.error import (IllegalInstruction, FatalError, Throw,
                          ExplicitExitException, VisibilityError, SignalReceived)
 from hippy.lexer import LexerError
 from hippy.sourceparser import ParseError
@@ -20,7 +20,7 @@ from hippy.objects.arrayobject import (
 from hippy.objects.closureobject import W_ClosureObject, new_closure
 from hippy.objects.instanceobject import W_InstanceObject
 from hippy.objects.strobject import W_StringObject
-from hippy.builtin_klass import W_ExceptionObject
+from hippy.builtin_klass import W_ExceptionObject, k_Exception
 from hippy.klass import ClassDeclaration, ClassBase, get_interp_decl_key
 from hippy.function import Function
 from hippy.frame import Frame, CatchBlock, Unsilence
@@ -293,7 +293,7 @@ class Interpreter(object):
 
     def _class_get(self, class_name):
         kls = self.space.global_class_cache.locate(class_name)
-        assert isinstance(kls, ClassBase)
+        assert kls is None or isinstance(kls, ClassBase)
         return kls
 
     def load_static(self, bc, arg):
@@ -466,29 +466,31 @@ class Interpreter(object):
         self.constant_names.append(name)
 
     def locate_constant(self, name, complain=True):
-        try:
-            return self.lookup_constant(name)
-        except KeyError:
-            if not complain:
-                return None
-            self.notice("Use of undefined constant %s - "
-                    "assumed '%s'" % (name, name))
-            return self.space.wrap(name)
+        c = self.lookup_constant(name)
+        if c is not None:
+            return c
+        if not complain:
+            return None
+        self.notice("Use of undefined constant %s - "
+                "assumed '%s'" % (name, name))
+        return self.space.wrap(name)
 
     def lookup_function(self, name):
         if not name:
-            raise KeyError
+            return None
         if name[0] == '\\':
             name = name[1:]
         func = self.space.global_function_cache.locate(name)
+        if func is None:
+            return None
         assert isinstance(func, AbstractFunction)
         return func
 
     def locate_function(self, name):
-        try:
-            return self.lookup_function(name)
-        except KeyError:
-            self.fatal("Call to undefined function %s()" % name)
+        func = self.lookup_function(name)
+        if func is not None:
+            return func
+        self.fatal("Call to undefined function %s()" % name)
 
     def get_this(self, frame):
         w_this = frame.w_this
@@ -511,12 +513,13 @@ class Interpreter(object):
             name = name[1:]
         if not name:
             return None
-        try:
-            return self._class_get(name)
-        except KeyError:
+        kls = self._class_get(name)
+        if kls is None:
             if autoload:
-                return self._autoload(name)
-            return None
+                kls = self._autoload(name)
+            else:
+                return None
+        return kls
 
     def _get_self_class(self):
         contextclass = self.get_contextclass()
@@ -575,10 +578,7 @@ class Interpreter(object):
         if self.autoload_stack:
             return self._autoload_from_stack(name)
 
-        try:
-            autoload_func = self.lookup_function('__autoload')
-        except KeyError:
-            return None
+        autoload_func = self.lookup_function('__autoload')
         if autoload_func is None:
             return None
         self._autoloading[cls_id] = None
@@ -753,6 +753,10 @@ class Interpreter(object):
     def deprecated(self, msg):
         self.handle_error(constants.E_DEPRECATED, msg)
 
+    def throw(self, msg, klass=k_Exception):
+        # cf. usage note for fatal()
+        raise Throw(klass.call_args(self, [self.space.newstr(msg)]))
+
     def fallback_handle_exception(self, w_exc):
         assert isinstance(w_exc, W_ExceptionObject)
         tb = w_exc.traceback
@@ -799,11 +803,11 @@ class Interpreter(object):
             try:
                 try:
                     w_result = self.interpret(frame)
-                except PHPException as e:
+                except Throw as e:
                     if self.w_exception_handler is not None:
                         try:
                             self.call(self.w_exception_handler, [e.w_exc])
-                        except PHPException as e2:
+                        except Throw as e2:
                             self.fallback_handle_exception(e2.w_exc)
                     else:
                         self.fallback_handle_exception(e.w_exc)
@@ -910,7 +914,7 @@ class Interpreter(object):
                         bc_impl = getattr(self, name)
                         try:
                             pc = bc_impl(bytecode, frame, space, arg, pc)
-                        except PHPException as e:
+                        except Throw as e:
                             pc = self.handle_exception(frame, e)
                         break
                 else:
@@ -920,7 +924,7 @@ class Interpreter(object):
                 bc_impl = getattr(self, BYTECODE_NAMES[next_instr])
                 try:
                     pc = bc_impl(bytecode, frame, space, arg, pc)
-                except PHPException as e:
+                except Throw as e:
                     pc = self.handle_exception(frame, e)
 
     def enter(self, frame):
@@ -1024,9 +1028,8 @@ class Interpreter(object):
         w_name = frame.pop().deref()
         name = space.str_w(w_name)
         w_base_name = frame.pop().deref()
-        try:
-            const = self.lookup_constant(name)
-        except KeyError:
+        const = self.lookup_constant(name)
+        if const is None:
             base_name = space.str_w(w_base_name)
             const = self.locate_constant(base_name)
         frame.push(const)
@@ -1335,7 +1338,7 @@ class Interpreter(object):
 
 
     def GETFUNC(self, bytecode, frame, space, arg, pc):
-        w_name = frame.pop().deref()            
+        w_name = frame.pop().deref()
         func = self.getfunc(w_name, frame.w_this, frame.get_contextclass())
         assert func is not None
         frame.push(func)
@@ -1345,9 +1348,8 @@ class Interpreter(object):
         w_name = frame.pop().deref()
         name = space.str_w(w_name)
         w_base_name = frame.pop().deref()
-        try:
-            func = self.lookup_function(name)
-        except KeyError:
+        func = self.lookup_function(name)
+        if func is None:
             func = self.getfunc(w_base_name, frame.w_this,
                     frame.get_contextclass())
         assert func is not None
@@ -1444,6 +1446,9 @@ class Interpreter(object):
 
     def call(self, callable, args_w):
         return callable.call_args(self, args_w)
+
+    def call_method(self, w_obj, method_name, args_w):
+        return self.getmeth(w_obj, method_name).call_args(self, args_w)
 
     @jit.unroll_safe
     def CALL(self, bytecode, frame, space, arg, pc):
@@ -1556,16 +1561,15 @@ class Interpreter(object):
     def declare_func(self, func):
         name = func.name
         func_id = func.get_identifier()
-        try:
-            func = self.lookup_function(func_id)
+        ldfunc = self.lookup_function(func_id)
+        if ldfunc is not None:
+            func = ldfunc
             if isinstance(func, Function):
                 extra = ' (previously declared in %s:%d)' % (
                     func.bytecode.filename, func.bytecode.startlineno)
             else:
                 extra = ''
             self.fatal("Cannot redeclare %s()%s" % (name, extra))
-        except KeyError:
-            pass
         self.space.global_function_cache.declare_new(func_id, func)
 
     def DECLARE_FUNC(self, bytecode, frame, space, arg, pc):
@@ -1790,6 +1794,7 @@ class Interpreter(object):
 
         if self._class_is_defined(name):
             cls = self._class_get(name)
+            assert cls is not None
         else:
             cls = None
 
@@ -1901,7 +1906,7 @@ class Interpreter(object):
         if not isinstance(w_exc, W_ExceptionObject):
             self.fatal("Exceptions must be valid objects derived from "
                     "the Exception base class")
-        raise PHPException(w_exc)
+        raise Throw(w_exc)
 
     def POPEN(self, bytecode, frame, space, arg, pc):
         cmd = space.str_w(frame.pop().deref())
