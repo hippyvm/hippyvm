@@ -1,10 +1,11 @@
 from hippy import consts
 from hippy.klass import def_class
 from hippy.objects.intobject import W_IntObject
-from hippy.builtin import wrap_method, ThisUnwrapper
+from hippy.builtin import wrap_method
 from hippy.builtin_klass import GetterSetterWrapper
-from hippy.error import PHPException
 
+from hippy.module.reflections.exception import (
+    k_ReflectionException)
 from hippy.module.reflections.parameter import k_ReflectionParameter
 from hippy.module.reflections.function_abstract import (
     k_ReflectionFunctionAbstract, W_ReflectionFunctionAbstract
@@ -60,9 +61,7 @@ def __construct(interp, this, class_name, method_name):
         this.ref_method = klass.methods[method_name]
     except KeyError:
         msg = "Method %s does not exist" % method_name
-        raise PHPException(interp._class_get('ReflectionException').call_args(
-            interp, [interp.space.wrap(msg)]
-        ))
+        interp.throw(msg, klass=k_ReflectionException)
 
 
 @k_ReflectionMethod.def_method(['interp', 'this'])

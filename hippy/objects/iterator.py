@@ -17,7 +17,7 @@ class W_InstanceIterator(W_BaseIterator):
         self.w_inst = w_inst
         self.space = space
         interp = space.ec.interpreter
-        interp.getmeth(w_inst, "rewind").call_args(interp, [])
+        interp.call_method(w_inst, "rewind", [])
         self.first_item = False
         self.w_valid = interp.getmeth(w_inst, "valid")
         self.w_key = interp.getmeth(w_inst, "key")

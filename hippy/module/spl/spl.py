@@ -111,9 +111,8 @@ def get_group(interp, this):
     try:
         return _get_group(interp, filename)
     except OSError:
-        raise PHPException(k_RuntimeException.call_args(
-            interp, [interp.space.wrap(
-                "SplFileInfo::getGroup(): stat failed for %s" % filename)]))
+        interp.throw("SplFileInfo::getGroup(): stat failed for %s" % filename,
+                     klass=k_RuntimeException)
 
 
 def _get_inode(interp, filename):

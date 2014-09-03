@@ -5,7 +5,6 @@ from hippy.objects.intobject import W_IntObject
 from hippy.objects.instanceobject import W_InstanceObject
 from hippy.builtin import Optional
 from hippy.builtin_klass import GetterSetterWrapper
-from hippy.error import PHPException
 from hippy.module.reflections.exception import k_ReflectionException
 
 
@@ -93,16 +92,14 @@ def __construct(interp, this, w_class, property_name):
         klass = interp.lookup_class_or_intf(class_name)
         if klass is None:
             msg = "Class %s does not exist" % class_name
-            raise PHPException(k_ReflectionException.call_args(
-                interp, [space.wrap(msg)]))
+            interp.throw(msg, klass=k_ReflectionException)
     elif isinstance(w_class, W_InstanceObject):
         klass = w_class.klass
         class_name = klass.name
     else:
         msg = ("The parameter class is expected to be either a string "
                "or an object")
-        raise PHPException(k_ReflectionException.call_args(
-            interp, [space.wrap(msg)]))
+        raise interp.throw(msg, klass=k_ReflectionException)
 
     this.class_name = class_name
     this.name = property_name
@@ -125,8 +122,7 @@ def __construct(interp, this, w_class, property_name):
             this.flags = consts.ACC_IMPLICIT_PUBLIC
             return
         msg = "Property %s::$%s does not exist" % (class_name, property_name)
-        raise PHPException(k_ReflectionException.call_args(
-            interp, [interp.space.wrap(msg)]))
+        interp.throw(msg, klass=k_ReflectionException)
 
 
 @k_ReflectionProperty.def_method(['interp', 'this'])
@@ -145,8 +141,7 @@ def getValue(interp, this, w_obj=None):
     if not property.is_public():
         msg = "Cannot access non-public member %s::%s" % (this.class_name,
                                                           this.name)
-        raise PHPException(k_ReflectionException.call_args(
-            interp, [interp.space.wrap(msg)]))
+        raise interp.throw(msg, klass=k_ReflectionException)
     if not property.is_static():
         w_value = w_obj.getattr(interp, this.name, w_obj.getclass(),
                                 give_notice=False)
@@ -160,8 +155,7 @@ def setValue(interp, this, w_arg_1, w_arg_2=None):
     if not this.ref_prop.is_public():
         msg = "Cannot access non-public member %s::%s" % (this.class_name,
                                                           this.name)
-        raise PHPException(k_ReflectionException.call_args(
-            interp, [interp.space.wrap(msg)]))
+        raise interp.throw(msg, klass=k_ReflectionException)
 
     if not this.ref_prop.is_static():
         w_obj = w_arg_1
