@@ -134,7 +134,6 @@ def_class('OutOfBoundsException', [], extends=k_Exception)
 k_stdClass = def_class('stdClass', [])
 k_incomplete = def_class('__PHP_Incomplete_Class', [])
 k_RuntimeException = def_class('RuntimeException', [], extends=k_Exception)
-k_LogicException = def_class('LogicException', [], extends=k_Exception)
 k_DomainException = def_class('DomainException', [], extends=k_Exception)
 k_UnexpectedValueException = def_class('UnexpectedValueException', [],
                                        extends=k_Exception)
@@ -174,7 +173,7 @@ k_ArrayAccess = def_class('ArrayAccess', [
     new_abstract_method(["interp"], name="ArrayAccess::offsetExists"),
     new_abstract_method(["interp"], name="ArrayAccess::offsetGet"),
     new_abstract_method(["interp"], name="ArrayAccess::offsetSet"),
-    new_abstract_method(["interp"], name="ArrayAccess::offsetUnset"),],
+    new_abstract_method(["interp"], name="ArrayAccess::offsetUnset")],
     flags=consts.ACC_INTERFACE | consts.ACC_ABSTRACT)
 k_ArrayAccess.is_array_access = True
 

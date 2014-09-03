@@ -7,13 +7,14 @@ from hippy.objects.resources.file_resource import W_FileResource
 from hippy.objects.resources.dir_resource import W_DirResource
 from hippy.error import PHPException
 from hippy.builtin_klass import (def_class, k_RuntimeException,
-    k_LogicException, k_UnexpectedValueException, GetterSetterWrapper)
+    k_UnexpectedValueException, GetterSetterWrapper)
 from hippy.module.spl.interface import k_SeekableIterator, k_RecursiveIterator
 from hippy.module.standard.file.funcs import (_is_dir, _is_file, _is_link,
     _is_executable, _is_readable, _is_writable, _filetype, _fseek, _fstat,
     _fopen, _basename, FopenError)
 from hippy import rpath
 from hippy import consts
+from hippy.module.spl.exception import k_LogicException
 
 
 class W_SplFileInfo(W_InstanceObject):
@@ -435,9 +436,8 @@ def sfo_construct(interp, this, filename, open_mode='r',
 
     assert filename is not None
     if os.path.isdir(filename):
-        raise PHPException(k_LogicException.call_args(
-            interp, [interp.space.wrap(
-                "Cannot use SplFileObject with directories")]))
+        raise interp.throw("Cannot use SplFileObject with directories",
+                           klass=k_LogicException)
     try:
         this.w_res = _fopen(interp.space, filename, this.open_mode,
                             use_include_path, w_ctx)
@@ -473,10 +473,9 @@ def sfo_valid(interp, this):
              name='SplFileObject::seek')
 def sfo_seek(interp, this, line_pos):
     if line_pos < 0:
-        raise PHPException(k_LogicException.call_args(
-            interp, [interp.space.wrap(
-                "SplFileObject::seek(): Can't seek file %s "
-                "to negative line %d" % (this.file_name, line_pos))]))
+        raise interp.throw("SplFileObject::seek(): Can't seek file %s to "
+                           "negative line %d" % (this.file_name, line_pos),
+                           klass=k_LogicException)
     this.w_res.seek_to_line(line_pos, this.flags & SFO_DROP_NEW_LINE)
 
 
