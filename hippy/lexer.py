@@ -328,7 +328,7 @@ RULES = [(parse_regex(rule), name) for rule, name in _RULES]
 _RULES_FOR_DOUBLE_QUOTE = (
     ("\$[a-zA-Z_][0-9a-zA-Z_]*(->[a-zA-Z_][0-9a-zA-Z_]*)?", 'T_VARIABLE'),
     (r"\{\$|\$\{", "T_DOLLAR_OPEN_CURLY_BRACES"),
-    (r"([^\"\$\{\\]|\\.|\$[^a-zA-Z\"\{]|{[^\$])+", "T_ENCAPSED_AND_WHITESPACE"),
+    (r"([^\"\$\{\\]|\\.|\$[^a-zA-Z\"\{]|{[^\$\"])+|{", "T_ENCAPSED_AND_WHITESPACE"),
     (r"\$", "T_DOLLAR"),
     ('"', '"'),
 )
