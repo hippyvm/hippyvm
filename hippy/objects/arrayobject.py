@@ -546,8 +546,8 @@ class W_ListArrayObject(W_ArrayObject):
             return self._isset_int(i)
 
     def create_iter(self, space, contextclass=None):
-        from hippy.objects.arrayiter import W_ListArrayIterator
-        return W_ListArrayIterator(self.lst_w)
+        from hippy.objects.arrayiter import ListArrayIterator
+        return ListArrayIterator(self.lst_w)
 
     def create_iter_ref(self, space, r_self, contextclass=None):
         from hippy.objects.arrayiter import ListArrayIteratorRef
@@ -750,8 +750,8 @@ class W_RDictArrayObject(W_ArrayObject):
         return key in self.dct_w
 
     def create_iter(self, space, contextclass=None):
-        from hippy.objects.arrayiter import W_RDictArrayIterator
-        return W_RDictArrayIterator(self.dct_w)
+        from hippy.objects.arrayiter import RDictArrayIterator
+        return RDictArrayIterator(self.dct_w)
 
     def create_iter_ref(self, space, r_self, contextclass=None):
         from hippy.objects.arrayiter import RDictArrayIteratorRef

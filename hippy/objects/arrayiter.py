@@ -1,7 +1,7 @@
 from hippy.objects.arrayobject import wrap_array_key
-from hippy.objects.iterator import W_BaseIterator
+from hippy.objects.iterator import BaseIterator
 
-class W_ListArrayIterator(W_BaseIterator):
+class ListArrayIterator(BaseIterator):
 
     def __init__(self, storage_w):
         self.storage_w = storage_w
@@ -22,7 +22,7 @@ class W_ListArrayIterator(W_BaseIterator):
         self.finished = self.index == len(self.storage_w)
         return space.wrap(index), w_value
 
-class ListArrayIteratorRef(W_BaseIterator):
+class ListArrayIteratorRef(BaseIterator):
     def __init__(self, space, r_array):
         self.r_array = r_array
         self.index = 0
@@ -51,7 +51,7 @@ class ListArrayIteratorRef(W_BaseIterator):
         self.finished = self.is_finished()
         return space.wrap(index), r_value
 
-class W_RDictArrayIterator(W_BaseIterator):
+class RDictArrayIterator(BaseIterator):
     def __init__(self, rdct_w):
         self.rdct_w = rdct_w
         self.dctiter = rdct_w.iteritems()
@@ -69,7 +69,7 @@ class W_RDictArrayIterator(W_BaseIterator):
         key, w_value = self.dctiter.next()
         return wrap_array_key(space, key), w_value
 
-class RDictArrayIteratorRef(W_BaseIterator):
+class RDictArrayIteratorRef(BaseIterator):
     def __init__(self, space, r_array):
         self.r_array = r_array
         self.index = 0
@@ -110,7 +110,7 @@ class RDictArrayIteratorRef(W_BaseIterator):
         return wrap_array_key(space, key), r_value
 
 
-class W_FixedIterator(W_BaseIterator):
+class W_FixedIterator(BaseIterator):
     def __init__(self, items_w):
         self.items_w = items_w
         self.index = 0

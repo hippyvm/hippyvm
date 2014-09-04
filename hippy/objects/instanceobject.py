@@ -3,7 +3,7 @@ from hippy.error import (
     ConvertError, VisibilityError, OffsetError, PHPException)
 from hippy.objects.base import W_Object
 from hippy.objects.reference import W_Reference, VirtualReference
-from hippy.objects.iterator import W_InstanceIterator
+from hippy.objects.iterator import InstanceIterator
 from hippy.objects.arrayobject import array_var_export, W_ArrayObject
 from rpython.rlib.rstring import StringBuilder
 from rpython.rlib import jit
@@ -445,7 +445,7 @@ class W_InstanceObject(W_Object):
 
         klass = self.getclass()
         if klass.is_iterator:
-            return W_InstanceIterator(space, self)
+            return InstanceIterator(space, self)
         elif klass.is_iterable:
             interp = space.ec.interpreter
             w_iterator = interp.getmeth(self, 'getIterator').call_args(interp, [])
