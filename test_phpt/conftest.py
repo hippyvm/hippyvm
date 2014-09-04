@@ -2357,8 +2357,8 @@ markers['ext/reflection'] = {
 }
 
 markers[spl_test_dir] = {
-    'array_001.phpt': "Missing ArrayObject",
-    'array_002.phpt': "Missing ArrayObject",
+    'array_001.phpt': "missing notice on unset()",
+    'array_002.phpt': "wrong instance number",
     'array_003.phpt': "Missing ArrayObject",
     'array_004.phpt': "Missing ArrayObject",
     'array_005.phpt': "Missing FilterIterator",
@@ -2402,10 +2402,8 @@ markers[spl_test_dir] = {
     'arrayObject_ksort_basic1.phpt': "Missing ArrayObject",
     'arrayObject_ksort_basic2.phpt': "Missing ArrayObject",
     'arrayObject_magicMethods1.phpt': "Missing ArrayObject",
-    'arrayObject_magicMethods2.phpt': "Missing ArrayObject",
     'arrayObject_magicMethods3.phpt': "Missing ArrayObject",
     'arrayObject_magicMethods4.phpt': "Missing ArrayObject",
-    'arrayObject_magicMethods5.phpt': "Missing ArrayObject",
     'arrayObject_magicMethods6.phpt': "Missing ArrayObject",
     'arrayObject_natcasesort_basic1.phpt': "Missing ArrayObject",
     'arrayObject_natsort_basic1.phpt': "Missing ArrayObject",
