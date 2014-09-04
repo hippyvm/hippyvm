@@ -2359,7 +2359,6 @@ markers['ext/reflection'] = {
 markers[spl_test_dir] = {
     'array_001.phpt': "missing notice on unset()",
     'array_002.phpt': "wrong instance number",
-    'array_003.phpt': "Missing ArrayObject",
     'array_004.phpt': "Missing ArrayObject",
     'array_005.phpt': "Missing FilterIterator",
     'array_007.phpt': "Missing IteratorAggregate",
@@ -2464,7 +2463,6 @@ markers[spl_test_dir] = {
     'bug54970.phpt': "?",
     'bug54971.phpt': "?",
     'bug60201.phpt': "?",
-    'bug61326.phpt': "?",
     'bug61347.phpt': "?",
     'bug61418.phpt': "Missing RegexIterator",
     'bug61453.phpt': "?",

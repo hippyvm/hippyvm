@@ -117,15 +117,18 @@ class W_InstanceObject(W_Object):
     def setup(self, interp):
         pass
 
-    def get_instance_attrs(self):
+    def get_instance_attrs(self, interp):
         d = OrderedDict()
         for attr in self.map.get_all_attrs():
             d[attr.name] = self.storage_w[attr.index]
+        klass = self.getclass()
+        for mangled_name, prop in klass.get_all_nonstatic_special_properties():
+            d[mangled_name] = prop.getter(interp, self)
         return d
 
     def get_rdict_array(self, space):
         if self.w_rdict_array is None:
-            dct_w = self.get_instance_attrs()
+            dct_w = self.get_instance_attrs(space.ec.interpreter)
             self.w_rdict_array = (
                 W_ArrayObject.new_array_from_rdict(space, dct_w))
         return self.w_rdict_array
@@ -208,7 +211,7 @@ class W_InstanceObject(W_Object):
 
     def var_export(self, space, indent, recursion, suffix):
         header = '%s::__set_state(array' % (self.getclass().name)
-        dct_w = self.get_instance_attrs()
+        dct_w = self.get_instance_attrs(space.ec.interpreter)
         clean_dct_w = OrderedDict()
         for key, value in dct_w.iteritems():
             last_null_pos = key.rfind('\x00')
@@ -221,8 +224,10 @@ class W_InstanceObject(W_Object):
                                 self, header, suffix=suffix, prefix='')
 
     def dump(self):
+        from hippy.objspace import getspace
+        interp = getspace().ec.interpreter
         items = []
-        dct_w = self.get_instance_attrs()
+        dct_w = self.get_instance_attrs(interp)
         for key, w_value in dct_w.items():
             items.append('%s=>%s' % (key, w_value.dump()))
         return "instance(%s: %s)" % (self.getclass().name, ', '.join(items))
@@ -532,8 +537,7 @@ class W_InstanceObject(W_Object):
             space.ec.hippy_warn(self._msg_misuse_as_array(space, False))
             return self
 
-    def compare(self, w_obj, objspace, strict):
-
+    def compare(self, w_obj, space, strict):
         w_left = self
         w_right = w_obj
 
@@ -542,8 +546,8 @@ class W_InstanceObject(W_Object):
         elif strict or w_left.getclass() is not w_right.getclass():
             return 1
 
-        left = w_left.get_instance_attrs()
-        right = w_right.get_instance_attrs()
+        left = w_left.get_instance_attrs(space.ec.interpreter)
+        right = w_right.get_instance_attrs(space.ec.interpreter)
         if len(left) - len(right) < 0:
             return -1
         if len(left) - len(right) > 0:
@@ -554,7 +558,7 @@ class W_InstanceObject(W_Object):
                 w_right_value = right[key]
             except KeyError:
                 return 1
-            cmp_res = objspace._compare(w_value, w_right_value)
+            cmp_res = space._compare(w_value, w_right_value)
             if cmp_res == 0:
                 continue
             else:
