@@ -50,3 +50,10 @@ class TestBoolObject(BaseTestInterpreter):
         assert self.echo('(boolean)5') == '1'
         assert self.echo('(boolean)0.0') == ''
         assert self.echo('(boolean)"foo"') == '1'
+
+    def test_plusplus(self):
+        output = self.run('''$i = true; $i++; echo $i;''')
+        assert output[0] == self.space.wrap(True)
+
+        output = self.run('''$i = false; $i++; echo $i;''')
+        assert output[0] == self.space.wrap(False)
