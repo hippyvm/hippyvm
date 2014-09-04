@@ -2374,7 +2374,7 @@ markers[spl_test_dir] = {
     'array_015.phpt': "Missing ArrayObject",
     'array_017.phpt': "Missing ArrayObject",
     'array_019.phpt': "Missing ArrayObject",
-    'array_022.phpt': "Missing ArrayObject",
+    'array_022.phpt': "SKIP: infinite loop when $ao->storage === $ao",
     'array_023.phpt': "Missing ArrayObject",
     'array_024.phpt': "Missing ArrayObject",
     'array_025.phpt': "Missing ArrayObject",
