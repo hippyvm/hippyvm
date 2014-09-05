@@ -1,7 +1,13 @@
 
-import py, re, tempfile, os
+import py, re, tempfile, os, sys
+import pexpect
 from hippy.main import main
 from hippy.constants import E_ALL, E_NOTICE
+from testing.test_interpreter import BaseTestInterpreter
+
+SCRIPT_PATH = os.path.abspath(__file__)
+SCRIPT_DIR = os.path.dirname(SCRIPT_PATH)
+HIPPY_MAIN = os.path.join(SCRIPT_DIR, "..", "hippy", "main.py")
 
 class TestMain(object):
     def setup_method(self, meth):
@@ -156,3 +162,21 @@ Stack trace:
             assert output == str(E_ALL & ~E_NOTICE)
         finally:
             os.chdir(d)
+
+class TestStdin(BaseTestInterpreter):
+    """Tests that spawn hippy as a new process."""
+
+    def test_code_from_stdin(self):
+        child = pexpect.spawn(sys.executable, [HIPPY_MAIN])
+        child.sendline("<?php for ($i=0; $i < 3; $i++) {echo \"e$i\";} ?>")
+        child.sendeof()
+        child.expect("e0e1e2")
+        child.expect(pexpect.EOF)
+
+    def test_code_from_file(self, tmpdir):
+        f = tmpdir.join("file.php")
+        f.write("<?php for ($i=0; $i < 3; $i++) {echo \"e$i\";} ?>")
+
+        child = pexpect.spawn(sys.executable, [HIPPY_MAIN, f.strpath])
+        child.expect("e0e1e2")
+        child.expect(pexpect.EOF)

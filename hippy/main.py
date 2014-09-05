@@ -34,10 +34,6 @@ def _run_fastcgi_server(server_port):
     return run_fcgi_server(port=server_port)
 
 def entry_point(argv):
-    if len(argv) < 2:
-        print __doc__
-        return 1
-
     i = 1
     fname = None
     gcdump = None
@@ -94,24 +90,18 @@ def entry_point(argv):
             return 1
         else:
             return _run_fastcgi_server(server_port)
-    if not fname:
-        print "php filename required"
-        return 1
-    else:
-        rest_of_args = []
-        for k in range(i + 1, len(argv)):
-            s = argv[k]
-            assert s is not None
-            rest_of_args.append(s)
-        return main(fname, rest_of_args, cgi, gcdump, debugger_pipes,
-                    bench_mode, bench_no)
+    rest_of_args = []
+    for k in range(i + 1, len(argv)):
+        s = argv[k]
+        assert s is not None
+        rest_of_args.append(s)
+    return main(fname, rest_of_args, cgi, gcdump, debugger_pipes,
+                bench_mode, bench_no)
 
 def main(filename, rest_of_args, cgi, gcdump, debugger_pipes=(-1, -1),
          bench_mode=False, bench_no=-1):
     space = getspace()
     interp = Interpreter(space)
-
-    absname = rpath.abspath(filename)
 
     try:
         ini_data = open('hippy.ini').read(-1)
@@ -125,7 +115,7 @@ def main(filename, rest_of_args, cgi, gcdump, debugger_pipes=(-1, -1),
             os.write(2, "error reading `hippy.ini`")
 
     try:
-        bc = space.bytecode_cache.compile_file(absname, space)
+        bc = space.bytecode_cache.compile_file(filename, space)
     except ParseError as e:
         print 'Parse error:  %s' % e
         return 2
