@@ -14,7 +14,7 @@ class BytecodeCache(object):
     def _really_compile(self, space, abs_fname):
 
         if abs_fname is None:
-            f = sys.stdin
+            f = os.fdopen(0) # open stdin
         else:
             f = open(abs_fname)
 
@@ -39,15 +39,16 @@ class BytecodeCache(object):
 
         if fname is None: # you can't cache stdin
             return self._really_compile(space, fname)
-
-        # otherwise this really is a filename
-        absname = abspath(fname)
-        try:
-            bc, tstamp = self.cached_files[absname]
-            if now - tstamp >= self.timeout:
-                mtime = os.stat(absname).st_mtime
-                if mtime > tstamp:
-                    raise KeyError
-            return bc
-        except KeyError:
-            return self._really_compile(space, fname)
+        else:
+            # otherwise this really is a filename
+            absname = abspath(fname)
+            assert absname is not None
+            try:
+                bc, tstamp = self.cached_files[absname]
+                if now - tstamp >= self.timeout:
+                    mtime = os.stat(absname).st_mtime
+                    if mtime > tstamp:
+                        raise KeyError
+                return bc
+            except KeyError:
+                return self._really_compile(space, fname)
