@@ -8,7 +8,7 @@ from collections import OrderedDict
 import hippy.hippyoption
 hippy.hippyoption.enable_all_optional_extensions()
 
-from hippy.objspace import ObjSpace, w_True, w_False
+from hippy.objspace import getspace, w_True, w_False
 from hippy.objects.intobject import W_IntObject
 from hippy.objects.floatobject import W_FloatObject
 from hippy.objects.arrayobject import W_ListArrayObject, W_RDictArrayObject
@@ -37,7 +37,7 @@ class BaseTestInterpreter(object):
         return self.engine.warnings(expected_warnings)
 
     def init_space(self):
-        self.space = ObjSpace()
+        self.space = getspace()
         if option.runappdirect:
             self.engine = self.DirectRunner(self.space)
         else:

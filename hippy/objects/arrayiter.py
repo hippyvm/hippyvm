@@ -6,21 +6,35 @@ class ListArrayIterator(BaseIterator):
     def __init__(self, storage_w):
         self.storage_w = storage_w
         self.index = 0
-        self.finished = len(storage_w) == 0
 
     def next(self, space):
         index = self.index
         w_value = self.storage_w[index]
         self.index = index + 1
-        self.finished = self.index == len(self.storage_w)
         return w_value
 
     def next_item(self, space):
+        interp = space.ec.interpreter
         index = self.index
-        w_value = self.storage_w[index]
+        w_value = self.current(interp)
+        w_index = self.key(interp)
         self.index = index + 1
-        self.finished = self.index == len(self.storage_w)
-        return space.wrap(index), w_value
+        return w_index, w_value
+
+    def current(self, interp):
+        return self.storage_w[self.index]
+
+    def key(self, interp):
+        return interp.space.wrap(self.index)
+
+    def rewind(self, interp):
+        self.index = 0
+
+    def valid(self, interp):
+        return self.index < len(self.storage_w)
+
+    def done(self):
+        return not self.valid(None)
 
 class ListArrayIteratorRef(BaseIterator):
     def __init__(self, space, r_array):

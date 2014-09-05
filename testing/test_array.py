@@ -5,6 +5,7 @@ from hippy.objects.intobject import W_IntObject as W_Int
 from hippy.objects.strobject import W_ConstStringObject as W_Str
 from hippy.objects.reference import W_Reference
 from hippy.objspace import ObjSpace
+from hippy.interpreter import Interpreter
 from testing.test_interpreter import BaseTestInterpreter
 
 
@@ -44,6 +45,7 @@ class TestArrayDirect(object):
 
     def test_value_iterators(self):
         space = ObjSpace()
+        interp = Interpreter(space)
         int_arr, float_arr, mix_arr, empty, hash, cp_arr = \
             self.create_array_strats(space)
         w_iter = int_arr.create_iter(space)
@@ -73,6 +75,7 @@ class TestArrayDirect(object):
 
     def test_item_iterators(self):
         space = ObjSpace()
+        interp = Interpreter(space)
         unpack = self.unpack
         int_arr, float_arr, mix_arr, empty, hash, cp_arr = \
             self.create_array_strats(space)
