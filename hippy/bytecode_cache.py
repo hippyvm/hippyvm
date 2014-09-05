@@ -20,17 +20,13 @@ class BytecodeCache(object):
 
         data = f.read(-1)
 
-        # probably don't want to close stdin
-        if abs_fname is not None:
-            f.close()
-
-        if abs_fname is not None:
-            tstamp = os.stat(abs_fname).st_mtime
-        else:
-            tstamp = time.time()
-
         bc = compile_php(abs_fname, data, space)
-        self.cached_files[abs_fname] = (bc, tstamp)
+
+        if abs_fname is not None: # if not stdin, cache bytecode
+            f.close() # also don't close if stdin
+            tstamp = os.stat(abs_fname).st_mtime
+            self.cached_files[abs_fname] = (bc, tstamp)
+
         return bc
 
     # pass fname as None for stdin
