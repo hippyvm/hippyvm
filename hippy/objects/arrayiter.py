@@ -68,9 +68,7 @@ class ListArrayIteratorRef(BaseIterator):
 class RDictArrayIterator(BaseIterator):
     def __init__(self, rdct_w):
         self.rdct_w = rdct_w
-        self.dctiter = rdct_w.iteritems()
-        self.remaining = len(rdct_w)
-        self.finished = self.remaining == 0
+        self.rewind(None)
 
     def next(self, space):
         self.remaining -= 1
@@ -82,6 +80,15 @@ class RDictArrayIterator(BaseIterator):
         self.finished = self.remaining == 0
         key, w_value = self.dctiter.next()
         return wrap_array_key(space, key), w_value
+
+    def rewind(self, interp):
+        self.dctiter = self.rdct_w.iteritems()
+        self.remaining = len(self.rdct_w)
+        self.finished = self.remaining == 0
+
+    def valid(self, interp):
+        return self.remaining == 0
+
 
 class RDictArrayIteratorRef(BaseIterator):
     def __init__(self, space, r_array):
