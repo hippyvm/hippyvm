@@ -149,6 +149,7 @@ class TestArrayDirect(object):
 
     def test_map_iter(self):
         space = ObjSpace()
+        interp = Interpreter(space)
         unpack = self.unpack
         w_a = space.newstr("a")
         w_b = space.newstr("b")

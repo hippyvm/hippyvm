@@ -751,7 +751,7 @@ class W_RDictArrayObject(W_ArrayObject):
 
     def create_iter(self, space, contextclass=None):
         from hippy.objects.arrayiter import RDictArrayIterator
-        return RDictArrayIterator(self.dct_w)
+        return RDictArrayIterator(self)
 
     def create_iter_ref(self, space, r_self, contextclass=None):
         from hippy.objects.arrayiter import RDictArrayIteratorRef
