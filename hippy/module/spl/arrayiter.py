@@ -120,7 +120,7 @@ def current(interp, this):
 
 @k_ArrayIterator.def_method(['interp', 'this'])
 def next(interp, this):
-    return this._iter.next(interp)
+    return this._iter.next(interp.space)
 
 
 @k_ArrayIterator.def_method(['interp', 'this'])

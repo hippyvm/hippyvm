@@ -8,9 +8,9 @@ class ListArrayIterator(BaseIterator):
         self.index = 0
 
     def next(self, space):
-        index = self.index
-        w_value = self.storage_w[index]
-        self.index = index + 1
+        interp = space.ec.interpreter
+        w_value = self.current(interp)
+        self.index += 1
         return w_value
 
     def next_item(self, space):
@@ -22,7 +22,10 @@ class ListArrayIterator(BaseIterator):
         return w_index, w_value
 
     def current(self, interp):
-        return self.storage_w[self.index]
+        try:
+            return self.storage_w[self.index]
+        except IndexError:
+            return None
 
     def key(self, interp):
         return interp.space.wrap(self.index)

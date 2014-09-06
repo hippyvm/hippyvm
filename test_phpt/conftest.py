@@ -2436,7 +2436,6 @@ markers[spl_test_dir] = {
     'bug45622b.phpt': "?",
     'bug45622.phpt': "?",
     'bug45826.phpt': "?",
-    'bug46031.phpt': "?",
     'bug46088.phpt': "?",
     'bug46115.phpt': "?",
     'bug46160.phpt': "?",
