@@ -2359,7 +2359,6 @@ markers['ext/reflection'] = {
 markers[spl_test_dir] = {
     'array_001.phpt': "missing notice on unset()",
     'array_002.phpt': "wrong instance number",
-    'array_004.phpt': "Missing ArrayObject",
     'array_005.phpt': "Missing FilterIterator",
     'array_007.phpt': "Missing IteratorAggregate",
     'array_008.phpt': "Missing ArrayObject",

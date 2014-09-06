@@ -17,6 +17,9 @@ class W_SplArray(W_InstanceObject):
             w_arr = w_arr.w_arr
         return w_arr
 
+class W_ArrayIterator(W_SplArray):
+    _iter = None
+
 def _get_storage(interp, this):
     return this.w_arr
 
@@ -40,16 +43,26 @@ k_ArrayIterator = def_class(
      'append', 'count',
      'current', 'next', 'key', 'rewind', 'valid'],
     [GetterSetterWrapper(_get_storage, _set_storage, 'storage', consts.ACC_PRIVATE)],
-    instance_class=W_SplArray,
+    instance_class=W_ArrayIterator,
     implements=[k_ArrayAccess, k_Iterator])
 
 
 @k_ArrayObject.def_method(['interp', 'this', Optional(W_Root)])
+def __construct(interp, this, w_arr=None):
+    if w_arr is None:
+        w_arr = interp.space.new_array_from_list([])
+    this.w_arr = w_arr
+
+
 @k_ArrayIterator.def_method(['interp', 'this', Optional(W_Root)])
 def __construct(interp, this, w_arr=None):
     if w_arr is None:
         w_arr = interp.space.new_array_from_list([])
     this.w_arr = w_arr
+    while isinstance(w_arr, W_SplArray):
+        w_arr = w_arr.w_arr
+    this._iter = w_arr.create_iter(interp.space)
+
 
 @k_ArrayObject.def_method(['interp', 'this', W_Root])
 @k_ArrayIterator.def_method(['interp', 'this', W_Root])
@@ -102,29 +115,24 @@ def getIterator(interp, this):
 
 @k_ArrayIterator.def_method(['interp', 'this'])
 def current(interp, this):
-    w_arr = this.get_rdict_array(interp.space)
-    return w_arr._current()
+    return this._iter.current(interp)
 
 
 @k_ArrayIterator.def_method(['interp', 'this'])
 def next(interp, this):
-    w_arr = this.get_rdict_array(interp.space)
-    return w_arr.next(interp.space)
+    return this._iter.next(interp)
 
 
 @k_ArrayIterator.def_method(['interp', 'this'])
 def key(interp, this):
-    w_arr = this.get_rdict_array(interp.space)
-    return w_arr._key(interp.space)
+    return this._iter.key(interp)
 
 
 @k_ArrayIterator.def_method(['interp', 'this'])
 def rewind(interp, this):
-    w_arr = this.get_rdict_array(interp.space)
-    w_arr.current_idx = 0
+    this._iter.rewind(interp)
 
 
 @k_ArrayIterator.def_method(['interp', 'this'])
 def valid(interp, this):
-    w_arr = this.get_rdict_array(interp.space)
-    return interp.space.newbool(w_arr.current_idx < w_arr.arraylen())
+    return interp.space.newbool(this._iter.valid(interp))
