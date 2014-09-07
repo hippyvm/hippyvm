@@ -1217,3 +1217,16 @@ class TestRecursiveDirectoryIterator(BaseTestInterpreter):
         assert self.space.str_w(output[1]) == tempdir + '/'
         assert self.space.str_w(output[2]) == 'RecursiveDirectoryIterator'
         assert self.space.str_w(output[3]) == tempdir + '/testdir/.'
+
+    def test_FilterIterator(self):
+        output = self.run('''
+        class EvenIterator extends FilterIterator {
+            public function accept() {
+                return $this->current() % 2 == 0;
+            }
+        }
+        $it = new EvenIterator(new ArrayIterator(range(0, 3)));
+        foreach($it as $n)
+            echo $n;
+        ''')
+        assert map(self.space.int_w, output) == [0, 2]

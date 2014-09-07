@@ -1,5 +1,6 @@
 from hippy.klass import def_class
 from hippy.builtin import wrap_method, ThisUnwrapper
+from hippy.builtin_klass import new_abstract_method
 from hippy.objects.base import W_Root
 from hippy.objects.instanceobject import W_InstanceObject
 from hippy.module.spl.exception import (
@@ -77,7 +78,6 @@ k_AppendIterator = def_class(
     'AppendIterator',
     ['__construct', 'append', 'next'],
     extends=k_IteratorIterator,
-    implements=[k_OuterIterator],
     instance_class=W_AppendIterator)
 
 
@@ -112,4 +112,18 @@ def next(interp, this):
             this.inner = interp.call_method(this.w_iterators, 'current', [])
             interp.call_method(this.inner, 'rewind', [])
         else:
+            return
+
+k_FilterIterator = def_class(
+    'FilterIterator',
+    ['next',
+     new_abstract_method(["interp"], name="FilterIterator::accept")],
+    extends=k_IteratorIterator)
+
+@k_FilterIterator.def_method(['interp', 'this'])
+def next(interp, this):
+    is_true = interp.space.is_true
+    while is_true(interp.call_method(this.inner, 'valid', [])):
+        interp.call_method(this.inner, 'next', [])
+        if is_true(interp.call_method(this, 'accept', [])):
             return
