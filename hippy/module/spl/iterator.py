@@ -66,10 +66,16 @@ class W_AppendIterator(W_IteratorIterator):
             interp.throw("The object is in an invalid state as the parent "
                 "constructor was not called", klass=k_LogicException)
 
+    def valid(self, interp):
+        if self.inner is None:
+            return False
+        w_valid = interp.call_method(self.inner, 'valid', [])
+        return interp.space.is_true(w_valid)
+
 
 k_AppendIterator = def_class(
     'AppendIterator',
-    ['__construct', 'append'],
+    ['__construct', 'append', 'next'],
     extends=k_IteratorIterator,
     implements=[k_OuterIterator],
     instance_class=W_AppendIterator)
@@ -90,3 +96,20 @@ def append(interp, this, w_iterator):
     this.check_state(interp)
     interp.getmeth(this.w_iterators, 'append').call_args(interp, [w_iterator])
     this.inner = w_iterator
+    w_valid = interp.call_method(w_iterator, 'valid', [])
+    if not interp.space.is_true(w_valid):
+        interp.call_method(w_iterator, 'rewind', [])
+
+@k_AppendIterator.def_method(['interp', 'this'])
+def next(interp, this):
+    this.check_state(interp)
+    if this.valid(interp):
+        interp.call_method(this.inner, 'next', [])
+    while not this.valid(interp):
+        interp.call_method(this.w_iterators, 'next', [])
+        w_valid = interp.call_method(this.w_iterators, 'valid', [])
+        if interp.space.is_true(w_valid):
+            this.inner = interp.call_method(this.w_iterators, 'current', [])
+            interp.call_method(this.inner, 'rewind', [])
+        else:
+            return
