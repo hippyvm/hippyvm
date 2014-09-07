@@ -1,3 +1,4 @@
+from hippy import consts
 from hippy.klass import def_class
 from hippy.builtin import wrap_method, ThisUnwrapper
 from hippy.builtin_klass import new_abstract_method
@@ -118,7 +119,8 @@ k_FilterIterator = def_class(
     'FilterIterator',
     ['rewind', 'next',
      new_abstract_method(["interp"], name="FilterIterator::accept")],
-    extends=k_IteratorIterator)
+    extends=k_IteratorIterator,
+    flags=consts.ACC_ABSTRACT)
 
 
 @k_FilterIterator.def_method(['interp', 'this'])
