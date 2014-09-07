@@ -2418,7 +2418,7 @@ markers[spl_test_dir] = {
     'bug36258.phpt': "Missing RecursiveIteratorIterator",
     'bug36287.phpt': "Missing RecursiveIteratorIterator",
     'bug36941.phpt': "?",
-    'bug37457.phpt': "?",
+    #'bug37457.phpt': "?",
     'bug38325.phpt': "?",
     'bug38618.phpt': "?",
     'bug40036.phpt': "?",

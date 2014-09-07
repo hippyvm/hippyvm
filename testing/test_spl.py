@@ -1220,13 +1220,13 @@ class TestRecursiveDirectoryIterator(BaseTestInterpreter):
 
     def test_FilterIterator(self):
         output = self.run('''
-        class EvenIterator extends FilterIterator {
+        class OddIterator extends FilterIterator {
             public function accept() {
-                return $this->current() % 2 == 0;
+                return $this->current() % 2 == 1;
             }
         }
-        $it = new EvenIterator(new ArrayIterator(range(0, 3)));
+        $it = new OddIterator(new ArrayIterator(range(0, 3)));
         foreach($it as $n)
             echo $n;
         ''')
-        assert map(self.space.int_w, output) == [0, 2]
+        assert map(self.space.int_w, output) == [1, 3]

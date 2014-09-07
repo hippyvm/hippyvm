@@ -116,9 +116,19 @@ def next(interp, this):
 
 k_FilterIterator = def_class(
     'FilterIterator',
-    ['next',
+    ['rewind', 'next',
      new_abstract_method(["interp"], name="FilterIterator::accept")],
     extends=k_IteratorIterator)
+
+@k_FilterIterator.def_method(['interp', 'this'])
+def rewind(interp, this):
+    interp.call_method(this.inner, 'rewind', [])
+    is_true = interp.space.is_true
+    while is_true(interp.call_method(this.inner, 'valid', [])):
+        if is_true(interp.call_method(this, 'accept', [])):
+            return
+        interp.call_method(this.inner, 'next', [])
+
 
 @k_FilterIterator.def_method(['interp', 'this'])
 def next(interp, this):
