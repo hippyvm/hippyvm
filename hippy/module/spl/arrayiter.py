@@ -13,8 +13,11 @@ class W_SplArray(W_InstanceObject):
 
     def get_rdict_array(self, space):
         w_arr = self.w_arr
-        while not isinstance(w_arr, W_ArrayObject):
+        while isinstance(w_arr, W_SplArray):
             w_arr = w_arr.w_arr
+        if isinstance(w_arr, W_InstanceObject):
+            return w_arr.get_rdict_array(space)
+        assert isinstance(w_arr, W_ArrayObject)
         return w_arr
 
 class W_ArrayIterator(W_SplArray):

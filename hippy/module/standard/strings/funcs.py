@@ -2604,7 +2604,7 @@ def vfprintf(space, args_w):
         return space.w_Null
     w_res = args_w[0]
     format = space.str_w(args_w[1])
-    w_args = unpack_array(args_w[2])
+    w_args = unpack_array(space, args_w[2])
 
     if w_res.tp != space.tp_file_res:
         space.ec.warn("vfprintf() expects parameter 1 "

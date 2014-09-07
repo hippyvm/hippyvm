@@ -84,7 +84,7 @@ class RDictArrayIterator(BaseIterator):
         key = self._current_index()
         if key is None:
             return None
-        return self.w_array.dct_w.get(key)
+        return self.w_array.dct_w.get(key, None)
 
     def key(self, interp):
         key = self._current_index()
