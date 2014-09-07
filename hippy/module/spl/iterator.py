@@ -120,6 +120,7 @@ k_FilterIterator = def_class(
      new_abstract_method(["interp"], name="FilterIterator::accept")],
     extends=k_IteratorIterator)
 
+
 @k_FilterIterator.def_method(['interp', 'this'])
 def rewind(interp, this):
     interp.call_method(this.inner, 'rewind', [])
