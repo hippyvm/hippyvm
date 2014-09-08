@@ -138,10 +138,11 @@ def rewind(interp, this):
 @k_FilterIterator.def_method(['interp', 'this'])
 def next(interp, this):
     is_true = interp.space.is_true
+    interp.call_method(this.inner, 'next', [])
     while is_true(interp.call_method(this.inner, 'valid', [])):
-        interp.call_method(this.inner, 'next', [])
         if is_true(interp.call_method(this, 'accept', [])):
             return
+        interp.call_method(this.inner, 'next', [])
 
 
 START, NEXT, TEST, SELF, CHILD = range(5)

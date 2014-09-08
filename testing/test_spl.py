@@ -1168,12 +1168,10 @@ class TestRecursiveDirectoryIterator(BaseTestInterpreter):
         assert len(output) == 3
         assert output[0] == output[2]
 
-    def test_has_children(self):
-        tempdir = tempfile.mkdtemp()
-        testdir = os.path.join(tempdir, 'testdir')
-        if not os.path.exists(testdir):
-            os.makedirs(testdir)
-        f = py.path.local(tempdir).join('foo.txt')
+    def test_has_children(self, tmpdir):
+        testdir = tmpdir / 'testdir'
+        testdir.mkdir()
+        f = tmpdir / 'foo.txt'
         f.write('Test file')
         output = self.run('''
         $dir = new recursivedirectoryiterator('%s');
@@ -1183,7 +1181,7 @@ class TestRecursiveDirectoryIterator(BaseTestInterpreter):
             }
         }
         echo $dir->hasChildren();
-        ''' % tempdir)
+        ''' % tmpdir)
         assert len(output) == 2
         assert self.space.str_w(output[0]) == 'testdir'
         assert output[1] == self.space.w_False
@@ -1230,3 +1228,25 @@ class TestRecursiveDirectoryIterator(BaseTestInterpreter):
             echo $n;
         ''')
         assert map(self.space.int_w, output) == [1, 3]
+
+    def test_FilterIterator_doesnt_read_invalid_data(self, tmpdir):
+        testdir = tmpdir / 'testdir'
+        testdir.mkdir()
+        f = tmpdir / 'foo.txt'
+        f.write('Test file')
+        output = self.run('''
+        class MyFilter extends FilterIterator {
+            public function accept() {
+                $current = $this->getInnerIterator()->current();
+                $filename = $current->getFilename();
+                return $filename[0] != '.';
+            }
+        }
+        $it = new MyFilter(new RecursiveIteratorIterator(
+                new recursivedirectoryiterator('%s')));
+        foreach ($it as $fileinfo) {
+            echo $fileinfo->getFilename();
+        }
+        ''' % tmpdir)
+        assert len(output) == 1
+        assert self.space.str_w(output[0]) == 'foo.txt'
