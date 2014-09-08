@@ -24,10 +24,9 @@ install:
   - wget https://bitbucket.org/pypy/pypy/get/default.tar.gz
   - mkdir pypy && tar xf default.tar.gz -C pypy --strip-components 1
   - pip install -r requirements.txt
-  - export PYTHONPATH=${PYTHONPATH}:pypy
 
 script:
-  - ./travis.sh
+  - PYTHONPATH=${PYTHONPATH}:pypy ./travis.sh
 
 notifications:
   irc:
