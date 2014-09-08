@@ -688,6 +688,9 @@ class BuiltinClass(ClassBase):
                 self._inherit_method(method)
             for p in extends.properties.itervalues():
                 self._inherit_property(p)
+            for key, w_value in extends.constants_w.iteritems():
+                if key not in self.constants_w:
+                    self.constants_w[key] = w_value
             self.immediate_parents.append(self.parentclass)
 
         self.access_flags = flags
