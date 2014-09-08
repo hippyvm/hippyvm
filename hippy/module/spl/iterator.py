@@ -185,8 +185,9 @@ def __construct(interp, this, w_iter, mode=LEAVES_ONLY):
                            klass=k_InvalidArgumentException)
     this.w_iter = w_iter
     this.mode = mode
-    this.level = 0
     this.in_iteration = False
+    this.stack = [RII_Node(this.w_iter)]
+    this.level = 0
 
 
 @k_RecursiveIteratorIterator.def_method(['interp', 'this'])
@@ -275,9 +276,12 @@ def _rii_next(interp, this):
                 this.level += 1
                 interp.call_method(w_child, 'rewind', [])
                 interp.call_method(this, 'beginChildren', [])
-        interp.call_method(this, 'endChildren', [])
-        this.stack.pop()
-        this.level -= 1
+        if this.level > 0:
+            interp.call_method(this, 'endChildren', [])
+            this.stack.pop()
+            this.level -= 1
+        else:
+            return
 
 
 @k_RecursiveIteratorIterator.def_method(['interp', 'this'])
