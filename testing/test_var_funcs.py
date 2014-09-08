@@ -1,3 +1,4 @@
+import re
 import py.test
 from hippy.objects.floatobject import W_FloatObject
 from testing.test_interpreter import BaseTestInterpreter
@@ -33,6 +34,21 @@ A Object
 )
 """
         assert self.space.str_w(output[0]) == '\\n'.join(expected.split('\n'))
+
+    def test_print_r_builtin(self):
+        """Check that print_r() works correctly on built-in classes"""
+        output = self.run('''
+        $result = print_r(dir('/'), TRUE);
+        echo str_replace("\\n", '\\n', $result);''')
+        expected = """\
+Directory Object
+(
+    [path] => /
+    [handle] => Resource id #1
+)
+"""
+        assert re.sub(r'\d+', '1', self.space.str_w(output[0])) == \
+            '\\n'.join(expected.split('\n'))
 
     @py.test.mark.parametrize(['input', 'expected'],
         [["'xxx'", 0.], ["'3.4bcd'", 3.4], ['2e1', 20.],

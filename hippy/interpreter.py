@@ -14,7 +14,7 @@ from hippy.phpcompiler import compile_php
 from hippy.ast import CompilerError
 from hippy.objects.reference import W_Reference
 from hippy.objects.interpolate import W_StrInterpolation
-from hippy.objects.iterator import W_BaseIterator
+from hippy.objects.iterator import BaseIterator
 from hippy.objects.arrayobject import (
         new_rdict, W_RDictArrayObject, W_ArrayObject)
 from hippy.objects.closureobject import W_ClosureObject, new_closure
@@ -1626,26 +1626,26 @@ class Interpreter(object):
         return pc
 
     def NEXT_VALUE_ITER(self, bytecode, frame, space, arg, pc):
-        w_iter = frame.peek()
-        if w_iter is None:
+        itr = frame.peek()
+        if itr is None:
             return arg
-        assert isinstance(w_iter, W_BaseIterator)
-        if w_iter.done():
+        assert isinstance(itr, BaseIterator)
+        if itr.done():
             return arg
-        w_value = w_iter.next(space)
+        w_value = itr.next(space)
         if w_value is None:
             return arg
         frame.push(w_value)
         return pc
 
     def NEXT_ITEM_ITER(self, bytecode, frame, space, arg, pc):
-        w_iter = frame.peek()
-        if w_iter is None:
+        itr = frame.peek()
+        if itr is None:
             return arg
-        assert isinstance(w_iter, W_BaseIterator)
-        if w_iter.done():
+        assert isinstance(itr, BaseIterator)
+        if itr.done():
             return arg
-        w_key, w_value = w_iter.next_item(space)
+        w_key, w_value = itr.next_item(space)
         if w_value is None:
             return arg
         frame.push(w_key)

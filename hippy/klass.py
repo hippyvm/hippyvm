@@ -66,6 +66,7 @@ class ClassBase(AbstractFunction, AccessMixin):
     custom_instance_class = None
     is_iterator = False
     is_array_access = False
+    is_iterable = False
     immediate_parents = None
     parentclass = None
     _all_nonstatic_special_properties = None    # lazy
@@ -159,6 +160,25 @@ class ClassBase(AbstractFunction, AccessMixin):
             raise ClassDeclarationError(
                 "Cannot make static method %s non static in class %s" %
                 (parent_method.repr(), method.getclass().name))
+
+    def _init_protocol_flags(self):
+        """Handle the builtin interfaces with special meaning in the core"""
+        for parent in self.immediate_parents:
+            if parent.is_iterator:  # implements Iterator
+                self.is_iterator = True
+                break
+        for parent in self.immediate_parents:
+            if parent.is_iterable:  # implements IteratorAggregate
+                self.is_iterable = True
+                break
+        for parent in self.immediate_parents:
+            if parent.is_array_access:  # implements ArrayAccess
+                self.is_array_access = True
+                break
+        if self.is_iterator and self.is_iterable:
+            raise ClassDeclarationError(
+                "Class %s cannot implement both Iterator and IteratorAggregate"
+                " at the same time" % self.name)
 
     def _make_property(self, prop, w_initial_value):
         if isinstance(prop, tuple):
@@ -633,13 +653,12 @@ all_builtin_classes = OrderedDict()
 
 
 def def_class(name, methods=[], properties=[], constants=[],
-        instance_class=None, flags=0, implements=[], extends=None,
-        is_iterator=False, is_array_access=False):
+        instance_class=None, flags=0, implements=[], extends=None):
     if name in all_builtin_classes:
         raise ValueError("Class '%s' has already been defined" % name)
     instance_class = _get_instance_class(extends, instance_class)
     cls = BuiltinClass(name, methods, properties, constants, instance_class,
-            flags, implements, extends, is_iterator, is_array_access)
+            flags, implements, extends)
     all_builtin_classes[name] = cls
     return cls
 
@@ -647,8 +666,7 @@ def def_class(name, methods=[], properties=[], constants=[],
 class BuiltinClass(ClassBase):
     def __init__(self, name,
                  methods=[], properties=[], constants=[], instance_class=None,
-                 flags=0, implements=[], extends=None, is_iterator=False,
-                 is_array_access=False):
+                 flags=0, implements=[], extends=None):
         ClassBase.__init__(self, name)
         assert (extends is None or extends.custom_instance_class is None or
                 issubclass(instance_class, extends.custom_instance_class))
@@ -670,12 +688,12 @@ class BuiltinClass(ClassBase):
                 self._inherit_method(method)
             for p in extends.properties.itervalues():
                 self._inherit_property(p)
+            for key, w_value in extends.constants_w.iteritems():
+                if key not in self.constants_w:
+                    self.constants_w[key] = w_value
             self.immediate_parents.append(self.parentclass)
 
         self.access_flags = flags
-        self.is_iterator = is_iterator
-        self.is_array_access = is_array_access
-
         self._init_constructor()
 
         for intf in implements:
@@ -685,15 +703,8 @@ class BuiltinClass(ClassBase):
                 method = self.methods[name]
                 setattr(self, 'method' + name, method)
 
-        if self.immediate_parents:
-            for parent in self.immediate_parents:
-                if parent.is_iterator:
-                    self.is_iterator = True
-                    break
-            for parent in self.immediate_parents:
-                if parent.is_array_access:
-                    self.is_array_access = True
-                    break
+        self._init_protocol_flags()
+
         # XXXX to discuss
         for base in self.immediate_parents:
             for parent_id in base.all_parents:
@@ -963,18 +974,10 @@ class UserClass(ClassBase):
         #
         try:
             self._check_abstract_methods()
+            self._init_protocol_flags()
         except ClassDeclarationError as e:
             interp.fatal(e.msg)
         self._init_magic_methods(interp)
-        for parent in immediate_parents:
-            if parent.is_iterator:
-                self.is_iterator = True
-                break
-            for parent in self.immediate_parents:
-                if parent.is_array_access:
-                    self.is_array_access = True
-                    break
-
         self.decl = decl
 
     def init_parent(self, interp, extends_name):

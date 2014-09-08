@@ -639,8 +639,8 @@ class ObjSpace(object):
         elif strict or w_left.getclass() is not w_right.getclass():
             return 1
 
-        left = w_left.get_instance_attrs()
-        right = w_right.get_instance_attrs()
+        left = w_left.get_instance_attrs(self.ec.interpreter)
+        right = w_right.get_instance_attrs(self.ec.interpreter)
         if len(left) - len(right) < 0:
             return -1
         if len(left) - len(right) > 0:

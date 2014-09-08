@@ -249,7 +249,7 @@ def _print_r(space, w_x, indent, recursion, builder):
         builder.append('%s(' % indent)
         keyindent = indent + ' ' * 4
         subindent = indent + ' ' * 8
-        dct_w = w_x.get_instance_attrs()
+        dct_w = w_x.get_instance_attrs(space.ec.interpreter)
         for name, w_value in dct_w.iteritems():
             name, access = demangle_property(name)
             if access == '':

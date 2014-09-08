@@ -52,6 +52,7 @@ class W_ExceptionObject(W_InstanceObject):
 def new_exception(interp, this, message='', code=0, w_previous=None):
     space = interp.space
     this.setattr(interp, 'file', space.wrap(this.traceback[0][0]), k_Exception)
+    this.setattr(interp, 'line', space.wrap(this.traceback[0][2]), k_Exception)
     this.setattr(interp, 'message', space.wrap(message), k_Exception)
     this.setattr(interp, 'code', space.wrap(code), k_Exception)
     if w_previous is None:
@@ -132,11 +133,6 @@ k_Exception = def_class('Exception',
 def_class('OutOfBoundsException', [], extends=k_Exception)
 k_stdClass = def_class('stdClass', [])
 k_incomplete = def_class('__PHP_Incomplete_Class', [])
-k_RuntimeException = def_class('RuntimeException', [], extends=k_Exception)
-k_LogicException = def_class('LogicException', [], extends=k_Exception)
-k_DomainException = def_class('DomainException', [], extends=k_Exception)
-k_UnexpectedValueException = def_class('UnexpectedValueException', [],
-                                       extends=k_Exception)
 
 
 def new_abstract_method(args, **kwds):
@@ -148,6 +144,9 @@ def new_abstract_method(args, **kwds):
         interp.fatal("Cannot call abstract method %s()" % (name,))
     return wrap_method(args, **kwds)(method)
 
+k_Traversable = def_class('Traversable', [],
+    flags=consts.ACC_INTERFACE | consts.ACC_ABSTRACT)
+
 
 k_Iterator = def_class('Iterator',
     [new_abstract_method(["interp"], name="Iterator::current"),
@@ -156,17 +155,23 @@ k_Iterator = def_class('Iterator',
      new_abstract_method(["interp"], name="Iterator::rewind"),
      new_abstract_method(["interp"], name="Iterator::valid")],
     flags=consts.ACC_INTERFACE | consts.ACC_ABSTRACT,
-    is_iterator=True
-)
+    extends=k_Traversable)
+k_Iterator.is_iterator = True
+
+k_IteratorAggregate = def_class('IteratorAggregate',
+    [new_abstract_method(["interp"], name="IteratorAggregate::getIterator")],
+    flags=consts.ACC_INTERFACE | consts.ACC_ABSTRACT,
+    extends=k_Traversable)
+k_IteratorAggregate.is_iterable = True
 
 
-ArrayAccess = def_class('ArrayAccess', [
+k_ArrayAccess = def_class('ArrayAccess', [
     new_abstract_method(["interp"], name="ArrayAccess::offsetExists"),
     new_abstract_method(["interp"], name="ArrayAccess::offsetGet"),
     new_abstract_method(["interp"], name="ArrayAccess::offsetSet"),
-    new_abstract_method(["interp"], name="ArrayAccess::offsetUnset"),],
-    flags=consts.ACC_INTERFACE | consts.ACC_ABSTRACT,
-    is_array_access=True)
+    new_abstract_method(["interp"], name="ArrayAccess::offsetUnset")],
+    flags=consts.ACC_INTERFACE | consts.ACC_ABSTRACT)
+k_ArrayAccess.is_array_access = True
 
 
 def_class('Reflector',
