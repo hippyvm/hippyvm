@@ -125,7 +125,8 @@ def count(interp, this):
 
 @k_ArrayObject.def_method(['interp', 'this'])
 def getIterator(interp, this):
-    return k_ArrayIterator.call_args(interp, [this])
+    k_IteratorClass = interp.locate_class_or_intf(this.iterator_class)
+    return k_IteratorClass.call_args(interp, [this])
 
 
 @k_ArrayIterator.def_method(['interp', 'this'])
