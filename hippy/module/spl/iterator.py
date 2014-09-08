@@ -1,11 +1,13 @@
 from hippy import consts
 from hippy.klass import def_class
-from hippy.builtin import wrap_method, ThisUnwrapper
+from hippy.builtin import wrap_method, ThisUnwrapper, Optional
 from hippy.builtin_klass import new_abstract_method
 from hippy.objects.base import W_Root
 from hippy.objects.instanceobject import W_InstanceObject
+from hippy.objects.intobject import W_IntObject
 from hippy.module.spl.exception import (
-    k_LogicException, k_BadMethodCallException)
+    k_LogicException, k_BadMethodCallException, k_InvalidArgumentException,
+    k_UnexpectedValueException)
 from hippy.module.spl.interface import k_OuterIterator
 from hippy.module.spl.arrayiter import k_ArrayIterator
 
@@ -140,3 +142,179 @@ def next(interp, this):
         interp.call_method(this.inner, 'next', [])
         if is_true(interp.call_method(this, 'accept', [])):
             return
+
+
+START, NEXT, TEST, SELF, CHILD = range(5)
+
+class RII_Node(object):
+    def __init__(self, w_iter):
+        self.w_iter = w_iter
+        self.state = START
+
+class W_RecursiveIteratorIterator(W_InstanceObject):
+    def get_current_iter(self):
+        return self.stack[-1].w_iter
+
+LEAVES_ONLY = 0
+SELF_FIRST = 1
+CHILD_FIRST = 2
+
+k_RecursiveIteratorIterator = def_class(
+    'RecursiveIteratorIterator',
+    ['__construct', 'rewind', 'valid', 'key', 'current', 'next',
+     'getInnerIterator', 'beginIteration', 'endIteration',
+     'callHasChildren', 'callGetChildren', 'beginChildren', 'endChildren',
+     'nextElement'],
+    constants=[
+        ('LEAVES_ONLY', W_IntObject(LEAVES_ONLY)),
+        ('SELF_FIRST', W_IntObject(SELF_FIRST)),
+        ('CHILD_FIRST', W_IntObject(CHILD_FIRST)),
+    ],
+    implements=[k_OuterIterator],
+    instance_class=W_RecursiveIteratorIterator)
+
+@k_RecursiveIteratorIterator.def_method(['interp', 'this', 'object',
+                                         Optional(int)])
+def __construct(interp, this, w_iter, mode=LEAVES_ONLY):
+    if w_iter.klass.is_iterable:
+        w_iter = interp.call_method(w_iter, 'getIterator', [])
+    if (not isinstance(w_iter, W_InstanceObject) or
+            not w_iter.klass.is_subclass_of_class_or_intf_name('RecursiveIterator')):
+        raise interp.throw("An instance of RecursiveIterator or "
+                           "IteratorAggregate creating it is required",
+                           klass=k_InvalidArgumentException)
+    this.w_iter = w_iter
+    this.mode = mode
+    this.level = 0
+    this.in_iteration = False
+
+
+@k_RecursiveIteratorIterator.def_method(['interp', 'this'])
+def rewind(interp, this):
+    this.stack = [RII_Node(this.w_iter)]
+    this.level = 0
+    if not this.in_iteration:
+        interp.call_method(this, 'beginIteration', [])
+        this.in_iteration = True
+    _rii_next(interp, this)
+    return
+
+
+@k_RecursiveIteratorIterator.def_method(['interp', 'this'])
+def valid(interp, this):
+    space = interp.space
+    level = this.level
+    while level >= 0:
+        w_sub_iter = this.stack[level].w_iter
+        if space.is_true(interp.call_method(w_sub_iter, 'valid', [])):
+            return space.w_True
+        level -= 1
+    if this.in_iteration:
+        interp.call_method(this, 'endIteration', [])
+        this.in_iteration = False
+    return space.w_False
+
+@k_RecursiveIteratorIterator.def_method(['interp', 'this'])
+def key(interp, this):
+    return interp.call_method(this.get_current_iter(), 'key', [])
+
+
+@k_RecursiveIteratorIterator.def_method(['interp', 'this'])
+def current(interp, this):
+    return interp.call_method(this.get_current_iter(), 'current', [])
+
+
+@k_RecursiveIteratorIterator.def_method(['interp', 'this'])
+def next(interp, this):
+    _rii_next(interp, this)
+
+def _rii_next(interp, this):
+    space = interp.space
+    while this.level >= 0:
+        while True:
+            node = this.stack[-1]
+            if node.state == NEXT:
+                interp.call_method(node.w_iter, 'next', [])
+                node.state = START
+            elif node.state == START:
+                if not space.is_true(interp.call_method(node.w_iter, 'valid', [])):
+                    break
+                node.state = TEST
+            elif node.state == TEST:
+                has_children = space.is_true(
+                    interp.call_method(this, 'callHasChildren', []))
+                if has_children:
+                    if this.mode == SELF_FIRST:
+                        node.state = SELF
+                    else:
+                        node.state = CHILD
+                else:
+                    node.state = NEXT
+                    interp.call_method(this, 'nextElement', [])
+                    return
+            elif node.state == SELF:
+                if this.mode == SELF_FIRST:
+                    node.state = CHILD
+                else:
+                    node.state = NEXT
+                interp.call_method(this, 'nextElement', [])
+                return
+            elif node.state == CHILD:
+                w_child = interp.call_method(this, 'callGetChildren', [])
+                if (not isinstance(w_child, W_InstanceObject) or
+                        not w_child.klass.is_subclass_of_class_or_intf_name('RecursiveIterator')):
+                    raise interp.throw(
+                        "Objects returned by RecursiveIterator::getChildren() "
+                        "must implement RecursiveIterator",
+                        klass=k_UnexpectedValueException)
+                if this.mode == CHILD_FIRST:
+                    node.state = SELF
+                else:
+                    node.state = NEXT
+                this.stack.append(RII_Node(w_child))
+                this.level += 1
+                interp.call_method(w_child, 'rewind', [])
+                interp.call_method(this, 'beginChildren', [])
+        interp.call_method(this, 'endChildren', [])
+        this.stack.pop()
+        this.level -= 1
+
+
+@k_RecursiveIteratorIterator.def_method(['interp', 'this'])
+def getInnerIterator(interp, this):
+    raise NotImplementedError
+
+
+@k_RecursiveIteratorIterator.def_method(['interp', 'this'])
+def beginIteration(interp, this):
+    pass
+
+
+@k_RecursiveIteratorIterator.def_method(['interp', 'this'])
+def endIteration(interp, this):
+    pass
+
+
+@k_RecursiveIteratorIterator.def_method(['interp', 'this'])
+def callHasChildren(interp, this):
+    return interp.call_method(this.get_current_iter(), 'hasChildren', [])
+
+
+@k_RecursiveIteratorIterator.def_method(['interp', 'this'])
+def callGetChildren(interp, this):
+    return interp.call_method(this.get_current_iter(), 'getChildren', [])
+
+
+@k_RecursiveIteratorIterator.def_method(['interp', 'this'])
+def beginChildren(interp, this):
+    pass
+
+
+@k_RecursiveIteratorIterator.def_method(['interp', 'this'])
+def endChildren(interp, this):
+    pass
+
+
+@k_RecursiveIteratorIterator.def_method(['interp', 'this'])
+def nextElement(interp, this):
+    pass
