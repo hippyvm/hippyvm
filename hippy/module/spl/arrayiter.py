@@ -6,6 +6,7 @@ from hippy.objects.base import W_Root
 from hippy.objects.arrayobject import W_ArrayObject
 from hippy.objects.instanceobject import W_InstanceObject
 from hippy import consts
+from hippy.module.spl.exception import k_InvalidArgumentException
 
 
 class W_SplArray(W_InstanceObject):
@@ -50,10 +51,17 @@ k_ArrayIterator = def_class(
     implements=[k_ArrayAccess, k_Iterator])
 
 
-@k_ArrayObject.def_method(['interp', 'this', Optional(W_Root)])
-def __construct(interp, this, w_arr=None):
+@k_ArrayObject.def_method(['interp', 'this', Optional(W_Root), Optional(int),
+    Optional(str)])
+def __construct(interp, this, w_arr=None, flags=0,
+        iterator_class='ArrayIterator'):
     if w_arr is None:
         w_arr = interp.space.new_array_from_list([])
+    if (not isinstance(w_arr, W_InstanceObject) and
+            not isinstance(w_arr, W_ArrayObject)):
+        raise interp.throw("Passed variable is not an array or object, using "
+            "empty array instead", klass=k_InvalidArgumentException)
+    this.iterator_class = iterator_class
     this.w_arr = w_arr
 
 
@@ -61,6 +69,10 @@ def __construct(interp, this, w_arr=None):
 def __construct(interp, this, w_arr=None):
     if w_arr is None:
         w_arr = interp.space.new_array_from_list([])
+    if (not isinstance(w_arr, W_InstanceObject) and
+            not isinstance(w_arr, W_ArrayObject)):
+        raise interp.throw("Passed variable is not an array or object, using "
+            "empty array instead", klass=k_InvalidArgumentException)
     this.w_arr = w_arr
     while isinstance(w_arr, W_SplArray):
         w_arr = w_arr.w_arr
