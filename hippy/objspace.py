@@ -741,6 +741,20 @@ class ObjSpace(object):
                 return False
         return True
 
+    @jit.elidable
+    def is_valid_clsname(self, name):
+        if len(name) == 0:
+            return False
+        c = name[0]
+        if not('a' <= c <= 'z' or 'A' <= c <= 'Z' or c == '_' or c == '\\'):
+            return False
+        for i in range(1, len(name)):
+            c = name[i]
+            if not('a' <= c <= 'z' or 'A' <= c <= 'Z' or c == '_'
+                   or '0' <= c <= '9' or c == '\\'):
+                return False
+        return True
+
     def is_integer(self, w_obj):
         if w_obj.tp == self.tp_int:
             return True
@@ -814,6 +828,9 @@ class ObjSpace(object):
                               "function name" % (name))
 
     def _get_callback_from_class(self, clsname, methname):
+        if not self.is_valid_clsname(clsname):
+            raise InvalidCallback("first array member is not a valid class "
+                                  "name or object")
         interp = self.ec.interpreter
         klass = interp.lookup_class_or_intf(clsname)
         if klass is None:
@@ -857,9 +874,6 @@ class ObjSpace(object):
                 methname = self.str_w(self.getitem(w_obj, self.wrap(1)))
                 return self._get_callback_from_instance(w_instance, methname)
             clsname = self.str_w(w_instance)
-            if not self.is_valid_varname(clsname):
-                raise InvalidCallback("first array member is not a valid "
-                                      "class name or object")
             methname = self.str_w(self.getitem(w_obj, self.wrap(1)))
             return self._get_callback_from_class(clsname, methname)
         elif isinstance(w_obj, W_InstanceObject):
