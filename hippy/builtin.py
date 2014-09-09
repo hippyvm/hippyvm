@@ -1061,33 +1061,36 @@ def ___exit(space, w_code_or_message):
     raise ExplicitExitException(code, message)
 
 
-def _is_a(space, w_obj, classname, allow_string, must_be_different):
+def _is_a(interp, w_obj, classname, allow_string, must_be_different):
+    space = interp.space
     if space.is_object(w_obj):
         klass = space.getclass(w_obj)
     elif allow_string:
-        klass = space.ec.interpreter.lookup_class_or_intf(space.str_w(w_obj))
+        klass = interp.lookup_class_or_intf(space.str_w(w_obj))
     else:
         klass = None
     #
-    k_super = space.ec.interpreter.lookup_class_or_intf(classname)
+    k_super = interp.lookup_class_or_intf(classname, autoload=False)
+    if k_super is None:
+        return space.w_False
     if klass is None:
         result = False
     elif must_be_different and klass is k_super:
         result = False    # aaaargh
     else:
-        result = klass.is_subclass_of_class_or_intf_name(k_super.name)
+        result = klass.is_subclass_of_class_or_intf_name(k_super.name.lower())
     return space.newbool(result)
 
 
-@wrap(['space', W_Root, str, Optional(bool)])
-def is_a(space, w_obj, classname, allow_string=False):
-    return _is_a(space, w_obj, classname, allow_string,
+@wrap(['interp', W_Root, str, Optional(bool)])
+def is_a(interp, w_obj, classname, allow_string=False):
+    return _is_a(interp, w_obj, classname, allow_string,
                  must_be_different=False)
 
 
-@wrap(['space', W_Root, str, Optional(bool)])
-def is_subclass_of(space, w_obj, classname, allow_string=False):
-    return _is_a(space, w_obj, classname, allow_string,
+@wrap(['interp', W_Root, str, Optional(bool)])
+def is_subclass_of(interp, w_obj, classname, allow_string=True):
+    return _is_a(interp, w_obj, classname, allow_string,
                  must_be_different=True)
 
 
