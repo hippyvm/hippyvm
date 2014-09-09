@@ -60,5 +60,8 @@ class W_BoolObject(W_Object):
     def to_py(self, interp):
         return interp.pyspace.wrap(interp.space.is_true(self))
 
+    def uplusplus(self, space):
+        return self
+
 w_True = W_BoolObject(True)
 w_False = W_BoolObject(False)

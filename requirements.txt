@@ -1,3 +1,4 @@
 prettytable
 rply
 pytest
+pexpect

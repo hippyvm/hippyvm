@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 """ Hippy VM. Execute by typing
 
-hippy [--gcdump dumpfile] [--cgi] [--server port] <file.php> [php program options]
+hippy [--gcdump dumpfile] [--cgi] [--server port] [<file.php>] [php program options]
 
 and enjoy
 """
@@ -36,10 +36,6 @@ def _run_fastcgi_server(server_port):
 def mk_entry_point(pyspace=None):
 
     def entry_point(argv):
-        if len(argv) < 2:
-            print __doc__
-            return 1
-
         i = 1
         fname = None
         gcdump = None
@@ -96,17 +92,13 @@ def mk_entry_point(pyspace=None):
                 return 1
             else:
                 return _run_fastcgi_server(server_port)
-        if not fname:
-            print "php filename required"
-            return 1
-        else:
-            rest_of_args = []
-            for k in range(i + 1, len(argv)):
-                s = argv[k]
-                assert s is not None
-                rest_of_args.append(s)
-            return main(fname, rest_of_args, cgi, gcdump, debugger_pipes,
-                        bench_mode, bench_no, pyspace=pyspace)
+        rest_of_args = []
+        for k in range(i + 1, len(argv)):
+            s = argv[k]
+            assert s is not None
+            rest_of_args.append(s)
+        return main(fname, rest_of_args, cgi, gcdump, debugger_pipes,
+                    bench_mode, bench_no, pyspace=pyspace)
     return entry_point
 
 def main(filename, rest_of_args, cgi, gcdump, debugger_pipes=(-1, -1),
@@ -116,8 +108,6 @@ def main(filename, rest_of_args, cgi, gcdump, debugger_pipes=(-1, -1),
     if pyspace is not None:
         pyspace.startup() # must be called once prior to use
     interp = Interpreter(space, pyspace=pyspace)
-
-    absname = rpath.abspath(filename)
 
     try:
         ini_data = open('hippy.ini').read(-1)
@@ -131,7 +121,7 @@ def main(filename, rest_of_args, cgi, gcdump, debugger_pipes=(-1, -1),
             os.write(2, "error reading `hippy.ini`")
 
     try:
-        bc = space.bytecode_cache.compile_file(absname, space)
+        bc = space.bytecode_cache.compile_file(filename, space)
     except ParseError as e:
         print 'Parse error:  %s' % e
         return 2

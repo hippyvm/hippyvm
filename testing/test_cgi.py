@@ -60,3 +60,20 @@ class TestCGI(BaseTestInterpreter):
         echo $_SESSION["a"];
         ''', cgi=True)
         assert self.unwrap(output[0]) == 13
+
+    def test_encode_cookies(self):
+        # no cookie set
+        self.run('''
+        header("Content-type: text/css");
+        setcookie("a","b=");
+        ''')
+        assert self.interp.sent_headers == ['Content-type: text/css',
+                                            'Set-Cookie: a=b%3D']
+
+    def test_decode_cookies(self):
+        os.environ['HTTP_COOKIE'] = 'a=b%3D'
+
+        output = self.run('''
+        echo $_COOKIE["a"];
+        ''', cgi=True)
+        assert self.unwrap(output[0]) == "b="

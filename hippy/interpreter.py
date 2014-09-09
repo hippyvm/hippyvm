@@ -6,7 +6,7 @@ from hippy.hippyoption import is_optional_extension_enabled
 from hippy.consts import BYTECODE_HAS_ARG, BYTECODE_NAMES,\
     BINOP_LIST, BINOP_BITWISE, RETURN
 from hippy.function import AbstractFunction
-from hippy.error import (IllegalInstruction, FatalError, PHPException,
+from hippy.error import (IllegalInstruction, FatalError, Throw,
                          ExplicitExitException, VisibilityError, SignalReceived)
 from hippy.lexer import LexerError
 from hippy.sourceparser import ParseError
@@ -14,13 +14,13 @@ from hippy.phpcompiler import compile_php
 from hippy.ast import CompilerError
 from hippy.objects.reference import W_Reference
 from hippy.objects.interpolate import W_StrInterpolation
-from hippy.objects.iterator import W_BaseIterator
+from hippy.objects.iterator import BaseIterator
 from hippy.objects.arrayobject import (
         new_rdict, W_RDictArrayObject, W_ArrayObject)
 from hippy.objects.closureobject import W_ClosureObject, new_closure
 from hippy.objects.instanceobject import W_InstanceObject
 from hippy.objects.strobject import W_StringObject
-from hippy.builtin_klass import W_ExceptionObject
+from hippy.builtin_klass import W_ExceptionObject, k_Exception
 from hippy.klass import ClassDeclaration, ClassBase, get_interp_decl_key
 from hippy.function import Function
 from hippy.frame import Frame, CatchBlock, Unsilence
@@ -419,7 +419,7 @@ class Interpreter(object):
                 if len(l2) != 2:
                     # XXX issue a warning?
                     continue
-                d[l2[0]] = space.wrap(l2[1])
+                d[l2[0]] = space.wrap(hippy.module.url._rawurldecode(l2[1]))
             return space.new_array_from_rdict(d)
         return space.w_Null
 
@@ -768,6 +768,10 @@ class Interpreter(object):
     def deprecated(self, msg):
         self.handle_error(constants.E_DEPRECATED, msg)
 
+    def throw(self, msg, klass=k_Exception):
+        # cf. usage note for fatal()
+        raise Throw(klass.call_args(self, [self.space.newstr(msg)]))
+
     def fallback_handle_exception(self, w_exc):
         assert isinstance(w_exc, W_ExceptionObject)
         tb = w_exc.traceback
@@ -814,11 +818,11 @@ class Interpreter(object):
             try:
                 try:
                     w_result = self.interpret(frame)
-                except PHPException as e:
+                except Throw as e:
                     if self.w_exception_handler is not None:
                         try:
                             self.call(self.w_exception_handler, [e.w_exc])
-                        except PHPException as e2:
+                        except Throw as e2:
                             self.fallback_handle_exception(e2.w_exc)
                     else:
                         self.fallback_handle_exception(e.w_exc)
@@ -925,7 +929,7 @@ class Interpreter(object):
                         bc_impl = getattr(self, name)
                         try:
                             pc = bc_impl(bytecode, frame, space, arg, pc)
-                        except PHPException as e:
+                        except Throw as e:
                             pc = self.handle_exception(frame, e)
                         break
                 else:
@@ -935,7 +939,7 @@ class Interpreter(object):
                 bc_impl = getattr(self, BYTECODE_NAMES[next_instr])
                 try:
                     pc = bc_impl(bytecode, frame, space, arg, pc)
-                except PHPException as e:
+                except Throw as e:
                     pc = self.handle_exception(frame, e)
 
     def enter(self, frame):
@@ -1354,7 +1358,7 @@ class Interpreter(object):
 
 
     def GETFUNC(self, bytecode, frame, space, arg, pc):
-        w_name = frame.pop().deref()            
+        w_name = frame.pop().deref()
         func = self.getfunc(w_name, frame.w_this, frame.get_contextclass())
         assert func is not None
         frame.push(func)
@@ -1463,6 +1467,9 @@ class Interpreter(object):
 
     def call(self, callable, args_w):
         return callable.call_args(self, args_w)
+
+    def call_method(self, w_obj, method_name, args_w):
+        return self.getmeth(w_obj, method_name).call_args(self, args_w)
 
     @jit.unroll_safe
     def CALL(self, bytecode, frame, space, arg, pc):
@@ -1640,26 +1647,26 @@ class Interpreter(object):
         return pc
 
     def NEXT_VALUE_ITER(self, bytecode, frame, space, arg, pc):
-        w_iter = frame.peek()
-        if w_iter is None:
+        itr = frame.peek()
+        if itr is None:
             return arg
-        assert isinstance(w_iter, W_BaseIterator)
-        if w_iter.done():
+        assert isinstance(itr, BaseIterator)
+        if itr.done():
             return arg
-        w_value = w_iter.next(space)
+        w_value = itr.next(space)
         if w_value is None:
             return arg
         frame.push(w_value)
         return pc
 
     def NEXT_ITEM_ITER(self, bytecode, frame, space, arg, pc):
-        w_iter = frame.peek()
-        if w_iter is None:
+        itr = frame.peek()
+        if itr is None:
             return arg
-        assert isinstance(w_iter, W_BaseIterator)
-        if w_iter.done():
+        assert isinstance(itr, BaseIterator)
+        if itr.done():
             return arg
-        w_key, w_value = w_iter.next_item(space)
+        w_key, w_value = itr.next_item(space)
         if w_value is None:
             return arg
         frame.push(w_key)
@@ -1920,7 +1927,7 @@ class Interpreter(object):
         if not isinstance(w_exc, W_ExceptionObject):
             self.fatal("Exceptions must be valid objects derived from "
                     "the Exception base class")
-        raise PHPException(w_exc)
+        raise Throw(w_exc)
 
     def POPEN(self, bytecode, frame, space, arg, pc):
         cmd = space.str_w(frame.pop().deref())

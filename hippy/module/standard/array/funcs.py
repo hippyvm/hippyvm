@@ -1579,7 +1579,7 @@ def count(interp, w_arr, recursive=0):
 @wrap(['space', 'unique_array'], aliases=["pos"])
 def current(space, w_arr):
     """ Return the current element in an array """
-    return w_arr._current(space)
+    return w_arr._current()
 
 
 @wrap(['space', 'unique_array'])
@@ -1591,7 +1591,7 @@ def each(space, w_arr):
     w_key = w_arr._key(space)
     if w_key is space.w_Null:
         return space.w_False
-    w_value = w_arr._current(space)
+    w_value = w_arr._current()
     w_arr.current_idx += 1
 
     pairs = [
@@ -1609,7 +1609,7 @@ def end(space, w_arr):
     if length == 0:
         return space.w_False
     w_arr.current_idx = length - 1
-    return w_arr._current(space)
+    return w_arr._current()
 
 
 @wrap(['space', 'frame', ArrayArg(None), Optional(W_Root), Optional(str)])
@@ -1786,13 +1786,7 @@ def natcasesort(interp, w_ref):
 @wrap(['space', 'unique_array'])
 def next(space, w_arr):
     """ Advance the internal array pointer of an array """
-    length = w_arr.arraylen()
-    current_idx = w_arr.current_idx + 1
-    if current_idx >= length:
-        w_arr.current_idx = length
-        return space.w_False
-    w_arr.current_idx = current_idx
-    return w_arr._current(space)
+    return w_arr.next(space)
 
 
 @wrap(['space', 'unique_array'])
@@ -1803,7 +1797,7 @@ def prev(space, w_arr):
     if current_idx < 0:
         return space.w_False
     w_arr.current_idx = current_idx
-    return w_arr._current(space)
+    return w_arr._current()
 
 
 def _xrange(start, end, inc):
@@ -1905,7 +1899,7 @@ def _range(space, w_start, w_end, step=None):
 def reset(space, w_arr):
     """ Set the internal pointer of an array to its first element """
     w_arr.current_idx = 0
-    return w_arr._current(space)
+    return w_arr._current()
 
 
 @wrap(['space', 'reference', Optional(int)], error=False)

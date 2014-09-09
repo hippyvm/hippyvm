@@ -47,7 +47,7 @@ from collections import OrderedDict
 from rpython.rlib import jit
 from rpython.rlib.objectmodel import newlist_hint
 from hippy.error import (InterpreterError, ExplicitExitException,
-                         ConvertError, FatalError, PHPException,
+                         ConvertError, FatalError, Throw,
                          VisibilityError)
 from hippy.objects.base import W_Root
 from hippy.objects.reference import W_Reference
@@ -76,7 +76,7 @@ def handle_as_warning(interp, message):
 
 def handle_as_exception(interp, message):
     from hippy.builtin_klass import k_Exception
-    raise PHPException(k_Exception.call_args(
+    raise Throw(k_Exception.call_args(
         interp, [interp.space.wrap(message)]))
 
 
@@ -944,19 +944,24 @@ def wrap(signature, name=None, aliases=(), error=None,
         return res
     return inner
 
+def new_function(ll_func, signature, fname, error, error_handler,
+                check_num_args=True):
+    sig = BuiltinSignature(signature)
+    runner = make_runner(signature, ll_func, fname, error,
+                         error_handler, check_num_args)
+    if sig.has_references:
+        res = BuiltinFunctionWithReferences(sig, fname, runner)
+    else:
+        res = BuiltinFunction(fname, runner)
+    return res
+
 
 def wrap_method(signature, name, error=None, flags=0,
                 error_handler=handle_as_warning, check_num_args=True):
+    assert '::' in name   # should be "Class::method"
     def inner(ll_func):
-        sig = BuiltinSignature(signature)
-        assert '::' in name   # should be "Class::method"
-        fname = name
-        runner = make_runner(signature, ll_func, fname, error,
-                             error_handler, check_num_args)
-        if sig.has_references:
-            res = BuiltinFunctionWithReferences(sig, fname, runner)
-        else:
-            res = BuiltinFunction(fname, runner)
+        res = new_function(ll_func, signature, name, error,
+                         error_handler, check_num_args)
         res.flags = flags
         return res
     return inner
