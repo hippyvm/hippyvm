@@ -26,7 +26,7 @@ install:
   - pip install -r requirements.txt
 
 script:
-  - export PYTHONPATH=${PYTHONPATH}:pypy && ./travis.sh
+  - export PYTHONPATH=${PYTHONPATH}:${PWD}/pypy && ./travis.sh
 
 notifications:
   irc:
