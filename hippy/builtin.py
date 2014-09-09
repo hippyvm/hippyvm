@@ -1028,6 +1028,28 @@ def interface_exists(space, name, autoload=True):
     return space.newbool(intf is not None and intf.is_interface())
 
 
+@wrap(['interp', str, str, Optional(bool)])
+def class_alias(interp, class_name, alias_name, autoload=True):
+    from hippy.klass import UserClass
+    space = interp.space
+    k_Class = interp.lookup_class_or_intf(class_name, autoload)
+    if k_Class is None:
+        interp.warn("Class '%s' not found" % class_name)
+        return space.w_False
+    if not isinstance(k_Class, UserClass):
+        interp.warn("First argument of class_alias() must be a name of "
+                    "user defined class")
+        return space.w_False
+    if alias_name and alias_name[0] == '\\':
+        alias_name = alias_name[1:]
+    class_cache = interp.space.global_class_cache
+    if class_cache.has_definition(alias_name.lower()):
+        interp.warn("Cannot redeclare class %s" % alias_name)
+        return space.w_False
+    class_cache.declare_new(alias_name.lower(), k_Class)
+    return space.w_True
+
+
 @wrap(['space', W_Root])
 def ___exit(space, w_code_or_message):
     code = 0
@@ -1047,12 +1069,13 @@ def _is_a(space, w_obj, classname, allow_string, must_be_different):
     else:
         klass = None
     #
+    k_super = space.ec.interpreter.lookup_class_or_intf(classname)
     if klass is None:
         result = False
-    elif must_be_different and klass.get_identifier() == classname.lower():
+    elif must_be_different and klass is k_super:
         result = False    # aaaargh
     else:
-        result = klass.is_subclass_of_class_or_intf_name(classname)
+        result = klass.is_subclass_of_class_or_intf_name(k_super.name)
     return space.newbool(result)
 
 
