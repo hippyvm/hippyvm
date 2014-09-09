@@ -167,7 +167,7 @@ class TestStdin(BaseTestInterpreter):
     """Tests that spawn hippy as a new process."""
 
     def test_code_from_stdin(self):
-        child = pexpect.spawn(sys.executable, [HIPPY_MAIN])
+        child = pexpect.spawn(sys.executable, [HIPPY_MAIN], env=os.environ)
         child.sendline("<?php for ($i=0; $i < 3; $i++) {echo \"e$i\";} ?>")
         child.sendeof()
         child.expect("e0e1e2")
@@ -177,6 +177,7 @@ class TestStdin(BaseTestInterpreter):
         f = tmpdir.join("file.php")
         f.write("<?php for ($i=0; $i < 3; $i++) {echo \"e$i\";} ?>")
 
-        child = pexpect.spawn(sys.executable, [HIPPY_MAIN, f.strpath])
+        child = pexpect.spawn(sys.executable,
+                [HIPPY_MAIN, f.strpath],env=os.environ)
         child.expect("e0e1e2")
         child.expect(pexpect.EOF)
