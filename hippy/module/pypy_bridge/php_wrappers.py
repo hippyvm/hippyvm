@@ -8,7 +8,7 @@ from hippy.klass import def_class
 from hippy.builtin import wrap, Optional, wrap_method, ThisUnwrapper
 from hippy.objects.base import W_Root as Wph_Root, W_Object as WPh_Object
 from hippy.function import AbstractFunction
-from hippy.objects.iterator import W_BaseIterator
+from hippy.objects.iterator import BaseIterator
 from hippy.objects.arrayobject import wrap_array_key, W_ArrayObject
 from hippy.objects.reference import W_Reference
 
@@ -138,7 +138,7 @@ class W_EmbeddedPyMod(WPh_Object):
         return self._getattr(interp, interp.space, name)
 
 
-class W_PyBridgeListProxyIterator(W_BaseIterator):
+class W_PyBridgeListProxyIterator(BaseIterator):
 
     _immutable_fields_ = ["py_space", "storage_w"]
 
@@ -218,7 +218,7 @@ class W_PyBridgeListProxy(W_ArrayObject):
     def to_py(self, interp):
         return self.wpy_list
 
-class W_PyBridgeDictProxyIterator(W_BaseIterator):
+class W_PyBridgeDictProxyIterator(BaseIterator):
 
     _immutable_fields_ = ["interp", "wpy_iter"]
 

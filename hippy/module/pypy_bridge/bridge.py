@@ -4,7 +4,7 @@ from hippy.objects.instanceobject import W_InstanceObject
 from hippy.klass import def_class, Method
 from hippy.module.pypy_bridge.scopes import PHP_Scope
 from hippy.module.pypy_bridge.php_wrappers import W_EmbeddedPyFunc
-from hippy.builtin_klass import k_Exception, W_ExceptionObject, k_RuntimeException
+from hippy.builtin_klass import k_Exception, W_ExceptionObject
 from hippy.error import PHPException
 
 from pypy.module.sys.version import CPYTHON_VERSION, PYPY_VERSION
