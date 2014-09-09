@@ -400,8 +400,6 @@ markers[class_object_test_dir] = {
     'get_declared_traits_basic_001.phpt': "unexpected T_STRING",
     'get_declared_traits_error_001.phpt': "undefined function get_declared_traits()",
     'get_declared_traits_variation1.phpt': "unexpected T_USE",
-    'is_subclass_of_variation_001.phpt': "__autoload ?",
-    'is_subclass_of_variation_004.phpt': "__autoload ?",
     'trait_class_exists_variation_003.phpt': "undefined function trait_exists()",
     'trait_exists_basic_001.phpt': "unexpected T_STRING",
     'trait_exists_error_001.phpt': "undefined function trait_exists()",

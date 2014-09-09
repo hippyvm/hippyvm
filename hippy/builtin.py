@@ -1065,8 +1065,12 @@ def _is_a(interp, w_obj, classname, allow_string, must_be_different):
     space = interp.space
     if space.is_object(w_obj):
         klass = space.getclass(w_obj)
-    elif allow_string:
-        klass = interp.lookup_class_or_intf(space.str_w(w_obj))
+    elif allow_string and space.is_str(w_obj):
+        name = space.str_w(w_obj)
+        if space.is_valid_clsname(name):
+            klass = interp.lookup_class_or_intf(space.str_w(w_obj))
+        else:
+            klass = None
     else:
         klass = None
     #
