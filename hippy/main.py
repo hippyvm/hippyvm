@@ -103,7 +103,6 @@ def mk_entry_point(pyspace=None):
 
 def main(filename, rest_of_args, cgi, gcdump, debugger_pipes=(-1, -1),
          bench_mode=False, bench_no=-1, pyspace=None):
-    assert filename is not None
     space = getspace()
     if pyspace is not None:
         pyspace.startup() # must be called once prior to use
