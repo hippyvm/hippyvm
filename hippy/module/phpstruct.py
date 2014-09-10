@@ -97,7 +97,7 @@ def _pack_hex_string(pack_obj, fmtdesc, count, nibbleshift):
     string = pack_obj.space.str_w(pack_obj.arg_w[pack_obj.arg_index])
     pack_obj.arg_index += 1
 
-    if len(string) < count:
+    if len(string) < count and count < sys.maxint:
         raise FormatException("not enough characters in string")
 
     output = range((len(string) + (len(string) % 2)) / 2)
