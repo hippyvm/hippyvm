@@ -8,11 +8,12 @@ from hippy.objects.interpolate import W_StrInterpolation
 from hippy import consts
 from hippy.bytecode import ByteCode
 from hippy.function import Function
-from rpython.rlib.objectmodel import we_are_translated
+from rpython.rlib.objectmodel import we_are_translated, enforceargs
 
 class ConstantMarker(W_Root):
     pass
 
+@enforceargs(str, str, None, None, bool)
 def compile_ast(filename, source, mainnode, space, print_exprs=False):
     ctx = CompilerContext(filename, source.split("\n"), 1, space,
                           print_exprs=print_exprs)

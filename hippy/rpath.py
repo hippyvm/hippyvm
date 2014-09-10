@@ -5,8 +5,10 @@ import os
 from os.path import isabs, islink, abspath, normpath
 
 from rpython.rlib.rpath import rabspath
+from rpython.rlib.objectmodel import enforceargs
 
 
+@enforceargs(str)
 def dirname(p):
     """Returns the directory component of a pathname"""
     i = p.rfind('/') + 1
@@ -17,6 +19,7 @@ def dirname(p):
     return head
 
 
+@enforceargs(str)
 def basename(p):
     """Returns the final component of a pathname"""
     i = p.rfind('/') + 1
@@ -24,6 +27,7 @@ def basename(p):
     return p[i:]
 
 
+@enforceargs(str)
 def split(p):
     """Split a pathname.  Returns tuple "(head, tail)" where "tail" is
     everything after the final slash.  Either part may be empty."""
@@ -35,6 +39,7 @@ def split(p):
     return head, tail
 
 
+@enforceargs(str)
 def exists(path):
     """Test whether a path exists.  Returns False for broken symbolic links"""
     try:
@@ -45,6 +50,7 @@ def exists(path):
     return True
 
 
+@enforceargs(str, [str])
 def join(a, p):
     """Join two or more pathname components, inserting '/' as needed.
     If any component is an absolute path, all previous path components
@@ -60,6 +66,7 @@ def join(a, p):
             path += '/' + b
     return path
 
+@enforceargs(str)
 def realpath(filename):
     """Return the canonical path of the specified filename, eliminating any
 symbolic links encountered in the path."""
@@ -83,6 +90,7 @@ symbolic links encountered in the path."""
     return abspath(filename)
 
 
+@enforceargs(str)
 def _resolve_link(path):
     """Internal helper function.  Takes a path and follows symlinks
     until we either arrive at something that isn't a symlink, or

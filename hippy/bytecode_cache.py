@@ -14,7 +14,8 @@ class BytecodeCache(object):
     def _really_compile(self, space, abs_fname):
 
         if abs_fname is None:
-            f = os.fdopen(0) # open stdin
+            f = os.fdopen(0)  # open stdin
+            abs_fname = '<stdin>'  # PHP uses '-' in that case
         else:
             f = open(abs_fname)
 
@@ -22,8 +23,8 @@ class BytecodeCache(object):
 
         bc = compile_php(abs_fname, data, space)
 
-        if abs_fname is not None: # if not stdin, cache bytecode
-            f.close() # also don't close if stdin
+        if abs_fname != '<stdin>':  # if not stdin, cache bytecode
+            f.close()  # also don't close if stdin
             tstamp = os.stat(abs_fname).st_mtime
             self.cached_files[abs_fname] = (bc, tstamp)
 
@@ -33,7 +34,7 @@ class BytecodeCache(object):
     def compile_file(self, fname, space):
         now = time.time()
 
-        if fname is None: # you can't cache stdin
+        if fname is None:  # you can't cache stdin
             return self._really_compile(space, fname)
         else:
             # otherwise this really is a filename
