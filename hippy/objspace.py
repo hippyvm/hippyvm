@@ -828,9 +828,6 @@ class ObjSpace(object):
                               "function name" % (name))
 
     def _get_callback_from_class(self, clsname, methname):
-        if not self.is_valid_clsname(clsname):
-            raise InvalidCallback("first array member is not a valid class "
-                                  "name or object")
         interp = self.ec.interpreter
         klass = interp.lookup_class_or_intf(clsname)
         if klass is None:
@@ -874,6 +871,9 @@ class ObjSpace(object):
                 methname = self.str_w(self.getitem(w_obj, self.wrap(1)))
                 return self._get_callback_from_instance(w_instance, methname)
             clsname = self.str_w(w_instance)
+            if not self.is_valid_clsname(clsname):
+                raise InvalidCallback("first array member is not a valid class "
+                                    "name or object")
             methname = self.str_w(self.getitem(w_obj, self.wrap(1)))
             return self._get_callback_from_class(clsname, methname)
         elif isinstance(w_obj, W_InstanceObject):
