@@ -421,6 +421,10 @@ class W_ListArrayObject(W_ArrayObject):
     def as_list_w(self):
         return self.lst_w[:]
 
+    def as_pair_list(self, space):
+        return [(space.newint(i), values)
+                for i, values in enumerate(self.lst_w)]
+
     def as_unique_arraydict(self):
         self._note_making_a_copy()
         d = self.as_rdict()   # make a fresh dictionary
@@ -634,6 +638,10 @@ class W_RDictArrayObject(W_ArrayObject):
 
     def as_list_w(self):
         return self.dct_w.values()
+
+    def as_pair_list(self, space):
+        return [(space.newstr(key), w_value)
+                for key, w_value in self.dct_w.iteritems()]
 
     def _getkeylist(self):
         keylist = self._keylist
