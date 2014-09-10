@@ -11,7 +11,7 @@ from hippy.sort import _sort
 from rpython.rlib.rstring import StringBuilder
 from rpython.rlib.objectmodel import we_are_translated
 from rpython.rlib import rfile # for side effects
-from rpython.rlib import rpath
+from hippy import rpath
 from rpython.rlib.rfile import create_popen_file
 
 
@@ -1470,6 +1470,7 @@ def rewind(space, w_res):
         space.ec.warn("rewind(): %d is not a valid "
                       "stream resource" % w_res.int_w(space))
         return space.w_False
+    assert isinstance(w_res, W_FileResource)
     w_res.rewind()
     return space.w_True
 
@@ -1754,6 +1755,7 @@ def rewinddir(space, w_dir=None):
         return space.w_False
 
     else:
+        assert isinstance(w_dir, W_DirResource)
         w_dir.rewind()
         return space.w_Null
 

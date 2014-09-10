@@ -504,12 +504,12 @@ def http_build_query(interp,  w_data,
                 out.append(''.join(res))
 
     if w_data.tp == space.tp_object:
-        for key,  w_value in w_data.get_instance_attrs().iteritems():
+        for key, w_value in w_data.get_instance_attrs(interp).iteritems():
             _,  prop = demangle_property(key)
             if prop:
                 continue
-            res = _build_query(space,  [],  key,  w_value,
-                               num_prefix,  arg_sep,  enctype)
+            res = _build_query(space, [], key, w_value, num_prefix,
+                               arg_sep, enctype)
             out.append(''.join(res))
 
     outstr = out.build()

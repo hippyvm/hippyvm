@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 """ Hippy VM. Execute by typing
 
-hippy [--gcdump dumpfile] [--cgi] [--server port] <file.php> [php program options]
+hippy [--gcdump dumpfile] [--cgi] [--server port] [<file.php>] [php program options]
 
 and enjoy
 """
@@ -21,9 +21,10 @@ from hippy.objspace import getspace
 from hippy.error import ExplicitExitException, InterpreterError, SignalReceived
 from hippy.config import load_ini
 from hippy.sourceparser import ParseError
+from hippy.lexer import LexerError
 from rpython.rlib.rgc import dump_rpy_heap
 from rpython.rlib.objectmodel import we_are_translated
-from rpython.rlib import rpath
+from hippy import rpath
 
 # Needs to be a separate func so flowspace doesn't say import cannot succeed
 # when there is no fastcgi module source around.
@@ -33,10 +34,6 @@ def _run_fastcgi_server(server_port):
     return run_fcgi_server(port=server_port)
 
 def entry_point(argv):
-    if len(argv) < 2:
-        print __doc__
-        return 1
-
     i = 1
     fname = None
     gcdump = None
@@ -83,9 +80,6 @@ def entry_point(argv):
             fname = arg
             break
         i += 1
-    if not fname and not fastcgi:
-        print "php filename required"
-        return 1
     if fastcgi:
         if bench_mode:
             print "can't specify --bench and --server"
@@ -96,21 +90,18 @@ def entry_point(argv):
             return 1
         else:
             return _run_fastcgi_server(server_port)
-    else:
-        rest_of_args = []
-        for k in range(i + 1, len(argv)):
-            s = argv[k]
-            assert s is not None
-            rest_of_args.append(s)
-        return main(fname, rest_of_args, cgi, gcdump, debugger_pipes,
-                    bench_mode, bench_no)
+    rest_of_args = []
+    for k in range(i + 1, len(argv)):
+        s = argv[k]
+        assert s is not None
+        rest_of_args.append(s)
+    return main(fname, rest_of_args, cgi, gcdump, debugger_pipes,
+                bench_mode, bench_no)
 
 def main(filename, rest_of_args, cgi, gcdump, debugger_pipes=(-1, -1),
          bench_mode=False, bench_no=-1):
     space = getspace()
     interp = Interpreter(space)
-
-    absname = rpath.abspath(filename)
 
     try:
         ini_data = open('hippy.ini').read(-1)
@@ -124,9 +115,18 @@ def main(filename, rest_of_args, cgi, gcdump, debugger_pipes=(-1, -1),
             os.write(2, "error reading `hippy.ini`")
 
     try:
-        bc = space.bytecode_cache.compile_file(absname, space)
-    except:
-        print "Error opening %s" % filename
+        bc = space.bytecode_cache.compile_file(filename, space)
+    except ParseError as e:
+        print 'Parse error:  %s' % e
+        return 2
+    except LexerError as e:
+        print 'Parse error:  %s on line %d' % (e.message, e.source_pos + 1)
+        return 2
+    except IOError as e:
+        print 'Could not open input file: %s' % filename
+        return 2
+    except Exception as e:
+        print 'Got exception: %s' % e
         return 2
     #
     if bench_mode:

@@ -13,8 +13,7 @@ def _rec_unwrap(space, w_arr):
         for key, val in dct.iteritems())
 
 
-def _as_list(w_arr):
-    space = ObjSpace()
+def _as_list(space, w_arr):
     iter = space.create_iter(w_arr)
     result = []
     while not iter.done():
@@ -416,14 +415,14 @@ class TestBuiltin(BaseTestInterpreter):
         echo str_replace("aba", "X", array("ababab", "aXbaba"), $count);
         echo $count;
         ''')
-        assert _as_list(output[0]) == ["Xbab", "aXbX"]
+        assert _as_list(self.space, output[0]) == ["Xbab", "aXbX"]
         assert self.space.int_w(output[1]) == 2
 
         output = self.run('''
         echo str_replace(array("aba", "Xb"), "X", array("ababab", "aXbaba"), $count);
         echo $count;
         ''')
-        assert _as_list(output[0]) == ["Xab", "aXX"]
+        assert _as_list(self.space, output[0]) == ["Xab", "aXX"]
         assert self.space.int_w(output[1]) == 4
 
     def test_str_rot13(self):
@@ -834,11 +833,12 @@ class TestBuiltin(BaseTestInterpreter):
         echo substr_replace(array("abc", "de", "fg"), array("x", "y"), 1, 1);
         echo substr_replace(array("abc", "de", "fg"), array("x", "y"), 1, array(0, 1));
         ''')
-        assert map(_as_list, output) == [["ax", "dx", "fx"],
-                ["ax", "dy", "f"],
-                ["x", "dx", "x"],
-                ["axc", "dy", "f"],
-                ["axbc", "dy", "f"]]
+        assert [_as_list(self.space, out) for out in output] == [
+            ["ax", "dx", "fx"],
+            ["ax", "dy", "f"],
+            ["x", "dx", "x"],
+            ["axc", "dy", "f"],
+            ["axbc", "dy", "f"]]
 
 
     def test_substr_replace_warn(self):
@@ -1530,3 +1530,11 @@ ooooord.''']
 
         assert [self.space.is_w(o, self.space.w_Null) for o in output] == [True] * 2
 
+    def test_hex2bin_invalid_data(self):
+        output = self.run('''
+        echo hex2bin('xx');
+        echo hex2bin('0123456789abcdefxx');
+
+        ''')
+
+        assert [output[0].boolval, output[1].boolval] == [False] * 2

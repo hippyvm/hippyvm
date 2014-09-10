@@ -92,10 +92,9 @@ def _substr_window(n, start, length):
     return start, end
 
 
-@specialize.arg(3)
-def _broadcast_as_list(w_arr, n_items, default, convert):
+@specialize.arg(4)
+def _broadcast_as_list(space, w_arr, n_items, default, convert):
     """Return a list of possibly unwrapped objects of given length"""
-    space = getspace()
     if w_arr is None:
         l = [default] * n_items
     elif w_arr.tp == space.tp_array:
@@ -691,7 +690,9 @@ def hex2bin(space, data):
 
     builder = StringBuilder(len(data) / 2)
     for i in xrange(0, len(data), 2):
-        char = chr(int(data[i:i+2], 16))
+        if not is_hexdigit(data[i]) or not is_hexdigit(data[i + 1]):
+            return space.w_False
+        char = chr(hexdigit(data[i]) << 4 | hexdigit(data[i + 1]))
         builder.append(char)
 
     return space.newstr(builder.build())
@@ -1458,32 +1459,31 @@ def sprintf(space, w_obj, args_w):
 
 
 # XXX: move elsewhere
-def _as_list(w_arr):
-    space = getspace()
+def _as_list(space, w_arr):
     iter = space.create_iter(w_arr)
     values = []
     while not iter.done():
-        _, w_val = iter.next_item(getspace())
+        _, w_val = iter.next_item(space)
         w_val = w_val.deref()
         if w_val.tp != space.tp_null:
             values.append(w_val)
     return values
 
 
-def unpack_array(w_arr):
+def unpack_array(space, w_arr):
     if w_arr.tp != ObjSpace.tp_array:
         if w_arr.tp not in [ObjSpace.tp_null, ObjSpace.tp_object]:
             return [w_arr]
         return []
     else:
-        return _as_list(w_arr)
+        return _as_list(space, w_arr)
 
 
 @wrap(['space', W_Root, W_Root])
 def vprintf(space, w_obj, w_args):
     """Output a formatted string."""
     format = space.str_w(w_obj)
-    args_w = unpack_array(w_args)
+    args_w = unpack_array(space, w_args)
     try:
         s = _printf(space, format, args_w, "printf")
     except ValidationError as e:
@@ -1497,17 +1497,13 @@ def vprintf(space, w_obj, w_args):
 def vsprintf(space, w_obj, w_args):
     """Return a formatted string."""
     format = space.str_w(w_obj)
-    args_w = unpack_array(w_args)
+    args_w = unpack_array(space, w_args)
     try:
         s = _printf(space, format, args_w, "printf")
         return space.newstr(s)
     except ValidationError as e:
         space.ec.warn("vsprintf(): " + e.msg)
         return space.w_False
-
-
-def _has_two_hex_digits(data):
-    return len(data) == 2 and is_hexdigit(data[0]) and is_hexdigit(data[1])
 
 
 @wrap(['space', str])
@@ -1519,8 +1515,9 @@ def quoted_printable_decode(space, data):
         c = data[i]
         if c == '=':
             next_two_chars = data[i + 1: i + 3]
-            if _has_two_hex_digits(next_two_chars):
-                hex_char = int(next_two_chars, 16)
+            if (i + 2 < len(data) and
+                    is_hexdigit(data[i + 1]) and is_hexdigit(data[i + 2])):
+                hex_char = hexdigit(data[i + 1]) << 4 | hexdigit(data[i + 2])
                 builder.append(chr(hex_char))
                 i += 3
             else:
@@ -1796,7 +1793,7 @@ def _str_xreplace_item(space, w_search, w_replace, subject, w_count,
         s = subject
         search_iter = space.create_iter(w_search)
         n_search = space.arraylen(w_search)
-        repls = _broadcast_as_list(w_replace, n_search, "", space.str_w)
+        repls = _broadcast_as_list(space, w_replace, n_search, "", space.str_w)
         for i in range(n_search):
             _, w_val = search_iter.next_item(space)
             search = space.str_w(w_val)
@@ -2446,9 +2443,9 @@ def _sreplace_array(space, w_string, w_replacement, w_start, w_length):
     assert w_string.tp == space.tp_array
     n_items = w_string.arraylen()
     string_iter = space.create_iter(w_string)
-    repls = _broadcast_as_list(w_replacement, n_items, "", space.str_w_quiet)
-    starts = _broadcast_as_list(w_start, n_items, 0, space.int_w)
-    lengths = _broadcast_as_list(w_length, n_items, sys.maxint, space.int_w)
+    repls = _broadcast_as_list(space, w_replacement, n_items, "", space.str_w_quiet)
+    starts = _broadcast_as_list(space, w_start, n_items, 0, space.int_w)
+    lengths = _broadcast_as_list(space, w_length, n_items, sys.maxint, space.int_w)
     result = [None] * n_items
     for i in range(n_items):
         _, w_val = string_iter.next_item(space)
@@ -2607,7 +2604,7 @@ def vfprintf(space, args_w):
         return space.w_Null
     w_res = args_w[0]
     format = space.str_w(args_w[1])
-    w_args = unpack_array(args_w[2])
+    w_args = unpack_array(space, args_w[2])
 
     if w_res.tp != space.tp_file_res:
         space.ec.warn("vfprintf() expects parameter 1 "

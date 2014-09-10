@@ -51,6 +51,11 @@ class TestParseDoubleQuote(object):
                                             ConstantInt(3))])
         assert parse_doublequoted("a{$x[3]}") == expected
 
+    def test_brackets_bug(self):
+        expected = DoubleQuotedStr([NamedVariable("x"),
+                                    ConstantStr("{")])
+        assert parse_doublequoted("$x{") == expected
+
     def test_interpolated_str_re(self):
         r = parse_doublequoted("^(?:$langtag|$privateUse)$")
         expected = DoubleQuotedStr([ConstantStr("^(?:"),
@@ -1574,3 +1579,13 @@ ENDOFHEREDOC;
 
         r = parse_doublequoted("xyz ${a} asd$")
         assert r == DoubleQuotedStr([ConstantStr("xyz "), NamedVariable("a"), ConstantStr(" asd$")])
+
+    def test_parse_error_no_token_name(self):
+        with raises(ParseError) as excinfo:
+            parse('$foo=;')
+        assert excinfo.value.message == "syntax error, unexpected ';' in <input>"
+
+    def test_parse_error_with_token_name(self):
+        with raises(ParseError) as excinfo:
+            parse('1->2;')
+        assert excinfo.value.message == "syntax error, unexpected '->' (T_OBJECT_OPERATOR) in <input>"

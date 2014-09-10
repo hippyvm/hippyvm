@@ -72,7 +72,7 @@ def func_num_args(frame, interp):
 def get_object_vars(interp, frame, w_obj):
     contextclass = frame.get_contextclass()
     o = OrderedDict()
-    dct_w = w_obj.get_instance_attrs()
+    dct_w = w_obj.get_instance_attrs(interp)
     for k, w_v in dct_w.iteritems():
         key1 = w_obj.klass.check_access_and_demangle_property(
             k, contextclass)
