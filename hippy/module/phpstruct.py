@@ -47,9 +47,6 @@ def table2desclist(table):
 # Pack Methods
 
 def _pack_string(pack_obj, fmtdesc, count, pad):
-    if pack_obj.arg_index >= len(pack_obj.arg_w):
-        raise FormatException("not enough arguments")
-
     string = pack_obj.space.str_w(pack_obj.pop_arg())
     if len(string) < count:
         for c in string:
@@ -63,8 +60,6 @@ def _pack_string(pack_obj, fmtdesc, count, pad):
 
 
 def pack_Z_nul_padded_string(pack_obj, fmtdesc, count):
-    if pack_obj.arg_index >= len(pack_obj.arg_w):
-        raise FormatException("not enough arguments")
     c = count - 1
     assert c >= 0
     string = pack_obj.space.str_w(pack_obj.pop_arg())[:c]
@@ -85,8 +80,6 @@ def pack_space_padded_string(pack_obj, fmtdesc, count):
 
 
 def _pack_hex_string(pack_obj, fmtdesc, count, nibbleshift):
-    if pack_obj.arg_index >= len(pack_obj.arg_w):
-        raise FormatException("not enough arguments")
     string = pack_obj.space.str_w(pack_obj.pop_arg())
     if len(string) < count and count < sys.maxint:
         raise FormatException("not enough characters in string")
@@ -145,9 +138,6 @@ def pack_hex_string_high_nibble_first(pack_obj, fmtdesc, count):
 
 def pack_int(pack_obj, fmtdesc, count):
     for _ in xrange(count):
-        if pack_obj.arg_index >= len(pack_obj.arg_w):
-            raise FormatException("too few arguments")
-
         value = pack_obj.space.int_w(pack_obj.pop_arg())
 
         if fmtdesc.bigendian:
@@ -166,9 +156,6 @@ def pack_int(pack_obj, fmtdesc, count):
 
 def pack_float(pack_obj, fmtdesc, count):
     for _ in xrange(count):
-        if pack_obj.arg_index >= len(pack_obj.arg_w):
-            raise FormatException("too few arguments")
-
         value = pack_obj.space.float_w(pack_obj.pop_arg())
         floatval = r_singlefloat(value)
         value = longlong2float.singlefloat2uint(floatval)
@@ -181,9 +168,6 @@ def pack_float(pack_obj, fmtdesc, count):
 
 def pack_double(pack_obj, fmtdesc, count):
     for _ in xrange(count):
-        if pack_obj.arg_index >= len(pack_obj.arg_w):
-            raise FormatException("too few arguments")
-
         value = pack_obj.space.float_w(pack_obj.pop_arg())
         value = longlong2float.float2longlong(value)
 
@@ -578,6 +562,8 @@ class Pack(object):
         self.arg_index = 0
 
     def pop_arg(self):
+        if self.arg_index >= len(self.arg_w):
+            raise FormatException("too few arguments")
         result = self.arg_w[self.arg_index]
         self.arg_index += 1
         return result

@@ -106,13 +106,15 @@ class TestPack(BaseTestInterpreter):
         assert self.space.str_w(output[8]) == 'string\x00\x00'
         assert self.space.str_w(output[9]) == 'string\x00\x00\x00'
 
+    @pytest.mark.skipif("config.option.runappdirect",
+        reason='PHP inconsistently says "not enough arguments"')
     def test_pack_string_warnings(self):
         with self.warnings() as w:
             self.run("""
                 echo pack("a6a6", "string");
             """)
 
-        assert w[0] == 'Warning: pack(): Type a: not enough arguments'
+        assert w[0] == 'Warning: pack(): Type a: too few arguments'
 
     def test_pack_h_hex_string_low_nibble_first(self):
         output = self.run("""
@@ -148,8 +150,9 @@ class TestPack(BaseTestInterpreter):
         assert self.space.str_w(output.pop(0)) == '\x8f\x8f\x80'
         assert self.space.str_w(output.pop(0)) == '\xff\xff'
 
+    @pytest.mark.skipif("config.option.runappdirect",
+        reason='PHP inconsistently says "not enough arguments"')
     def test_pack_hex_warnings(self):
-
         with self.warnings() as w:
             self.run("""
                 echo pack("hh", "8");
@@ -157,7 +160,7 @@ class TestPack(BaseTestInterpreter):
                 echo pack("h", "!");
             """)
 
-        assert w.pop(0) == 'Warning: pack(): Type h: not enough arguments'
+        assert w.pop(0) == 'Warning: pack(): Type h: too few arguments'
         assert w.pop(0) == 'Warning: pack(): Type h: not enough characters in string'
         assert w.pop(0) == 'Warning: pack(): Type h: illegal hex digit !'
 
