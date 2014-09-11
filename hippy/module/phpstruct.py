@@ -144,7 +144,7 @@ def pack_hex_string_high_nibble_first(pack_obj, fmtdesc, count):
 
 
 def pack_int(pack_obj, fmtdesc, count):
-    for _ in range(count):
+    for _ in xrange(count):
         if pack_obj.arg_index >= len(pack_obj.arg_w):
             raise FormatException("too few arguments")
 
@@ -165,7 +165,7 @@ def pack_int(pack_obj, fmtdesc, count):
 
 
 def pack_float(pack_obj, fmtdesc, count):
-    for _ in range(count):
+    for _ in xrange(count):
         if pack_obj.arg_index >= len(pack_obj.arg_w):
             raise FormatException("too few arguments")
 
@@ -180,7 +180,7 @@ def pack_float(pack_obj, fmtdesc, count):
 
 
 def pack_double(pack_obj, fmtdesc, count):
-    for _ in range(count):
+    for _ in xrange(count):
         if pack_obj.arg_index >= len(pack_obj.arg_w):
             raise FormatException("too few arguments")
 
@@ -197,19 +197,17 @@ def pack_nul_byte(pack_obj, fmtdesc, count):
     if count == sys.maxint:
         raise FormatException("'*' ignored")
 
-    for _ in range(count):
+    for _ in xrange(count):
         pack_obj.result.append(chr(0x00))
         pack_obj.arg_index += 1
 
 
 def pack_back_up_one_byte(pack_obj, fmtdesc, count):
-
     if count == sys.maxint:
         raise FormatException("'*' ignored")
 
     if pack_obj.result:
         pack_obj.result.pop()
-        pack_obj.arg_index -= 1
     else:
         raise FormatException("outside of string")
 
@@ -236,7 +234,7 @@ def pack_nullfill_to_absolute_position(pack_obj, fmtdesc, count):
 def unpack_nul_padded_string(unpack_obj, fmtdesc, count, name):
 
     data = []
-    for _ in range(count):
+    for _ in xrange(count):
 
         if unpack_obj.string_index >= len(unpack_obj.string):
             raise FormatException(
@@ -252,7 +250,7 @@ def unpack_nul_padded_string(unpack_obj, fmtdesc, count, name):
 def unpack_space_padded_string(unpack_obj, fmtdesc, count, name):
 
     data = []
-    for _ in range(count):
+    for _ in xrange(count):
 
         if unpack_obj.string_index >= len(unpack_obj.string):
             raise FormatException(
@@ -275,7 +273,7 @@ def unpack_space_padded_string(unpack_obj, fmtdesc, count, name):
 
 def unpack_nul_padded_string_2(unpack_obj, fmtdesc, count, name):
     data = []
-    for _ in range(count):
+    for _ in xrange(count):
 
         if unpack_obj.string_index >= len(unpack_obj.string):
             raise FormatException(
@@ -304,7 +302,7 @@ def unpack_hex_string(unpack_obj, fmtdesc, count, name,
                       high_nibble_first=False):
     data = []
     count = count / 2 + count % 2
-    for _ in range(count):
+    for _ in xrange(count):
 
         if unpack_obj.string_index >= len(unpack_obj.string):
             raise FormatException(
@@ -338,7 +336,7 @@ def unpack_hex_string_high_nibble_first(unpack_obj, fmtdesc, count, name):
 
 
 def unpack_int(unpack_obj, fmtdesc, count, name):
-    for pos in range(count):
+    for pos in xrange(count):
         a = unpack_obj.string_index
         b = unpack_obj.string_index+fmtdesc.size
         assert a >= 0
@@ -376,7 +374,7 @@ def unpack_signed_char(unpack_obj, fmtdesc, count):
 
 
 def unpack_float(unpack_obj, fmtdesc, count, name):
-    for pos in range(count):
+    for pos in xrange(count):
         a = unpack_obj.string_index
         b = unpack_obj.string_index+fmtdesc.size
         assert a >= 0
@@ -403,7 +401,7 @@ def unpack_float(unpack_obj, fmtdesc, count, name):
 
 
 def unpack_double(unpack_obj, fmtdesc, count, name):
-    for pos in range(count):
+    for pos in xrange(count):
 
         a = unpack_obj.string_index
         b = unpack_obj.string_index+fmtdesc.size
@@ -621,12 +619,6 @@ class Pack(object):
 
         self.result = []
 
-        # do not count X as argument that require input from arg_w
-        valid_args = 0
-        for fmtdesc, repetitions in self.fmt_interpreted:
-            if fmtdesc.fmtchar != 'X':
-                valid_args += 1
-
         for fmtdesc, repetitions in self.fmt_interpreted:
 
             try:
@@ -635,7 +627,7 @@ class Pack(object):
                 self.space.ec.warn(
                     "pack(): Type %s: %s" % (fmtdesc.fmtchar, e.message)
                 )
-        if valid_args < len(self.arg_w):
+        if self.arg_index < len(self.arg_w):
             self.space.ec.warn(
                 "pack(): %s "
                 "arguments unused" % (len(self.arg_w) - self.arg_index)
