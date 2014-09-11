@@ -745,10 +745,12 @@ def _unpack(space, formats, string):
     for i, uc in enumerate(results):
         name = uc.name
         if name is None:
-            name = i + 1
-        if uc.str_value:
-            pairs.append((space.wrap(name), space.wrap(uc.str_value)))
+            w_key = space.newint(i + 1)
         else:
-            pairs.append((space.wrap(name), space.wrap(uc.num_value)))
+            w_key = space.newstr(name)
+        if uc.str_value:
+            pairs.append((w_key, space.wrap(uc.str_value)))
+        else:
+            pairs.append((w_key, space.wrap(uc.num_value)))
 
     return space.new_array_from_pairs(pairs)
