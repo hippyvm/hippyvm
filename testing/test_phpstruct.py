@@ -30,7 +30,6 @@ class TestPackFormat(BaseTestInterpreter):
 class TestPack(BaseTestInterpreter):
 
     def test_pack_a_string_nul_padded(self):
-
         output = self.run("""
             echo pack("a", "string");
             echo pack("a*", "string");
@@ -58,7 +57,6 @@ class TestPack(BaseTestInterpreter):
         assert self.space.str_w(output.pop(0)) == 'string\x00\x00str'
 
     def test_pack_A_string_space_padded(self):
-
         output = self.run("""
             echo pack("A", "string");
             echo pack("A1", "string");
@@ -82,7 +80,6 @@ class TestPack(BaseTestInterpreter):
         assert self.space.str_w(output.pop(0)) == 'string  str'
 
     def test_pack_Z_nul_padded_string(self):
-
         output = self.run("""
             echo pack("Z", "string");
 
@@ -110,7 +107,6 @@ class TestPack(BaseTestInterpreter):
         assert self.space.str_w(output[9]) == 'string\x00\x00\x00'
 
     def test_pack_string_warnings(self):
-
         with self.warnings() as w:
             self.run("""
                 echo pack("a6a6", "string");
@@ -119,7 +115,6 @@ class TestPack(BaseTestInterpreter):
         assert w[0] == 'Warning: pack(): Type a: not enough arguments'
 
     def test_pack_h_hex_string_low_nibble_first(self):
-
         output = self.run("""
             echo pack("h", '8');
             echo pack("h2", '8f');
@@ -137,7 +132,6 @@ class TestPack(BaseTestInterpreter):
         assert self.space.str_w(output.pop(0)) == '\xff\xff'
 
     def test_pack_H_hex_string_high_nibble_first(self):
-
         output = self.run("""
             echo pack("H", '8');
             echo pack("H2", '8f');
@@ -167,100 +161,33 @@ class TestPack(BaseTestInterpreter):
         assert w.pop(0) == 'Warning: pack(): Type h: not enough characters in string'
         assert w.pop(0) == 'Warning: pack(): Type h: illegal hex digit !'
 
-    def test_pack_c_signed_char(self):
+    @pytest.mark.parametrize(['fmt', 'py_fmt'], [
+        ('c', 'b'),
+        ('C', 'b'),
+        ('s', 'h'),
+        ('S', 'H'),
+        ('n', '>H'),
+        ('v', '<H'),
+        ('i', '=i'),
+        ('l', 'i'),
+        ('f', 'f'),
+        ('d', 'd')])
+    def test_pack_numeric(self, fmt, py_fmt):
+        assert len(py_fmt) <= 2
+        py_fmt2 = py_fmt + py_fmt[-1]
         output = self.run("""
-            echo pack("c", 40);
-            echo pack("c", 41);
-            echo pack("c", '40');
-            echo pack("cc", 40, 40);
-        """);
+            echo pack("%(fmt)s", 40);
+            echo pack("%(fmt)s", '40');
+            echo pack("%(fmt)s%(fmt)s", 40, 40);
+            echo pack("%(fmt)s2", 40, 40);
+            echo pack("%(fmt)s*", 40, 40);
+        """ % {'fmt': fmt})
 
-        assert self.space.str_w(output.pop(0)) == struct.pack('b', 40)
-        assert self.space.str_w(output.pop(0)) == struct.pack('b', 41)
-        assert self.space.str_w(output.pop(0)) == struct.pack('b', 40)
-        assert self.space.str_w(output.pop(0)) == struct.pack('bb', 40, 40)
-
-    def test_pack_C_unsigned_char(self):
-        output = self.run("""
-            echo pack("C", 40);
-            echo pack("C", 41);
-            echo pack("C", '40');
-            echo pack("CC", 40, 40);
-        """);
-
-        assert self.space.str_w(output.pop(0)) == struct.pack('b', 40)
-        assert self.space.str_w(output.pop(0)) == struct.pack('b', 41)
-        assert self.space.str_w(output.pop(0)) == struct.pack('b', 40)
-        assert self.space.str_w(output.pop(0)) == struct.pack('bb', 40, 40)
-
-    def test_pack_s_signed_short(self):
-        output = self.run("""
-            echo pack("s", 40);
-            echo pack("s", '40');
-            echo pack("ss", 40, 40);
-            echo pack("s", array());
-        """)
-
-        assert self.space.str_w(output.pop(0)) == struct.pack('h', 40)
-        assert self.space.str_w(output.pop(0)) == struct.pack('h', 40)
-        assert self.space.str_w(output.pop(0)) == struct.pack('hh', 40, 40)
-        assert self.space.str_w(output.pop(0)) == '\x00\x00'
-
-    def test_pack_S_unsigned_short(self):
-        output = self.run("""
-            echo pack("S", 40);
-            echo pack("S", '40');
-            echo pack("SS", 40, 40);
-        """)
-
-        assert self.space.str_w(output.pop(0)) == struct.pack('H', 40)
-        assert self.space.str_w(output.pop(0)) == struct.pack('H', 40)
-        assert self.space.str_w(output.pop(0)) == struct.pack('HH', 40, 40)
-
-    def test_pack_n_unsigned_short_big_endian(self):
-        output = self.run("""
-            echo pack("n", 40);
-            echo pack("n", '40');
-            echo pack("nn", 40, 40);
-        """)
-
-        assert self.space.str_w(output.pop(0)) == struct.pack('>H', 40)
-        assert self.space.str_w(output.pop(0)) == struct.pack('>H', 40)
-        assert self.space.str_w(output.pop(0)) == struct.pack('>HH', 40, 40)
-
-    def test_pack_v_unsigned_short_little_endian(self):
-        output = self.run("""
-            echo pack("v", 40);
-            echo pack("v", '40');
-            echo pack("vv", 40, 40);
-        """)
-
-        assert self.space.str_w(output.pop(0)) == struct.pack('<H', 40)
-        assert self.space.str_w(output.pop(0)) == struct.pack('<H', 40)
-        assert self.space.str_w(output.pop(0)) == struct.pack('<HH', 40, 40)
-
-    def test_pack_i_signed_integer(self):
-        output = self.run("""
-            echo pack("i", 40);
-            echo pack("i", '40');
-            echo pack("ii", 40, 40);
-        """)
-
-        assert self.space.str_w(output.pop(0)) == struct.pack('=i', 40)
-        assert self.space.str_w(output.pop(0)) == struct.pack('=i', 40)
-        assert self.space.str_w(output.pop(0)) == struct.pack('=ii', 40, 40)
-
-    def test_pack_l_signed_long(self):
-
-        output = self.run("""
-            echo pack("l", 40);
-            echo pack("l", '40');
-            echo pack("ll", 40, 40);
-        """)
-
-        assert self.space.str_w(output.pop(0)) == struct.pack('i', 40)
-        assert self.space.str_w(output.pop(0)) == struct.pack('i', 40)
-        assert self.space.str_w(output.pop(0)) == struct.pack('ii', 40, 40)
+        assert self.space.str_w(output.pop(0)) == struct.pack(py_fmt, 40)
+        assert self.space.str_w(output.pop(0)) == struct.pack(py_fmt, 40)
+        assert self.space.str_w(output.pop(0)) == struct.pack(py_fmt2, 40, 40)
+        assert self.space.str_w(output.pop(0)) == struct.pack(py_fmt2, 40, 40)
+        assert self.space.str_w(output.pop(0)) == struct.pack(py_fmt2, 40, 40)
 
     def test_pack_int_warnings(self):
         with self.warnings() as w:
@@ -271,28 +198,6 @@ class TestPack(BaseTestInterpreter):
 
         assert w[0] == 'Warning: pack(): Type c: too few arguments'
         assert w[1] == 'Warning: pack(): Type c: too few arguments'
-
-    def test_pack_float(self):
-        output = self.run("""
-            echo pack("f", 40);
-            echo pack("f", '40');
-            echo pack("ff", 40, 40);
-        """)
-
-        assert self.space.str_w(output.pop(0)) == struct.pack('f', 40)
-        assert self.space.str_w(output.pop(0)) == struct.pack('f', 40)
-        assert self.space.str_w(output.pop(0)) == struct.pack('ff', 40, 40)
-
-    def test_pack_double(self):
-        output = self.run("""
-            echo pack("d", 40);
-            echo pack("d", '40');
-            echo pack("dd", 40, 40);
-        """)
-
-        assert self.space.str_w(output.pop(0)) == struct.pack('d', 40)
-        assert self.space.str_w(output.pop(0)) == struct.pack('d', 40)
-        assert self.space.str_w(output.pop(0)) == struct.pack('dd', 40, 40)
 
     def test_x_null_byte(self):
         output = self.run("""
@@ -391,7 +296,7 @@ class TestUnpack(BaseTestInterpreter):
             echo unpack("a6", "string");
             echo unpack("a7", "string ");
             echo unpack("a7", "string\0");
-        """);
+        """)
 
         assert self._next(output, self.space.str_w) == ['s']
         assert self._next(output, self.space.str_w) == ['string']
@@ -417,7 +322,7 @@ class TestUnpack(BaseTestInterpreter):
             echo unpack("Z6", "string");
             echo unpack("Z7", "string ");
             echo unpack("Z7", "string\0ala");
-        """);
+        """)
 
         assert self._next(output, self.space.str_w) == ['s']
         assert self._next(output, self.space.str_w) == ['string']
