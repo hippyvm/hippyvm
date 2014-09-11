@@ -640,8 +640,12 @@ class W_RDictArrayObject(W_ArrayObject):
         return self.dct_w.values()
 
     def as_pair_list(self, space):
-        return [(space.newstr(key), w_value)
-                for key, w_value in self.dct_w.iteritems()]
+        keylist = self._getkeylist()
+        result = []
+        for key in keylist:
+            w_key = wrap_array_key(space, key)
+            result.append((w_key, self.dct_w[key]))
+        return result
 
     def _getkeylist(self):
         keylist = self._keylist
