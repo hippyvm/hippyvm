@@ -328,7 +328,7 @@ RULES = [(parse_regex(rule), name) for rule, name in _RULES]
 _RULES_FOR_DOUBLE_QUOTE = (
     ("\$[a-zA-Z_][0-9a-zA-Z_]*(->[a-zA-Z_][0-9a-zA-Z_]*)?", 'T_VARIABLE'),
     (r"\{\$|\$\{", "T_DOLLAR_OPEN_CURLY_BRACES"),
-    (r"([^\"\$\{\\]|\\.|\$[^a-zA-Z\"\{]|{[^\$])+", "T_ENCAPSED_AND_WHITESPACE"),
+    (r"([^\"\$\{\\]|\\.|\$[^a-zA-Z\"\{]|{[^\$\"])+|{", "T_ENCAPSED_AND_WHITESPACE"),
     (r"\$", "T_DOLLAR"),
     ('"', '"'),
 )
@@ -433,6 +433,8 @@ class Lexer(object):
                     'hippy.%s.%s' % ("lexer_cache", runner_name) , None, None,
                     ['recognize', 'automaton']
                 )
+                if getattr(lexer_runner, "rulehash", 0) != hash(str(rules)):
+                    raise ImportError # hack
 
                 self.runners_context[context] = (
                     lexer_runner.recognize, lexer_runner.automaton)
@@ -450,7 +452,9 @@ class Lexer(object):
                 automaton = automaton.make_deterministic(names)
                 automaton.optimize()
                 code = automaton.generate_lexing_code()
-                open(runner_file, "w").write(code)
+                with open(runner_file, "w") as f:
+                    f.write(code)
+                    f.write("\n\nrulehash = %s" % hash(str(rules)))
 
                 exec py.code.Source(code).compile()
                 self.runners_context[context] = (recognize, automaton)

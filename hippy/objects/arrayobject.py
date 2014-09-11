@@ -8,6 +8,7 @@ from hippy.objects.base import W_Object
 from hippy.objects.reference import W_Reference, VirtualReference
 from hippy.objects.convert import force_float_to_int_in_any_way
 from hippy.objects.strobject import string_var_export
+from hippy.objects.boolobject import w_False
 from hippy.error import ConvertError
 from collections import OrderedDict
 from rpython.rlib.rstring import StringBuilder
@@ -294,8 +295,18 @@ class W_ArrayObject(W_Object):
     def _each(self, space):
         raise NotImplementedError("abstract")
 
-    def _current(self, space):
+    def _current(self):
         raise NotImplementedError("abstract")
+
+    def next(self, space):
+        length = self.arraylen()
+        current_idx = self.current_idx + 1
+        if current_idx >= length:
+            self.current_idx = length
+            return w_False
+        self.current_idx = current_idx
+        return self._current()
+
 
     def _key(self, space):
         raise NotImplementedError("abstract")
@@ -436,12 +447,12 @@ class W_ListArrayObject(W_ArrayObject):
     def get_rdict_from_array(self):
         return self.as_rdict()
 
-    def _current(self, space):
+    def _current(self):
         index = self.current_idx
         if 0 <= index < len(self.lst_w):
             return self.lst_w[index]
         else:
-            return space.w_False
+            return w_False
 
     def _key(self, space):
         index = self.current_idx
@@ -542,8 +553,8 @@ class W_ListArrayObject(W_ArrayObject):
             return self._isset_int(i)
 
     def create_iter(self, space, contextclass=None):
-        from hippy.objects.arrayiter import W_ListArrayIterator
-        return W_ListArrayIterator(self.lst_w)
+        from hippy.objects.arrayiter import ListArrayIterator
+        return ListArrayIterator(self.lst_w)
 
     def create_iter_ref(self, space, r_self, contextclass=None):
         from hippy.objects.arrayiter import ListArrayIteratorRef
@@ -641,13 +652,13 @@ class W_RDictArrayObject(W_ArrayObject):
     def _keylist_changed(self):
         self._keylist = None
 
-    def _current(self, space):
+    def _current(self):
         keylist = self._getkeylist()
         index = self.current_idx
         if 0 <= index < len(keylist):
             return self.dct_w[keylist[index]]
         else:
-            return space.w_False
+            return w_False
 
     def _key(self, space):
         keylist = self._getkeylist()
@@ -746,8 +757,8 @@ class W_RDictArrayObject(W_ArrayObject):
         return key in self.dct_w
 
     def create_iter(self, space, contextclass=None):
-        from hippy.objects.arrayiter import W_RDictArrayIterator
-        return W_RDictArrayIterator(self.dct_w)
+        from hippy.objects.arrayiter import RDictArrayIterator
+        return RDictArrayIterator(self)
 
     def create_iter_ref(self, space, r_self, contextclass=None):
         from hippy.objects.arrayiter import RDictArrayIteratorRef

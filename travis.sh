@@ -1,7 +1,5 @@
 #!/bin/bash
 
-export PYTHONPATH=$PYTHONPATH:pypy
-
 if [[ "$TRANSLATE" == "true" ]]; then
     python pypy/rpython/bin/rpython --batch targethippy.py
 else
