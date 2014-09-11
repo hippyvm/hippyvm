@@ -18,7 +18,7 @@ class TestPyPyBridge(BaseTestInterpreter):
         echo($math->pi);
         ''')
         assert phspace.float_w(output[0]) == math.pi
-   
+
     def test_import_py_nested1_mod_func(self):
         phspace = self.space
         output = self.run('''
