@@ -1222,5 +1222,5 @@ class W_InvokeCall(AbstractFunction):
 
     def call_args(self, interp, args_w, w_this=None, thisclass=None,
                   closureargs=None):
-        return self.call_func.call_args(interp, args_w,
+        return self.wpy_func.call_args(interp, args_w,
                                         w_this=self.w_obj, thisclass=self.klass)

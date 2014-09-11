@@ -499,3 +499,15 @@ embed_py_func($src);
 echo(f());
         ''')
         assert phspace.int_w(output[0]) == 45
+
+    def test_embed_py_func_lexical(self):
+        php_space = self.space
+
+        output = self.run('''
+$src = "def f(x, y): return x + y";
+$f = embed_py_func_lexical($src);
+$r = $f(666, 1);
+echo $r;
+        ''')
+
+        assert php_space.int_w(output[0]) == 667

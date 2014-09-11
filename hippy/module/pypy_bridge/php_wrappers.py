@@ -4,7 +4,7 @@ that they can be used in PHP programs.
 """
 
 from hippy.objects.instanceobject import W_InstanceObject
-from hippy.klass import def_class
+from hippy.klass import def_class, W_InvokeCall
 from hippy.builtin import wrap, Optional, wrap_method, ThisUnwrapper
 from hippy.objects.base import W_Root as Wph_Root, W_Object as WPh_Object
 from hippy.function import AbstractFunction
@@ -77,7 +77,6 @@ k_PyBridgeProxy = def_class('PyBridgeProxy',
     [], instance_class=W_PyProxyGeneric
 )
 
-
 class W_EmbeddedPyFunc(AbstractFunction):
     _immutable_fields_ = ["interp", "py_callable"]
 
@@ -108,6 +107,23 @@ class W_EmbeddedPyFunc(AbstractFunction):
     def needs_value(self, i):
         return False
 
+class W_EmbeddedPyFuncLexicalCall(W_InvokeCall):
+
+    def __init__(self, wpy_func):
+        W_InvokeCall.__init__(self, None, wpy_func, None)
+        self.wpy_func = wpy_func
+
+    def call_args(self, interp, args_w):
+
+        wpy_args_elems = [ x.to_py(interp) for x in args_w ]
+
+        rv = interp.pyspace.call_args(
+                self.wpy_func, Arguments(interp.pyspace, wpy_args_elems))
+        return rv.to_php(interp)
+
+    def needs_ref(self, i):
+        return False
+
 class W_EmbeddedPyFuncLexical(W_InstanceObject):
     """ A 'lexically scoped' embedded Python function.
     Essentially these instances behave a bit like a PHP closure."""
@@ -134,15 +150,15 @@ class W_EmbeddedPyFuncLexical(W_InstanceObject):
         # XXX
         assert False
 
-    #def get_callable(self):
-    #    return W_EmbeddedPyFuncLexicalCall(self.py_func)
+    def get_callable(self):
+        return W_EmbeddedPyFuncLexicalCall(self.py_func)
 
 k_EmbeddedPyFuncLexical = def_class('EmbeddedPyFuncLexical', [])
 
 def new_embedded_py_func_lexical(interp, py_func):
     return W_EmbeddedPyFuncLexical(interp, py_func, interp.get_frame(),
             k_EmbeddedPyFuncLexical,
-            k_EmbeddedPyFuncLexical.get_initial_storage_w(space)[:])
+            k_EmbeddedPyFuncLexical.get_initial_storage_w(interp.space)[:])
 
 class W_EmbeddedPyMod(WPh_Object):
     _immutable_fields_ = ["py_space", "py_mod"]
