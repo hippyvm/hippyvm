@@ -31,6 +31,7 @@ class FmtDesc(object):
         self.signed = False
         self.needcount = False
         self.bigendian = False
+        self.many_args = attrs.pop('many_args', False)
         self.__dict__.update(attrs)
 
     def _freeze_(self):
@@ -458,77 +459,91 @@ fmt_table = {
         'pack': pack_int,
         'unpack': unpack_int,
         'signed': True,
+        'many_args': True,
     },
     'C': {
         'size': 1,
         'pack': pack_int,
         'unpack': unpack_int,
+        'many_args': True,
     },
     's': {
         'size': 2,
         'pack': pack_int,
         'unpack': unpack_int,
         'signed': True,
+        'many_args': True,
     },
     'S': {
         'size': 2,
         'pack': pack_int,
         'unpack': unpack_int,
+        'many_args': True,
     },
     'n': {
         'size': 2,
         'pack': pack_int,
         'unpack': unpack_int,
         'bigendian': True,
+        'many_args': True,
     },
     'v': {
         'size': 2,
         'pack': pack_int,
         'unpack': unpack_int,
         'bigendian': False,
+        'many_args': True,
     },
     'i': {
         'size': sizeof_c_type('unsigned int'),
         'pack': pack_int,
         'unpack': unpack_int,
         'signed': True,
+        'many_args': True,
     },
     'I': {
         'size': 4,
         'pack': pack_int,
         'unpack': unpack_int,
+        'many_args': True,
     },
     'l': {
         'size': 4,
         'pack': pack_int,
         'unpack': unpack_int,
-        'signed': True
+        'signed': True,
+        'many_args': True,
     },
     'L': {
         'size': 4,
         'pack': pack_int,
         'unpack': unpack_int,
+        'many_args': True,
     },
     'N': {
         'size': 4,
         'pack': pack_int,
         'unpack': unpack_int,
         'bigendian': True,
+        'many_args': True,
     },
     'V': {
         'size': 4,
         'pack': pack_int,
         'unpack': unpack_int,
+        'many_args': True,
     },
     'f': {
         'size': sizeof_c_type('float'),
         'pack': pack_float,
-        'unpack': unpack_float
+        'unpack': unpack_float,
+        'many_args': True,
     },
     'd': {
         'size': sizeof_c_type('double'),
         'pack': pack_double,
-        'unpack': unpack_double
+        'unpack': unpack_double,
+        'many_args': True,
     },
     'x': {
         'size': 1,
@@ -591,7 +606,10 @@ class Pack(object):
                 if repetitions is None:
                     rep = 1
                 elif repetitions == '*':
-                    rep = sys.maxint
+                    if fmtdesc.many_args:
+                        rep = len(self.arg_w) - self.arg_index
+                    else:
+                        rep = sys.maxint
                 else:
                     rep = int(repetitions)
                 results.append((fmtdesc, rep))
