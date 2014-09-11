@@ -830,6 +830,7 @@ class Interpreter(object):
 
     def debug_eval(self, source, parent_frame=None,
                    allow_direct_class_access=False):
+        assert source is not None
         ast = parse(self.space, source, 0, '<eval>')
         bc = compile_ast('<eval>', source, ast,
                          self.space, print_exprs=True)
