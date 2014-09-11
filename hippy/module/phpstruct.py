@@ -302,7 +302,6 @@ hex_digit = ['0', '1', '2', '3',
 
 def unpack_hex_string(unpack_obj, fmtdesc, count, name,
                       high_nibble_first=False):
-    # import pdb; pdb.set_trace()
     data = []
     count = count / 2 + count % 2
     for _ in range(count):
@@ -320,7 +319,6 @@ def unpack_hex_string(unpack_obj, fmtdesc, count, name,
         nibbles = element % 16, element / 16
         if high_nibble_first:
             nibbles = element / 16, element % 16
-        # import pdb; pdb.set_trace()
         nibbles_digits = hex_digit[nibbles[0]], hex_digit[nibbles[1]]
         data.append('%s%s' % nibbles_digits)
 
@@ -341,7 +339,6 @@ def unpack_hex_string_high_nibble_first(unpack_obj, fmtdesc, count, name):
 
 def unpack_int(unpack_obj, fmtdesc, count, name):
     for pos in range(count):
-        # import pdb; pdb.set_trace()
         a = unpack_obj.string_index
         b = unpack_obj.string_index+fmtdesc.size
         assert a >= 0
@@ -703,8 +700,9 @@ class Unpack(object):
 
         for fmtdesc, repetitions, name in self.fmt_interpreted:
             if repetitions == sys.maxint:
-                # import pdb; pdb.set_trace()
                 repetitions = len(self.string) - self.string_index
+                if fmtdesc.fmtchar in ('h', 'H'):
+                    repetitions *= 2
             fmtdesc.unpack(self,  fmtdesc,  repetitions,  name)
         return self.result
 

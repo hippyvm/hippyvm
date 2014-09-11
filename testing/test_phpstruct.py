@@ -323,7 +323,6 @@ class TestPack(BaseTestInterpreter):
         assert w[1] == 'Warning: pack(): Type X: outside of string'
 
     def test_null_fill_to_absolute_position(self):
-
         output = self.run("""
             echo pack("@2a3a3", "string", "string");
             echo pack("a3a3@7", "alama", "testromek");
@@ -711,3 +710,27 @@ class TestUnpack(BaseTestInterpreter):
             ['int2', '40960'],
             ['int3', '40960']
         ]
+
+class TestRoundTrips(BaseTestInterpreter):
+    def test_double(self):
+        output = self.run('''
+        $hex = "2d431cebe2362a3f";
+        $packed = pack("H*", $hex);
+        echo $packed;
+        $num = unpack("d", pack("H*", $hex))[1];
+        echo $num;
+        $serialized = serialize($num);
+        echo $serialized;
+        $num2 = unserialize(serialize($num));
+        echo $num2;
+        $packed2 = pack("d", $num2);
+        echo $packed2;
+        $repr = unpack("H*", $packed2)[1];
+        echo $repr;
+        ''')
+        assert output[0] == self.space.newstr("\x2d\x43\x1c\xeb\xe2\x36\x2a\x3f")
+        assert output[1] == self.space.newfloat(0.0002)
+        assert output[2] == self.space.newstr('d:0.00020000000000000001;')
+        assert output[3] == self.space.newfloat(0.0002)
+        assert output[4] == output[0]
+        assert output[5] == self.space.newstr("2d431cebe2362a3f")
