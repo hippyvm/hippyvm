@@ -299,7 +299,7 @@ def unpack_hex_string(unpack_obj, fmtdesc, count, name,
 
     to_append = "".join(data)
     to_append = to_append[:count]
-    unpack_obj.result_append(name, n_bytes, 0, to_append, 0)
+    unpack_obj.result_append(name, n_bytes, 1, to_append, 0)
 
 
 def unpack_hex_string_low_nibble_first(unpack_obj, fmtdesc, count, name):
@@ -626,22 +626,14 @@ class Pack(object):
         return self.result.build()
 
 
-class UnpackContainer(object):
-    def __init__(self, name, str_value, num_value):
-        self.name = name
-        self.str_value = str_value
-        self.num_value = num_value
-
-
 class Unpack(object):
 
-    def __init__(self, fmt, string):
+    def __init__(self, space, fmt, string):
         self.fmt = fmt
         self.string = string
         self.string_index = 0
-
-        self.table = unroll_fmttable
         self.result = []
+        self.space = space
 
     def _get_fmtdect(self, char):
         for fmtdesc in unroll_fmttable:
@@ -650,11 +642,18 @@ class Unpack(object):
         raise FormatException("Invalid format type %s" % char)
 
     def result_append(self, name, count, pos, str_val, num_value):
+        space = self.space
         if name:
             if count > 1:
                 name += str(pos)
-        self.result.append(
-            UnpackContainer(name, str_val, num_value))
+            w_key = space.newstr(name)
+        else:
+            w_key = space.newint(pos)
+        if str_val:
+            self.result.append((w_key, space.wrap(str_val)))
+        else:
+            self.result.append((w_key, space.wrap(num_value)))
+
 
     @jit.unroll_safe  # assuming that the format string isn't too crazy
     def interpret(self):
@@ -703,21 +702,9 @@ def pack(space, formats, args_w):
 
 def _unpack(space, formats, string):
     try:
-        results = Unpack(formats, string).build()
+        pairs = Unpack(space, formats, string).build()
     except FormatException as e:
         space.ec.warn("unpack(): %s" % (e.message))
 
         return space.w_False
-    pairs = []
-    for i, uc in enumerate(results):
-        name = uc.name
-        if not name:
-            w_key = space.newint(i + 1)
-        else:
-            w_key = space.newstr(name)
-        if uc.str_value:
-            pairs.append((w_key, space.wrap(uc.str_value)))
-        else:
-            pairs.append((w_key, space.wrap(uc.num_value)))
-
     return space.new_array_from_pairs(pairs)

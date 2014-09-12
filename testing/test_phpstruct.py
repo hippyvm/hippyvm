@@ -266,14 +266,14 @@ class TestPack(BaseTestInterpreter):
 class TestUnpackFormat(BaseTestInterpreter):
 
     def test_1(self):
-        fmt = phpstruct.Unpack("a1one/a2two/a*three",  'zyz').interpret()
+        fmt = phpstruct.Unpack(self.space, "a1one/a2two/a*three",  'zyz').interpret()
 
         assert fmt.pop(0)[1:] == (1, 'one')
         assert fmt.pop(0)[1:] == (2, 'two')
         assert fmt.pop(0)[1:] == (-1, 'three')
 
     def test_2(self):
-        fmt = phpstruct.Unpack("a0one",  'zyz').interpret()
+        fmt = phpstruct.Unpack(self.space, "a0one",  'zyz').interpret()
 
         assert fmt.pop(0)[1:] == (0, 'one')
 
@@ -598,6 +598,8 @@ class TestUnpack(BaseTestInterpreter):
             echo unpack("c2chars/nint", "\x04\x00\xa0\x00");
             echo unpack("c2/nint", "\x04\x00\xa0\x00");
             echo unpack("c2/n3int", "\x04\x00\xa0\x00\xa0\x00\xa0\x00");
+            echo unpack("c2a/c2b", "\x01\x02\x03\x04");
+            echo unpack("c2/c2", "\x01\x02\x03\x04");
         """)
         assert self._next_arr(output, self.space.str_w) == [
             ['chars1', '4'],
@@ -609,7 +611,6 @@ class TestUnpack(BaseTestInterpreter):
             ['2', '0'],
             ['int', '40960']
         ]
-
         assert self._next_arr(output, self.space.str_w) == [
             ['1', '4'],
             ['2', '0'],
@@ -617,6 +618,17 @@ class TestUnpack(BaseTestInterpreter):
             ['int2', '40960'],
             ['int3', '40960']
         ]
+        assert self._next_arr(output, self.space.str_w) == [
+            ['a1', '1'],
+            ['a2', '2'],
+            ['b1', '3'],
+            ['b2', '4'],
+        ]
+        assert self._next_arr(output, self.space.str_w) == [
+            ['1', '3'],
+            ['2', '4'],
+        ]
+
 
 class TestRoundTrips(BaseTestInterpreter):
     def test_double(self):
