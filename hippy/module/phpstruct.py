@@ -277,6 +277,7 @@ hex_digit = ['0', '1', '2', '3',
 
 def unpack_hex_string(unpack_obj, fmtdesc, count, name,
                       high_nibble_first=False):
+    assert count >= 0
     data = []
     n_bytes = count / 2 + count % 2
     for _ in xrange(n_bytes):
