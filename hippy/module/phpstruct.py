@@ -3,6 +3,7 @@ import sys
 from rpython.rlib import longlong2float
 from rpython.rlib.unroll import unrolling_iterable
 from rpython.rlib.rarithmetic import r_singlefloat, widen
+from rpython.rlib.rstring import StringBuilder
 from rpython.rtyper.tool.rfficache import sizeof_c_type
 from rpython.rtyper.lltypesystem import lltype, rffi
 
@@ -69,7 +70,7 @@ def pack_Z_nul_padded_string(pack_obj, fmtdesc, count):
         pack_obj.result.append(c)
     pack_obj.result.append('\x00')
 
-    if len(pack_obj.result) < count:
+    if pack_obj.result.getlength() < count:
         pack_obj.result.append('\x00' * (count - len(string) - 1))
 
 
@@ -181,18 +182,15 @@ def pack_double(pack_obj, fmtdesc, count):
 def pack_nul_byte(pack_obj, fmtdesc, count):
     if count < 0:
         raise FormatException("'*' ignored")
-
-    for _ in xrange(count):
-        pack_obj.result.append(chr(0x00))
-        pack_obj.arg_index += 1
+    pack_obj.result.append_multiple_char('\0', count)
 
 
 def pack_back_up_one_byte(pack_obj, fmtdesc, count):
     if count < 0:
         raise FormatException("'*' ignored")
-
-    if pack_obj.result:
-        pack_obj.result.pop()
+    result_len = pack_obj.result.getlength()
+    if result_len > 0:
+        pack_obj._shrink(result_len - 1)
     else:
         raise FormatException("outside of string")
 
@@ -201,16 +199,11 @@ def pack_nullfill_to_absolute_position(pack_obj, fmtdesc, count):
     if count < 0:
         raise FormatException("'*' ignored")
 
-    if len(pack_obj.result) <= pack_obj.arg_index:
-        pack_obj.result.append(chr(0x00) * count)
-    else:
-        lenght_diff = count - len(pack_obj.result)
-        if lenght_diff > 0:
-            for _ in range(lenght_diff):
-                pack_obj.result.append(chr(0x00))
-        if lenght_diff < 0:
-            for _ in range(lenght_diff * -1):
-                pack_obj.result.pop()
+    length_diff = count - pack_obj.result.getlength()
+    if length_diff > 0:
+        pack_obj.result.append_multiple_char('\0', length_diff)
+    elif length_diff < 0:
+        pack_obj._shrink(count)
 
 
 # Unpack Methods
@@ -593,6 +586,12 @@ class Pack(object):
             if char == fmtdesc.fmtchar:
                 return fmtdesc
 
+    def _shrink(self, new_len):
+        result_so_far = self.result.build()
+        assert new_len < len(result_so_far)
+        self.result = StringBuilder()
+        self.result.append_slice(result_so_far, 0, new_len)
+
     def interpret(self):
         results = []
         rep = 0
@@ -616,8 +615,7 @@ class Pack(object):
     def build(self):
         self.fmt_interpreted = self.interpret()
         self.size = self._size(self.fmt_interpreted)
-
-        self.result = []
+        self.result = StringBuilder()
 
         for fmtdesc, repetitions in self.fmt_interpreted:
             if repetitions == -1 and fmtdesc.many_args:
@@ -626,15 +624,13 @@ class Pack(object):
                 fmtdesc.pack(self, fmtdesc, repetitions)
             except FormatException as e:
                 self.space.ec.warn(
-                    "pack(): Type %s: %s" % (fmtdesc.fmtchar, e.message)
-                )
+                    "pack(): Type %s: %s" % (fmtdesc.fmtchar, e.message))
         if self.arg_index < len(self.arg_w):
             self.space.ec.warn(
                 "pack(): %s "
-                "arguments unused" % (len(self.arg_w) - self.arg_index)
-            )
+                "arguments unused" % (len(self.arg_w) - self.arg_index))
 
-        return "".join(self.result)
+        return self.result.build()
 
 
 class UnpackContainer(object):
