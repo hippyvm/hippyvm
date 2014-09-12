@@ -23,8 +23,7 @@ class TestPackFormat(BaseTestInterpreter):
 
     def test_3(self):
         fmt = phpstruct.Pack(self.space, "a*",  '').interpret()
-
-        assert fmt.pop(0)[-1] == sys.maxint
+        assert fmt.pop(0)[-1] == -1
 
 
 class TestPack(BaseTestInterpreter):

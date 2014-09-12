@@ -49,13 +49,14 @@ def table2desclist(table):
 
 def _pack_string(pack_obj, fmtdesc, count, pad):
     string = pack_obj.space.str_w(pack_obj.pop_arg())
-    if len(string) < count:
+    if count < 0:
         for c in string:
             pack_obj.result.append(c)
-        if count != sys.maxint:
-            pack_obj.result.append(pad * (count - len(string)))
+    elif len(string) < count:
+        pack_obj.result.append(string)
+        for _ in range(count - len(string)):
+            pack_obj.result.append(pad)
     else:
-        assert count >= 0
         for c in string[:count]:
             pack_obj.result.append(c)
 
@@ -82,7 +83,7 @@ def pack_space_padded_string(pack_obj, fmtdesc, count):
 
 def _pack_hex_string(pack_obj, fmtdesc, count, nibbleshift):
     string = pack_obj.space.str_w(pack_obj.pop_arg())
-    if len(string) < count and count < sys.maxint:
+    if len(string) < count and count >= 0:
         raise FormatException("not enough characters in string")
 
     output = range((len(string) + (len(string) % 2)) / 2)
@@ -178,8 +179,7 @@ def pack_double(pack_obj, fmtdesc, count):
 
 
 def pack_nul_byte(pack_obj, fmtdesc, count):
-
-    if count == sys.maxint:
+    if count < 0:
         raise FormatException("'*' ignored")
 
     for _ in xrange(count):
@@ -188,7 +188,7 @@ def pack_nul_byte(pack_obj, fmtdesc, count):
 
 
 def pack_back_up_one_byte(pack_obj, fmtdesc, count):
-    if count == sys.maxint:
+    if count < 0:
         raise FormatException("'*' ignored")
 
     if pack_obj.result:
@@ -198,8 +198,7 @@ def pack_back_up_one_byte(pack_obj, fmtdesc, count):
 
 
 def pack_nullfill_to_absolute_position(pack_obj, fmtdesc, count):
-
-    if count == sys.maxint:
+    if count < 0:
         raise FormatException("'*' ignored")
 
     if len(pack_obj.result) <= pack_obj.arg_index:
@@ -606,10 +605,7 @@ class Pack(object):
                 if repetitions is None:
                     rep = 1
                 elif repetitions == '*':
-                    if fmtdesc.many_args:
-                        rep = len(self.arg_w) - self.arg_index
-                    else:
-                        rep = sys.maxint
+                    rep = -1
                 else:
                     rep = int(repetitions)
                 results.append((fmtdesc, rep))
@@ -624,7 +620,8 @@ class Pack(object):
         self.result = []
 
         for fmtdesc, repetitions in self.fmt_interpreted:
-
+            if repetitions == -1 and fmtdesc.many_args:
+                repetitions = len(self.arg_w) - self.arg_index
             try:
                 fmtdesc.pack(self, fmtdesc, repetitions)
             except FormatException as e:
