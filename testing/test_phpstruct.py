@@ -270,7 +270,7 @@ class TestUnpackFormat(BaseTestInterpreter):
 
         assert fmt.pop(0)[1:] == (1, 'one')
         assert fmt.pop(0)[1:] == (2, 'two')
-        assert fmt.pop(0)[1:] == (sys.maxint, 'three')
+        assert fmt.pop(0)[1:] == (-1, 'three')
 
     def test_2(self):
         fmt = phpstruct.Unpack("a0one",  'zyz').interpret()

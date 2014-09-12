@@ -278,13 +278,13 @@ hex_digit = ['0', '1', '2', '3',
 def unpack_hex_string(unpack_obj, fmtdesc, count, name,
                       high_nibble_first=False):
     data = []
-    count = count / 2 + count % 2
-    for _ in xrange(count):
+    n_bytes = count / 2 + count % 2
+    for _ in xrange(n_bytes):
 
         if unpack_obj.string_index >= len(unpack_obj.string):
             raise FormatException(
                 "Type %s: not enough input, need %s, have %s" % (
-                    fmtdesc.fmtchar, count, len(data)),
+                    fmtdesc.fmtchar, n_bytes, len(data)),
                 fmtdesc.fmtchar)
 
         element = ord(unpack_obj.string[unpack_obj.string_index])
@@ -297,11 +297,9 @@ def unpack_hex_string(unpack_obj, fmtdesc, count, name,
         nibbles_digits = hex_digit[nibbles[0]], hex_digit[nibbles[1]]
         data.append('%s%s' % nibbles_digits)
 
-    _, repetitions, _ = unpack_obj.fmt_interpreted[0]
     to_append = "".join(data)
-    assert repetitions >= 0
-    to_append = to_append[:repetitions]
-    unpack_obj.result_append(name, count, 0, to_append, 0)
+    to_append = to_append[:count]
+    unpack_obj.result_append(name, n_bytes, 0, to_append, 0)
 
 
 def unpack_hex_string_low_nibble_first(unpack_obj, fmtdesc, count, name):
@@ -675,7 +673,7 @@ class Unpack(object):
                     rep = int(self.fmt[start:pos])
                 elif c == '*':
                     pos += 1
-                    rep = sys.maxint
+                    rep = -1
             start = pos
             while pos < len(self.fmt) and self.fmt[pos] != '/':
                 pos += 1
@@ -689,7 +687,7 @@ class Unpack(object):
         self.fmt_interpreted = self.interpret()
 
         for fmtdesc, repetitions, name in self.fmt_interpreted:
-            if repetitions == sys.maxint:
+            if repetitions < 0:
                 repetitions = len(self.string) - self.string_index
                 if fmtdesc.fmtchar in ('h', 'H'):
                     repetitions *= 2
