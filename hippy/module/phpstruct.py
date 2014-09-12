@@ -52,27 +52,23 @@ def table2desclist(table):
 def _pack_string(pack_obj, fmtdesc, count, pad):
     string = pack_obj.space.str_w(pack_obj.pop_arg())
     if count < 0:
-        for c in string:
-            pack_obj.result.append(c)
+        pack_obj.result.append(string)
     elif len(string) < count:
         pack_obj.result.append(string)
-        for _ in range(count - len(string)):
-            pack_obj.result.append(pad)
+        pack_obj.result.append_multiple_char(pad, count - len(string))
     else:
-        for c in string[:count]:
-            pack_obj.result.append(c)
+        pack_obj.result.append(string[:count])
 
 
 def pack_Z_nul_padded_string(pack_obj, fmtdesc, count):
     c = count - 1
     assert c >= 0
     string = pack_obj.space.str_w(pack_obj.pop_arg())[:c]
-    for c in string:
-        pack_obj.result.append(c)
+    pack_obj.result.append(string)
     pack_obj.result.append('\x00')
 
     if pack_obj.result.getlength() < count:
-        pack_obj.result.append('\x00' * (count - len(string) - 1))
+        pack_obj.result.append_multiple_char('\x00', count - len(string) - 1)
 
 
 def pack_nul_padded_string(pack_obj, fmtdesc, count):
@@ -140,6 +136,7 @@ def pack_hex_string_high_nibble_first(pack_obj, fmtdesc, count):
     _pack_hex_string(pack_obj, fmtdesc, count, 4)
 
 
+@jit.unroll_safe  # because count <= num_args
 def pack_int(pack_obj, fmtdesc, count):
     for _ in xrange(count):
         value = pack_obj.space.int_w(pack_obj.pop_arg())
@@ -158,6 +155,7 @@ def pack_int(pack_obj, fmtdesc, count):
                 value >>= 8
 
 
+@jit.unroll_safe  # because count <= num_args
 def pack_float(pack_obj, fmtdesc, count):
     for _ in xrange(count):
         value = pack_obj.space.float_w(pack_obj.pop_arg())
@@ -170,6 +168,7 @@ def pack_float(pack_obj, fmtdesc, count):
             value >>= 8
 
 
+@jit.unroll_safe  # because count <= num_args
 def pack_double(pack_obj, fmtdesc, count):
     for _ in xrange(count):
         value = pack_obj.space.float_w(pack_obj.pop_arg())
