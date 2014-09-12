@@ -4,6 +4,7 @@ from rpython.rlib import longlong2float
 from rpython.rlib.unroll import unrolling_iterable
 from rpython.rlib.rarithmetic import r_singlefloat, widen
 from rpython.rlib.rstring import StringBuilder
+from rpython.rlib import jit
 from rpython.rtyper.tool.rfficache import sizeof_c_type
 from rpython.rtyper.lltypesystem import lltype, rffi
 
@@ -586,6 +587,7 @@ class Pack(object):
         self.result = StringBuilder()
         self.result.append_slice(result_so_far, 0, new_len)
 
+    @jit.unroll_safe
     def interpret(self):
         results = []
         pos = 0
@@ -606,6 +608,7 @@ class Pack(object):
             results.append((self._get_fmtdesc(char), rep))
         return results
 
+    @jit.unroll_safe
     def build(self):
         self.fmt_interpreted = self.interpret()
         self.result = StringBuilder()
