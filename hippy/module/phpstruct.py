@@ -658,27 +658,33 @@ class Unpack(object):
         self.result.append(
             UnpackContainer(name, str_val, num_value))
 
+    @jit.unroll_safe  # assuming that the format string isn't too crazy
     def interpret(self):
         results = []
-        rep = 0
-        from rpython.rlib.rsre.rsre_re import finditer
-        itr = finditer('((\S)(\d+|\*)?((\/)|(([a-z]+)(\/)?))?)', self.fmt)
-        try:
-            while True:
-                _, char, repetitions, _, _, _, name, _ = itr.next().groups()
-                if char != '/':
-                    fmtdesc = self._get_fmtdect(char)
-                    if repetitions is None:
-                        rep = 1
-                    elif repetitions == '*':
-                        rep = sys.maxint
-                    else:
-                        rep = int(repetitions)
-                    results.append((fmtdesc, rep, name))
-        except StopIteration:
-            pass
+        pos = 0
+        while pos < len(self.fmt):
+            char = self.fmt[pos]
+            rep = 1
+            pos += 1
+            if pos < len(self.fmt):
+                c = self.fmt[pos]
+                if '0' <= c <= '9':
+                    start = pos
+                    while pos < len(self.fmt) and '0' <= self.fmt[pos] <= '9':
+                        pos += 1
+                    rep = int(self.fmt[start:pos])
+                elif c == '*':
+                    pos += 1
+                    rep = sys.maxint
+            start = pos
+            while pos < len(self.fmt) and self.fmt[pos] != '/':
+                pos += 1
+            name = self.fmt[start:pos]
+            pos += 1  # move past the '/'
+            results.append((self._get_fmtdect(char), rep, name))
         return results
 
+    @jit.unroll_safe  # assuming that the format string isn't too crazy
     def build(self):
         self.fmt_interpreted = self.interpret()
 
@@ -687,7 +693,7 @@ class Unpack(object):
                 repetitions = len(self.string) - self.string_index
                 if fmtdesc.fmtchar in ('h', 'H'):
                     repetitions *= 2
-            fmtdesc.unpack(self,  fmtdesc,  repetitions,  name)
+            fmtdesc.unpack(self, fmtdesc, repetitions, name)
         return self.result
 
 
@@ -707,7 +713,7 @@ def _unpack(space, formats, string):
     pairs = []
     for i, uc in enumerate(results):
         name = uc.name
-        if name is None:
+        if not name:
             w_key = space.newint(i + 1)
         else:
             w_key = space.newstr(name)
