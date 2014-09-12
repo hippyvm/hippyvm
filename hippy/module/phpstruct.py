@@ -575,12 +575,6 @@ class Pack(object):
         self.arg_index += 1
         return result
 
-    def _size(self, fmt_interpreted):
-        size = 0
-        for fmtdesc, repetitions in self.fmt_interpreted:
-            size += fmtdesc.size * repetitions
-        return size
-
     def _get_fmtdesc(self, char):
         for fmtdesc in unroll_fmttable:
             if char == fmtdesc.fmtchar:
@@ -594,27 +588,26 @@ class Pack(object):
 
     def interpret(self):
         results = []
-        rep = 0
-        from rpython.rlib.rsre.rsre_re import finditer
-        itr = finditer('((\S)(\d+|\*)?)', self.fmt)
-        try:
-            while True:
-                _, char, repetitions = itr.next().groups()
-                fmtdesc = self._get_fmtdesc(char)
-                if repetitions is None:
-                    rep = 1
-                elif repetitions == '*':
+        pos = 0
+        while pos < len(self.fmt):
+            char = self.fmt[pos]
+            rep = 1
+            pos += 1
+            if pos < len(self.fmt):
+                c = self.fmt[pos]
+                if '0' <= c <= '9':
+                    start = pos
+                    while pos < len(self.fmt) and '0' <= self.fmt[pos] <= '9':
+                        pos += 1
+                    rep = int(self.fmt[start:pos])
+                elif c == '*':
+                    pos += 1
                     rep = -1
-                else:
-                    rep = int(repetitions)
-                results.append((fmtdesc, rep))
-        except StopIteration:
-            pass
+            results.append((self._get_fmtdesc(char), rep))
         return results
 
     def build(self):
         self.fmt_interpreted = self.interpret()
-        self.size = self._size(self.fmt_interpreted)
         self.result = StringBuilder()
 
         for fmtdesc, repetitions in self.fmt_interpreted:
