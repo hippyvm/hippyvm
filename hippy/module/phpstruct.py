@@ -1,16 +1,12 @@
-import sys
-
 from rpython.rlib import longlong2float
 from rpython.rlib.unroll import unrolling_iterable
-from rpython.rlib.rarithmetic import r_singlefloat, widen
+from rpython.rlib.rarithmetic import r_singlefloat, widen, intmask
 from rpython.rlib.rstring import StringBuilder
 from rpython.rlib import jit
 from rpython.rtyper.tool.rfficache import sizeof_c_type
 from rpython.rtyper.lltypesystem import lltype, rffi
 
 from hippy.builtin import wrap, StringArg
-
-from rpython.rlib.rarithmetic import intmask
 
 
 float_buf = lltype.malloc(
@@ -209,10 +205,8 @@ def pack_nullfill_to_absolute_position(pack_obj, fmtdesc, count):
 # Unpack Methods
 
 def unpack_nul_padded_string(unpack_obj, fmtdesc, count, name):
-
     data = []
     for _ in xrange(count):
-
         if unpack_obj.string_index >= len(unpack_obj.string):
             raise FormatException(
                 "Type %s: not enough input, need %s, have %s" % (
@@ -225,10 +219,8 @@ def unpack_nul_padded_string(unpack_obj, fmtdesc, count, name):
 
 
 def unpack_space_padded_string(unpack_obj, fmtdesc, count, name):
-
     data = []
     for _ in xrange(count):
-
         if unpack_obj.string_index >= len(unpack_obj.string):
             raise FormatException(
                 "Type %s: not enough input, need %s, have %s" % (
@@ -251,7 +243,6 @@ def unpack_space_padded_string(unpack_obj, fmtdesc, count, name):
 def unpack_nul_padded_string_2(unpack_obj, fmtdesc, count, name):
     data = []
     for _ in xrange(count):
-
         if unpack_obj.string_index >= len(unpack_obj.string):
             raise FormatException(
                 "Type %s: not enough input, need %s, have %s" % (
@@ -311,15 +302,14 @@ def unpack_hex_string_high_nibble_first(unpack_obj, fmtdesc, count, name):
     unpack_hex_string(unpack_obj, fmtdesc, count, name, True)
 
 
+@jit.unroll_safe
 def unpack_int(unpack_obj, fmtdesc, count, name):
     for pos in xrange(count):
         a = unpack_obj.string_index
-        b = unpack_obj.string_index+fmtdesc.size
+        b = unpack_obj.string_index + fmtdesc.size
         assert a >= 0
         assert b >= 0
-        data = unpack_obj.string[
-            a:b
-        ]
+        data = unpack_obj.string[a:b]
 
         if not len(data) == fmtdesc.size:
             raise FormatException(
@@ -335,29 +325,30 @@ def unpack_int(unpack_obj, fmtdesc, count, name):
                 byte = ord(data[i])
                 if fmtdesc.signed and i == 0 and byte > 128:
                     byte -= 256
-                value |= byte << (fmtdesc.size-1-i) * 8
+                value |= byte << (fmtdesc.size - 1 - i) * 8
         else:
             for i in range(fmtdesc.size):
                 byte = ord(data[i])
                 if fmtdesc.signed and i == fmtdesc.size - 1 and byte > 128:
                     byte -= 256
-                value |= byte << i*8
-        unpack_obj.result_append(name, count, pos+1, None, intmask(value))
+                value |= byte << i * 8
+        unpack_obj.result_append(name, count, pos + 1, None, intmask(value))
 
 
-def unpack_signed_char(unpack_obj, fmtdesc, count):
-    pass
+def _read_single(data):
+    p = rffi.cast(rffi.CCHARP, float_buf)
+    for i, element in enumerate(data):
+        p[i] = element
+    return float_buf[0]
 
-
+@jit.unroll_safe
 def unpack_float(unpack_obj, fmtdesc, count, name):
     for pos in xrange(count):
         a = unpack_obj.string_index
-        b = unpack_obj.string_index+fmtdesc.size
+        b = unpack_obj.string_index + fmtdesc.size
         assert a >= 0
         assert b >= 0
-        data = unpack_obj.string[
-            a:b
-        ]
+        data = unpack_obj.string[a:b]
 
         if not len(data) == fmtdesc.size:
             raise FormatException(
@@ -366,42 +357,33 @@ def unpack_float(unpack_obj, fmtdesc, count, name):
                 fmtdesc.fmtchar)
 
         unpack_obj.string_index += fmtdesc.size
-
-        p = rffi.cast(rffi.CCHARP, float_buf)
-        assert fmtdesc.size >= 0
-        for i, element in enumerate(data[:fmtdesc.size]):
-            p[i] = element
-
-        floatval = float_buf[0]
-        unpack_obj.result_append(name, count, pos+1, None, float(floatval))
+        single = _read_single(data)
+        unpack_obj.result_append(name, count, pos + 1, None, float(single))
 
 
+def _read_double(data):
+    p = rffi.cast(rffi.CCHARP, double_buf)
+    for i, element in enumerate(data):
+        p[i] = element
+    return double_buf[0]
+
+@jit.unroll_safe
 def unpack_double(unpack_obj, fmtdesc, count, name):
     for pos in xrange(count):
-
         a = unpack_obj.string_index
-        b = unpack_obj.string_index+fmtdesc.size
+        b = unpack_obj.string_index + fmtdesc.size
         assert a >= 0
         assert b >= 0
-        data = unpack_obj.string[
-            a:b
-        ]
+        data = unpack_obj.string[a:b]
 
         if not len(data) == fmtdesc.size:
             raise FormatException(
                 "Type %s: not enough input, need %s, have %s" % (
                     fmtdesc.fmtchar, count, len(data)),
                 fmtdesc.fmtchar)
-
         unpack_obj.string_index += fmtdesc.size
-
-        p = rffi.cast(rffi.CCHARP, double_buf)
-        assert fmtdesc.size >= 0
-        for i, element in enumerate(data[:fmtdesc.size]):
-            p[i] = element
-
-        value = double_buf[0]
-        unpack_obj.result_append(name, count, pos+1, None, value)
+        value = _read_double(data)
+        unpack_obj.result_append(name, count, pos + 1, None, value)
 
 
 def unpack_nul_byte(unpack_obj, fmtdesc, count, name):
@@ -654,7 +636,6 @@ class Unpack(object):
             self.result.append((w_key, space.wrap(str_val)))
         else:
             self.result.append((w_key, space.wrap(num_value)))
-
 
     @jit.unroll_safe  # assuming that the format string isn't too crazy
     def interpret(self):
