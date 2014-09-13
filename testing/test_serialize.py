@@ -236,6 +236,16 @@ echo serialize($c);
         assert output[5].dump() == "NULL"
         assert output[6].dump() == "array(1, 2, 'xyz')"
 
+    def test_float_precision(self):
+        expected_pickle = 'd:0.00020000000000000001;'
+        output = self.run('''
+        echo serialize(0.0002);
+        $pickle = '%s';
+        echo unserialize($pickle);
+        ''' % expected_pickle)
+        assert output[0] == self.space.newstr(expected_pickle)
+        assert output[1] == self.space.newfloat(0.0002)
+
     def test_unserialize_extra_data(self):
         output = self.run("$x = 'i:5;FOOBAR!';\necho unserialize($x);")
         assert output[0].dump() == "5"

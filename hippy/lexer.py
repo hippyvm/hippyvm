@@ -115,7 +115,6 @@ PRECEDENCES = [
 ]
 
 
-
 def group(*choices):
     return '(' + '|'.join(choices) + ')'
 
@@ -195,6 +194,7 @@ _KEYWORDS = (
     ("__NAMESPACE__", 'T_NS_C'),
     ("__DIR__", 'T_DIR')
 )
+
 
 def normalize_keywords(keywords):
     ret = []
