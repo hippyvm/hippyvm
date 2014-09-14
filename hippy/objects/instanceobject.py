@@ -438,11 +438,6 @@ class W_InstanceObject(W_Object):
         return self._create_iter(space, contextclass, byref=True)
 
     def _create_iter(self, space, contextclass, byref):
-        # not exactly correct, because it computes the list of returned
-        # attributes at once.  We might see differences if the object
-        # is modified during iteration.  "But well" for now.
-        from hippy.objects.arrayiter import W_FixedIterator
-
         klass = self.getclass()
         if klass.is_iterator:
             return InstanceIterator(space, self)
@@ -457,6 +452,15 @@ class W_InstanceObject(W_Object):
                     "traversable or implement interface Iterator" %
                     klass.name)]))
             return w_iterator.create_iter(space)
+        else:
+            return self._create_fixed_iter(space, contextclass, byref)
+
+    def _create_fixed_iter(self, space, contextclass, byref):
+        # not exactly correct, because it computes the list of returned
+        # attributes at once.  We might see differences if the object
+        # is modified during iteration.  "But well" for now.
+        from hippy.objects.arrayiter import W_FixedIterator
+        klass = self.getclass()
         items_w = []
         attrs = self.map.get_all_attrs()
         for attr in attrs:

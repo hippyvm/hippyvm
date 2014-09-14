@@ -160,8 +160,7 @@ class RDictArrayIteratorRef(BaseIterator):
 class W_FixedIterator(BaseIterator):
     def __init__(self, items_w):
         self.items_w = items_w
-        self.index = 0
-        self.finished = len(items_w) == 0
+        self.rewind(None)
 
     def next(self, space):
         index = self.index
@@ -176,3 +175,15 @@ class W_FixedIterator(BaseIterator):
         self.index = index + 1
         self.finished = self.index == len(self.items_w)
         return space.newstr(key), w_value
+
+    def rewind(self, interp):
+        self.index = 0
+        self.finished = len(self.items_w) == 0
+
+    def current(self, interp):
+        _, w_value = self.items_w[self.index]
+        return w_value
+
+    def key(self, interp):
+        key, _ = self.items_w[self.index]
+        return interp.space.newstr(key)

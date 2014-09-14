@@ -2732,7 +2732,7 @@ class TestKlass(BaseTestInterpreter):
             "myIterator::valid",
         ]
 
-    def test_iterator_aggreagate(self):
+    def test_iterator_aggregate(self):
         output = self.run('''
 
             class SubKlass {
@@ -2773,7 +2773,7 @@ class TestKlass(BaseTestInterpreter):
         assert self.space.int_w(output[1]) == 2
         assert self.space.int_w(output[2]) == 3
 
-    def test_iterator_aggreagate_object(self):
+    def test_iterator_aggregate_object(self):
         output = self.run('''
 
             class Klass implements IteratorAggregate {
@@ -2804,7 +2804,7 @@ class TestKlass(BaseTestInterpreter):
         assert self.space.str_w(output[2]) == 'property3 -> Public property three'
         assert self.space.str_w(output[3]) == 'property4 -> last property'
 
-    def test_iterator_aggreagate_error(self):
+    def test_iterator_aggregate_error(self):
         with self.warnings(['Fatal error: Class X cannot implement both '
                             'Iterator and IteratorAggregate at the same time']):
             self.run('''

@@ -77,7 +77,10 @@ def __construct(interp, this, w_arr=None):
     this.w_arr = w_arr
     while isinstance(w_arr, W_SplArray):
         w_arr = w_arr.w_arr
-    this._iter = w_arr.create_iter(interp.space)
+    if isinstance(w_arr, W_InstanceObject):
+        this._iter = w_arr._create_fixed_iter(interp.space, None, False)
+    else:
+        this._iter = w_arr.create_iter(interp.space)
 
 
 @k_ArrayObject.def_method(['interp', 'this', W_Root])
