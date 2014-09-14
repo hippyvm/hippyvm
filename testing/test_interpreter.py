@@ -1,7 +1,6 @@
 import py
 import os
 import sys
-import cStringIO
 import pytest
 from collections import OrderedDict
 
@@ -9,7 +8,7 @@ from collections import OrderedDict
 import hippy.hippyoption
 hippy.hippyoption.enable_all_optional_extensions()
 
-from hippy.objspace import ObjSpace, w_True, w_False
+from hippy.objspace import getspace, w_True, w_False
 from hippy.objects.intobject import W_IntObject
 from hippy.objects.floatobject import W_FloatObject
 from hippy.objects.arrayobject import W_ListArrayObject, W_RDictArrayObject
@@ -37,15 +36,21 @@ class BaseTestInterpreter(object):
     def warnings(self, expected_warnings=None):
         return self.engine.warnings(expected_warnings)
 
-    def setup_method(self, method):
-        self.space = ObjSpace()
+    def init_space(self):
+        self.space = getspace()
         if option.runappdirect:
             self.engine = self.DirectRunner(self.space)
         else:
             self.engine = self.Engine(self.space)
             self.engine.Interpreter = self.interpreter
 
-    def teardown_method(self, method):
+
+    @py.test.yield_fixture(autouse=True)
+    def setup_interp(self):
+        self.env_copy = os.environ.copy()
+        self.init_space()
+        yield
+        os.environ = self.env_copy
         self.engine = None
         self.space = None
 
@@ -98,7 +103,7 @@ class BaseTestInterpreter(object):
 
     def is_object(self, w_obj, expected_clsname, properties):
         clsname = w_obj.klass.name
-        d = w_obj.get_instance_attrs()
+        d = w_obj.get_instance_attrs(self.interp)
         assert clsname == expected_clsname, "bad class name\n%s" % output
         for (key, w_value), (expected_name, w_expected_value) in \
                 zip(d.iteritems(), properties):
@@ -4056,6 +4061,23 @@ class TestInterpreter(_TestInterpreter):
             '\x00DB\x00type-mysql', '\x00DB\x00conn-', '\x00DB\x00user-',
             '\x00DB\x00pass-']
 
+    def test_constant_in_namespace(self):
+        output = self.run("""
+        namespace foo\\bar;
+        $x = falsE;
+        echo $x;
+        """)
+        assert output == [self.space.w_False]
+
+    def test_constant_in_classdef_in_namespace(self):
+        output = self.run("""
+        namespace foo\\bar;
+        class A {
+            static $x = falsE;
+        }
+        echo A::$x;
+        """)
+        assert output == [self.space.w_False]
 
     @skip_on_travis
     def test_backtick_expr(self):

@@ -1,7 +1,13 @@
 
-import py, re, tempfile, os
+import py, re, tempfile, os, sys
+import pexpect
 from hippy.main import main
 from hippy.constants import E_ALL, E_NOTICE
+from testing.test_interpreter import BaseTestInterpreter
+
+SCRIPT_PATH = os.path.abspath(__file__)
+SCRIPT_DIR = os.path.dirname(SCRIPT_PATH)
+HIPPY_MAIN = os.path.join(SCRIPT_DIR, "..", "hippy", "main.py")
 
 class TestMain(object):
     def setup_method(self, meth):
@@ -133,13 +139,13 @@ Stack trace:
         output = self.run('''<?
         header("xyz")
         ?>''', capfd, cgi=True)
-        assert output == "\r\nContent-Type: text/html\r\nxyz\r\n\r\n"
+        assert output == "Content-Type: text/html\r\nxyz\r\n\r\n"
 
     def test_headers_replace(self, capfd):
         output = self.run('''<?
         header("Content-Type: text/css", true);
         ?>''', capfd, cgi=True)
-        assert output == "\r\nContent-Type: text/css\r\n\r\n"
+        assert output == "Content-Type: text/css\r\n\r\n"
 
     def test_hippy_ini_read(self, capfd):
         tmpdir = tempfile.mkdtemp()
@@ -156,3 +162,22 @@ Stack trace:
             assert output == str(E_ALL & ~E_NOTICE)
         finally:
             os.chdir(d)
+
+class TestStdin(BaseTestInterpreter):
+    """Tests that spawn hippy as a new process."""
+
+    def test_code_from_stdin(self):
+        child = pexpect.spawn(sys.executable, [HIPPY_MAIN], env=os.environ)
+        child.sendline("<?php for ($i=0; $i < 3; $i++) {echo \"e$i\";} ?>")
+        child.sendeof()
+        child.expect("e0e1e2")
+        child.expect(pexpect.EOF)
+
+    def test_code_from_file(self, tmpdir):
+        f = tmpdir.join("file.php")
+        f.write("<?php for ($i=0; $i < 3; $i++) {echo \"e$i\";} ?>")
+
+        child = pexpect.spawn(sys.executable,
+                [HIPPY_MAIN, f.strpath],env=os.environ)
+        child.expect("e0e1e2")
+        child.expect(pexpect.EOF)

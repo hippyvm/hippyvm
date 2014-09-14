@@ -45,8 +45,9 @@ import os
 import inspect
 from collections import OrderedDict
 from rpython.rlib import jit
+from rpython.rlib.objectmodel import newlist_hint
 from hippy.error import (InterpreterError, ExplicitExitException,
-                         ConvertError, FatalError, PHPException,
+                         ConvertError, FatalError, Throw,
                          VisibilityError)
 from hippy.objects.base import W_Root
 from hippy.objects.reference import W_Reference
@@ -68,16 +69,20 @@ def _tuple_literal(names):
     else:
         return '()'
 
+
 def handle_as_warning(interp, message):
     raise WrongParameters(message)
 
+
 def handle_as_exception(interp, message):
     from hippy.builtin_klass import k_Exception
-    raise PHPException(k_Exception.call_args(
+    raise Throw(k_Exception.call_args(
         interp, [interp.space.wrap(message)]))
+
 
 def handle_as_void(interp, message):
     raise ExitSilently()
+
 
 def argument_not(interp, _type, funcname, arg_num, given_tp, handler):
     message = "%s() expects parameter %d to be %s, %s given" % \
@@ -628,45 +633,44 @@ class BuiltinFunctionBuilder(object):
 
         source = self.make_source(check_num_args)
         d = {
-             'fname': self.funcname,
+            'fname': self.funcname,
+            'argument_not': argument_not,
+            'arguments_exactly': arguments_exactly,
+            'error_handler': error_handler,
 
-             'argument_not': argument_not,
-             'arguments_exactly': arguments_exactly,
-             'error_handler': error_handler,
+            'warn_exactly': warn_exactly,
+            'warn_not_array': warn_not_array,
 
-             'warn_exactly': warn_exactly,
-             'warn_not_array': warn_not_array,
+            'warn_not_file_resource': warn_not_file_resource,
+            'warn_not_valid_file_resource': warn_not_valid_file_resource,
 
-             'warn_not_file_resource': warn_not_file_resource,
-             'warn_not_valid_file_resource': warn_not_valid_file_resource,
+            'warn_not_resource': warn_not_resource,
+            'warn_not_valid_resource': warn_not_valid_resource,
 
-             'warn_not_resource': warn_not_resource,
-             'warn_not_valid_resource': warn_not_valid_resource,
+            'warn_not_stream_context': warn_not_stream_context,
+            'warn_not_valid_stream_context': warn_not_valid_stream_context,
 
-             'warn_not_stream_context': warn_not_stream_context,
-             'warn_not_valid_stream_context': warn_not_valid_stream_context,
+            'warn_not_mysql_link': warn_not_mysql_link,
+            'warn_not_valid_mysql_link': warn_not_valid_mysql_link,
 
-             'warn_not_mysql_link': warn_not_mysql_link,
-             'warn_not_valid_mysql_link': warn_not_valid_mysql_link,
+            'warn_not_mysql_result': warn_not_mysql_result,
+            'warn_not_valid_mysql_result': warn_not_valid_mysql_result,
 
-             'warn_not_mysql_result': warn_not_mysql_result,
-             'warn_not_valid_mysql_result': warn_not_valid_mysql_result,
-
-             'warn_not': warn_not,
-             'warn_could_not_convert_to_str': warn_could_not_convert_to_str,
-             'warn_at_least': warn_at_least,
-             'warn_at_most': warn_at_most,
-
-             'check_reference': check_reference,
-             'unroll_safe': jit.unroll_safe,
-             'W_FileResource': W_FileResource,
-             'W_DirResource': W_DirResource,
-             'W_ArrayObject': W_ArrayObject,
-             'W_InstanceObject': W_InstanceObject,
-             'FatalError': FatalError,
-             'ConvertError': ConvertError,
-             'ExitSilently': ExitSilently,
-            }
+            'warn_not': warn_not,
+            'warn_could_not_convert_to_str': warn_could_not_convert_to_str,
+            'warn_at_least': warn_at_least,
+            'warn_at_most': warn_at_most,
+            'warn_not_mcrypt_res': warn_not_mcrypt_res,
+            'check_reference': check_reference,
+            'unroll_safe': jit.unroll_safe,
+            'W_FileResource': W_FileResource,
+            'W_DirResource': W_DirResource,
+            'W_ArrayObject': W_ArrayObject,
+            'W_InstanceObject': W_InstanceObject,
+            'FatalError': FatalError,
+            'ConvertError': ConvertError,
+            'ExitSilently': ExitSilently,
+        }
 
         from hippy.hippyoption import is_optional_extension_enabled
         if is_optional_extension_enabled("mysql"):
@@ -820,6 +824,11 @@ def warn_not_valid_mysql_result(space, funcname, arg_num, res_id, given_tp):
                           (funcname, res_id), w_False)
 
 
+def warn_not_mcrypt_res(space, funcname, arg_num, res_id, given_tp):
+    raise WrongParameters("%s(): %d is not a valid MCrypt resource" %
+                          (funcname, res_id), w_False)
+
+
 def warn_could_not_convert_to_str(space, w_obj):
     klass = w_obj.getclass(space).name
     space.ec.catchable_fatal("Object of class %s could not be "
@@ -935,19 +944,24 @@ def wrap(signature, name=None, aliases=(), error=None,
         return res
     return inner
 
+def new_function(ll_func, signature, fname, error, error_handler,
+                check_num_args=True):
+    sig = BuiltinSignature(signature)
+    runner = make_runner(signature, ll_func, fname, error,
+                         error_handler, check_num_args)
+    if sig.has_references:
+        res = BuiltinFunctionWithReferences(sig, fname, runner)
+    else:
+        res = BuiltinFunction(fname, runner)
+    return res
+
 
 def wrap_method(signature, name, error=None, flags=0,
                 error_handler=handle_as_warning, check_num_args=True):
+    assert '::' in name   # should be "Class::method"
     def inner(ll_func):
-        sig = BuiltinSignature(signature)
-        assert '::' in name   # should be "Class::method"
-        fname = name
-        runner = make_runner(signature, ll_func, fname, error,
-                             error_handler, check_num_args)
-        if sig.has_references:
-            res = BuiltinFunctionWithReferences(sig, fname, runner)
-        else:
-            res = BuiltinFunction(fname, runner)
+        res = new_function(ll_func, signature, name, error,
+                         error_handler, check_num_args)
         res.flags = flags
         return res
     return inner
@@ -977,9 +991,7 @@ def microtime(space,   is_float=False):
 
 @wrap(['interp', str])
 def function_exists(interp, funcname):
-    try:
-        interp.lookup_function(funcname)
-    except KeyError:
+    if interp.lookup_function(funcname) is None:
         return interp.space.w_False
     return interp.space.w_True
 
@@ -1056,14 +1068,22 @@ def is_subclass_of(space, w_obj, classname, allow_string=False):
                  must_be_different=True)
 
 
-@wrap(['interp', W_Root, str])
-def method_exists(interp, w_obj, method_name):
+def _get_class(interp, w_obj):
+    '''Returns a class object starting from either a string or object.'''
     klass = None
     space = interp.space
     if w_obj.tp == space.tp_str:
         klass = interp._lookup_class(space.str_w(w_obj))
     elif w_obj.tp == space.tp_object:
         klass = space.getclass(w_obj)
+
+    return klass
+
+
+@wrap(['interp', W_Root, str])
+def method_exists(interp, w_obj, method_name):
+    klass = _get_class(interp, w_obj)
+    space = interp.space
     if not klass:
         return space.w_False
 
@@ -1093,6 +1113,23 @@ def get_class(space, w_object=None):
         klass = space.getclass(w_object)
     #
     return space.newstr(klass.name)
+
+
+@wrap(['interp', W_Root])
+def get_class_methods(interp, w_obj):
+    '''Gets the class methods' names.'''
+    klass = _get_class(interp, w_obj)
+    space = interp.space
+    if not klass:
+        return space.w_Null
+
+    contextclass = interp.get_contextclass()
+    methods = klass.get_methods(contextclass)
+    class_methods = newlist_hint(len(klass.methods))
+    for method in methods:
+        class_methods.append(space.newstr(method))
+
+    return space.new_array_from_list(class_methods)
 
 
 @wrap(['space'])

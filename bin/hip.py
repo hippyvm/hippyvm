@@ -52,7 +52,7 @@ def repl():
         if not line.lstrip() or line.lstrip().startswith('//'):
             continue
         try:
-            pc = parse(space, line, 0)
+            pc = parse(space, line, 0, '<input>')
             bc = compile_ast("<input>", line, pc, space, print_exprs=True)
         except Exception, e:
             print >> sys.stderr, '%s: %s' % (e.__class__.__name__, e)

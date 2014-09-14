@@ -1,11 +1,12 @@
 import sys
 import operator
+import signal
 from collections import OrderedDict
 from rpython.rlib.objectmodel import specialize, we_are_translated
 from rpython.rlib.rarithmetic import intmask
 from rpython.rlib.rstring import StringBuilder
 from rpython.rlib.signature import signature, types
-from rpython.rlib import jit
+from rpython.rlib import jit, rsignal
 from hippy.consts import BINOP_LIST, BINOP_COMPARISON_LIST
 from hippy.error import VisibilityError, InvalidCallback
 from hippy.objects.reference import W_Reference
@@ -53,6 +54,18 @@ def my_cmp(one, two, ignore_order=False):
 class ExecutionContext(object):
     def __init__(self, space):
         self.interpreter = None
+        self.initialized = False
+
+    def init_signals(self):
+        if self.initialized:
+            return
+        self.initialized = True
+        rsignal.pypysig_setflag(signal.SIGINT)
+
+    def clear_signals(self):
+        rsignal.pypysig_getaddr_occurred().c_value = 0
+        rsignal.pypysig_default(signal.SIGINT)
+        self.initialized = False
 
     def notice(self, msg):
         self.interpreter.notice(msg)
@@ -100,12 +113,13 @@ class ObjSpace(object):
     (tp_int, tp_float, tp_str, tp_array, tp_null, tp_bool,
      tp_object, tp_file_res, tp_dir_res, tp_stream_context,
      tp_mysql_link, tp_mysql_result,
-     tp_constant, tp_delayed_class_const) = range(14)
+     tp_constant, tp_delayed_class_const, tp_xmlparser_res, tp_mcrypt_res) = range(16)
 
     # in the same order as the types above
     TYPENAMES = ["integer", "double", "string", "array", "NULL", "boolean",
                  "object", "resource", "resource", "resource",
-                 "resource", "resource", "constant", "delayed constant"]
+                 "resource", "resource", "constant", "delayed constant",
+                 "resource", "resource"]
 
     w_True = w_True
     w_False = w_False
@@ -368,16 +382,9 @@ class ObjSpace(object):
     def iter(self, w_arr):
         return ObjSpaceWithIter(self, w_arr)
 
-    def create_iter(self, w_obj, contextclass=None):
-        w_obj = w_obj.deref()
-
-        if isinstance(w_obj, W_InstanceObject):
-            if w_obj.klass.is_subclass_of_class_or_intf_name('IteratorAggregate'):
-                w_method = self.ec.interpreter.getmeth(w_obj, 'getIterator')
-                w_obj = w_method.call_args(self.ec.interpreter, [])
-                return w_obj.create_iter(self)
-
-        return w_obj.create_iter(self, contextclass)
+    def create_iter(self, w_arr, contextclass=None):
+        w_arr = w_arr.deref()
+        return w_arr.create_iter(self, contextclass)
 
     def create_iter_ref(self, r_array, contextclass=None):
         if not isinstance(r_array, W_Reference):
@@ -632,8 +639,8 @@ class ObjSpace(object):
         elif strict or w_left.getclass() is not w_right.getclass():
             return 1
 
-        left = w_left.get_instance_attrs()
-        right = w_right.get_instance_attrs()
+        left = w_left.get_instance_attrs(self.ec.interpreter)
+        right = w_right.get_instance_attrs(self.ec.interpreter)
         if len(left) - len(right) < 0:
             return -1
         if len(left) - len(right) > 0:
@@ -800,11 +807,11 @@ class ObjSpace(object):
             clsname = name[:pos]
             methname = name[pos + 2:]
             return self._get_callback_from_class(clsname, methname)
-        try:
-            return self.ec.interpreter.lookup_function(name)
-        except KeyError:
-            raise InvalidCallback("function '%s' not found or invalid "
-                                    "function name" % (name))
+        func = self.ec.interpreter.lookup_function(name)
+        if func is not None:
+            return func
+        raise InvalidCallback("function '%s' not found or invalid "
+                              "function name" % (name))
 
     def _get_callback_from_class(self, clsname, methname):
         interp = self.ec.interpreter
@@ -951,6 +958,14 @@ if is_optional_extension_enabled("mysql"):
     from ext_module.mysql.result_resource import W_MysqlResultResource
     W_MysqlLinkResource.tp = ObjSpace.tp_mysql_link
     W_MysqlResultResource.tp = ObjSpace.tp_mysql_result
+
+if is_optional_extension_enabled("xml"):
+    from ext_module.xml.xmlparser import XMLParserResource
+    XMLParserResource.tp = ObjSpace.tp_xmlparser_res
+
+if is_optional_extension_enabled("mcrypt"):
+    from ext_module.mcrypt.mcrypt_resource import W_McryptResource
+    W_McryptResource.tp = ObjSpace.tp_mcrypt_res
 
 W_Constant.tp = ObjSpace.tp_constant
 DelayedClassConstant.tp = ObjSpace.tp_delayed_class_const

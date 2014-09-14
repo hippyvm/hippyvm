@@ -301,16 +301,23 @@ class TestSplFileInfo(BaseTestInterpreter):
         assert output[1] == self.space.w_False
 
     def test_is_executable(self):
+        from distutils.spawn import find_executable
+        sh_exec_path = find_executable("sh")
+        sh_dir_path = os.path.dirname(sh_exec_path)
+
         output = self.run('''
-        $info = new SplFileInfo('/usr/bin/php');
+        // sh should be executable.
+        $info = new SplFileInfo('%s');
         echo $info->isExecutable();
 
-        $info = new SplFileInfo('/usr/bin');
+        // And the dir it is in.
+        $info = new SplFileInfo('%s');
         echo $info->isExecutable();
 
-        $info = new SplFileInfo('foo');
+        // check nonexistant path is not executable.
+        $info = new SplFileInfo('/.non/exist/ever');
         echo $info->isExecutable();
-        ''')
+        ''' % (sh_exec_path, sh_dir_path))
         assert output[0] == self.space.w_True
         assert output[1] == self.space.w_True
         assert output[2] == self.space.w_False
@@ -1161,12 +1168,10 @@ class TestRecursiveDirectoryIterator(BaseTestInterpreter):
         assert len(output) == 3
         assert output[0] == output[2]
 
-    def test_has_children(self):
-        tempdir = tempfile.mkdtemp()
-        testdir = os.path.join(tempdir, 'testdir')
-        if not os.path.exists(testdir):
-            os.makedirs(testdir)
-        f = py.path.local(tempdir).join('foo.txt')
+    def test_has_children(self, tmpdir):
+        testdir = tmpdir / 'testdir'
+        testdir.mkdir()
+        f = tmpdir / 'foo.txt'
         f.write('Test file')
         output = self.run('''
         $dir = new recursivedirectoryiterator('%s');
@@ -1176,7 +1181,7 @@ class TestRecursiveDirectoryIterator(BaseTestInterpreter):
             }
         }
         echo $dir->hasChildren();
-        ''' % tempdir)
+        ''' % tmpdir)
         assert len(output) == 2
         assert self.space.str_w(output[0]) == 'testdir'
         assert output[1] == self.space.w_False
@@ -1211,6 +1216,40 @@ class TestRecursiveDirectoryIterator(BaseTestInterpreter):
         assert self.space.str_w(output[2]) == 'RecursiveDirectoryIterator'
         assert self.space.str_w(output[3]) == tempdir + '/testdir/.'
 
+    def test_FilterIterator(self):
+        output = self.run('''
+        class OddIterator extends FilterIterator {
+            public function accept() {
+                return $this->current() % 2 == 1;
+            }
+        }
+        $it = new OddIterator(new ArrayIterator(range(0, 3)));
+        foreach($it as $n)
+            echo $n;
+        ''')
+        assert map(self.space.int_w, output) == [1, 3]
+
+    def test_FilterIterator_doesnt_read_invalid_data(self, tmpdir):
+        testdir = tmpdir / 'testdir'
+        testdir.mkdir()
+        f = tmpdir / 'foo.txt'
+        f.write('Test file')
+        output = self.run('''
+        class MyFilter extends FilterIterator {
+            public function accept() {
+                $current = $this->getInnerIterator()->current();
+                $filename = $current->getFilename();
+                return $filename[0] != '.';
+            }
+        }
+        $it = new MyFilter(new RecursiveIteratorIterator(
+                new recursivedirectoryiterator('%s')));
+        foreach ($it as $fileinfo) {
+            echo $fileinfo->getFilename();
+        }
+        ''' % tmpdir)
+        assert len(output) == 1
+        assert self.space.str_w(output[0]) == 'foo.txt'
 
 class TestArrayIterator(BaseTestInterpreter):
 

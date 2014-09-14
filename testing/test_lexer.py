@@ -181,6 +181,14 @@ class TestLexer(object):
             ('T_END_HEREDOC', 'X', 3),
             (';', ';', 3)]
 
+    def test_heredoc_with_quoted_dollar(self):
+        r = self.lex_full("<<<X\n\"$\"\nX;\n")
+        assert r == [
+            ('T_START_HEREDOC', '<<<X\n', 0),
+            ('T_ENCAPSED_AND_WHITESPACE', '"$"', 1),
+            ('T_END_HEREDOC', 'X', 2),
+            (';', ';', 2)]
+
     def test_heredoc_error(self):
         with pytest.raises(LexerError) as excinfo:
             self.lex("<<< HERE\n sadsadasdas\n")

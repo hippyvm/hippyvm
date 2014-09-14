@@ -2,7 +2,7 @@ import sys, struct
 
 from rply.token import BaseBox
 from rply import ParsingError
-from rpython.rlib import rpath
+from hippy import rpath
 from rpython.rlib.objectmodel import we_are_translated
 from hippy import consts
 from hippy.error import InterpreterError
@@ -969,7 +969,7 @@ class InitializedVariable(Node):
 
 
 class PropertyDecl(Node):
-    def __init__(self, name, expr, access_flags=0, lineno=0):
+    def __init__(self, name, expr, access_flags=consts.ACC_PUBLIC, lineno=0):
         self.name = name
         self.expr = expr
         self.lineno = lineno
@@ -1937,16 +1937,17 @@ class NamedConstant(Node):
         ctx.emit(consts.LOAD_NAMED_CONSTANT, ctx.create_name(name))
 
     def wrap(self, ctx, space):
+        name = self.name.as_unqualified()
+        if name is not None:
+            name_lower = name.lower()
+            if name_lower == 'null':
+                return space.w_Null
+            elif name_lower == 'true':
+                return space.w_True
+            elif name_lower == 'false':
+                return space.w_False
         name = self.name.get_qualified_name(ctx)
-        name_lower = name.lower()
-        if name_lower == 'null':
-            return space.w_Null
-        elif name_lower == 'true':
-            return space.w_True
-        elif name_lower == 'false':
-            return space.w_False
-        else:
-            return W_Constant(name)
+        return W_Constant(name)
 
 
 class MagicConstant(Node):

@@ -1,12 +1,12 @@
 import os
+from collections import OrderedDict
+from rpython.rlib.rsocket import (
+    RSocket, SOCK_DGRAM, SOCK_STREAM, INETAddress, SocketTimeout, CSocketError)
+from rpython.rlib.rstring import StringBuilder
+from rpython.rlib.objectmodel import enforceargs
+
 from hippy.objects.resources import W_Resource
 from hippy.objects.resources.file_resource import W_FileResource
-from rpython.rlib.rsocket import RSocket, SOCK_DGRAM, SOCK_STREAM
-from rpython.rlib.rsocket import INETAddress
-from rpython.rlib.rsocket import SocketTimeout
-from rpython.rlib.rsocket import CSocketError
-from collections import OrderedDict
-from rpython.rlib.rstring import StringBuilder
 
 
 CLOSE, OPEN, NONE = range(3)
@@ -50,6 +50,7 @@ class W_SocketResource(W_FileResource):
         else:
             self.socket = RSocket(type=type)
             self.addr = INETAddress(self.hostname, self.port)
+        self.space.ec.interpreter.register_fd(self)
 
     def settimeout(self, timeout):
         self.socket.settimeout(timeout)
@@ -80,10 +81,12 @@ class W_SocketResource(W_FileResource):
         try:
             self.socket.close()
             self.state = CLOSE
+            self.space.ec.interpreter.unregister_fd(self)
             return True
         except IOError:
             return False
 
+    @enforceargs(None, str, None)
     def do_filter(self, data, direction):
         from hippy.module.standard.strings.funcs import _str_rot13
         from hippy.module.standard.strings.funcs import _chunk_split
@@ -128,11 +131,13 @@ class W_SocketResource(W_FileResource):
         except (SocketTimeout, CSocketError):
             self.timed_out = True
             return ""
+        assert data is not None
         data = self.do_filter(data, READ)
         if len(data) < size:
             self.eof = True
         return data
 
+    @enforceargs(None, str, int)
     def write(self, data, length):
         if length <= 0:
             return 0
@@ -142,6 +147,7 @@ class W_SocketResource(W_FileResource):
         self.cur_line_no += towrite.count(os.linesep)
         return min(length, len(data))
 
+    @enforceargs(None, str)
     def writeall(self, data):
         towrite = self.do_filter(data, WRITE)
         assert towrite is not None

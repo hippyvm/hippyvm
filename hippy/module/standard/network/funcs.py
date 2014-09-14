@@ -8,7 +8,7 @@ from rpython.rlib import rsocket
 from rpython.rlib.rstring import StringBuilder
 from hippy.module.date.funcs import _strftime
 from hippy.objects.resources.socket_resource import W_SocketResource
-from hippy.module.url import urlsplit
+from hippy.module.url import urlsplit, _rawurlencode
 
 
 def checkdnsrr():
@@ -272,7 +272,7 @@ def setcookie(interp, name, value="", expire=0, path=None,
               domain=None, secure=False, httponly=False):
     """ Send a cookie"""
     c = StringBuilder()
-    c.append("Set-Cookie: %s=%s" % (name, value))
+    c.append("Set-Cookie: %s=%s" % (name, _rawurlencode(value)))
     if expire > 0:
         d = _strftime(interp, True, '%a, %d %b %Y %H:%M:%S', expire)
         c.append("; Expires=%s" % d)

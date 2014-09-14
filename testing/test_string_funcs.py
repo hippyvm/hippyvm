@@ -13,8 +13,7 @@ def _rec_unwrap(space, w_arr):
         for key, val in dct.iteritems())
 
 
-def _as_list(w_arr):
-    space = ObjSpace()
+def _as_list(space, w_arr):
     iter = space.create_iter(w_arr)
     result = []
     while not iter.done():
@@ -129,6 +128,14 @@ class TestBuiltin(BaseTestInterpreter):
     def test_bin2hex(self):
         output = self.run("echo bin2hex('A b-1');")
         assert self.space.str_w(output[0]) == "4120622d31"
+
+    def test_hex2bin(self):
+        output = self.run('''
+        echo hex2bin('4120622d31');
+        echo hex2bin('6578616d706c65206865782064617461');
+        ''')
+        assert self.space.str_w(output[0]) == "A b-1"
+        assert self.space.str_w(output[1]) == "example hex data"
 
     def test_chr(self):
         output = self.run('''
@@ -408,14 +415,14 @@ class TestBuiltin(BaseTestInterpreter):
         echo str_replace("aba", "X", array("ababab", "aXbaba"), $count);
         echo $count;
         ''')
-        assert _as_list(output[0]) == ["Xbab", "aXbX"]
+        assert _as_list(self.space, output[0]) == ["Xbab", "aXbX"]
         assert self.space.int_w(output[1]) == 2
 
         output = self.run('''
         echo str_replace(array("aba", "Xb"), "X", array("ababab", "aXbaba"), $count);
         echo $count;
         ''')
-        assert _as_list(output[0]) == ["Xab", "aXX"]
+        assert _as_list(self.space, output[0]) == ["Xab", "aXX"]
         assert self.space.int_w(output[1]) == 4
 
     def test_str_rot13(self):
@@ -489,7 +496,7 @@ class TestBuiltin(BaseTestInterpreter):
         output = self.run("echo stristr('abc', 'd');")
         assert self.space.is_w(output[0], self.space.w_False)
         output = self.run("echo stristr('a', '');", [
-            "Warning: stristr(): Empty delimiter"])
+            "Warning: stristr(): Empty needle"])
         assert self.space.is_w(output[0], self.space.w_False)
 
     def test_strlen(self):
@@ -572,7 +579,7 @@ class TestBuiltin(BaseTestInterpreter):
         assert self.space.is_w(output[0], self.space.w_False)
 
         output = self.run("echo strpos('a', '');", [
-            "Warning: strpos(): Empty delimiter"])
+            "Warning: strpos(): Empty needle"])
         assert self.space.is_w(output[0], self.space.w_False)
 
         output = self.run("echo strpos('a', '', 1, 2);", [
@@ -711,7 +718,7 @@ class TestBuiltin(BaseTestInterpreter):
         assert all([self.space.is_w(out, self.space.w_False) for out in output])
 
         output = self.run('''echo strstr('abc', '');''', [
-            "Warning: strstr(): Empty delimiter"])
+            "Warning: strstr(): Empty needle"])
         assert self.space.is_w(output[0], self.space.w_False)
 
     def test_strtr(self):
@@ -826,11 +833,12 @@ class TestBuiltin(BaseTestInterpreter):
         echo substr_replace(array("abc", "de", "fg"), array("x", "y"), 1, 1);
         echo substr_replace(array("abc", "de", "fg"), array("x", "y"), 1, array(0, 1));
         ''')
-        assert map(_as_list, output) == [["ax", "dx", "fx"],
-                ["ax", "dy", "f"],
-                ["x", "dx", "x"],
-                ["axc", "dy", "f"],
-                ["axbc", "dy", "f"]]
+        assert [_as_list(self.space, out) for out in output] == [
+            ["ax", "dx", "fx"],
+            ["ax", "dy", "f"],
+            ["x", "dx", "x"],
+            ["axc", "dy", "f"],
+            ["axbc", "dy", "f"]]
 
 
     def test_substr_replace_warn(self):
@@ -1333,3 +1341,200 @@ ooooord.''']
             '', 'rrr'
 
         ]
+
+    def test_quoted_printable_decode(self):
+        output = self.run(r'''
+        echo quoted_printable_decode("=   \r\na");
+        echo quoted_printable_decode("=   \na");
+        echo quoted_printable_decode("=   xa");
+        echo quoted_printable_decode("=f foo");
+        echo quoted_printable_decode("=f");
+
+        ''')
+        assert [self.space.str_w(w_v) for w_v in output] == [
+            'a', 'a', '=   xa', '=f foo', '=f'
+        ]
+
+    def test_crc32_basic(self):
+        output = self.run('''
+        $a = crc32('string_val1234');
+        echo is_int($a);
+        echo $a;
+
+        ''')
+        assert [output[0].boolval, self.space.int_w(output[1])] == [
+            True, 256895812
+        ]
+
+    def test_crc32_variation1(self):
+        output = self.run('''
+        // declaring class
+        class sample  {
+          public function __toString() {
+            return "object";
+          }
+        }
+
+        //array of values to iterate over
+        $values = array(
+
+              // int data
+              0,
+              1,
+              12345,
+              -2345,
+
+              // float data
+              10.5,
+              -10.5,
+              10.1234567e10,
+              10.7654321E-10,
+              .5,
+
+              // null data
+              NULL,
+              null,
+
+              // boolean data
+              true,
+              false,
+              TRUE,
+              FALSE,
+
+              // empty data
+              "",
+              '',
+
+              // object data
+              new sample(),
+        );
+        foreach($values as $value) {
+            echo (crc32($value));
+        };
+
+        ''')
+        expected = [-186917087, -2082672713, -873121252, 1860518047,
+                    269248583, -834950157, -965354630, 1376932222,
+                    -2036403827, 0, 0, -2082672713, 0, -2082672713, 0, 0, 0,
+                    -1465013268]
+        if sys.maxint >= 2**31:
+            expected = [e & 0xFFFFFFFF for e in expected]
+
+        assert [self.space.int_w(w_v) for w_v in output] == expected
+
+        output = self.run('''
+        $unset_var = 10;
+        unset ($unset_var);
+        echo crc32($undefined_var);
+        echo crc32($unset_var);
+        ''',
+        [
+            'Notice: Undefined variable: undefined_var',
+            'Notice: Undefined variable: unset_var'
+        ])
+        assert [self.space.int_w(w_v) for w_v in output] == [0, 0]
+
+        output = self.run('''
+        // declaring class
+        class sample  {
+          public function __toString() {
+            return "object";
+          }
+        }
+
+        //array of values to iterate over
+        $values = array(
+
+              // array data
+              array(),
+              array(0),
+              array(1),
+              array(1, 2),
+              array('color' => 'red', 'item' => 'pen'),
+        );
+        foreach($values as $value) {
+            echo (crc32($value));
+        };
+
+        ''',
+        ['Warning: crc32() expects parameter 1 to be string, array given'] * 5)
+        assert [self.space.is_w(o, self.space.w_Null) for o in output] == [True] * 5
+
+    def test_crc32_variation2(self):
+        output = self.run('''
+        $string_array = array(
+          '',
+          ' ',
+          'hello world',
+          'HELLO WORLD',
+          ' helloworld ',
+
+          '(hello world)',
+          'hello(world)',
+          'helloworld()',
+          'hello()(world',
+
+          '"hello" world',
+          'hello "world"',
+          'hello""world',
+
+          'hello\\tworld',
+          'hellowor\\\\tld',
+          '\\thello world\\t',
+          'hello\\nworld',
+          'hellowor\\\\nld',
+          '\\nhello world\\n',
+          '\\n\\thelloworld',
+          'hel\\tlo\\n world',
+
+          '!@#$%&',
+          '#hello@world.com',
+          '$hello$world',
+        );
+
+        // looping to check the behaviour of the function for each string in the array
+
+        foreach($string_array as $str) {
+          echo crc32($str);
+        }
+
+        ''')
+
+        # Note: some of the values are different to what is expected in
+        # test_phpt/ext/standard/strings/crc32_variation2.phpt. However, that
+        # test seems to be wrong as PHP in Appengine report the values below.
+        expected = [0, -378745019, 222957957, -2015000997, 1234261835,
+                    -1867296214, 1048577080, 2129739710, -1633247628, 135755572,
+                    27384015, -497244052, -2065897232, 243585859, -856440615,
+                    647088397, 523630053, -2062229676, 1169918910, -618551732,
+                    -1828940657, -1654468652, -1648442217]
+        if sys.maxint >= 2**31:
+            expected = [e & 0xFFFFFFFF for e in expected]
+
+        assert [self.space.int_w(w_v) for w_v in output] == expected
+
+    def test_crc32_error(self):
+        output = self.run('''
+        echo crc32();
+
+        //Test crc32 with one more than the expected number of arguments
+        $str = 'string_val';
+        $extra_arg = 10;
+        echo crc32($str, $extra_arg);
+
+        ''',
+        [
+            'Warning: crc32() expects exactly 1 parameter, 0 given',
+            'Warning: crc32() expects exactly 1 parameter, 2 given'
+        ])
+
+        assert [self.space.is_w(o, self.space.w_Null) for o in output] == [True] * 2
+
+    def test_hex2bin_invalid_data(self):
+        output = self.run('''
+        echo hex2bin('xx');
+        echo hex2bin('0123456789abcdefxx');
+
+        ''')
+
+        assert [output[0].boolval, output[1].boolval] == [False] * 2

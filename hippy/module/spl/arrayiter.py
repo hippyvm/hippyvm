@@ -1,148 +1,158 @@
-from hippy.builtin_klass import wrap_method
-from hippy.builtin import ThisUnwrapper, Optional
+from hippy.builtin_klass import (
+    k_Iterator, GetterSetterWrapper, k_ArrayAccess, k_IteratorAggregate, ThisUnwrapper)
+from hippy.builtin import Optional, wrap_method
 from hippy.klass import def_class
-from hippy.error import PHPException
 from hippy.objects.base import W_Root
-
+from hippy.objects.arrayobject import W_ArrayObject
 from hippy.objects.instanceobject import W_InstanceObject
-
-from hippy.objects.arrayobject import W_ListArrayObject, W_RDictArrayObject
 from hippy import consts
+from hippy.module.spl.exception import k_InvalidArgumentException
+from hippy.module.spl.interface import k_RecursiveIterator
 
 
-class W_ArrayIterator(W_InstanceObject):
+class W_SplArray(W_InstanceObject):
+    w_arr = None
 
-    def create_iter(self, space, contextclass=None):
-        return self.w_obj_iter
+    def get_rdict_array(self, space):
+        w_arr = self.w_arr
+        while isinstance(w_arr, W_SplArray):
+            w_arr = w_arr.w_arr
+        if isinstance(w_arr, W_InstanceObject):
+            return w_arr.get_rdict_array(space)
+        assert isinstance(w_arr, W_ArrayObject)
+        return w_arr
 
-    def offset_exists(self, space, index):
-        return space.wrap(self.w_obj.hasitem(space, index))
+class W_ArrayIterator(W_SplArray):
+    _iter = None
 
-    def offset_get(self, space, index):
-        return self.w_obj.getitem(space, index)
+def _get_storage(interp, this):
+    return this.w_arr
 
-    def offset_set(self, space, index, value):
-        _, value = self.w_obj.setitem2_maybe_inplace(space, index, value)
-        return value
-
-    def offset_unset(self, space, index):
-        self.w_obj._unsetitem(space, index)
-
-    def seek(self, space, index):
-        raise NotImplementedError()
-
-    def current(self, space):
-        return self.w_obj_iter.current(space)
-
-    def next(self, space):
-        return self.w_obj_iter.next(space)
-
-    def key(self, space):
-        return self.w_obj_iter.key(space)
-
-    def rewind(self, space):
-        return self.w_obj_iter.rewind(space)
-
-    def valid(self, space):
-        raise NotImplementedError()
-
-    def count(self, space):
-        return self.w_obj_iter.len(space)
-
-    def done(self):
-        return self.w_obj_iter.done()
+def _set_storage(interp, this, w_arr):
+    raise NotImplementedError
 
 
-@wrap_method(['interp', ThisUnwrapper(W_ArrayIterator), Optional(W_Root)],
-             name='ArrayIterator::__construct')
-def ArrayIterator_construct(interp, this, w_obj=None):
-    this.w_obj = w_obj
-    this.w_obj_iter = w_obj.create_iter(interp.space)
-
-@wrap_method(['interp', ThisUnwrapper(W_ArrayIterator), W_Root],
-             name='ArrayIterator::offsetExists')
-def ArrayIterator_offsetExists(interp, this, index):
-    return this.offset_exists(interp.space, index)
+k_ArrayObject = def_class(
+    'ArrayObject',
+    ['__construct', 'offsetExists', 'offsetGet', 'offsetSet', 'offsetUnset',
+     'append', 'count',
+     'getIterator'],
+    [GetterSetterWrapper(_get_storage, _set_storage, 'storage', consts.ACC_PRIVATE)],
+    instance_class=W_SplArray,
+    implements=[k_IteratorAggregate, k_ArrayAccess])
 
 
-@wrap_method(['interp', ThisUnwrapper(W_ArrayIterator), W_Root],
-             name='ArrayIterator::offsetGet')
-def ArrayIterator_offsetGet(interp, this, index):
-    return this.offset_get(interp.space, index)
-
-
-@wrap_method(['interp', ThisUnwrapper(W_ArrayIterator), W_Root, W_Root],
-             name='ArrayIterator::offsetSet')
-def ArrayIterator_offsetSet(interp, this, index, value):
-    return this.offset_set(interp.space, index, value)
-
-
-@wrap_method(['interp', ThisUnwrapper(W_ArrayIterator), W_Root],
-             name='ArrayIterator::offsetUnset')
-def ArrayIterator_offsetUnset(interp, this, index):
-    return this.offset_unset(interp.space, index)
-
-
-@wrap_method(['interp', ThisUnwrapper(W_ArrayIterator), W_Root],
-             name='ArrayIterator::seek')
-def ArrayIterator_seek(interp, this, index):
-    return this.seek(interp.space, index)
-
-
-@wrap_method(['interp', ThisUnwrapper(W_ArrayIterator)],
-             name='ArrayIterator::current')
-def ArrayIterator_current(interp, this):
-    return this.current(interp.space)
-
-
-@wrap_method(['interp', ThisUnwrapper(W_ArrayIterator)],
-             name='ArrayIterator::next')
-def ArrayIterator_next(interp, this):
-    return this.next(interp.space)
-
-
-@wrap_method(['interp', ThisUnwrapper(W_ArrayIterator)],
-             name='ArrayIterator::key')
-def ArrayIterator_key(interp, this):
-    return this.key(interp.space)
-
-
-@wrap_method(['interp', ThisUnwrapper(W_ArrayIterator)],
-             name='ArrayIterator::rewind')
-def ArrayIterator_rewind(interp, this):
-    return this.rewind(interp.space)
-
-
-@wrap_method(['interp', ThisUnwrapper(W_ArrayIterator)],
-             name='ArrayIterator::valid')
-def ArrayIterator_valid(interp, this):
-    pass
-
-
-@wrap_method(['interp', ThisUnwrapper(W_ArrayIterator)],
-             name='ArrayIterator::count')
-def ArrayIterator_count(interp, this):
-    return this.count(interp.space)
-
-
-ArrayIterator = def_class(
+k_ArrayIterator = def_class(
     'ArrayIterator',
-    [ArrayIterator_construct,
-     ArrayIterator_offsetExists,
-     ArrayIterator_offsetGet,
-     ArrayIterator_offsetSet,
-     ArrayIterator_offsetUnset,
-     ArrayIterator_seek,
-     ArrayIterator_current,
-     ArrayIterator_next,
-     ArrayIterator_key,
-     ArrayIterator_rewind,
-     ArrayIterator_valid,
-     ArrayIterator_count],
-    [('storage', consts.ACC_PRIVATE)],
+    ['__construct', 'offsetExists', 'offsetGet', 'offsetSet', 'offsetUnset',
+     'append', 'count',
+     'current', 'next', 'key', 'rewind', 'valid'],
+    [GetterSetterWrapper(_get_storage, _set_storage, 'storage', consts.ACC_PRIVATE)],
     instance_class=W_ArrayIterator,
-    implements=["ArrayAccess", "SeekableIterator", "Countable"]
-)
+    implements=[k_ArrayAccess, k_Iterator])
+
+
+@k_ArrayObject.def_method(['interp', 'this', Optional(W_Root), Optional(int),
+    Optional(str)])
+def __construct(interp, this, w_arr=None, flags=0,
+        iterator_class='ArrayIterator'):
+    if w_arr is None:
+        w_arr = interp.space.new_array_from_list([])
+    if (not isinstance(w_arr, W_InstanceObject) and
+            not isinstance(w_arr, W_ArrayObject)):
+        raise interp.throw("Passed variable is not an array or object, using "
+            "empty array instead", klass=k_InvalidArgumentException)
+    this.iterator_class = iterator_class
+    this.w_arr = w_arr
+
+
+@k_ArrayIterator.def_method(['interp', 'this', Optional(W_Root)])
+def __construct(interp, this, w_arr=None):
+    if w_arr is None:
+        w_arr = interp.space.new_array_from_list([])
+    if (not isinstance(w_arr, W_InstanceObject) and
+            not isinstance(w_arr, W_ArrayObject)):
+        raise interp.throw("Passed variable is not an array or object, using "
+            "empty array instead", klass=k_InvalidArgumentException)
+    this.w_arr = w_arr
+    while isinstance(w_arr, W_SplArray):
+        w_arr = w_arr.w_arr
+    this._iter = w_arr.create_iter(interp.space)
+
+
+@k_ArrayObject.def_method(['interp', 'this', W_Root])
+@k_ArrayIterator.def_method(['interp', 'this', W_Root])
+def offsetExists(interp, this, w_index):
+    return interp.space.newbool(this.w_arr.isset_index(interp.space, w_index))
+
+
+@k_ArrayObject.def_method(['interp', 'this', W_Root])
+@k_ArrayIterator.def_method(['interp', 'this', W_Root])
+def offsetGet(interp, this, w_index):
+    w_arr = this.get_rdict_array(interp.space)
+    return w_arr.getitem(interp.space, w_index, give_notice=True)
+
+@k_ArrayObject.def_method(['interp', 'this', W_Root, W_Root])
+@k_ArrayIterator.def_method(['interp', 'this', W_Root, W_Root])
+def offsetSet(interp, this, w_index, w_newval):
+    w_arr = this.get_rdict_array(interp.space)
+    if w_index == interp.space.w_Null:
+        w_arr.appenditem_inplace(interp.space, w_newval)
+    else:
+        w_arr, _ = this.w_arr.setitem2_maybe_inplace(interp.space,
+                                                    w_index, w_newval)
+        this.w_arr = w_arr
+
+
+@k_ArrayObject.def_method(['interp', 'this', W_Root])
+@k_ArrayIterator.def_method(['interp', 'this', W_Root])
+def offsetUnset(interp, this, w_index):
+    w_arr = this.get_rdict_array(interp.space)
+    this.w_arr = w_arr._unsetitem(interp.space, w_index)
+
+@k_ArrayObject.def_method(['interp', 'this', W_Root])
+@k_ArrayIterator.def_method(['interp', 'this', W_Root])
+def append(interp, this, w_newval):
+    w_arr = this.get_rdict_array(interp.space)
+    w_arr.appenditem_inplace(interp.space, w_newval)
+
+
+@k_ArrayObject.def_method(['interp', 'this'])
+@k_ArrayIterator.def_method(['interp', 'this'])
+def count(interp, this):
+    w_arr = this.get_rdict_array(interp.space)
+    return interp.space.wrap(w_arr.arraylen())
+
+
+@k_ArrayObject.def_method(['interp', 'this'])
+def getIterator(interp, this):
+    k_IteratorClass = interp.locate_class_or_intf(this.iterator_class)
+    return k_IteratorClass.call_args(interp, [this])
+
+
+@k_ArrayIterator.def_method(['interp', 'this'])
+def current(interp, this):
+    return this._iter.current(interp)
+
+
+@k_ArrayIterator.def_method(['interp', 'this'])
+def next(interp, this):
+    return this._iter.next(interp.space)
+
+
+@k_ArrayIterator.def_method(['interp', 'this'])
+def key(interp, this):
+    return this._iter.key(interp)
+
+
+@k_ArrayIterator.def_method(['interp', 'this'])
+def rewind(interp, this):
+    this._iter.rewind(interp)
+
+
+@k_ArrayIterator.def_method(['interp', 'this'])
+def valid(interp, this):
+    return interp.space.newbool(this._iter.valid(interp))
 
 
 class W_RecursiveArrayIterator(W_ArrayIterator):
@@ -192,7 +202,5 @@ RecursiveArrayIterator = def_class(
      RecursiveArrayIterator_hasChildren],
     [],
     instance_class=W_RecursiveArrayIterator,
-    implements=["RecursiveIterator"],
-    extends=ArrayIterator
-)
-
+    implements=[k_RecursiveIterator],
+    extends=k_ArrayIterator)

@@ -1,21 +1,7 @@
 #!/bin/bash
 
-export PYTHONPATH=$PYTHONPATH:pypy
-
-
-declare -a STEPS=(
-    'py.test testing/ -v'
-    'python pypy/rpython/bin/rpython targethippy.py'
-);
-
-
-for var in "${STEPS[@]}"
-do
-    echo -e "\n\e[32m#### $var ####\e[0m\n"
-    $var
-    if [ $? != 0 ]
-    then
-	exit 1
-    fi
-
-done
+if [[ "$TRANSLATE" == "true" ]]; then
+    python pypy/rpython/bin/rpython --batch targethippy.py
+else
+    eval "py.test $TESTDIR -v"
+fi

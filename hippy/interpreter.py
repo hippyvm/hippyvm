@@ -6,21 +6,21 @@ from hippy.hippyoption import is_optional_extension_enabled
 from hippy.consts import BYTECODE_HAS_ARG, BYTECODE_NAMES,\
     BINOP_LIST, BINOP_BITWISE, RETURN
 from hippy.function import AbstractFunction
-from hippy.error import (IllegalInstruction, FatalError, PHPException,
-                         ExplicitExitException, VisibilityError)
+from hippy.error import (IllegalInstruction, FatalError, Throw,
+                         ExplicitExitException, VisibilityError, SignalReceived)
 from hippy.lexer import LexerError
 from hippy.sourceparser import ParseError
 from hippy.phpcompiler import compile_php
 from hippy.ast import CompilerError
 from hippy.objects.reference import W_Reference
 from hippy.objects.interpolate import W_StrInterpolation
-from hippy.objects.iterator import W_BaseIterator
+from hippy.objects.iterator import BaseIterator
 from hippy.objects.arrayobject import (
         new_rdict, W_RDictArrayObject, W_ArrayObject)
 from hippy.objects.closureobject import W_ClosureObject, new_closure
 from hippy.objects.instanceobject import W_InstanceObject
 from hippy.objects.strobject import W_StringObject
-from hippy.builtin_klass import W_ExceptionObject
+from hippy.builtin_klass import W_ExceptionObject, k_Exception
 from hippy.klass import ClassDeclaration, ClassBase, get_interp_decl_key
 from hippy.function import Function
 from hippy.frame import Frame, CatchBlock, Unsilence
@@ -32,11 +32,13 @@ from hippy.astcompiler import compile_ast
 from hippy.module.standard.directory import php_dir
 from hippy.module.standard.glob import php_glob
 from hippy.module.spl import spl
+from hippy import rpath
 from rpython.rlib.objectmodel import we_are_translated
 from rpython.rlib import jit
-from rpython.rlib import rpath
+from rpython.rlib import rsignal
 from rpython.rlib.unroll import unrolling_iterable
 from rpython.rlib.rfile import create_popen_file
+from hippy.rpath import exists, dirname, join, abspath
 
 from hippy.module.session import Session
 
@@ -87,6 +89,8 @@ if is_optional_extension_enabled("hash"):
 if is_optional_extension_enabled("xml"):
     import ext_module.xml.interface
 
+if is_optional_extension_enabled("mcrypt"):
+    import ext_module.mcrypt.funcs
 
 
 def get_printable_location(pc, bytecode, contextclass=None):
@@ -197,6 +201,7 @@ class OutputBufferingLock(object):
     def __exit__(self, exc_type, exc_val, trace):
         self.interp.ob_lock = False
 
+
 @jit.elidable
 def is_constant_self_or_parent(name):
     key = name.lower()
@@ -270,10 +275,25 @@ class Interpreter(object):
         self.http_status_code = -1
         self.shutdown_functions = []
         self.shutdown_arguments = []
+        self.open_fd = {}
+
+    def register_fd(self, w_fd):
+        self.open_fd[w_fd.res_id] = w_fd
+
+    def unregister_fd(self, w_fd):
+        del self.open_fd[w_fd.res_id]
+
+    def handle_signal_if_necessary(self):
+        n = rsignal.pypysig_getaddr_occurred().c_value
+        if n < 0:
+            n = rsignal.pypysig_poll()
+            if n < 0:
+                rsignal.pypysig_getaddr_occurred().c_value = 0
+                raise SignalReceived()
 
     def _class_get(self, class_name):
         kls = self.space.global_class_cache.locate(class_name)
-        assert isinstance(kls, ClassBase)
+        assert kls is None or isinstance(kls, ClassBase)
         return kls
 
     def load_static(self, bc, arg):
@@ -366,16 +386,21 @@ class Interpreter(object):
             self.session.write_close(self)
         for i, func in enumerate(self.shutdown_functions):
             func.call_args(self, self.shutdown_arguments[i])
+        for _,  mysql_link in self.mysql_links.items():
+            if not mysql_link.persistent:
+                mysql_link.close()
+        for _, fd in self.open_fd.items():
+            fd.close()
 
-    def initialize_server_variable(self, space):
+    def _get_server_env(self):
         if self.web_config is None:
             initial_server_dict = OrderedDict()
             for k, v in os.environ.items():
                 if k not in initial_server_dict:
-                    initial_server_dict[k] = space.wrap(v)
+                    initial_server_dict[k] = self.space.wrap(v)
         else:
             initial_server_dict = self.web_config.initial_server_dict
-        return space.new_array_from_rdict(initial_server_dict)
+        return initial_server_dict
 
     def initialize_cookie_variable(self, space):
         if self.web_config is not None and self.web_config.cookie is not None:
@@ -387,7 +412,7 @@ class Interpreter(object):
                 if len(l2) != 2:
                     # XXX issue a warning?
                     continue
-                d[l2[0]] = space.wrap(l2[1])
+                d[l2[0]] = space.wrap(hippy.module.url._rawurldecode(l2[1]))
             return space.new_array_from_rdict(d)
         return space.w_Null
 
@@ -396,11 +421,16 @@ class Interpreter(object):
 
     def setup_globals(self, space, argv=None):
         self.globals.set_var('GLOBALS', self.w_globals_ref)
-        self.r_server = W_Reference(self.initialize_server_variable(space))
+        server_dict = self._get_server_env()
         if argv:
-            self.globals.set_var('argc', W_Reference(space.wrap(len(argv))))
-            self.globals.set_var('argv', W_Reference(space.new_array_from_list(
-                [space.wrap(x) for x in argv])))
+            w_argc = space.wrap(len(argv))
+            w_argv = space.new_array_from_list([space.wrap(x) for x in argv])
+            self.globals.set_var('argc', W_Reference(w_argc))
+            self.globals.set_var('argv', W_Reference(w_argv))
+            server_dict['argc'] = w_argc
+            server_dict['argv'] = w_argv
+        self.r_server = W_Reference(
+            self.space.new_array_from_rdict(server_dict))
         self.globals.set_var('_SERVER', self.r_server)
 
         if self.web_config is not None:
@@ -436,29 +466,31 @@ class Interpreter(object):
         self.constant_names.append(name)
 
     def locate_constant(self, name, complain=True):
-        try:
-            return self.lookup_constant(name)
-        except KeyError:
-            if not complain:
-                return None
-            self.notice("Use of undefined constant %s - "
-                    "assumed '%s'" % (name, name))
-            return self.space.wrap(name)
+        c = self.lookup_constant(name)
+        if c is not None:
+            return c
+        if not complain:
+            return None
+        self.notice("Use of undefined constant %s - "
+                "assumed '%s'" % (name, name))
+        return self.space.wrap(name)
 
     def lookup_function(self, name):
         if not name:
-            raise KeyError
+            return None
         if name[0] == '\\':
             name = name[1:]
         func = self.space.global_function_cache.locate(name)
+        if func is None:
+            return None
         assert isinstance(func, AbstractFunction)
         return func
 
     def locate_function(self, name):
-        try:
-            return self.lookup_function(name)
-        except KeyError:
-            self.fatal("Call to undefined function %s()" % name)
+        func = self.lookup_function(name)
+        if func is not None:
+            return func
+        self.fatal("Call to undefined function %s()" % name)
 
     def get_this(self, frame):
         w_this = frame.w_this
@@ -481,12 +513,13 @@ class Interpreter(object):
             name = name[1:]
         if not name:
             return None
-        try:
-            return self._class_get(name)
-        except KeyError:
+        kls = self._class_get(name)
+        if kls is None:
             if autoload:
-                return self._autoload(name)
-            return None
+                kls = self._autoload(name)
+            else:
+                return None
+        return kls
 
     def _get_self_class(self):
         contextclass = self.get_contextclass()
@@ -545,10 +578,7 @@ class Interpreter(object):
         if self.autoload_stack:
             return self._autoload_from_stack(name)
 
-        try:
-            autoload_func = self.lookup_function('__autoload')
-        except KeyError:
-            return None
+        autoload_func = self.lookup_function('__autoload')
         if autoload_func is None:
             return None
         self._autoloading[cls_id] = None
@@ -633,8 +663,6 @@ class Interpreter(object):
     def send_headers(self):
         self.any_output = True
         if self.cgi:
-            if self.cgi != constants.CGI_FASTCGI:
-                self._writestr("\r\n")
             if self.http_status_code != -1:
                 self._writestr('Status: %d\r\n' % self.http_status_code)
             for k in self.headers:
@@ -725,6 +753,10 @@ class Interpreter(object):
     def deprecated(self, msg):
         self.handle_error(constants.E_DEPRECATED, msg)
 
+    def throw(self, msg, klass=k_Exception):
+        # cf. usage note for fatal()
+        raise Throw(klass.call_args(self, [self.space.newstr(msg)]))
+
     def fallback_handle_exception(self, w_exc):
         assert isinstance(w_exc, W_ExceptionObject)
         tb = w_exc.traceback
@@ -765,16 +797,17 @@ class Interpreter(object):
             self.setup()
         frame = Frame(self, bytecode, is_global_level=True)
         frame.load_from_scope(self.globals)
+        old_global_frame = self.global_frame
         self.global_frame = frame
         if top_main:
             try:
                 try:
                     w_result = self.interpret(frame)
-                except PHPException as e:
+                except Throw as e:
                     if self.w_exception_handler is not None:
                         try:
                             self.call(self.w_exception_handler, [e.w_exc])
-                        except PHPException as e2:
+                        except Throw as e2:
                             self.fallback_handle_exception(e2.w_exc)
                     else:
                         self.fallback_handle_exception(e.w_exc)
@@ -784,6 +817,7 @@ class Interpreter(object):
                     self.flush_buffers()
         else:
             w_result = self.interpret(frame)
+            self.global_frame = old_global_frame
         return w_result
 
     def run_local_include(self, bytecode, parent_frame):
@@ -796,6 +830,7 @@ class Interpreter(object):
 
     def debug_eval(self, source, parent_frame=None,
                    allow_direct_class_access=False):
+        assert source is not None
         ast = parse(self.space, source, 0, '<eval>')
         bc = compile_ast('<eval>', source, ast,
                          self.space, print_exprs=True)
@@ -880,7 +915,7 @@ class Interpreter(object):
                         bc_impl = getattr(self, name)
                         try:
                             pc = bc_impl(bytecode, frame, space, arg, pc)
-                        except PHPException as e:
+                        except Throw as e:
                             pc = self.handle_exception(frame, e)
                         break
                 else:
@@ -890,7 +925,7 @@ class Interpreter(object):
                 bc_impl = getattr(self, BYTECODE_NAMES[next_instr])
                 try:
                     pc = bc_impl(bytecode, frame, space, arg, pc)
-                except PHPException as e:
+                except Throw as e:
                     pc = self.handle_exception(frame, e)
 
     def enter(self, frame):
@@ -994,9 +1029,8 @@ class Interpreter(object):
         w_name = frame.pop().deref()
         name = space.str_w(w_name)
         w_base_name = frame.pop().deref()
-        try:
-            const = self.lookup_constant(name)
-        except KeyError:
+        const = self.lookup_constant(name)
+        if const is None:
             base_name = space.str_w(w_base_name)
             const = self.locate_constant(base_name)
         frame.push(const)
@@ -1178,6 +1212,7 @@ class Interpreter(object):
 
     def JUMP_BACK_IF_TRUE(self, bytecode, frame, space, arg, pc):
         if space.is_true(frame.pop()):
+            self.handle_signal_if_necessary()
             driver.can_enter_jit(pc=arg, bytecode=bytecode, frame=frame,
                              self=self, contextclass=frame.get_contextclass())
             return arg
@@ -1205,6 +1240,7 @@ class Interpreter(object):
         return arg
 
     def JUMP_BACKWARD(self, bytecode, frame, space, arg, pc):
+        self.handle_signal_if_necessary()
         driver.can_enter_jit(pc=arg, bytecode=bytecode, frame=frame,
                              self=self, contextclass=frame.get_contextclass())
         return arg
@@ -1313,9 +1349,8 @@ class Interpreter(object):
         w_name = frame.pop().deref()
         name = space.str_w(w_name)
         w_base_name = frame.pop().deref()
-        try:
-            func = self.lookup_function(name)
-        except KeyError:
+        func = self.lookup_function(name)
+        if func is None:
             func = self.getfunc(w_base_name, frame.w_this,
                     frame.get_contextclass())
         assert func is not None
@@ -1412,6 +1447,9 @@ class Interpreter(object):
 
     def call(self, callable, args_w):
         return callable.call_args(self, args_w)
+
+    def call_method(self, w_obj, method_name, args_w):
+        return self.getmeth(w_obj, method_name).call_args(self, args_w)
 
     @jit.unroll_safe
     def CALL(self, bytecode, frame, space, arg, pc):
@@ -1524,16 +1562,15 @@ class Interpreter(object):
     def declare_func(self, func):
         name = func.name
         func_id = func.get_identifier()
-        try:
-            func = self.lookup_function(func_id)
+        ldfunc = self.lookup_function(func_id)
+        if ldfunc is not None:
+            func = ldfunc
             if isinstance(func, Function):
                 extra = ' (previously declared in %s:%d)' % (
                     func.bytecode.filename, func.bytecode.startlineno)
             else:
                 extra = ''
             self.fatal("Cannot redeclare %s()%s" % (name, extra))
-        except KeyError:
-            pass
         self.space.global_function_cache.declare_new(func_id, func)
 
     def DECLARE_FUNC(self, bytecode, frame, space, arg, pc):
@@ -1590,26 +1627,26 @@ class Interpreter(object):
         return pc
 
     def NEXT_VALUE_ITER(self, bytecode, frame, space, arg, pc):
-        w_iter = frame.peek()
-        if w_iter is None:
+        itr = frame.peek()
+        if itr is None:
             return arg
-        assert isinstance(w_iter, W_BaseIterator)
-        if w_iter.done():
+        assert isinstance(itr, BaseIterator)
+        if itr.done():
             return arg
-        w_value = w_iter.next(space)
+        w_value = itr.next(space)
         if w_value is None:
             return arg
         frame.push(w_value)
         return pc
 
     def NEXT_ITEM_ITER(self, bytecode, frame, space, arg, pc):
-        w_iter = frame.peek()
-        if w_iter is None:
+        itr = frame.peek()
+        if itr is None:
             return arg
-        assert isinstance(w_iter, W_BaseIterator)
-        if w_iter.done():
+        assert isinstance(itr, BaseIterator)
+        if itr.done():
             return arg
-        w_key, w_value = w_iter.next_item(space)
+        w_key, w_value = itr.next_item(space)
         if w_value is None:
             return arg
         frame.push(w_key)
@@ -1758,6 +1795,7 @@ class Interpreter(object):
 
         if self._class_is_defined(name):
             cls = self._class_get(name)
+            assert cls is not None
         else:
             cls = None
 
@@ -1794,22 +1832,37 @@ class Interpreter(object):
             frame.push(self.space.w_False)
             return
 
+    def find_file(self, fname):
+        """Resolve a file name relative to the include_path and to
+        the location of the current code"""
+        for path in self.include_path:
+            if exists(join(path, [fname])):
+                return abspath(join(path, [fname]))
+        code_dir = dirname(self.get_frame().bytecode.filename)
+        if exists(join(code_dir, [fname])):
+            return abspath(join(code_dir, [fname]))
+        return abspath(fname)
+
     def _include(self, frame, func_name, require=False, once=False):
         name = self.space.str_w(frame.pop())
-        #print "INCLUDE", name
-        fname = self.space.bytecode_cache.find_file(self, name)
+        use_path = not (name.startswith('/') or name.startswith('./') or
+                        name.startswith('../'))
+        if use_path:
+            fname = self.find_file(name)
+        else:
+            fname = abspath(name)
         if once is True and fname in self.cached_files:
             frame.push(self.space.newint(1))
             return
         try:
             bc = self.compile_file(fname)
         except OSError as exc:
-            self._report_include_warning(frame, func_name, fname, exc,
+            self._report_include_warning(frame, func_name, name, exc,
                                          require)
             return
         except IOError as exc:
             if not we_are_translated():
-                self._report_include_warning(frame, func_name, fname, exc,
+                self._report_include_warning(frame, func_name, name, exc,
                                              require)
                 return
             assert False # dead code
@@ -1854,7 +1907,7 @@ class Interpreter(object):
         if not isinstance(w_exc, W_ExceptionObject):
             self.fatal("Exceptions must be valid objects derived from "
                     "the Exception base class")
-        raise PHPException(w_exc)
+        raise Throw(w_exc)
 
     def POPEN(self, bytecode, frame, space, arg, pc):
         cmd = space.str_w(frame.pop().deref())

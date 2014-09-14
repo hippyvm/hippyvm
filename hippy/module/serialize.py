@@ -10,6 +10,7 @@ from rpython.rlib.debug import check_nonneg
 from rpython.rlib.rarithmetic import r_uint, intmask
 from rpython.rlib.listsort import make_timsort_class
 from collections import OrderedDict
+from rpython.rlib import rfloat
 
 
 class SerializerMemo(object):
@@ -41,6 +42,7 @@ class SerializerError(Exception):
 
 
 IntSort = make_timsort_class()
+
 
 def remove_duplicates_fin(lst):
     prev = lst[0]
@@ -329,10 +331,17 @@ def load_object(fp):
         if s[i + 1] != ':':
             raise SerializerError("':' expected")
         data = fp.read_substring_until(';')
-        w_number, valid = convert_string_to_number(data)
-        if not valid:
-            raise SerializerError('bad double')
-        w_result = fp.space.newfloat(w_number.float_w(fp.space))
+        if data == 'INF':
+            w_result = fp.space.wrap(rfloat.INFINITY)
+        elif data == '-INF':
+            w_result = fp.space.wrap(-rfloat.INFINITY)
+        elif data == 'NAN':
+            w_result = fp.space.wrap(rfloat.NAN)
+        else:
+            w_number, valid = convert_string_to_number(data)
+            if not valid:
+                raise SerializerError('bad double')
+            w_result = fp.space.newfloat(w_number.float_w(fp.space))
     #
     elif tp == 'b':
         if s[i + 1] != ':':

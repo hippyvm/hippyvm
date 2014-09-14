@@ -242,11 +242,10 @@ class Debugger(object):
                 continue
             if msg.command == "breakpoint":
                 fname = msg.args[0].lower()
-                try:
-                    interp.lookup_function(fname)
+                if interp.lookup_function(fname) is not None:
                     self.breakpoints[fname] = True
                     self.send_and_wait("echo", ["Breakpoint set %s" % fname])
-                except KeyError:
+                else:
                     self.send_and_wait("warn",
                                      ["error function %s not found" % fname])
             elif msg.command == "force_breakpoint":

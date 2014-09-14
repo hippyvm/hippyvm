@@ -1,5 +1,6 @@
 import math
 import sys
+import os
 from rpython.rlib import rfloat, jit
 from rpython.rlib.rarithmetic import r_uint, intmask, ovfcheck
 from rpython.rlib.rstring import StringBuilder
@@ -12,7 +13,8 @@ from hippy.objects.floatobject import W_FloatObject
 from hippy.builtin import wrap, Optional, LongArg
 
 from rpython.rlib.rrandom import Random
-_random = Random()
+seed = int(os.urandom(4).encode('hex'), 16)
+_random = Random(seed=seed)
 
 RANDMAX = 0x7fffffff
 MAX_BITS = sys.maxint.bit_length()  # == 31 or 63
@@ -90,6 +92,8 @@ def atan(space, d):
 @wrap(['space', float])
 def atanh(space, d):
     """ atanh - Inverse hyperbolic tangent """
+    if d == 1:
+        return space.wrap(rfloat.INFINITY)
     try:
         return space.wrap(math.atanh(d))
     except OverflowError:
@@ -608,7 +612,7 @@ def unbiased_rand(mn, mx):
 
 def rand_range(a, b):
     # php way a + n(b-a+1)/(M+1)
-    n = intmask(_random.genrand32())
+    n = intmask(_random.genrand32()) >> 1
     M = RANDMAX
     return int(a + n * (b - a + 1) / (M + 1))
 
@@ -619,10 +623,10 @@ def rand(space, num_args, x=0, y=RANDMAX):
     """ rand - Generate a random integer"""
     if num_args == 1 or num_args >= 3:
         space.ec.warn("rand() expects exactly 2 parameters, %d given"
-                % num_args)
+                      % num_args)
         return space.w_Null
-    # return space.wrap(int(rand_range(x, y)))
-    return space.wrap(int(unbiased_rand(x, y)))
+    return space.wrap(int(rand_range(x, y)))
+    #return space.wrap(int(unbiased_rand(x, y)))
 
 NDIGITS_MAX = int((rfloat.DBL_MANT_DIG - rfloat.DBL_MIN_EXP) * 0.30103)
 NDIGITS_MIN = -int((rfloat.DBL_MAX_EXP + 1) * 0.30103)

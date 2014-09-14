@@ -1,6 +1,6 @@
 from hippy.function import AbstractFunction
 from hippy.ast import AccessMixin, CompilerError, DelayedObject
-from hippy.error import PHPException, VisibilityError, InterpreterError
+from hippy.error import Throw, VisibilityError, InterpreterError
 from hippy.objects.reference import W_Reference
 from hippy.objects.instanceobject import (
     W_InstanceObject, LOOKUP_SETATTR, LOOKUP_GETATTR, LOOKUP_HASATTR,
@@ -9,6 +9,8 @@ from hippy.objects.strobject import W_StringObject
 from hippy import consts
 from hippy.objects.nullobject import w_Null
 from hippy.mapdict import Terminator
+from hippy.builtin import (
+    BuiltinFunction, ThisUnwrapper, handle_as_warning, new_function)
 from rpython.rlib import jit
 from rpython.rlib.objectmodel import we_are_translated
 from rpython.rlib.unroll import unrolling_iterable
@@ -51,8 +53,6 @@ def normalize_access(access_flags):
 
 class ClassBase(AbstractFunction, AccessMixin):
     access_flags = 0
-    extends_name = None
-    base_interface_names = None
     constructor_method = None
     method__clone = None
     method__get = None
@@ -66,6 +66,7 @@ class ClassBase(AbstractFunction, AccessMixin):
     custom_instance_class = None
     is_iterator = False
     is_array_access = False
+    is_iterable = False
     immediate_parents = None
     parentclass = None
     _all_nonstatic_special_properties = None    # lazy
@@ -95,6 +96,8 @@ class ClassBase(AbstractFunction, AccessMixin):
         elif self.get_identifier() in self.methods:
             method = self.methods[self.get_identifier()]
         else:
+            return
+        if method is None:
             return
         if method.is_static():
             raise CompilerError("Constructor %s cannot be static" %
@@ -136,9 +139,6 @@ class ClassBase(AbstractFunction, AccessMixin):
         meth_id = parent_method.get_identifier()
         if meth_id not in self.methods:
             self.methods[meth_id] = parent_method
-        else:
-            method = self.methods[meth_id]
-            self._check_inheritance(method, parent_method)
 
     def _check_inheritance(self, method, parent_method):
         if parent_method.is_final():
@@ -160,6 +160,25 @@ class ClassBase(AbstractFunction, AccessMixin):
             raise ClassDeclarationError(
                 "Cannot make static method %s non static in class %s" %
                 (parent_method.repr(), method.getclass().name))
+
+    def _init_protocol_flags(self):
+        """Handle the builtin interfaces with special meaning in the core"""
+        for parent in self.immediate_parents:
+            if parent.is_iterator:  # implements Iterator
+                self.is_iterator = True
+                break
+        for parent in self.immediate_parents:
+            if parent.is_iterable:  # implements IteratorAggregate
+                self.is_iterable = True
+                break
+        for parent in self.immediate_parents:
+            if parent.is_array_access:  # implements ArrayAccess
+                self.is_array_access = True
+                break
+        if self.is_iterator and self.is_iterable:
+            raise ClassDeclarationError(
+                "Class %s cannot implement both Iterator and IteratorAggregate"
+                " at the same time" % self.name)
 
     def _make_property(self, prop, w_initial_value):
         if isinstance(prop, tuple):
@@ -278,6 +297,18 @@ class ClassBase(AbstractFunction, AccessMixin):
             return name[i+1:]
         else:
             return None
+
+    def get_methods(self, contextclass):
+        '''Returns a list of accessible method names for the given context.'''
+        methods = []
+        for method_name, method in self.methods.iteritems():
+            try:
+                self._visibility_check(method, method_name, contextclass)
+                methods.append(method.get_name())
+            except VisibilityError:
+                pass
+
+        return methods
 
     def lookup_staticmember(self, name, contextclass, check_visibility):
         property = self._lookup_property(name, contextclass, check_visibility)
@@ -579,7 +610,7 @@ class ClassBase(AbstractFunction, AccessMixin):
             w_res = method.method_func.call_args(space.ec.interpreter, [],
                                                 w_this=w_obj,
                                                 thisclass=self)
-        except PHPException:
+        except Throw:
             raise space.ec.fatal("Method %s::__toString() must not "
                                  "throw an exception" % self.name)
         if not isinstance(w_res, W_StringObject):
@@ -608,16 +639,26 @@ class ClassBase(AbstractFunction, AccessMixin):
         return result
 
 
+def _get_instance_class(extends, instance_class):
+    if extends is not None:
+        if instance_class is None:
+            return extends.custom_instance_class
+        else:
+            return instance_class
+    else:
+        return instance_class
+
+
 all_builtin_classes = OrderedDict()
 
 
 def def_class(name, methods=[], properties=[], constants=[],
-        instance_class=None, flags=0, implements=[], extends=None,
-        is_iterator=False, is_array_access=False):
+        instance_class=None, flags=0, implements=[], extends=None):
     if name in all_builtin_classes:
         raise ValueError("Class '%s' has already been defined" % name)
+    instance_class = _get_instance_class(extends, instance_class)
     cls = BuiltinClass(name, methods, properties, constants, instance_class,
-            flags, implements, extends, is_iterator, is_array_access)
+            flags, implements, extends)
     all_builtin_classes[name] = cls
     return cls
 
@@ -625,73 +666,107 @@ def def_class(name, methods=[], properties=[], constants=[],
 class BuiltinClass(ClassBase):
     def __init__(self, name,
                  methods=[], properties=[], constants=[], instance_class=None,
-                 flags=0, implements=[], extends=None, is_iterator=False, is_array_access=False):
-        if extends is not None and not isinstance(extends, BuiltinClass):
-            extends = all_builtin_classes[extends]
-        implements = [(intf if isinstance(intf, BuiltinClass) else
-            all_builtin_classes[intf]) for intf in implements]
-
+                 flags=0, implements=[], extends=None):
         ClassBase.__init__(self, name)
-
-        self.immediate_parents = []
-        if extends is not None:
-            self.parentclass = extends
-            self.extends_name = extends.name
-
-            if self.constructor_method is None:
-                self.constructor_method = extends.constructor_method
-
-            if instance_class is None:
-                self.custom_instance_class = extends.custom_instance_class
-            else:
-                assert extends.custom_instance_class is None or issubclass(
-                    instance_class, extends.custom_instance_class)
-                self.custom_instance_class = instance_class
-
-            for method in extends.methods.itervalues():
-                self._inherit_method(method)
-            for p in extends.properties.itervalues():
-                self._inherit_property(p)
-            self.immediate_parents.append(self.parentclass)
-        else:
-            self.custom_instance_class = instance_class
-
-        for func in methods:
-            meth = Method(func, func.flags, self)
-            self.methods[meth.get_identifier()] = meth
+        assert (extends is None or extends.custom_instance_class is None or
+                issubclass(instance_class, extends.custom_instance_class))
+        self.custom_instance_class = instance_class
+        for method_spec in methods:
+            self.declare_method(method_spec)
         for prop in properties:
             self._make_property(prop, w_Null)
         for name, w_value in constants:
             self.constants_w[name] = w_value
 
-        self.access_flags = flags
-        self.base_interface_names = [intf.name for intf in implements]
-        self.is_iterator = is_iterator
-        self.is_array_access = is_array_access
+        self.immediate_parents = []
+        if extends is not None:
+            self.parentclass = extends
+            if self.constructor_method is None:
+                self.constructor_method = extends.constructor_method
 
+            for method in extends.methods.itervalues():
+                self._inherit_method(method)
+            for p in extends.properties.itervalues():
+                self._inherit_property(p)
+            for key, w_value in extends.constants_w.iteritems():
+                if key not in self.constants_w:
+                    self.constants_w[key] = w_value
+            self.immediate_parents.append(self.parentclass)
+
+        self.access_flags = flags
         self._init_constructor()
 
         for intf in implements:
             self.immediate_parents.append(intf)
-        self._check_abstract_methods()
         for name in magic_methods_unrolled:
             if name in self.methods:
                 method = self.methods[name]
                 setattr(self, 'method' + name, method)
 
-        if self.immediate_parents:
-            for parent in self.immediate_parents:
-                if parent.is_iterator:
-                    self.is_iterator = True
-                    break
-            for parent in self.immediate_parents:
-                if parent.is_array_access:
-                    self.is_array_access = True
-                    break
+        self._init_protocol_flags()
+
         # XXXX to discuss
         for base in self.immediate_parents:
             for parent_id in base.all_parents:
                 self.all_parents[parent_id] = None
+
+    def declare_method(self, method_spec):
+        if isinstance(method_spec, str):
+            self.methods[method_spec.lower()] = None
+        elif isinstance(method_spec, BuiltinFunction):
+            meth = Method(method_spec, method_spec.flags, self)
+            self.methods[meth.get_identifier()] = meth
+        else:
+            raise TypeError("Invalid method declaration: %s" % method_spec)
+
+    def def_method(self, signature, name=None, error=None, flags=0,
+                   error_handler=handle_as_warning, check_num_args=True):
+        try:
+            i = signature.index('this')
+            signature[i] = ThisUnwrapper(self.instance_class)
+        except ValueError:
+            pass
+
+        def inner(ll_func):
+            fname = name or ll_func.__name__
+            fullname = self.name + "::" + fname
+            func = new_function(ll_func, signature, fullname, error,
+                            error_handler, check_num_args)
+            method = Method(func, flags, self)
+            meth_id = method.get_identifier()
+            if not meth_id in self.methods:
+                raise ValueError(
+                    "Unknown method %s was not declared in the class "
+                    "definition" % method.repr())
+            if self.methods[meth_id] is not None:
+                raise ValueError(
+                    "Duplicate implementation for method %s!" % method.repr())
+            self.methods[meth_id] = method
+            if meth_id == '__construct':
+                self.constructor_method = method
+            return ll_func
+        return inner
+
+    @property
+    def instance_class(self):
+        return self.custom_instance_class or W_InstanceObject
+
+    def validate(self):
+        """Check that the class is valid wrt. inheritance, interfaces, etc.
+
+        Only for testing.
+        """
+        for name, method in self.methods.iteritems():
+            if not isinstance(method, Method):
+                raise ValueError("Invalid method object for %s::%s: %s" %
+                                 (self.name, name, method))
+        self._check_abstract_methods()
+        if self.parentclass is not None:
+            for parent_method in self.parentclass.methods.itervalues():
+                meth_id = parent_method.get_identifier()
+                method = self.methods[meth_id]
+                if method is not parent_method:
+                    self._check_inheritance(method, parent_method)
 
 
 class ClassDeclaration(AbstractFunction, AccessMixin):
@@ -852,16 +927,6 @@ class UserClass(ClassBase):
         if parent is not None:
             immediate_parents.append(self.parentclass)
         if decl.base_interface_names:
-            if 'Traversable' in decl.base_interface_names:
-                interp.fatal("Class %s must implement interface Traversable as"
-                             " part of either Iterator or IteratorAggregate in"
-                             " Unknown on line " % self.name)
-
-            if 'IteratorAggregate' in decl.base_interface_names and \
-                'Iterator' in decl.base_interface_names:
-                interp.fatal("Class %s cannot implement both Iterator and "
-                             "IteratorAggregate at the same time" % self.name)
-
             for intfname in decl.base_interface_names:
                 intf = interp.lookup_class_or_intf(intfname)
                 if intf is None:
@@ -909,18 +974,10 @@ class UserClass(ClassBase):
         #
         try:
             self._check_abstract_methods()
+            self._init_protocol_flags()
         except ClassDeclarationError as e:
             interp.fatal(e.msg)
         self._init_magic_methods(interp)
-        for parent in immediate_parents:
-            if parent.is_iterator:
-                self.is_iterator = True
-                break
-            for parent in self.immediate_parents:
-                if parent.is_array_access:
-                    self.is_array_access = True
-                    break
-
         self.decl = decl
 
     def init_parent(self, interp, extends_name):

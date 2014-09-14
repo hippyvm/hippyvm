@@ -51,6 +51,11 @@ class TestParseDoubleQuote(object):
                                             ConstantInt(3))])
         assert parse_doublequoted("a{$x[3]}") == expected
 
+    def test_brackets_bug(self):
+        expected = DoubleQuotedStr([NamedVariable("x"),
+                                    ConstantStr("{")])
+        assert parse_doublequoted("$x{") == expected
+
     def test_interpolated_str_re(self):
         r = parse_doublequoted("^(?:$langtag|$privateUse)$")
         expected = DoubleQuotedStr([ConstantStr("^(?:"),
@@ -1405,7 +1410,7 @@ class TestParser(object):
     def test_minus_static_decl(self):
         r = parse("class A { var $x = -1; }")
         assert r == Block([ClassBlock('A', 0x0, None, [], Block([
-            PropertyDecl("x", ConstantInt(-1), 1)]))])
+            PropertyDecl("x", ConstantInt(-1))]))])
 
     def test_lambda_function(self):
         r = parse("$x = function($a) {};")
@@ -1460,6 +1465,14 @@ ENDOFHEREDOC;
 """)
         assert r == Block([Stmt(Print(
             ConstantStr("This is a heredoc test.", 1)))])
+
+    def test_heredoc_with_dollar(self):
+        r = parse("""print <<<ENDOFHEREDOC
+This is a heredoc with quoted dollar "$".
+ENDOFHEREDOC;
+""")
+        assert r == Block([Stmt(Print(
+            ConstantStr("This is a heredoc with quoted dollar \"$\".", 1)))])
 
     def test_index_function_result(self):
         r = parse('f()[0][1];')
@@ -1566,3 +1579,13 @@ ENDOFHEREDOC;
 
         r = parse_doublequoted("xyz ${a} asd$")
         assert r == DoubleQuotedStr([ConstantStr("xyz "), NamedVariable("a"), ConstantStr(" asd$")])
+
+    def test_parse_error_no_token_name(self):
+        with raises(ParseError) as excinfo:
+            parse('$foo=;')
+        assert excinfo.value.message == "syntax error, unexpected ';' in <input>"
+
+    def test_parse_error_with_token_name(self):
+        with raises(ParseError) as excinfo:
+            parse('1->2;')
+        assert excinfo.value.message == "syntax error, unexpected '->' (T_OBJECT_OPERATOR) in <input>"

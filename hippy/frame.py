@@ -317,6 +317,7 @@ class Frame(object):
         else:
             self.unset_ref(no)
 
+    @jit.unroll_safe
     def load_from_scope(self, scope):
         self.extra_variables = scope.dct_w
         varnames = self.bytecode.varnames

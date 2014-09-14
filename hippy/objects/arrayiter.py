@@ -1,42 +1,45 @@
 from hippy.objects.arrayobject import wrap_array_key
-from hippy.objects.iterator import W_BaseIterator
+from hippy.objects.iterator import BaseIterator
 
-
-class W_ListArrayIterator(W_BaseIterator):
+class ListArrayIterator(BaseIterator):
 
     def __init__(self, storage_w):
         self.storage_w = storage_w
         self.index = 0
-        self.finished = len(storage_w) == 0
 
     def next(self, space):
-        index = self.index
-        w_value = self.storage_w[index]
-        self.index = index + 1
-        self.finished = self.index == len(self.storage_w)
+        interp = space.ec.interpreter
+        w_value = self.current(interp)
+        self.index += 1
         return w_value
 
     def next_item(self, space):
+        interp = space.ec.interpreter
         index = self.index
-        w_value = self.storage_w[index]
+        w_value = self.current(interp)
+        w_index = self.key(interp)
         self.index = index + 1
-        self.finished = self.index == len(self.storage_w)
-        return space.wrap(index), w_value
+        return w_index, w_value
 
-    def current(self, space):
-        return self.storage_w[self.index]
+    def current(self, interp):
+        try:
+            return self.storage_w[self.index]
+        except IndexError:
+            return None
 
-    def key(self, space):
-        return space.wrap(self.index)
+    def key(self, interp):
+        return interp.space.wrap(self.index)
 
-    def rewind(self, space):
+    def rewind(self, interp):
         self.index = 0
 
-    def len(self, space):
-        return space.wrap(len(self.storage_w))
+    def valid(self, interp):
+        return self.index < len(self.storage_w)
 
+    def done(self):
+        return not self.valid(None)
 
-class ListArrayIteratorRef(W_BaseIterator):
+class ListArrayIteratorRef(BaseIterator):
     def __init__(self, space, r_array):
         self.r_array = r_array
         self.index = 0
@@ -65,42 +68,55 @@ class ListArrayIteratorRef(W_BaseIterator):
         self.finished = self.is_finished()
         return space.wrap(index), r_value
 
+class RDictArrayIterator(BaseIterator):
+    def __init__(self, w_array):
+        self.w_array = w_array
+        self.rewind(None)
 
-class W_RDictArrayIterator(W_BaseIterator):
-    def __init__(self, rdct_w):
-        self.rdct_w = rdct_w
-        self.dctiter = rdct_w.iteritems()
-        self.remaining = len(rdct_w)
-        self.finished = self.remaining == 0
+    def _current_index(self):
+        keylist = self.w_array._getkeylist()
+        try:
+            return keylist[self.index]
+        except IndexError:
+            return None
+
+    def current(self, interp):
+        key = self._current_index()
+        if key is None:
+            return None
+        return self.w_array.dct_w.get(key, None)
+
+    def key(self, interp):
+        key = self._current_index()
+        if key is None:
+            return None
+        return wrap_array_key(interp.space, key)
 
     def next(self, space):
-        self.remaining -= 1
-        self.finished = self.remaining == 0
-        return self.dctiter.next()[1]
+        w_value = self.current(None)
+        self.index += 1
+        self.finished = not self.valid(None)
+        return w_value
 
     def next_item(self, space):
-        self.remaining -= 1
-        self.finished = self.remaining == 0
-        key, w_value = self.dctiter.next()
-        return wrap_array_key(space, key), w_value
+        interp = space.ec.interpreter
+        w_value = self.current(interp)
+        w_key = self.key(interp)
+        if w_key is None:
+            return None, None
+        self.index += 1
+        self.finished = not self.valid(interp)
+        return w_key, w_value
 
-    def current(self, space):
-        return self.rdct_w.values()[self.remaining*-1]
+    def rewind(self, interp):
+        self.index = 0
+        self.finished = not self.valid(interp)
 
-    def key(self, space):
-        return space.wrap(self.rdct_w.keys()[self.remaining*-1])
-
-    def rewind(self, space):
-        self.dctiter = self.rdct_w.iteritems()
-        self.remaining = len(self.rdct_w)
-        self.finished = self.remaining == 0
-
-    def len(self, space):
-        return space.wrap(len(self.rdct_w))
+    def valid(self, interp):
+        return self.index < self.w_array.arraylen()
 
 
-
-class RDictArrayIteratorRef(W_BaseIterator):
+class RDictArrayIteratorRef(BaseIterator):
     def __init__(self, space, r_array):
         self.r_array = r_array
         self.index = 0
@@ -141,7 +157,7 @@ class RDictArrayIteratorRef(W_BaseIterator):
         return wrap_array_key(space, key), r_value
 
 
-class W_FixedIterator(W_BaseIterator):
+class W_FixedIterator(BaseIterator):
     def __init__(self, items_w):
         self.items_w = items_w
         self.index = 0
