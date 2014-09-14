@@ -157,24 +157,16 @@ def valid(interp, this):
 
 class W_RecursiveArrayIterator(W_ArrayIterator):
 
-    def get_children(self, space):
-        interp = space.ec.interpreter
-        if not self.has_children(space):
-            exception = interp._class_get('InvalidArgumentException')
-            raise PHPException(exception.call_args(
-                interp, [interp.space.wrap(
-                    "Passed variable is not an array or object, using empty array instead"
-                )]
-            ))
+    def get_children(self, interp):
+        if not self.has_children(interp):
+            raise interp.throw("Passed variable is not an array or object, "
+                "using empty array instead",
+                klass=k_InvalidArgumentException)
+        return self._iter.current(interp)
 
-        return self.current(space)
-
-    def has_children(self, space):
-        w_current = self.current(space)
-
-        if isinstance(w_current, W_ListArrayObject):
-            return True
-        if isinstance(w_current, W_RDictArrayObject):
+    def has_children(self, interp):
+        w_current = self._iter.current(interp)
+        if isinstance(w_current, W_ArrayObject):
             return True
         if isinstance(w_current, W_InstanceObject) and \
            w_current.klass.is_iterator:
