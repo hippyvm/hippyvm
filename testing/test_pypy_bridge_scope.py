@@ -184,6 +184,40 @@ echo($f());
         ''')
         assert phspace.int_w(output[0]) == 42
 
+    # Broken, will need to be addressed when we overhaul scoping.
+    # FatalError: Call to undefined function len()
+    # FAO: ltratt
+    @pytest.mark.xfail()
+    def test_php_can_call_python_builtin(self):
+        phspace = self.space
+
+        output = self.run('''
+            $src = <<<EOD
+            def c():
+                src2 = "function c2(\$ls) { return len(\$ls); }"
+                c2 = embed_php_func(src2)
+                return(c2([1,2,3,4]))
+            EOD;
+            $c = embed_py_func($src);
+            $n = $c();
+            echo($n);
+        ''')
+        assert phspace.int_w(output[0]) == 4
+
+    def test_python_can_call_php_global_builtin(self):
+        phspace = self.space
+
+        output = self.run('''
+            $src = <<<EOD
+            def c(ary):
+                return count(ary) # count is a PHP builtin func
+            EOD;
+            $c = embed_py_func($src);
+            $n = $c(array(1, 2, 3, 4, 5, 6));
+            echo($n);
+        ''')
+        assert phspace.int_w(output[0]) == 6
+
     def test_php_cant_call_normal_python_objects(self):
         phspace = self.space
         with pytest.raises(FatalError):
