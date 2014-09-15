@@ -10,6 +10,9 @@ from rply import ParsingError
 from rply.token import BaseBox, SourcePosition
 from rply import token
 
+class MissingMarker(Exception):
+    """Raised when the end marker of a now/heredoc is not found"""
+
 
 def _basebox_getsourcepos(self):
     return self.lineno
@@ -355,6 +358,12 @@ _RULES_FOR_HEREDOC = (
 
 RULES_FOR_HEREDOC = [(parse_regex(rule), name) for rule, name in _RULES_FOR_HEREDOC]
 
+_RULES_FOR_NOWDOC = (
+    (r".*", "T_ENCAPSED_AND_WHITESPACE"),
+)
+
+RULES_FOR_NOWDOC = [(parse_regex(rule), name) for rule, name in _RULES_FOR_NOWDOC]
+
 _RULES_FOR_BRACKETS = (
     ("\]", "]"),
     ("\[", "["),
@@ -389,7 +398,8 @@ ALL_RULES = _KEYWORDS +\
  CONTEXT_CURLY_BRACES,
  CONTEXT_BRACKETS,
  CONTEXT_HEREDOC,
- CONTEXT_BACKTICK) = range(7)
+ CONTEXT_NOWDOC,
+ CONTEXT_BACKTICK) = range(8)
 
 
 class Lexer(object):
@@ -419,6 +429,7 @@ class Lexer(object):
             CONTEXT_CURLY_BRACES: KEYWORDS + RULES_FOR_CONTEXT_BRACKETS + RULES,
             CONTEXT_BRACKETS: RULES_FOR_BRACKETS,
             CONTEXT_HEREDOC: RULES_FOR_HEREDOC,
+            CONTEXT_NOWDOC: RULES_FOR_NOWDOC,
             CONTEXT_BACKTICK: RULES_FOR_BACKTICK
          }
 
@@ -479,6 +490,7 @@ class Lexer(object):
             CONTEXT_CURLY_BRACES: self.get_runner(CONTEXT_CURLY_BRACES, self.buf),
             CONTEXT_BRACKETS: self.get_runner(CONTEXT_BRACKETS, self.buf),
             CONTEXT_HEREDOC: self.get_runner(CONTEXT_HEREDOC, self.buf),
+            CONTEXT_NOWDOC: self.get_runner(CONTEXT_NOWDOC, self.buf),
             CONTEXT_BACKTICK: self.get_runner(CONTEXT_BACKTICK, self.buf),
         }
 
@@ -567,14 +579,22 @@ class Lexer(object):
 
         elif ctx == CONTEXT_NORMAL and tok.name == "T_START_HEREDOC":
             here_doc_id = tok.getstr().lstrip("b<<<").lstrip("<<<").strip()
-            if here_doc_id.startswith('"'):
-                if not here_doc_id.endswith('"'):
+            if here_doc_id.startswith("'"):
+                if not here_doc_id.endswith("'"):
                     raise LexerError("wrong marker", tok.source_pos)
                 end = len(here_doc_id) - 1
                 assert end >= 0
-                here_doc_id = here_doc_id[1:end]
-            elif here_doc_id.startswith("'"):
-                if not here_doc_id.endswith("'"):
+                self.here_doc_id = here_doc_id[1:end]
+                token_end = tok.source_pos.idx + len(tok.source) - 1
+                assert token_end >= 0
+                try:
+                    self.scan_for_marker(search_start=token_end)
+                except MissingMarker:
+                    raise LexerError("unfinished nowdoc", tok.source_pos)
+                self.context_stack.append(CONTEXT_NOWDOC)
+                return tok
+            elif here_doc_id.startswith('"'):
+                if not here_doc_id.endswith('"'):
                     raise LexerError("wrong marker", tok.source_pos)
                 end = len(here_doc_id) - 1
                 assert end >= 0
@@ -582,28 +602,10 @@ class Lexer(object):
             self.here_doc_id = here_doc_id
             token_end = tok.source_pos.idx + len(tok.source) - 1
             assert token_end >= 0
-            search_string = '\n' + self.here_doc_id
-            id_len = len(search_string)
-            search_start = token_end
-            while True:
-                candidate = self.buf[search_start:].find(search_string)
-                if candidate < 0:
-                    raise LexerError("unfinished heredoc", tok.source_pos)
-                try:
-                    semicolon = 0
-                    if self.buf[search_start + candidate + id_len] == ';':
-                        semicolon = 1
-                    if self.buf[search_start + candidate + id_len + semicolon] == '\n':
-                        here_doc_end = search_start + candidate
-                        break
-                except IndexError:
-                    here_doc_end = search_start + candidate
-                    break
-                search_start = search_start + candidate + id_len
-            heredoc_content = self.buf[token_end:here_doc_end]
-            self.here_doc_pos = token_end
-            self.here_doc_end = here_doc_end
-            self.here_doc_end_line = self.lineno + heredoc_content.count("\n")
+            try:
+                self.scan_for_marker(search_start=token_end)
+            except MissingMarker:
+                raise LexerError("unfinished heredoc", tok.source_pos)
             self.context_stack.append(CONTEXT_HEREDOC)
 
         elif ((ctx == CONTEXT_DOUBLEQUOTE or
@@ -611,8 +613,8 @@ class Lexer(object):
             if runner.text[tok.source_pos.idx + len(tok.getstr())] == "[":
                 self.context_stack.append(CONTEXT_BRACKETS)
 
-        elif ctx == CONTEXT_HEREDOC:
-
+        elif ctx == CONTEXT_HEREDOC or ctx == CONTEXT_NOWDOC:
+            #import pdb; pdb.set_trace()
             if self.here_doc_finish:
                 tok.source = self.here_doc_id
                 tok.name = 'T_END_HEREDOC'
@@ -629,7 +631,6 @@ class Lexer(object):
                 self.here_doc_finish = False
 
             elif tok.source_pos.idx + len(tok.source) > self.here_doc_end:
-
                 start = tok.source_pos.idx
                 assert start >= 0
                 stop = self.here_doc_end
@@ -679,3 +680,27 @@ class Lexer(object):
                 backslash = False
             p += 1
         assert False
+
+    def scan_for_marker(self, search_start):
+        search_string = '\n' + self.here_doc_id
+        id_len = len(search_string)
+        pos = search_start
+        while True:
+            candidate = self.buf[pos:].find(search_string)
+            if candidate < 0:
+                raise MissingMarker
+            try:
+                semicolon = 0
+                if self.buf[pos + candidate + id_len] == ';':
+                    semicolon = 1
+                if self.buf[pos + candidate + id_len + semicolon] == '\n':
+                    here_doc_end = pos + candidate
+                    break
+            except IndexError:
+                here_doc_end = pos + candidate
+                break
+            pos = pos + candidate + id_len
+        content = self.buf[search_start:here_doc_end]
+        self.here_doc_pos = search_start
+        self.here_doc_end = here_doc_end
+        self.here_doc_end_line = self.lineno + content.count("\n")
