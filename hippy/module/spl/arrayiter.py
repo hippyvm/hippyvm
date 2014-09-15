@@ -1,12 +1,13 @@
 from hippy.builtin_klass import (
-    k_Iterator, GetterSetterWrapper, k_ArrayAccess, k_IteratorAggregate)
-from hippy.builtin import Optional
+    k_Iterator, GetterSetterWrapper, k_ArrayAccess, k_IteratorAggregate, ThisUnwrapper)
+from hippy.builtin import Optional, wrap_method
 from hippy.klass import def_class
 from hippy.objects.base import W_Root
 from hippy.objects.arrayobject import W_ArrayObject
 from hippy.objects.instanceobject import W_InstanceObject
 from hippy import consts
 from hippy.module.spl.exception import k_InvalidArgumentException
+from hippy.module.spl.interface import k_RecursiveIterator
 
 
 class W_SplArray(W_InstanceObject):
@@ -76,7 +77,10 @@ def __construct(interp, this, w_arr=None):
     this.w_arr = w_arr
     while isinstance(w_arr, W_SplArray):
         w_arr = w_arr.w_arr
-    this._iter = w_arr.create_iter(interp.space)
+    if isinstance(w_arr, W_InstanceObject):
+        this._iter = w_arr._create_fixed_iter(interp.space, None, False)
+    else:
+        this._iter = w_arr.create_iter(interp.space)
 
 
 @k_ArrayObject.def_method(['interp', 'this', W_Root])
@@ -152,3 +156,46 @@ def rewind(interp, this):
 @k_ArrayIterator.def_method(['interp', 'this'])
 def valid(interp, this):
     return interp.space.newbool(this._iter.valid(interp))
+
+
+class W_RecursiveArrayIterator(W_ArrayIterator):
+
+    def get_children(self, interp):
+        if not self.has_children(interp):
+            raise interp.throw("Passed variable is not an array or object, "
+                "using empty array instead",
+                klass=k_InvalidArgumentException)
+        return self._iter.current(interp)
+
+    def has_children(self, interp):
+        w_current = self._iter.current(interp)
+        if isinstance(w_current, W_ArrayObject):
+            return True
+        if isinstance(w_current, W_InstanceObject) and \
+           w_current.klass.is_iterator:
+            return True
+        else:
+            return False
+
+
+@wrap_method(['interp', ThisUnwrapper(W_RecursiveArrayIterator)],
+             name='RecursiveArrayIterator::getChildren')
+def RecursiveArrayIterator_getChildren(interp, this):
+    w_children = this.get_children(interp)
+    return RecursiveArrayIterator.call_args(interp, [w_children])
+
+
+@wrap_method(['interp', ThisUnwrapper(W_RecursiveArrayIterator)],
+             name='RecursiveArrayIterator::hasChildren')
+def RecursiveArrayIterator_hasChildren(interp, this):
+    return interp.space.wrap(this.has_children(interp))
+
+
+RecursiveArrayIterator = def_class(
+    'RecursiveArrayIterator',
+    [RecursiveArrayIterator_getChildren,
+     RecursiveArrayIterator_hasChildren],
+    [],
+    instance_class=W_RecursiveArrayIterator,
+    implements=[k_RecursiveIterator],
+    extends=k_ArrayIterator)
