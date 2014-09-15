@@ -79,36 +79,6 @@ k_PyBridgeProxy = def_class('PyBridgeProxy',
     [], instance_class=W_PyProxyGeneric
 )
 
-class W_EmbeddedPyFunc(AbstractFunction):
-    _immutable_fields_ = ["interp", "py_callable"]
-
-    def __init__(self, interp, py_callable):
-        self.interp = interp
-        self.py_callable = py_callable
-
-    def get_wrapped_py_obj(self):
-        return self.py_callable
-
-    @jit.unroll_safe
-    def call_args(self, interp, args_w, w_this=None, thisclass=None,
-                  closureargs=None):
-
-        wpy_args_elems = [ x.to_py(interp) for x in args_w ]
-
-        # Methods are really just functions with self bound
-        if w_this is not None:
-            wpy_args_elems = [w_this.to_py(interp)] + wpy_args_elems
-
-        rv = interp.pyspace.call_args(
-                self.py_callable, Arguments(interp.pyspace, wpy_args_elems))
-        return rv.to_php(interp)
-
-    def needs_ref(self, i):
-        return False
-
-    def needs_value(self, i):
-        return False
-
 class W_EmbeddedPyFuncLexicalCall(W_InvokeCall):
 
     def __init__(self, wpy_func):
@@ -135,7 +105,7 @@ class W_EmbeddedPyFuncLexical(W_InstanceObject):
 
     _immutable_fields_ = [ "interp", "py_func" ]
 
-    def __init__(self, interp, py_func, parent_php_frame, klass, storage_w):
+    def __init__(self, interp, py_func, klass, storage_w):
         self.interp = interp
         self.py_func = py_func
         W_InstanceObject.__init__(self, klass, storage_w)
@@ -161,8 +131,7 @@ class W_EmbeddedPyFuncLexical(W_InstanceObject):
 k_EmbeddedPyFuncLexical = def_class('EmbeddedPyFuncLexical', [])
 
 def new_embedded_py_func_lexical(interp, py_func):
-    return W_EmbeddedPyFuncLexical(interp, py_func, interp.get_frame(),
-            k_EmbeddedPyFuncLexical,
+    return W_EmbeddedPyFuncLexical(interp, py_func, k_EmbeddedPyFuncLexical,
             k_EmbeddedPyFuncLexical.get_initial_storage_w(interp.space)[:])
 
 class W_EmbeddedPyMod(WPh_Object):
