@@ -80,6 +80,8 @@ k_PyBridgeProxy = def_class('PyBridgeProxy',
 
 class W_EmbeddedPyCallable(W_InvokeCall):
 
+    _immutable_fields_ = [ "wpy_func" ]
+
     def __init__(self, wpy_func):
         W_InvokeCall.__init__(self, None, wpy_func, None)
         self.wpy_func = wpy_func
@@ -157,7 +159,6 @@ class W_EmbeddedPyMod(WPh_Object):
     def getattr(self, interp, name, contextclass=None, give_notice=False, fail_with_none=False):
         interp = self.py_space.get_php_interp()
         return self._getattr(interp, interp.space, name)
-
 
 class W_PyBridgeListProxyIterator(BaseIterator):
 
