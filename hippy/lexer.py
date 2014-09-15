@@ -573,6 +573,12 @@ class Lexer(object):
                 end = len(here_doc_id) - 1
                 assert end >= 0
                 here_doc_id = here_doc_id[1:end]
+            elif here_doc_id.startswith("'"):
+                if not here_doc_id.endswith("'"):
+                    raise LexerError("wrong marker", tok.source_pos)
+                end = len(here_doc_id) - 1
+                assert end >= 0
+                here_doc_id = here_doc_id[1:end]
             self.here_doc_id = here_doc_id
             token_end = tok.source_pos.idx + len(tok.source) - 1
             assert token_end >= 0
