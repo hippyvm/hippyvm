@@ -21,7 +21,7 @@ class CatchBlock(ExceptionHandler):
     def match(self, interp, w_exc):
         assert isinstance(w_exc, W_ExceptionObject)
         k_exc = w_exc.klass
-        k_catch = interp.lookup_class_or_intf(self.exc_class)
+        k_catch = interp.lookup_class_or_intf(self.exc_class, autoload=False)
         if k_catch is None:
             return False
         return k_exc.is_subclass_of_class_or_intf_name(k_catch.name)

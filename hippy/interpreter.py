@@ -1792,7 +1792,7 @@ class Interpreter(object):
         assert isinstance(w_name, W_StringObject)
         name = w_name.unwrap()
 
-        k_hint = self.lookup_class_or_intf(name)
+        k_hint = self.lookup_class_or_intf(name, autoload=False)
         if k_hint is not None and k_hint.is_interface():
             msg = "implement interface "
         else:
