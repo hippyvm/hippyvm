@@ -2822,7 +2822,6 @@ markers[spl_test_dir] = {
     'spl_iterator_caching_count_basic.phpt': "?",
     'spl_iterator_caching_count_error.phpt': "?",
     'spl_iterator_caching_getcache_error.phpt': "?",
-    'spl_iterator_getcallchildren.phpt': "missing RecursiveArrayIterator",
     'spl_iterator_iterator_constructor.phpt': "?",
     'spl_iterator_to_array_basic.phpt': "?",
     'spl_iterator_to_array_error.phpt': "?",
