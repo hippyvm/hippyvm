@@ -1822,7 +1822,6 @@ markers[Zend_test_dir] = {
     'bug55705.phpt': "?",
     'bug55825.phpt': "missing traits",
     'bug60099.phpt': "__HALT_COMPILER issue",
-    'bug60138.phpt': "missing RecursiveIteratorIterator",
     'bug60139.phpt': "missing gc_collect_cycles()",
     'bug60169.phpt': "unexpected :",
     'bug60536_001.phpt': "missing traits",
