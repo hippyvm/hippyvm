@@ -41,11 +41,7 @@ class W_PyProxyGeneric(W_InstanceObject):
 
     def get_callable(self):
         """ PHP interpreter calls this when calls a wrapped Python var  """
-        # We trick the interpreter into seeing something that looks like
-        # the kind of function that came from a PHP closure.
-
-        # XXX make the callable directly?
-        return new_embedded_py_func(self.interp, self.wpy_inst).get_callable()
+        return W_EmbeddedPyCallable(self.wpy_inst)
 
     def to_py(self, interp):
         return self.wpy_inst
