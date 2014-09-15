@@ -101,11 +101,11 @@ class TestPyPyBridgeConversions(BaseTestInterpreter):
         def dummy(x):
             return x
         EOD;
-        embed_py_func($src);
+        $dummy = embed_py_func($src);
 
         class C { }
         $x = new C();
-        echo(dummy($x) === $x);
+        echo($dummy($x) === $x);
         ''')
         assert phspace.is_true(output[0])
 
@@ -227,9 +227,9 @@ class TestPyPyBridgeConversions(BaseTestInterpreter):
             print x, dummy(x)
             return x is dummy(x)
         EOD;
-        embed_py_func($src);
+        $tst = embed_py_func($src);
 
-        echo(tst());
+        echo($tst());
         ''')
         assert phspace.is_true(output[0])
 
@@ -240,8 +240,8 @@ class TestPyPyBridgeConversions(BaseTestInterpreter):
         def n():
             return None
         EOD;
-        embed_py_func($src);
+        $n = embed_py_func($src);
 
-        echo(null === n());
+        echo(null === $n());
         ''')
         assert phspace.is_true(output[0])

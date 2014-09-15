@@ -79,18 +79,6 @@ def _compile_py_func_from_string(interp, func_source):
     return wpy_func_name, wpy_func
 
 @wrap(['interp', str], name='embed_py_func')
-def embed_py_func(interp, func_source):
-    phspace, pyspace = interp.space, interp.pyspace
-
-    # Compile
-    wpy_func_name, wpy_func = _compile_py_func_from_string( interp, func_source)
-
-    # Masquerade it as a PHP function.
-    func_name = pyspace.str_w(wpy_func_name)
-    ph_func = W_EmbeddedPyFunc(interp, wpy_func)
-    phspace.global_function_cache.declare_new(func_name, ph_func)
-
-@wrap(['interp', str], name='embed_py_func_lexical')
 def embed_py_func_lexical(interp, func_source):
     phspace, pyspace = interp.space, interp.pyspace
 

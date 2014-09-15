@@ -171,11 +171,11 @@ class TestPyPyBridge(BaseTestInterpreter):
         def cmp(x, y):
             return x == y
         EOD;
-        embed_py_func($src);
+        $cmp = embed_py_func($src);
 
         class C { }
         $x = new C();
-        echo(cmp($x, $x));
+        echo($cmp($x, $x));
         ''')
         assert phspace.is_true(output[0])
 
@@ -186,12 +186,12 @@ class TestPyPyBridge(BaseTestInterpreter):
         def cmp(x, y):
             return x == y
         EOD;
-        embed_py_func($src);
+        $cmp = embed_py_func($src);
 
         class C { }
         $x = new C();
         $y = new C();
-        echo(cmp($x, $y));
+        echo($cmp($x, $y));
         ''')
         assert phspace.is_true(output[0])
 
@@ -202,7 +202,7 @@ class TestPyPyBridge(BaseTestInterpreter):
         def cmp(x, y):
             return x == y
         EOD;
-        embed_py_func($src);
+        $cmp = embed_py_func($src);
 
         class C {
             public $val;
@@ -212,7 +212,7 @@ class TestPyPyBridge(BaseTestInterpreter):
         }
         $x = new C(1);
         $y = new C(2);
-        echo(cmp($x, $y));
+        echo($cmp($x, $y));
         ''')
         assert not phspace.is_true(output[0])
 
@@ -223,7 +223,7 @@ class TestPyPyBridge(BaseTestInterpreter):
         def cmp(x, y):
             return x == y
         EOD;
-        embed_py_func($src);
+        $cmp = embed_py_func($src);
 
         class C {
             public $val;
@@ -233,7 +233,7 @@ class TestPyPyBridge(BaseTestInterpreter):
         }
         $x = new C(1);
         $y = new C(1);
-        echo(cmp($x, $y));
+        echo($cmp($x, $y));
         ''')
         assert phspace.is_true(output[0])
 
@@ -245,13 +245,13 @@ class TestPyPyBridge(BaseTestInterpreter):
             return str(isinstance(a, C))
         EOD;
 
-        embed_py_func($src);
+        $iof = embed_py_func($src);
 
         class C {}
         class D {}
         $x = new C;
         $y = new D;
-        echo(iof($x) . " " . iof($y));
+        echo($iof($x) . " " . $iof($y));
         ''')
         assert phspace.str_w(output[0]) == "True False"
 
@@ -262,12 +262,12 @@ class TestPyPyBridge(BaseTestInterpreter):
         def is_chk(x, y):
             return str(id(x) == id(y))
         EOD;
-        embed_py_func($src);
+        $is_chk = embed_py_func($src);
 
         class C {}
         $x = new C;
         $y = new c;
-        echo(is_chk($x, $y) . " " . is_chk($x, $x));
+        echo($is_chk($x, $y) . " " . $is_chk($x, $x));
         ''')
         assert phspace.str_w(output[0]) == "False True"
 
@@ -281,9 +281,9 @@ class TestPyPyBridge(BaseTestInterpreter):
         def is_chk():
             return "%s %s" % (str(id(f) == id(g)), str(id(f) == id(f)))
         EOD;
-        embed_py_func($src);
+        $is_chk = embed_py_func($src);
 
-        echo(is_chk());
+        echo($is_chk());
         ''')
         assert phspace.str_w(output[0]) == "False True"
 
@@ -294,12 +294,12 @@ class TestPyPyBridge(BaseTestInterpreter):
         def is_chk(x, y):
             return str(x is y)
         EOD;
-        embed_py_func($src);
+        $is_chk = embed_py_func($src);
 
         class C {}
         $x = new C;
         $y = new c;
-        echo(is_chk($x, $y) . " " . is_chk($x, $x));
+        echo($is_chk($x, $y) . " " . $is_chk($x, $x));
         ''')
         assert phspace.str_w(output[0]) == "False True"
 
@@ -313,9 +313,9 @@ class TestPyPyBridge(BaseTestInterpreter):
         def is_chk():
             return "%s %s" % (str(f is g), str(f is f))
         EOD;
-        embed_py_func($src);
+        $is_chk = embed_py_func($src);
 
-        echo(is_chk());
+        echo($is_chk());
         ''')
         assert phspace.str_w(output[0]) == "False True"
 
@@ -328,8 +328,8 @@ class TestPyPyBridge(BaseTestInterpreter):
                 pystone.main()
         EOD;
 
-        embed_py_func($src);
-        mystone();
+        $mystone = embed_py_func($src);
+        $mystone();
         ''')
         # just check it runs
 
@@ -349,8 +349,8 @@ class TestPyPyBridge(BaseTestInterpreter):
             hello()
         EOD;
 
-        embed_py_func($src);
-        call_php();
+        $call_php = embed_py_func($src);
+        $call_php();
         ''')
         assert phspace.str_w(output[0]) == "foobar"
 
@@ -376,8 +376,8 @@ class TestPyPyBridge(BaseTestInterpreter):
         def test():
             return "jibble"
         EOD;
-        embed_py_func($src);
-        echo(test());
+        $test = embed_py_func($src);
+        echo($test());
         ''')
         assert phspace.str_w(output[0]) == "jibble"
 
@@ -388,8 +388,8 @@ class TestPyPyBridge(BaseTestInterpreter):
         def cat(x, y, z):
             return "%s-%s-%s" % (x, y, z)
         EOD;
-        embed_py_func($src);
-        echo(cat("t", "minus", 10));
+        $cat = embed_py_func($src);
+        echo($cat("t", "minus", 10));
         ''')
         assert phspace.str_w(output[0]) == "t-minus-10"
 
@@ -403,10 +403,10 @@ def cwd():
     return os.getpid
 EOD;
 
-embed_py_func($src);
+$cwd = embed_py_func($src);
 
 echo "111111\n";
-$x = cwd();
+$x = $cwd();
 echo "222222\n";
 echo $x();
 echo "333333\n";
@@ -424,9 +424,9 @@ echo "333333\n";
                 return x + y
             return get_x
         EOD;
-        embed_py_func($src);
+        $mk_get_x = embed_py_func($src);
 
-        $f = mk_get_x(2, 4);
+        $f = $mk_get_x(2, 4);
         echo($f());
         ''')
         assert phspace.int_w(output[0]) == 6
@@ -439,10 +439,10 @@ $src = <<<EOD
 def f():
     return x;
 EOD;
-embed_py_func($src);
+$f = embed_py_func($src);
 $x = 43;
 
-echo(f());
+echo($f());
         ''')
         assert phspace.int_w(output[0]) == 43
 
@@ -457,10 +457,10 @@ def f():
         return x;
     return g
 EOD;
-embed_py_func($src);
+$f = embed_py_func($src);
 $x = 11;
 
-$g = f();
+$g = $f();
 echo($g());
         ''')
         assert phspace.int_w(output[0]) == 11
@@ -477,9 +477,9 @@ def f():
     x += 1
     return g()
 EOD;
-embed_py_func($src);
+$f = embed_py_func($src);
 
-echo(f());
+echo($f());
         ''')
         assert phspace.int_w(output[0]) == 45
 
@@ -494,9 +494,9 @@ def f():
     x = 45
     return g()
 EOD;
-embed_py_func($src);
+$f = embed_py_func($src);
 
-echo(f());
+echo($f());
         ''')
         assert phspace.int_w(output[0]) == 45
 
@@ -505,7 +505,7 @@ echo(f());
 
         output = self.run('''
 $src = "def f(x, y): return x + y";
-$f = embed_py_func_lexical($src);
+$f = embed_py_func($src);
 $r = $f(666, 1);
 echo $r;
         ''')

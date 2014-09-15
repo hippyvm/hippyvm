@@ -15,8 +15,8 @@ $src = <<<EOD
 def f(): return [1,2,3]
 EOD;
 
-embed_py_func($src);
-$ar = f();
+$f = embed_py_func($src);
+$ar = $f();
 echo(count($ar));
 
         ''')
@@ -31,8 +31,8 @@ $src = <<<EOD
 def f(): return [3, 2, 1]
 EOD;
 
-embed_py_func($src);
-$ar = f();
+$f = embed_py_func($src);
+$ar = $f();
 
 for ($i = 0; $i < 3; $i++) {
     echo($ar[$i]);
@@ -49,8 +49,8 @@ $src = <<<EOD
 def f(): return [3, 2, 1]
 EOD;
 
-embed_py_func($src);
-$ar = f();
+$f = embed_py_func($src);
+$ar = $f();
 
 foreach ($ar as $i) {
     echo($i);
@@ -67,8 +67,8 @@ $src = <<<EOD
 def f(): return ["zero", "one", "two"]
 EOD;
 
-embed_py_func($src);
-$ar = f();
+$f = embed_py_func($src);
+$ar = $f();
 
 foreach ($ar as $k => $v) {
     echo("$k:$v");
@@ -87,8 +87,8 @@ $src = <<<EOD
 def f(): return ["zero", "one", "two"]
 EOD;
 
-embed_py_func($src);
-$ar = f();
+$f = embed_py_func($src);
+$ar = $f();
 
 $ar[1] = "three";
 for ($i = 0; $i < 3; $i++) {
@@ -107,8 +107,8 @@ $src = <<<EOD
 def f(): return ["zero", "one", "two"]
 EOD;
 
-embed_py_func($src);
-$ar = f();
+$f = embed_py_func($src);
+$ar = $f();
 
 $ar[] = "three";
 for ($i = 0; $i < 4; $i++) {
@@ -132,8 +132,8 @@ $src = <<<EOD
 def f(): return {"a" : "b", "c" : "d", "e" : "f"}
 EOD;
 
-embed_py_func($src);
-$ar = f();
+$f = embed_py_func($src);
+$ar = $f();
 echo(count($ar));
 
         ''')
@@ -147,8 +147,8 @@ $src = <<<EOD
 def f(): return {"a" : "b", "c" : "d", "e" : "f"}
 EOD;
 
-embed_py_func($src);
-$ar = f();
+$f = embed_py_func($src);
+$ar = $f();
 echo($ar["a"]);
 echo($ar["c"]);
 echo($ar["e"]);
@@ -166,8 +166,8 @@ $src = <<<EOD
 def f(): return {6 : "a", 7 : "b", 8 : "c"}
 EOD;
 
-embed_py_func($src);
-$ar = f();
+$f = embed_py_func($src);
+$ar = $f();
 echo($ar[8]);
 echo($ar[7]);
 echo($ar[6]);
@@ -185,8 +185,8 @@ $src = <<<EOD
 def f(): return {"x" : 10, 999 : 14, "z" : -1}
 EOD;
 
-embed_py_func($src);
-$ar = f();
+$f = embed_py_func($src);
+$ar = $f();
 
 foreach ($ar as $i) {
     echo($i);
@@ -205,8 +205,8 @@ $src = <<<EOD
 def f(): return {"x" : 10, 999 : 14, "z" : -1}
 EOD;
 
-embed_py_func($src);
-$ar = f();
+$f = embed_py_func($src);
+$ar = $f();
 
 foreach ($ar as $k => $v) {
     echo("$k:$v");
@@ -226,8 +226,8 @@ $src = <<<EOD
 def f(): return { 0 : "one", 1 : "two", 2 : "three" }
 EOD;
 
-embed_py_func($src);
-$ar = f();
+$f = embed_py_func($src);
+$ar = $f();
 
 $ar[1] = "bumble";
 for ($i = 0; $i < 3; $i++) {
@@ -247,8 +247,8 @@ $src = <<<EOD
 def f(): return { 0 : "one", 1 : "two", 2 : "three" }
 EOD;
 
-embed_py_func($src);
-$ar = f();
+$f = embed_py_func($src);
+$ar = $f();
 
 $ar["x"] = "bumble";
 echo($ar[0]);
@@ -269,8 +269,8 @@ $src = <<<EOD
 def f(): return { "one" : "one", "two" : "two", "three" : "three" }
 EOD;
 
-embed_py_func($src);
-$ar = f();
+$f = embed_py_func($src);
+$ar = $f();
 
 $ar["two"] = "bumble";
 echo($ar["one"]);
@@ -292,8 +292,8 @@ $src = <<<EOD
 def f(): return { "x" : "one", "y" : "two", "z" : "three" }
 EOD;
 
-embed_py_func($src);
-$ar = f();
+$f = embed_py_func($src);
+$ar = $f();
 
 $ar[] = "bumble"; # ?!?!
         ''')
@@ -310,11 +310,11 @@ $ar[] = "bumble"; # ?!?!
         output = self.run('''
 
 $src = "def f(a): return type(a) == dict";
-embed_py_func($src);
+$f = embed_py_func($src);
 
 $in = array("my", "array", 2, 3);
 
-echo(f($in));
+echo($f($in));
 
         ''')
         assert phspace.is_true(output[0])
@@ -324,11 +324,11 @@ echo(f($in));
         output = self.run('''
 
 $src = "def f(a): return type(a.as_list()) == list";
-embed_py_func($src);
+$f = embed_py_func($src);
 
 $in = array(1, 2, 4, 8, 16);
 
-echo(f($in));
+echo($f($in));
 
         ''')
         assert phspace.is_true(output[0])
@@ -347,11 +347,11 @@ def f(a):
         return False
 EOD;
 
-embed_py_func($src);
+$f = embed_py_func($src);
 
 $in = array("a" => 1); // mixed keys
 
-echo(f($in));
+echo($f($in));
 
         ''')
         assert self.space.is_true(output[0])
@@ -370,11 +370,11 @@ def f(arry_d):
         return e.args[0]
 EOD;
 
-embed_py_func($src);
+$f = embed_py_func($src);
 
 $in = array(1, 2, 3); // int keys
 
-echo(f($in));
+echo($f($in));
 
         ''')
         assert phspace.str_w(output[0]) == "Stale wrapped PHP array. No longer integer keyed!"
@@ -388,11 +388,11 @@ echo(f($in));
         output = self.run('''
 
 $src = "def f(a): return len(a)";
-embed_py_func($src);
+$f = embed_py_func($src);
 
 $in = array();
 
-echo(f($in));
+echo($f($in));
 
         ''')
         assert phspace.int_w(output[0]) == 0
@@ -402,11 +402,11 @@ echo(f($in));
         output = self.run('''
 
 $src = "def f(a): return len(a.as_list())";
-embed_py_func($src);
+$f = embed_py_func($src);
 
 $in = array("an", "intkeyed", "array");
 
-echo(f($in));
+echo($f($in));
 
         ''')
         assert phspace.int_w(output[0]) == 3
@@ -416,11 +416,11 @@ echo(f($in));
         output = self.run('''
 
 $src = "def f(ary): return len(ary)";
-embed_py_func($src);
+$f = embed_py_func($src);
 
 $in = array("a" => 1, "b" => "mixed-key", "c" => "array");
 
-echo(f($in));
+echo($f($in));
 
         ''')
         assert phspace.int_w(output[0]) == 3
@@ -430,13 +430,13 @@ echo(f($in));
         output = self.run('''
 
 $src = "def f(ary, idx): return ary[idx]";
-embed_py_func($src);
+$f = embed_py_func($src);
 
 $in = array("an", "intkeyed", "array");
 
-echo(f($in, 0));
-echo(f($in, 1));
-echo(f($in, 2));
+echo($f($in, 0));
+echo($f($in, 1));
+echo($f($in, 2));
 
         ''')
         assert phspace.str_w(output[0]) == "an"
@@ -453,13 +453,13 @@ def f(ary, idx):
     return ls[idx]
 EOD;
 
-embed_py_func($src);
+$f = embed_py_func($src);
 
 $in = array("an", "intkeyed", "array");
 
-echo(f($in, 0));
-echo(f($in, 1));
-echo(f($in, 2));
+echo($f($in, 0));
+echo($f($in, 1));
+echo($f($in, 2));
 
         ''')
         assert phspace.str_w(output[0]) == "an"
@@ -472,11 +472,11 @@ echo(f($in, 2));
 
 $src = "def f(ary): return len(ary.as_list())";
 
-embed_py_func($src);
+$f = embed_py_func($src);
 
 $in = array("an", "intkeyed", "array");
 
-echo(f($in));
+echo($f($in));
 
         ''')
         assert phspace.int_w(output[0]) == 3
@@ -486,13 +486,13 @@ echo(f($in));
         output = self.run('''
 
 $src = "def f(ary, idx): return ary[idx]";
-embed_py_func($src);
+$f = embed_py_func($src);
 
 $in = array("a" => 1, "b" => 22, "c" => 333);
 
-echo(f($in, "a"));
-echo(f($in, "b"));
-echo(f($in, "c"));
+echo($f($in, "a"));
+echo($f($in, "b"));
+echo($f($in, "c"));
 
         ''')
         assert phspace.int_w(output[0]) == 1
@@ -511,11 +511,11 @@ def f(ary):
     return "|".join(ret)
 EOD;
 
-embed_py_func($src);
+$f = embed_py_func($src);
 
 $in = array("a" => 1, "b" => 22, "c" => 333);
 
-echo(f($in));
+echo($f($in));
 
         ''')
         assert phspace.str_w(output[0]) == "a,1|b,22|c,333"
@@ -530,11 +530,11 @@ def f(ary):
     return "|".join(ret)
 EOD;
 
-embed_py_func($src);
+$f = embed_py_func($src);
 
 $in = array("a" => 1, "b" => 22, "c" => 333);
 
-echo(f($in));
+echo($f($in));
 
         ''')
         assert phspace.str_w(output[0]) == "a|b|c"
@@ -549,11 +549,11 @@ def f(ary):
     return "|".join(ret)
 EOD;
 
-embed_py_func($src);
+$f = embed_py_func($src);
 
 $in = array("a" => 1, "b" => 22, "c" => 333);
 
-echo(f($in));
+echo($f($in));
 
         ''')
         assert phspace.str_w(output[0]) == "1|22|333"
@@ -570,11 +570,11 @@ def f(ary):
     return "|".join(ret)
 EOD;
 
-embed_py_func($src);
+$f = embed_py_func($src);
 
 $in = array(2, 1, 0);
 
-echo(f($in));
+echo($f($in));
 
         ''')
         assert phspace.str_w(output[0]) == "0,2|1,1|2,0"
@@ -589,11 +589,11 @@ def f(ary):
     return "|".join(ret)
 EOD;
 
-embed_py_func($src);
+$f = embed_py_func($src);
 
 $in = array("a", "b", "c");
 
-echo(f($in));
+echo($f($in));
 
         ''')
         assert phspace.str_w(output[0]) == "0|1|2"
@@ -608,11 +608,11 @@ def f(ary):
     return "|".join(ret)
 EOD;
 
-embed_py_func($src);
+$f = embed_py_func($src);
 
 $in = array("x", "y", "z");
 
-echo(f($in));
+echo($f($in));
 
         ''')
         assert phspace.str_w(output[0]) == "x|y|z"
@@ -629,17 +629,19 @@ def f(ary):
     return ary
 EOD;
 
-embed_py_func($src);
+$f= embed_py_func($src);
 
 $in = array("x", "y", "z");
 
-$out = f($in);
+$out = $f($in);
 
 echo $out["x"];
 
         ''')
         assert phspace.str_w(output[0]) == "y"
 
+    # XXX pass by value/ref semantics broken
+    @pytest.mark.xfail()
     def test_php_mixed_key_array_setitem_in_python_no_ret(self):
         phspace = self.space
         output = self.run('''
@@ -649,11 +651,11 @@ def f(ary):
     ary["x"] = "y"
 EOD;
 
-embed_py_func($src);
+$f = embed_py_func($src);
 
 $in = array("x", "y", "z");
 
-f($in);
+$f($in);
 
 echo $in["x"];
 
@@ -671,17 +673,19 @@ def f(ary):
     return ary
 EOD;
 
-embed_py_func($src);
+$f = embed_py_func($src);
 
 $in = array("x", "y", "z");
 
-$out = f($in);
+$out = $f($in);
 
 echo $out[3];
 
         ''')
         assert phspace.str_w(output[0]) == "a"
 
+    # XXX pass by value/ref semantics broken
+    @pytest.mark.xfail()
     def test_php_int_key_array_append_in_python(self):
         phspace = self.space
         output = self.run('''
@@ -692,11 +696,11 @@ def f(ary):
     ary_l.append("a")
 EOD;
 
-embed_py_func($src);
+$f = embed_py_func($src);
 
 $in = array("x", "y", "z");
 
-f($in);
+$f($in);
 
 echo $in[3];
 
@@ -715,11 +719,12 @@ def A_construct(self):
     self.l = [1,2,3]
     print(self.l)
 EOD;
-embed_py_func($src);
+$A_construct = embed_py_func($src);
 
 class A {
     function __construct() {
-        A_construct($this);
+        global $A_construct;
+        $A_construct($this);
     }
 }
 

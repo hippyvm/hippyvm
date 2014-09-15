@@ -13,9 +13,9 @@ def f(a, b):
     return sum([a, b])
 EOD;
 
-embed_py_func($src);
+$f = embed_py_func($src);
 
-echo f(4, 7);
+echo $f(4, 7);
 
         ''')
         assert phspace.int_w(output[0]) == 11
@@ -32,11 +32,12 @@ def f(a, b):
     return sum([a, b])
 EOD;
 
-    embed_py_func($src);
+    $f = embed_py_func($src);
+    return $f;
 }
 
-make();
-echo f(5, 7);
+$g = make();
+echo $g(5, 7);
 
         ''')
         assert phspace.int_w(output[0]) == 12
@@ -55,11 +56,12 @@ def f(b):
     return sum([a, b])
 EOD;
 
-    embed_py_func($src);
+    $f = embed_py_func($src);
+    return $f;
 }
 
-make();
-echo f(3);
+$g = make();
+echo $g(3);
 
         ''')
         assert phspace.int_w(output[0]) == 5
@@ -77,32 +79,16 @@ $pysrc = <<<EOD
 def f():
     php_src = "function g(\$a, \$b) { return \$a + \$b; }"
     g = embed_php_func(php_src)
-    print(type(g))
     return g(5, 4)
 EOD;
 
-embed_py_func($pysrc);
-echo f();
+$f = embed_py_func($pysrc);
+echo $f();
 
         ''')
         assert phspace.int_w(output[0]) == 9
 
     # --
-    def test_embed_php_func_not_polluting_php_global(self):
-        phspace = self.space
-        output = self.run('''
-
-$pysrc = <<<EOD
-def f():
-    php_src = "function g(\$a, \$b) { return \$a + \$b; }"
-    embed_php_func(php_src)
-EOD;
-
-embed_py_func($pysrc);
-echo function_exists("g");
-
-        ''')
-        assert not phspace.is_true(output[0])
 
     def test_php_looks_into_lexical_scope(self):
         phspace = self.space
@@ -116,8 +102,8 @@ def f():
     return g
 EOD;
 
-embed_py_func($pysrc);
-$g = f();
+$f = embed_py_func($pysrc);
+$g = $f();
 echo $g(7);
 
         ''')
@@ -131,8 +117,8 @@ echo $g(7);
             def f():
                 return x
             EOD;
-            embed_py_func($pysrc);
-            echo(f());
+            $f = embed_py_func($pysrc);
+            echo($f());
         ''')
         assert phspace.int_w(output[0]) == 3
 
@@ -149,16 +135,16 @@ def f1():
     src2 = """
     function f2() {
         \$src3 = "def f3(): return x";
-        embed_py_func(\$src3);
-        return f3();
+        \$f3 = embed_py_func(\$src3);
+        return \$f3();
     }
     """
     f2 = embed_php_func(src2)
     return f2();
 EOD;
 
-    embed_py_func($src1);
-    echo f1();
+    $f1 = embed_py_func($src1);
+    echo $f1();
 
         ''')
         assert phspace.int_w(output[0]) == 668
@@ -175,9 +161,9 @@ def f():
     x += 1
     return g()
 EOD;
-embed_py_func($src);
+$f = embed_py_func($src);
 
-echo(f());
+echo($f());
         ''')
         assert phspace.int_w(output[0]) == 45
 
@@ -193,8 +179,8 @@ def f():
 
     return h()
 EOD;
-embed_py_func($pysrc);
-echo(f());
+$f = embed_py_func($pysrc);
+echo($f());
         ''')
         assert phspace.int_w(output[0]) == 42
 
@@ -211,8 +197,8 @@ def f():
 
     return h()
 EOD;
-embed_py_func($pysrc);
-echo(f());
+$f = embed_py_func($pysrc);
+echo($f());
         ''')
 
     def test_python_calling_php_func(self):
@@ -226,9 +212,9 @@ echo(f());
         def test():
             return f()
         EOD;
-        embed_py_func($src);
+        $test = embed_py_func($src);
 
-        echo(test()); ''')
+        echo($test()); ''')
         assert phspace.str_w(output[0]) == "f"
 
     def test_python_calling_php_func_case_insensitive(self):
@@ -242,9 +228,9 @@ echo(f());
         def test():
             return "%s %s" % (f(), F())
         EOD;
-        embed_py_func($src);
+        $test = embed_py_func($src);
 
-        echo(test()); ''')
+        echo($test()); ''')
         assert phspace.str_w(output[0]) == "F F"
 
     def test_python_ref_php_class(self):
@@ -255,12 +241,12 @@ echo(f());
             return C()
         EOD;
 
-        embed_py_func($src);
+        $ref = embed_py_func($src);
 
         class C {
             function m() { return "c.m"; }
         }
-        echo(ref()->m()); ''')
+        echo($ref()->m()); ''')
         assert phspace.str_w(output[0]) == "c.m"
 
     def test_python_lookup_php_attr(self):
@@ -270,7 +256,7 @@ echo(f());
             def ref():
                 return C(2).x
             EOD;
-            embed_py_func($src);
+            $ref = embed_py_func($src);
 
             class C {
                 public $x;
@@ -278,7 +264,7 @@ echo(f());
                     $this->x = $x;
                 }
             }
-            echo(ref());
+            echo($ref());
         """)
         assert phspace.int_w(output[0]) == 2
 
@@ -290,10 +276,10 @@ echo(f());
             def ref():
                 return C().x
             EOD;
-            embed_py_func($src);
+            $ref = embed_py_func($src);
 
             class C {}
-            ref();
+            $ref();
         """)
         assert phspace.int_w(output[0]) == 2
 
@@ -304,7 +290,7 @@ echo(f());
             def ref(c):
                 c.x = 3
             EOD;
-            embed_py_func($src);
+            $ref = embed_py_func($src);
 
             class C {
                 public $x;
@@ -313,7 +299,7 @@ echo(f());
                 }
             }
             $c = new C(2);
-            ref($c);
+            $ref($c);
             echo($c->x);
         """)
         assert phspace.int_w(output[0]) == 3
@@ -325,12 +311,12 @@ echo(f());
             def ref():
                 return C().m()
             EOD;
-            embed_py_func($src);
+            $ref = embed_py_func($src);
 
             class C {
                 function m() { return "c.m"; }
             }
-            echo(ref());
+            echo($ref());
         """)
         assert phspace.str_w(output[0]) == "c.m"
 
@@ -341,12 +327,12 @@ echo(f());
             def ref():
                 return C().M()
             EOD;
-            embed_py_func($src);
+            $ref = embed_py_func($src);
 
             class C {
                 function M() { return "c.m"; }
             }
-            echo(ref());
+            echo($ref());
         """)
         assert phspace.str_w(output[0]) == "c.m"
 
@@ -359,8 +345,8 @@ echo(f());
             def ref():
                 return b
             EOD;
-            embed_py_func($src);
-            echo(ref());
+            $ref = embed_py_func($src);
+            echo($ref());
         """)
         assert self.space.str_w(output[0]) == "c"
 
@@ -376,7 +362,7 @@ echo(f());
         echo($math->pi);
         ''')
         assert phspace.float_w(output[0]) == math.pi
-   
+
     def test_import_py_nested1_mod_func(self):
         phspace = self.space
         output = self.run('''
@@ -407,7 +393,7 @@ echo(f());
                 php = php_global_ns()
                 return php.strlen("test")
             EOD;
-            embed_py_func($src);
-            echo(test());
+            $test = embed_py_func($src);
+            echo($test());
         ''')
         assert phspace.int_w(output[0]) == 4

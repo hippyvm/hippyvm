@@ -43,8 +43,10 @@ class W_PyProxyGeneric(W_InstanceObject):
         """ PHP interpreter calls this when calls a wrapped Python var  """
         # We trick the interpreter into seeing something that looks like
         # the kind of function that came from a PHP closure.
-        ph_func = W_EmbeddedPyFunc(self.interp, self.wpy_inst)
-        return ph_func
+
+        # XXX make the callable directly?
+        return new_embedded_py_func_lexical(
+                self.interp, self.wpy_inst).get_callable()
 
     def to_py(self, interp):
         return self.wpy_inst
@@ -122,6 +124,9 @@ class W_EmbeddedPyFuncLexicalCall(W_InvokeCall):
         return rv.to_php(interp)
 
     def needs_ref(self, i):
+        return False
+
+    def needs_val(self, i):
         return False
 
 class W_EmbeddedPyFuncLexical(W_InstanceObject):
