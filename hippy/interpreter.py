@@ -502,7 +502,7 @@ class Interpreter(object):
         if py_scope is not None:
             wph_v = py_scope.ph_lookup(name)
             if wph_v is not None:
-                if not isinstance(wph_v, php_wrappers.W_EmbeddedPyFuncLexicalCall):
+                if not isinstance(wph_v, php_wrappers.W_EmbeddedPyCallable):
                     self.fatal("Can only call Python functions from PHP")
                 return wph_v
         self.fatal("Call to undefined function %s()" % name)
@@ -1315,7 +1315,7 @@ class Interpreter(object):
         return method.bind(w_this, klass)
 
     def getfunc(self, w_name, w_this, contextclass):
-        if isinstance(w_name, php_wrappers.W_EmbeddedPyFuncLexicalCall):
+        if isinstance(w_name, php_wrappers.W_EmbeddedPyCallable):
             # We allow Python to return references to functions, rather than
             # merely referencing names.
             return w_name

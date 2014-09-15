@@ -3,7 +3,7 @@ from hippy.objects.base import W_Root as Wph_Root
 from hippy.objects.instanceobject import W_InstanceObject
 from hippy.klass import def_class, Method
 from hippy.module.pypy_bridge.scopes import PHP_Scope
-from hippy.module.pypy_bridge.php_wrappers import (new_embedded_py_func_lexical)
+from hippy.module.pypy_bridge.php_wrappers import new_embedded_py_func
 from hippy.builtin_klass import k_Exception, W_ExceptionObject
 from hippy.error import PHPException
 
@@ -78,14 +78,14 @@ def _compile_py_func_from_string(interp, func_source):
     return wpy_func_name, wpy_func
 
 @wrap(['interp', str], name='embed_py_func')
-def embed_py_func_lexical(interp, func_source):
+def embed_py_func(interp, func_source):
     phspace, pyspace = interp.space, interp.pyspace
 
     # Compile
     wpy_func_name, wpy_func = _compile_py_func_from_string(interp, func_source)
 
     # Masquerade it as a PHP function.
-    return new_embedded_py_func_lexical(interp, wpy_func)
+    return new_embedded_py_func(interp, wpy_func)
 
 @wrap(['interp', str], name='import_py_mod')
 def import_py_mod(interp, modname):

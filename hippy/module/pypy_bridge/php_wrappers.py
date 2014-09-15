@@ -45,8 +45,7 @@ class W_PyProxyGeneric(W_InstanceObject):
         # the kind of function that came from a PHP closure.
 
         # XXX make the callable directly?
-        return new_embedded_py_func_lexical(
-                self.interp, self.wpy_inst).get_callable()
+        return new_embedded_py_func(self.interp, self.wpy_inst).get_callable()
 
     def to_py(self, interp):
         return self.wpy_inst
@@ -79,7 +78,7 @@ k_PyBridgeProxy = def_class('PyBridgeProxy',
     [], instance_class=W_PyProxyGeneric
 )
 
-class W_EmbeddedPyFuncLexicalCall(W_InvokeCall):
+class W_EmbeddedPyCallable(W_InvokeCall):
 
     def __init__(self, wpy_func):
         W_InvokeCall.__init__(self, None, wpy_func, None)
@@ -99,7 +98,7 @@ class W_EmbeddedPyFuncLexicalCall(W_InvokeCall):
     def needs_val(self, i):
         return False
 
-class W_EmbeddedPyFuncLexical(W_InstanceObject):
+class W_EmbeddedPyFunc(W_InstanceObject):
     """ A 'lexically scoped' embedded Python function.
     Essentially these instances behave a bit like a PHP closure."""
 
@@ -112,27 +111,23 @@ class W_EmbeddedPyFuncLexical(W_InstanceObject):
 
     def setattr(self, interp, attr, w_value, contextclass, unique_item=False):
         interp.catchable_fatal(
-                "EmbeddedPyFuncLexical object cannot have properties")
+                "%s object cannot have properties" % type(self))
 
     def setattr_ref(self, interp, attr, w_value, contextclass):
         interp.catchable_fatal(
-                "EmbeddedPyFuncLexical object cannot have properties")
+                "%s object cannot have properties" % type(self))
 
     def clone(self, interp, contextclass):
-        #return ...
-        #W_ClosureObject(self._func, k_Closure,
-        #                        self.storage_w[:], self.w_this, self.static)
-        # XXX
-        assert False
+        raise NotImplementedError("Not implemented")
 
     def get_callable(self):
-        return W_EmbeddedPyFuncLexicalCall(self.py_func)
+        return W_EmbeddedPyCallable(self.py_func)
 
-k_EmbeddedPyFuncLexical = def_class('EmbeddedPyFuncLexical', [])
+k_EmbeddedPyFunc = def_class('EmbeddedPyFunc', [])
 
-def new_embedded_py_func_lexical(interp, py_func):
-    return W_EmbeddedPyFuncLexical(interp, py_func, k_EmbeddedPyFuncLexical,
-            k_EmbeddedPyFuncLexical.get_initial_storage_w(interp.space)[:])
+def new_embedded_py_func(interp, py_func):
+    return W_EmbeddedPyFunc(interp, py_func, k_EmbeddedPyFunc,
+            k_EmbeddedPyFunc.get_initial_storage_w(interp.space)[:])
 
 class W_EmbeddedPyMod(WPh_Object):
     _immutable_fields_ = ["py_space", "py_mod"]
