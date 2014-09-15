@@ -413,8 +413,6 @@ echo($f());
         ''')
         assert phspace.str_w(output[0]) == "a/b"
 
-
-
     #
     # Python importing PHP
     #
