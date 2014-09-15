@@ -181,14 +181,14 @@ class W_RecursiveArrayIterator(W_ArrayIterator):
 @wrap_method(['interp', ThisUnwrapper(W_RecursiveArrayIterator)],
              name='RecursiveArrayIterator::getChildren')
 def RecursiveArrayIterator_getChildren(interp, this):
-    w_children = this.get_children(interp.space)
+    w_children = this.get_children(interp)
     return RecursiveArrayIterator.call_args(interp, [w_children])
 
 
 @wrap_method(['interp', ThisUnwrapper(W_RecursiveArrayIterator)],
              name='RecursiveArrayIterator::hasChildren')
 def RecursiveArrayIterator_hasChildren(interp, this):
-    return interp.space.wrap(this.has_children(interp.space))
+    return interp.space.wrap(this.has_children(interp))
 
 
 RecursiveArrayIterator = def_class(
