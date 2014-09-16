@@ -583,12 +583,14 @@ class Lexer(object):
                     self.scan_for_marker(search_start=token_end)
                 except MissingMarker:
                     raise LexerError("unfinished nowdoc", tok.source_pos)
-                if self.here_doc_pos >= self.here_doc_end:
+                nowdoc_end = self.here_doc_end
+                assert nowdoc_end >= 0
+                if self.here_doc_pos >= nowdoc_end:
                     content = ''
                 else:
-                    content = self.buf[self.here_doc_pos + 1:self.here_doc_end]
+                    content = self.buf[self.here_doc_pos + 1:nowdoc_end]
                 self.lineno = self.here_doc_end_line
-                self.pos = self.here_doc_end + len(self.here_doc_id)
+                self.pos = nowdoc_end + len(self.here_doc_id)
                 return Token('T_NOWDOC', content, tok.source_pos)
             elif here_doc_id.startswith('"'):
                 if not here_doc_id.endswith('"'):
