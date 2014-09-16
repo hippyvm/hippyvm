@@ -215,6 +215,7 @@ KEYWORDS = normalize_keywords(_KEYWORDS)
 _RULES = (
     ("b?\<\<\<[^\n]*\n", 'T_START_HEREDOC'),
     ("\x00", 'T_END_HEREDOC'),  # generated artificially
+    ("\x00", 'T_NOWDOC'),  # generated artificially
     ("\x00", 'T_ENCAPSED_AND_WHITESPACE'),  # generated artificially
     ("\x00", 'T_IGNORE_THIS_TOKEN'),  # generated artificially
 
@@ -358,12 +359,6 @@ _RULES_FOR_HEREDOC = (
 
 RULES_FOR_HEREDOC = [(parse_regex(rule), name) for rule, name in _RULES_FOR_HEREDOC]
 
-_RULES_FOR_NOWDOC = (
-    (r".*", "T_ENCAPSED_AND_WHITESPACE"),
-)
-
-RULES_FOR_NOWDOC = [(parse_regex(rule), name) for rule, name in _RULES_FOR_NOWDOC]
-
 _RULES_FOR_BRACKETS = (
     ("\]", "]"),
     ("\[", "["),
@@ -398,8 +393,7 @@ ALL_RULES = _KEYWORDS +\
  CONTEXT_CURLY_BRACES,
  CONTEXT_BRACKETS,
  CONTEXT_HEREDOC,
- CONTEXT_NOWDOC,
- CONTEXT_BACKTICK) = range(8)
+ CONTEXT_BACKTICK) = range(7)
 
 
 class Lexer(object):
@@ -429,7 +423,6 @@ class Lexer(object):
             CONTEXT_CURLY_BRACES: KEYWORDS + RULES_FOR_CONTEXT_BRACKETS + RULES,
             CONTEXT_BRACKETS: RULES_FOR_BRACKETS,
             CONTEXT_HEREDOC: RULES_FOR_HEREDOC,
-            CONTEXT_NOWDOC: RULES_FOR_NOWDOC,
             CONTEXT_BACKTICK: RULES_FOR_BACKTICK
          }
 
@@ -490,7 +483,6 @@ class Lexer(object):
             CONTEXT_CURLY_BRACES: self.get_runner(CONTEXT_CURLY_BRACES, self.buf),
             CONTEXT_BRACKETS: self.get_runner(CONTEXT_BRACKETS, self.buf),
             CONTEXT_HEREDOC: self.get_runner(CONTEXT_HEREDOC, self.buf),
-            CONTEXT_NOWDOC: self.get_runner(CONTEXT_NOWDOC, self.buf),
             CONTEXT_BACKTICK: self.get_runner(CONTEXT_BACKTICK, self.buf),
         }
 
@@ -591,8 +583,13 @@ class Lexer(object):
                     self.scan_for_marker(search_start=token_end)
                 except MissingMarker:
                     raise LexerError("unfinished nowdoc", tok.source_pos)
-                self.context_stack.append(CONTEXT_NOWDOC)
-                return tok
+                if self.here_doc_pos >= self.here_doc_end:
+                    content = ''
+                else:
+                    content = self.buf[self.here_doc_pos + 1:self.here_doc_end]
+                self.lineno = self.here_doc_end_line
+                self.pos = self.here_doc_end + len(self.here_doc_id)
+                return Token('T_NOWDOC', content, tok.source_pos)
             elif here_doc_id.startswith('"'):
                 if not here_doc_id.endswith('"'):
                     raise LexerError("wrong marker", tok.source_pos)
@@ -613,8 +610,7 @@ class Lexer(object):
             if runner.text[tok.source_pos.idx + len(tok.getstr())] == "[":
                 self.context_stack.append(CONTEXT_BRACKETS)
 
-        elif ctx == CONTEXT_HEREDOC or ctx == CONTEXT_NOWDOC:
-            #import pdb; pdb.set_trace()
+        elif ctx == CONTEXT_HEREDOC:
             if self.here_doc_finish:
                 tok.source = self.here_doc_id
                 tok.name = 'T_END_HEREDOC'
