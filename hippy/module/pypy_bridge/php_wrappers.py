@@ -79,10 +79,11 @@ class W_EmbeddedPyCallable(W_InvokeCall):
     _immutable_fields_ = [ "wpy_func" ]
 
     def __init__(self, wpy_func):
-        W_InvokeCall.__init__(self, None, wpy_func, None)
+        W_InvokeCall.__init__(self, None, None, None)
         self.wpy_func = wpy_func
 
-    def call_args(self, interp, args_w):
+    def call_args(self, interp, args_w,
+            w_this=None, thisclass=None, closureargs=None):
 
         wpy_args_elems = [ x.to_py(interp) for x in args_w ]
 
@@ -112,11 +113,11 @@ class W_EmbeddedPyFunc(W_InstanceObject):
 
     def setattr(self, interp, attr, w_value, contextclass, unique_item=False):
         interp.catchable_fatal(
-                "%s object cannot have properties" % type(self))
+                "W_EmbeddedPyFunc object cannot have properties")
 
     def setattr_ref(self, interp, attr, w_value, contextclass):
         interp.catchable_fatal(
-                "%s object cannot have properties" % type(self))
+                "W_EmbeddedPyFunc object cannot have properties")
 
     def clone(self, interp, contextclass):
         raise NotImplementedError("Not implemented")
