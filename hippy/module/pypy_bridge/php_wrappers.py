@@ -96,6 +96,9 @@ class W_EmbeddedPyCallable(W_InvokeCall):
     def needs_val(self, i):
         return False
 
+    def is_py_call(self):
+        return True
+
 class W_EmbeddedPyFunc(W_InstanceObject):
     """ A 'lexically scoped' embedded Python function.
     Essentially these instances behave a bit like a PHP closure."""

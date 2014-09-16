@@ -640,8 +640,6 @@ echo $out["x"];
         ''')
         assert phspace.str_w(output[0]) == "y"
 
-    # XXX pass by value/ref semantics broken
-    @pytest.mark.xfail()
     def test_php_mixed_key_array_setitem_in_python_no_ret(self):
         phspace = self.space
         output = self.run('''
@@ -684,8 +682,6 @@ echo $out[3];
         ''')
         assert phspace.str_w(output[0]) == "a"
 
-    # XXX pass by value/ref semantics broken
-    @pytest.mark.xfail()
     def test_php_int_key_array_append_in_python(self):
         phspace = self.space
         output = self.run('''

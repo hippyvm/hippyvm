@@ -78,6 +78,9 @@ class AbstractFunction(W_Root):
         from hippy.module.pypy_bridge import py_wrappers
         return py_wrappers.W_EmbeddedPHPFunc(interp.pyspace, self)
 
+    def is_py_call(self):
+        return False
+
 class Function(AbstractFunction):
     _immutable_fields_ = ['tp[*]', 'names[*]',
                           'defaults_w[*]', 'typehints[*]', 'bytecode',

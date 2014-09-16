@@ -1456,7 +1456,12 @@ class Interpreter(object):
         func = frame.pop()
         assert isinstance(func, AbstractFunction)
 
-        if func.needs_value(arg):
+        # Special arg passing semantics for PHP->Py calls.
+        if func.is_py_call():
+            # For now we always pass a reference to Python and the conversion
+            # code decides whether to dereference it. This may change.
+            w_argument = ptr_argument.get_ref(self)
+        elif func.needs_value(arg):
             w_argument = ptr_argument.deref(self, give_notice=True)
         else:
             if func.needs_ref(arg) and not ptr_argument.isref:

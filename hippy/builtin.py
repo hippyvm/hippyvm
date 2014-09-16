@@ -874,7 +874,6 @@ class BuiltinFunction(AbstractFunction):
     def get_signature(self):
         return None
 
-
 class BuiltinFunctionWithReferences(BuiltinFunction):
     _immutable_fields_ = ['references', 'runner']
 
