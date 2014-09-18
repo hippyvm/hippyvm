@@ -5,8 +5,8 @@ class TestPyPyBridge(BaseTestInterpreter):
     def test_import_py_mod_func(self):
         phspace = self.space
         output = self.run('''
-        $math = import_py_mod("math");
-        echo($math->pow(2, 3));
+            $math = import_py_mod("math");
+            echo($math->pow(2, 3));
         ''')
         assert phspace.int_w(output[0]) == 8
 
@@ -14,43 +14,39 @@ class TestPyPyBridge(BaseTestInterpreter):
         import math
         phspace = self.space
         output = self.run('''
-        $math = import_py_mod("math");
-        echo($math->pi);
+            $math = import_py_mod("math");
+            echo($math->pi);
         ''')
         assert phspace.float_w(output[0]) == math.pi
 
     def test_import_py_nested1_mod_func(self):
         phspace = self.space
         output = self.run('''
-        $os_path = import_py_mod("os.path");
-        echo($os_path->join("a", "b"));
+            $os_path = import_py_mod("os.path");
+            echo($os_path->join("a", "b"));
         ''')
         assert phspace.str_w(output[0]) == "a/b"
 
     def test_import_py_nested2_mod_func(self):
         phspace = self.space
         output = self.run('''
-        $os = import_py_mod("os");
-        echo($os->path->join("a", "b"));
+            $os = import_py_mod("os");
+            echo($os->path->join("a", "b"));
         ''')
         assert phspace.str_w(output[0]) == "a/b"
 
-    # ------------------------------------------------------
-    # Testing the definitions of new Python modules from PHP
-    # ------------------------------------------------------
-
     def test_embed_py_mod(self):
         output = self.run('''
-        $m = embed_py_mod("mymod", "def f(): print('hello')");
-        echo($m->f());
+            $m = embed_py_mod("mymod", "def f(): print('hello')");
+            echo($m->f());
         ''')
         assert output[0] == self.space.w_Null # XXX for now
 
     def test_call_func_int_args(self):
         phspace = self.space
         output = self.run('''
-        $m = embed_py_mod("mymod", "def f(x): return x+1");
-        echo($m->f(665));
+            $m = embed_py_mod("mymod", "def f(x): return x+1");
+            echo($m->f(665));
         ''')
         assert phspace.int_w(output[0]) == 666
 
@@ -67,10 +63,10 @@ class TestPyPyBridge(BaseTestInterpreter):
     def test_multiple_modules(self):
         phspace = self.space
         output = self.run('''
-        $m1 = embed_py_mod("mod1", "def f(x): return x+1");
-        $m2 = embed_py_mod("mod2", "def g(x): return x-1");
-        echo($m1->f(665));
-        echo($m2->g(665));
+            $m1 = embed_py_mod("mod1", "def f(x): return x+1");
+            $m2 = embed_py_mod("mod2", "def g(x): return x-1");
+            echo($m1->f(665));
+            echo($m2->g(665));
         ''')
         assert phspace.int_w(output[0]) == 666
         assert phspace.int_w(output[1]) == 664
@@ -78,279 +74,280 @@ class TestPyPyBridge(BaseTestInterpreter):
     def test_modules_intercall(self):
         phspace = self.space
         output = self.run('''
-        $m1 = embed_py_mod("mod1", "def f(x): return x+1");
-        $m2 = embed_py_mod("mod2", "import mod1\ndef g(x): return mod1.f(x)");
-        echo($m2->g(1336));
+            $m1 = embed_py_mod("mod1", "def f(x): return x+1");
+            $m2 = embed_py_mod("mod2",
+                "import mod1\ndef g(x): return mod1.f(x)");
+            echo($m2->g(1336));
         ''')
         assert phspace.int_w(output[0]) == 1337
 
     def test_modules_intercall2(self):
         phspace = self.space
         output = self.run('''
-        $m1 = embed_py_mod("mod1", "def f(x): return x+1");
-        $m2 = embed_py_mod("mod2", "import mod1\ndef g(x): return mod1.f(x)");
-        $m3 = embed_py_mod("mod3", "import mod2\ndef h(x): return mod2.g(x)");
-        echo($m3->h(41));
+            $m1 = embed_py_mod("mod1", "def f(x): return x+1");
+            $m2 = embed_py_mod("mod2",
+                "import mod1\ndef g(x): return mod1.f(x)");
+            $m3 = embed_py_mod("mod3",
+                "import mod2\ndef h(x): return mod2.g(x)");
+            echo($m3->h(41));
         ''')
         assert phspace.int_w(output[0]) == 42
 
     def test_fib(self):
         phspace = self.space
         output = self.run('''
-        $src = <<<EOD
-        def fib(n):
-            if n == 0: return 0
-            if n == 1: return 1
-            return fib(n-1) + fib(n-2)
-        EOD;
+            $src = <<<EOD
+            def fib(n):
+                if n == 0: return 0
+                if n == 1: return 1
+                return fib(n-1) + fib(n-2)
+            EOD;
 
-        $m = embed_py_mod("fib", $src);
-        $expects = [0, 1, 1, 2, 3, 5, 8, 13, 21, 34, 55, 89, 144];
+            $m = embed_py_mod("fib", $src);
+            $expects = [0, 1, 1, 2, 3, 5, 8, 13, 21, 34, 55, 89, 144];
 
-        for ($i = 0; $i < count($expects); $i++) {
-            assert($m->fib($i) == $expects[$i]);
-        }
+            for ($i = 0; $i < count($expects); $i++) {
+                assert($m->fib($i) == $expects[$i]);
+            }
         ''')
 
     def test_multitype_args(self):
         phspace = self.space
         output = self.run('''
-        $src = <<<EOD
-        def cat(s, b, i):
-            return "%s-%s-%s" % (s, b, i)
-        EOD;
+            $src = <<<EOD
+            def cat(s, b, i):
+                return "%s-%s-%s" % (s, b, i)
+            EOD;
 
-        $m = embed_py_mod("meow", $src);
-        echo($m->cat("123", True, 666));
+            $m = embed_py_mod("meow", $src);
+            echo($m->cat("123", True, 666));
         ''')
         assert phspace.str_w(output[0]) == "123-True-666"
 
     def test_variadic_args(self):
         phspace = self.space
         output = self.run('''
-        $src = <<<EOD
-        def cat(*args):
-            return "-".join([str(x) for x in args])
-        EOD;
+            $src = <<<EOD
+            def cat(*args):
+                return "-".join([str(x) for x in args])
+            EOD;
 
-        $m = embed_py_mod("meow", $src);
-        echo($m->cat(5, 4, 3, 2, 1, "Thunderbirds", "Are", "Go"));
+            $m = embed_py_mod("meow", $src);
+            echo($m->cat(5, 4, 3, 2, 1, "Thunderbirds", "Are", "Go"));
         ''')
         assert phspace.str_w(output[0]) == "5-4-3-2-1-Thunderbirds-Are-Go"
 
     def test_kwargs_exhaustive(self):
         phspace = self.space
         output = self.run('''
-        $src = <<<EOD
-        def cat(x="111", y="222", z="333"):
-            return "-".join([x, y, z])
-        EOD;
+            $src = <<<EOD
+            def cat(x="111", y="222", z="333"):
+                return "-".join([x, y, z])
+            EOD;
 
-        $m = embed_py_mod("meow", $src);
-        echo($m->cat("abc", "def", "ghi"));
+            $m = embed_py_mod("meow", $src);
+            echo($m->cat("abc", "def", "ghi"));
         ''')
         assert phspace.str_w(output[0]) == "abc-def-ghi"
 
     def test_kwargs_nonexhaustive(self):
         phspace = self.space
         output = self.run('''
-        $src = <<<EOD
-        def cat(x="111", y="222", z="333"):
-            return "-".join([x, y, z])
-        EOD;
+            $src = <<<EOD
+            def cat(x="111", y="222", z="333"):
+                return "-".join([x, y, z])
+            EOD;
 
-        $m = embed_py_mod("meow", $src);
-        echo($m->cat("abc", "def"));
+            $m = embed_py_mod("meow", $src);
+            echo($m->cat("abc", "def"));
         ''')
         assert phspace.str_w(output[0]) == "abc-def-333"
 
     def test_phbridgeproxy_equality1(self):
         phspace = self.space
         output = self.run('''
-        $src = <<<EOD
-        def cmp(x, y):
-            return x == y
-        EOD;
-        $cmp = embed_py_func($src);
+            $src = <<<EOD
+            def cmp(x, y):
+                return x == y
+            EOD;
+            $cmp = embed_py_func($src);
 
-        class C { }
-        $x = new C();
-        echo($cmp($x, $x));
+            class C { }
+            $x = new C();
+            echo($cmp($x, $x));
         ''')
         assert phspace.is_true(output[0])
 
     def test_phbridgeproxy_equality2(self):
         phspace = self.space
         output = self.run('''
-        $src = <<<EOD
-        def cmp(x, y):
-            return x == y
-        EOD;
-        $cmp = embed_py_func($src);
+            $src = <<<EOD
+            def cmp(x, y):
+                return x == y
+            EOD;
+            $cmp = embed_py_func($src);
 
-        class C { }
-        $x = new C();
-        $y = new C();
-        echo($cmp($x, $y));
+            class C { }
+            $x = new C();
+            $y = new C();
+            echo($cmp($x, $y));
         ''')
         assert phspace.is_true(output[0])
 
     def test_phbridgeproxy_nequality1(self):
         phspace = self.space
         output = self.run('''
-        $src = <<<EOD
-        def cmp(x, y):
-            return x == y
-        EOD;
-        $cmp = embed_py_func($src);
+            $src = <<<EOD
+            def cmp(x, y):
+                return x == y
+            EOD;
+            $cmp = embed_py_func($src);
 
-        class C {
-            public $val;
-            function __construct($val) {
-                $this->val = $val;
+            class C {
+                public $val;
+                function __construct($val) {
+                    $this->val = $val;
+                }
             }
-        }
-        $x = new C(1);
-        $y = new C(2);
-        echo($cmp($x, $y));
+            $x = new C(1);
+            $y = new C(2);
+            echo($cmp($x, $y));
         ''')
         assert not phspace.is_true(output[0])
 
     def test_phbridgeproxy_nequality2(self):
         phspace = self.space
         output = self.run('''
-        $src = <<<EOD
-        def cmp(x, y):
-            return x == y
-        EOD;
-        $cmp = embed_py_func($src);
+            $src = <<<EOD
+            def cmp(x, y):
+                return x == y
+            EOD;
+            $cmp = embed_py_func($src);
 
-        class C {
-            public $val;
-            function __construct($val) {
-                $this->val = $val;
+            class C {
+                public $val;
+                function __construct($val) {
+                    $this->val = $val;
+                }
             }
-        }
-        $x = new C(1);
-        $y = new C(1);
-        echo($cmp($x, $y));
+            $x = new C(1);
+            $y = new C(1);
+            echo($cmp($x, $y));
         ''')
         assert phspace.is_true(output[0])
 
     def test_phbridgeproxy_instanceof(self):
         phspace = self.space
         output = self.run('''
-        $src = <<<EOD
-        def iof(a):
-            return str(isinstance(a, C))
-        EOD;
+            $src = <<<EOD
+            def iof(a):
+                return isinstance(a, C)
+            EOD;
 
-        $iof = embed_py_func($src);
+            $iof = embed_py_func($src);
 
-        class C {}
-        class D {}
-        $x = new C;
-        $y = new D;
-        echo($iof($x) . " " . $iof($y));
+            class C {}
+            class D {}
+            $x = new C;
+            $y = new D;
+            echo($iof($x));
+            echo($iof($y));
         ''')
-        assert phspace.str_w(output[0]) == "True False"
+        assert phspace.is_true(output[0])
+        assert not phspace.is_true(output[1])
 
     def test_phbridgeproxy_id1(self):
         phspace = self.space
         output = self.run('''
-        $src = <<<EOD
-        def is_chk(x, y):
-            return str(id(x) == id(y))
-        EOD;
-        $is_chk = embed_py_func($src);
+            $src = <<<EOD
+            def is_chk(x, y):
+                return str(id(x) == id(y))
+            EOD;
+            $is_chk = embed_py_func($src);
 
-        class C {}
-        $x = new C;
-        $y = new c;
-        echo($is_chk($x, $y) . " " . $is_chk($x, $x));
+            class C {}
+            $x = new C;
+            $y = new c;
+            echo($is_chk($x, $y) . " " . $is_chk($x, $x));
         ''')
         assert phspace.str_w(output[0]) == "False True"
 
     def test_phbridgeproxy_id2(self):
         phspace = self.space
         output = self.run('''
-        function f() {}
-        function g() {}
+            function f() {}
+            function g() {}
 
-        $src = <<<EOD
-        def is_chk():
-            return "%s %s" % (str(id(f) == id(g)), str(id(f) == id(f)))
-        EOD;
-        $is_chk = embed_py_func($src);
+            $src = <<<EOD
+            def is_chk():
+                return "%s %s" % (str(id(f) == id(g)), str(id(f) == id(f)))
+            EOD;
+            $is_chk = embed_py_func($src);
 
-        echo($is_chk());
+            echo($is_chk());
         ''')
         assert phspace.str_w(output[0]) == "False True"
 
     def test_phbridgeproxy_is1(self):
         phspace = self.space
         output = self.run('''
-        $src = <<<EOD
-        def is_chk(x, y):
-            return str(x is y)
-        EOD;
-        $is_chk = embed_py_func($src);
+            $src = <<<EOD
+            def is_chk(x, y):
+                return str(x is y)
+            EOD;
+            $is_chk = embed_py_func($src);
 
-        class C {}
-        $x = new C;
-        $y = new c;
-        echo($is_chk($x, $y) . " " . $is_chk($x, $x));
+            class C {}
+            $x = new C;
+            $y = new c;
+            echo($is_chk($x, $y) . " " . $is_chk($x, $x));
         ''')
         assert phspace.str_w(output[0]) == "False True"
 
     def test_phbridgeproxy_is2(self):
         phspace = self.space
         output = self.run('''
-        function f() {}
-        function g() {}
+            function f() {}
+            function g() {}
 
-        $src = <<<EOD
-        def is_chk():
-            return "%s %s" % (str(f is g), str(f is f))
-        EOD;
-        $is_chk = embed_py_func($src);
+            $src = <<<EOD
+            def is_chk():
+                return "%s %s" % (str(f is g), str(f is f))
+            EOD;
+            $is_chk = embed_py_func($src);
 
-        echo($is_chk());
+            echo($is_chk());
         ''')
         assert phspace.str_w(output[0]) == "False True"
 
     def test_pystone(self):
         pytest.skip("need to enable time module in pypy")
         output = self.run('''
-        $src = <<<EOD
-        def mystone():
-                from test import pystone
-                pystone.main()
-        EOD;
+            $src = <<<EOD
+            def mystone():
+                    from test import pystone
+                    pystone.main()
+            EOD;
 
-        $mystone = embed_py_func($src);
-        $mystone();
+            $mystone = embed_py_func($src);
+            $mystone();
         ''')
         # just check it runs
-
-    # ------------------------------------------------------
-    # Testing calling PHP from Python
-    # ------------------------------------------------------
 
     def test_callback_to_php(self):
         phspace = self.space
         output = self.run('''
-        function hello() {
-            echo "foobar";
-        }
+            function hello() {
+                echo "foobar";
+            }
 
-        $src = <<<EOD
-        def call_php():
-            hello()
-        EOD;
+            $src = <<<EOD
+            def call_php():
+                hello()
+            EOD;
 
-        $call_php = embed_py_func($src);
-        $call_php();
+            $call_php = embed_py_func($src);
+            $call_php();
         ''')
         assert phspace.str_w(output[0]) == "foobar"
 
@@ -359,37 +356,37 @@ class TestPyPyBridge(BaseTestInterpreter):
     def test_obj_proxy(self):
         phspace = self.space
         output = self.run('''
-        $src = <<<EOD
-        import sys
-        def get():
-            return sys
-        EOD;
-        $m = embed_py_mod("m", $src);
-        echo($m->get()->__name__);
+            $src = <<<EOD
+            import sys
+            def get():
+                return sys
+            EOD;
+            $m = embed_py_mod("m", $src);
+            echo($m->get()->__name__);
         ''')
         assert phspace.str_w(output[0]) == "sys"
 
     def test_inplace_function(self):
         phspace = self.space
         output = self.run('''
-        $src = <<<EOD
-        def test():
-            return "jibble"
-        EOD;
-        $test = embed_py_func($src);
-        echo($test());
+            $src = <<<EOD
+            def test():
+                return "jibble"
+            EOD;
+            $test = embed_py_func($src);
+            echo($test());
         ''')
         assert phspace.str_w(output[0]) == "jibble"
 
     def test_inplace_function_args(self):
         phspace = self.space
         output = self.run('''
-        $src = <<<EOD
-        def cat(x, y, z):
-            return "%s-%s-%s" % (x, y, z)
-        EOD;
-        $cat = embed_py_func($src);
-        echo($cat("t", "minus", 10));
+            $src = <<<EOD
+            def cat(x, y, z):
+                return "%s-%s-%s" % (x, y, z)
+            EOD;
+            $cat = embed_py_func($src);
+            echo($cat("t", "minus", 10));
         ''')
         assert phspace.str_w(output[0]) == "t-minus-10"
 
@@ -397,117 +394,48 @@ class TestPyPyBridge(BaseTestInterpreter):
         pytest.skip("broken in some bizarre way. calling fdopen!")
         phspace = self.space
         output = self.run('''
-$src = <<<EOD
-def cwd():
-    import os
-    return os.getpid
-EOD;
+            $src = <<<EOD
+            def cwd():
+                import os
+                return os.getpid
+            EOD;
 
-$cwd = embed_py_func($src);
+            $cwd = embed_py_func($src);
 
-echo "111111\n";
-$x = $cwd();
-echo "222222\n";
-echo $x();
-echo "333333\n";
+            echo "111111\n";
+            $x = $cwd();
+            echo "222222\n";
+            echo $x();
+            echo "333333\n";
         ''')
         import os
         assert phspace.int_w(output[0]) == os.getpid()
 
-    def test_closures_are_intact(self):
-        """ Check we didn't break closures """
+    def test_embed_php_func(self):
         phspace = self.space
         output = self.run('''
-        $src = <<<EOD
-        def mk_get_x(x, y):
-            def get_x():
-                return x + y
-            return get_x
-        EOD;
-        $mk_get_x = embed_py_func($src);
+            $pysrc = <<<EOD
+            def f():
+                php_src = "function g(\$a, \$b) { return \$a + \$b; }"
+                g = embed_php_func(php_src)
+                return g(5, 4)
+            EOD;
 
-        $f = $mk_get_x(2, 4);
-        echo($f());
+            $f = embed_py_func($pysrc);
+            echo $f();
         ''')
-        assert phspace.int_w(output[0]) == 6
+        assert phspace.int_w(output[0]) == 9
 
-    def test_php2py_cross_lang_closure_is_late_binding(self):
+    def test_embed_py_func(self):
         phspace = self.space
         output = self.run('''
-$x = 42;
-$src = <<<EOD
-def f():
-    return x;
-EOD;
-$f = embed_py_func($src);
-$x = 43;
+            $src = <<<EOD
+            def f(a, b):
+                return sum([a, b])
+            EOD;
 
-echo($f());
-        ''')
-        assert phspace.int_w(output[0]) == 43
-
-
-    def test_php2py_cross_lang_closure_is_late_binding2(self):
-        phspace = self.space
-        output = self.run('''
-$x = 64;
-$src = <<<EOD
-def f():
-    def g():
-        return x;
-    return g
-EOD;
-$f = embed_py_func($src);
-$x = 11;
-
-$g = $f();
-echo($g());
+            $f = embed_py_func($src);
+            echo $f(4, 7);
         ''')
         assert phspace.int_w(output[0]) == 11
 
-
-    def test_py2php_cross_lang_closure_is_late_binding(self):
-        phspace = self.space
-        output = self.run('''
-$src = <<<EOD
-def f():
-    x = 44
-    php_src = "function g() { return \$x; }"
-    g = embed_php_func(php_src)
-    x += 1
-    return g()
-EOD;
-$f = embed_py_func($src);
-
-echo($f());
-        ''')
-        assert phspace.int_w(output[0]) == 45
-
-    def test_py2php_cross_lang_closure_is_late_binding2(self):
-        phspace = self.space
-        output = self.run('''
-$x = 44;
-$src = <<<EOD
-def f():
-    php_src = "function g() { return \$x; }"
-    g = embed_php_func(php_src)
-    x = 45
-    return g()
-EOD;
-$f = embed_py_func($src);
-
-echo($f());
-        ''')
-        assert phspace.int_w(output[0]) == 45
-
-    def test_embed_py_func_lexical(self):
-        php_space = self.space
-
-        output = self.run('''
-$src = "def f(x, y): return x + y";
-$f = embed_py_func($src);
-$r = $f(666, 1);
-echo $r;
-        ''')
-
-        assert php_space.int_w(output[0]) == 667

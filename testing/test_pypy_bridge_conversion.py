@@ -8,9 +8,6 @@ class TestPyPyBridgeConversions(BaseTestInterpreter):
     def new_interp(self):
         return self.engine.new_interp(None, None)
 
-    # -------------
-    # PHP -> Python
-    # -------------
     def test_py_int_of_ph_integer(self):
         interp = self.new_interp()
         wph_integer = interp.space.newint(666)
@@ -45,7 +42,6 @@ class TestPyPyBridgeConversions(BaseTestInterpreter):
         for polarity in [True, False]:
             wph_boolean = interp.space.wrap(polarity)
             wpy_bool = wph_boolean.to_py(interp)
-            # XXX until interp.space.bool_w exists.
             assert interp.pyspace.bool_w(wpy_bool) == polarity
 
     def test_py_list_of_ph_array(self):
@@ -92,7 +88,7 @@ class TestPyPyBridgeConversions(BaseTestInterpreter):
         assert pyspace.int_w(pyspace.getitem(wpy_innr, consts[0])) == 1
         assert pyspace.str_w(pyspace.getitem(wpy_innr, consts[1])) == "a"
 
-    # XXX Any way of mutating the list.
+    # XXX Test mutating the list
 
     def test_unwrap_php(self):
         phspace = self.space
@@ -109,9 +105,6 @@ class TestPyPyBridgeConversions(BaseTestInterpreter):
         ''')
         assert phspace.is_true(output[0])
 
-    # -------------
-    # Python -> PHP
-    # -------------
     def test_ph_integer_of_py_int(self):
         interp = self.new_interp()
         py_int = interp.pyspace.newint(666)
@@ -210,8 +203,7 @@ class TestPyPyBridgeConversions(BaseTestInterpreter):
         assert type(wph_closure) is W_ClosureObject
 
     # XXX List slices
-    # XXX Any way of mutating the list.
-
+    # XXX Test mutating the list.
 
     def test_unwrap_py(self):
         phspace = self.space
