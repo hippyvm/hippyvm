@@ -34,8 +34,7 @@ class TestPyPyBridgeArgPassing(BaseTestInterpreter):
         ''')
         assert phspace.str_w(output[0]) == "a"
 
-    @pytest.mark.xfail
-    def test_py2php_list_default_by_val(self):
+    def test_py2php_list_by_val(self):
         phspace = self.space
         output = self.run('''
             $src = <<<EOD
@@ -50,17 +49,17 @@ class TestPyPyBridgeArgPassing(BaseTestInterpreter):
             $r = $f();
             echo $r;
         ''')
-        assert phspace.int_w(output[0]) == 0
+        assert phspace.int_w(output[0]) == 1
 
     def test_py2php_list_by_ref(self):
         phspace = self.space
         output = self.run('''
             $src = <<<EOD
             def f():
-                l = [1,2,3]
+                l = PRef([1,2,3])
                 g = embed_php_func("function g(&\$l) { \$l[0] = 666; }")
                 g(l)
-                return l[0]
+                return l.deref()[0]
             EOD;
 
             $f = embed_py_func($src);
@@ -69,7 +68,7 @@ class TestPyPyBridgeArgPassing(BaseTestInterpreter):
         ''')
         assert phspace.int_w(output[0]) == 666
 
-    def test_py2php_int_default_by_val(self):
+    def test_py2php_int_by_val(self):
         phspace = self.space
         output = self.run('''
             $src = <<<EOD
@@ -86,16 +85,15 @@ class TestPyPyBridgeArgPassing(BaseTestInterpreter):
         ''')
         assert phspace.int_w(output[0]) == 1
 
-    @pytest.mark.xfail
     def test_py2php_int_by_ref(self):
         phspace = self.space
         output = self.run('''
             $src = <<<EOD
             def f():
-                i = 1
+                i = PRef(1337)
                 g = embed_php_func("function g(&\$i) { \$i = 666; }")
                 g(i)
-                return i
+                return i.deref()
             EOD;
 
             $f = embed_py_func($src);

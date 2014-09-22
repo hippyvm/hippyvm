@@ -145,7 +145,16 @@ class W_EmbeddedPHPFunc(W_Root):
         php_interp = self.space.get_php_interp()
         phspace = self.space.get_php_interp().space
 
-        wph_args_elems = [ x.to_php(php_interp) for x in args ]
+        wph_args_elems = []
+        for arg_no in xrange(len(args)):
+            wpy_arg = args[arg_no]
+
+            if self.wph_func.needs_ref(arg_no):
+                assert isinstance(wpy_arg, W_PRef) # XXX proper error
+                wph_args_elems.append(wpy_arg.ref)
+            else:
+                wph_args_elems.append(wpy_arg.to_php(php_interp))
+
         res = self.wph_func.call_args(php_interp, wph_args_elems)
 
         return res.to_py(php_interp)
@@ -368,4 +377,28 @@ def make_wrapped_mixed_key_php_array(interp, wphp_arry_ref):
     storage = strategy.erase(wphp_arry_ref)
 
     return WPy_DictMultiObject(interp.pyspace, strategy, storage)
+
+
+class W_PRef(W_Root):
+    """ Represents a PHP reference """
+
+    def __init__(self, space, w_py_val):
+        from hippy.objects.reference import W_Reference
+        w_ph_val = w_py_val.to_php(space.get_php_interp())
+        self.ref = W_Reference(w_ph_val)
+        self.py_space = space
+
+    def deref(self):
+        return self.ref.deref().to_py(self.py_space.get_php_interp())
+
+    @staticmethod
+    def descr_new(space, w_type, w_py_val):
+        w_obj = space.allocate_instance(W_PRef, w_type)
+        w_obj.__init__(space, w_py_val)
+        return w_obj
+
+W_PRef.typedef = TypeDef("PRef",
+    __new__ = interp2app(W_PRef.descr_new),
+    deref = interp2app(W_PRef.deref),
+)
 
