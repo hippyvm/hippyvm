@@ -540,21 +540,6 @@ class TestPyPyBridgeArrayConversions(BaseTestInterpreter):
         ''')
         assert phspace.str_w(output[0]) == "y"
 
-    def test_php_mixed_key_array_setitem_in_python_no_ret(self):
-        phspace = self.space
-        output = self.run('''
-            $src = <<<EOD
-            def f(ary):
-                ary["x"] = "y"
-            EOD;
-
-            $f = embed_py_func($src);
-            $in = array("x", "y", "z");
-            $f($in);
-            echo $in["x"];
-        ''')
-        assert phspace.str_w(output[0]) == "y"
-
     def test_php_int_key_array_setitem_in_python_ret(self):
         phspace = self.space
         output = self.run('''
@@ -569,22 +554,6 @@ class TestPyPyBridgeArrayConversions(BaseTestInterpreter):
             $in = array("x", "y", "z");
             $out = $f($in);
             echo $out[3];
-        ''')
-        assert phspace.str_w(output[0]) == "a"
-
-    def test_php_int_key_array_append_in_python(self):
-        phspace = self.space
-        output = self.run('''
-            $src = <<<EOD
-            def f(ary):
-                ary_l = ary.as_list()
-                ary_l.append("a")
-            EOD;
-
-            $f = embed_py_func($src);
-            $in = array("x", "y", "z");
-            $f($in);
-            echo $in[3];
         ''')
         assert phspace.str_w(output[0]) == "a"
 
