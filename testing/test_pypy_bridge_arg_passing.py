@@ -175,3 +175,75 @@ class TestPyPyBridgeArgPassing(BaseTestInterpreter):
         ''')
         assert phspace.int_w(output[0]) == 2
         assert phspace.int_w(output[1]) == 1
+
+    def test_py2php_str_by_val(self):
+        phspace = self.space
+        output = self.run('''
+            $src = <<<EOD
+            def f():
+                i = "old"
+                g(i)
+                return i
+            EOD;
+
+            function g($s) { $s = "new"; }
+
+            $f = embed_py_func($src);
+            $r = $f();
+            echo $r;
+        ''')
+        assert phspace.str_w(output[0]) == "old"
+
+    def test_py2php_str_by_val2(self):
+        phspace = self.space
+        output = self.run('''
+            $src = <<<EOD
+            def f():
+                i = "old"
+                g(i)
+                return i
+            EOD;
+
+            function g($s) { $s[0] = "x"; }
+
+            $f = embed_py_func($src);
+            $r = $f();
+            echo $r;
+        ''')
+        assert phspace.str_w(output[0]) == "old"
+
+    def test_py2php_str_by_ref(self):
+        phspace = self.space
+        output = self.run('''
+            $src = <<<EOD
+            def f():
+                i = PRef("old")
+                g(i)
+                return i.deref()
+            EOD;
+
+            function g(&$s) { $s = "new"; }
+
+            $f = embed_py_func($src);
+            $r = $f();
+            echo $r;
+        ''')
+        assert phspace.str_w(output[0]) == "new"
+
+    def test_py2php_str_by_ref2(self):
+        phspace = self.space
+        output = self.run('''
+            $src = <<<EOD
+            def f():
+                i = PRef("old")
+                g(i)
+                return i.deref()
+            EOD;
+
+            function g(&$s) { $s[0] = "x"; }
+
+            $f = embed_py_func($src);
+            $r = $f();
+            echo $r;
+        ''')
+        assert phspace.str_w(output[0]) == "xld"
