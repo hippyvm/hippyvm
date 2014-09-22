@@ -40,10 +40,11 @@ class TestPyPyBridgeArgPassing(BaseTestInterpreter):
             $src = <<<EOD
             def f():
                 l = [1,2,3]
-                g = embed_php_func("function g(\$l) { \$l[0] = 666; }")
                 g(l)
                 return l[0]
             EOD;
+
+            function g($l) { $l[0] = 666; }
 
             $f = embed_py_func($src);
             $r = $f();
@@ -57,10 +58,11 @@ class TestPyPyBridgeArgPassing(BaseTestInterpreter):
             $src = <<<EOD
             def f():
                 l = PRef([1,2,3])
-                g = embed_php_func("function g(&\$l) { \$l[0] = 666; }")
                 g(l)
                 return l.deref()[0]
             EOD;
+
+            function g(&$l) { $l[0] = 666; }
 
             $f = embed_py_func($src);
             $r = $f();
@@ -74,10 +76,11 @@ class TestPyPyBridgeArgPassing(BaseTestInterpreter):
             $src = <<<EOD
             def f():
                 i = 1
-                g = embed_php_func("function g(\$i) { \$i = 666; }")
                 g(i)
                 return i
             EOD;
+
+            function g($i) { $i = 666; }
 
             $f = embed_py_func($src);
             $r = $f();
@@ -91,10 +94,11 @@ class TestPyPyBridgeArgPassing(BaseTestInterpreter):
             $src = <<<EOD
             def f():
                 i = PRef(1337)
-                g = embed_php_func("function g(&\$i) { \$i = 666; }")
                 g(i)
                 return i.deref()
             EOD;
+
+            function g(&$i) { $i = 666; }
 
             $f = embed_py_func($src);
             $r = $f();
