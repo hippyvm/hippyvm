@@ -101,3 +101,73 @@ class TestPyPyBridgeArgPassing(BaseTestInterpreter):
             echo $r;
         ''')
         assert phspace.int_w(output[0]) == 666
+
+    def test_py2php_obj_by_val(self):
+        """note that it is the object id that is by value.
+        the object is not copied like an array"""
+        phspace = self.space
+        output = self.run('''
+            $src = <<<EOD
+            def f(a1, a2):
+                swap_local(a1, a2)
+                return [a1, a2]
+            EOD;
+
+            $f = embed_py_func($src);
+
+            class C {
+                function __construct($v) {
+                    $this->v = $v;
+                }
+            };
+
+            function swap_local($o1, $o2) {
+                $tmp = $o1;
+                $o1 = $o2;
+                $o2 = $tmp;
+            }
+
+            $c1 = new C(1);
+            $c2 = new C(2);
+
+            $arr = $f($c1, $c2);
+            echo $arr[0]->v;
+            echo $arr[1]->v;
+        ''')
+        # they should not swap
+        assert phspace.int_w(output[0]) == 1
+        assert phspace.int_w(output[1]) == 2
+
+    def test_py2php_obj_by_ref(self):
+        phspace = self.space
+        output = self.run('''
+            $src = <<<EOD
+            def f(a1, a2):
+                p1, p2 = PRef(a1), PRef(a2)
+                swap(p1, p2)
+                return [p1.deref(), p2.deref()]
+            EOD;
+
+            $f = embed_py_func($src);
+
+            class C {
+                function __construct($v) {
+                    $this->v = $v;
+                }
+            };
+
+            function swap(&$o1, &$o2) {
+                $tmp = $o1;
+                $o1 = $o2;
+                $o2 = $tmp;
+            }
+
+            $c1 = new C(1);
+            $c2 = new C(2);
+
+            $arr = $f($c1, $c2);
+            echo $arr[0]->v;
+            echo $arr[1]->v;
+        ''')
+        assert phspace.int_w(output[0]) == 2
+        assert phspace.int_w(output[1]) == 1
