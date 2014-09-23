@@ -307,4 +307,27 @@ class TestPyPyBridgeArgPassing(BaseTestInterpreter):
             $r = $f();
             echo($r);
         ''')
-        assert(phspace.str_w(output[0]) == "Arg 1 of PHP func 'g' is pass by value")
+        assert(phspace.str_w(output[0]) ==
+                "Arg 1 of PHP func 'g' is pass by value")
+
+    def test_py2php_value_to_ref_is_error(self):
+        phspace = self.space
+        output = self.run('''
+            $src = <<<EOD
+            def f():
+                i = "old"
+                try:
+                    g(i) # is an error since we passed a ref to a non-ref arg
+                    return "No exception!"
+                except ValueError as e:
+                    return e.message
+            EOD;
+
+            function g(&$s) {}
+
+            $f = embed_py_func($src);
+            $r = $f();
+            echo($r);
+        ''')
+        assert(phspace.str_w(output[0]) ==
+                "Arg 1 of PHP func 'g' is pass by reference")
