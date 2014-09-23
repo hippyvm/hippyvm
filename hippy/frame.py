@@ -18,14 +18,17 @@ class CatchBlock(ExceptionHandler):
         self.position = position
         self.stackdepth = stackdepth
 
-    def match(self, w_exc):
+    def match(self, interp, w_exc):
         assert isinstance(w_exc, W_ExceptionObject)
-        klass = w_exc.klass
-        return klass.is_subclass_of_class_or_intf_name(self.exc_class)
+        k_exc = w_exc.klass
+        k_catch = interp.lookup_class_or_intf(self.exc_class, autoload=False)
+        if k_catch is None:
+            return False
+        return k_exc.is_subclass_of_class_or_intf_name(k_catch.name)
 
     @jit.unroll_safe
     def handle(self, w_exc, frame):
-        if self.match(w_exc):
+        if self.match(frame.interp, w_exc):
             frame.pop_n(frame.stackpos - self.stackdepth)
             frame.push(w_exc)
             while frame.ptrs:

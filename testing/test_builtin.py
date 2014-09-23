@@ -878,3 +878,50 @@ array(2) {
         echo $b;
         """)
         assert self.unwrap(output[0]) == 2
+
+    def test_class_alias_instanceof(self):
+        output = self.run('''
+        class foo {}
+        class_alias('foo', 'bar');
+        $foo1 = new foo;
+        $bar1 = new bar;
+        echo $foo1 instanceof $bar1;
+        echo $bar1 instanceof $foo1;
+        echo $bar1 instanceof foo;
+        echo $bar1 instanceof bar;
+        $name = 'bar';
+        echo $bar1 instanceof $name;
+        echo $foo1 instanceof $name;
+        ''')
+        assert output == map(self.space.newbool, [True] * 6)
+
+    def test_class_alias_exceptions(self):
+        output = self.run('''
+        class Error1 extends Exception {}
+        class_alias('Error1', 'Error2');
+        try {
+            throw new Error2;
+        } catch (Error1 $e) {
+            echo 'OK';
+        }
+        try {
+            throw new Error1;
+        } catch (Error2 $e) {
+            echo 'OK';
+        }
+        ''')
+        assert output == [self.space.newstr('OK')] * 2
+
+    def test_class_alias_typehint(self):
+        output = self.run('''
+        class foo {}
+        class_alias('foo', 'bar');
+        $foo1 = new foo;
+        $bar1 = new bar;
+
+        function takes_foo(foo $x) { echo 'OK'; }
+        function takes_bar(bar $x) { echo 'OK'; }
+        takes_foo($bar1);
+        takes_bar($foo1);
+        ''')
+        assert output == [self.space.newstr('OK')] * 2
