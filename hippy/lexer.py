@@ -10,6 +10,9 @@ from rply import ParsingError
 from rply.token import BaseBox, SourcePosition
 from rply import token
 
+class MissingMarker(Exception):
+    """Raised when the end marker of a now/heredoc is not found"""
+
 
 def _basebox_getsourcepos(self):
     return self.lineno
@@ -212,6 +215,7 @@ KEYWORDS = normalize_keywords(_KEYWORDS)
 _RULES = (
     ("b?\<\<\<[^\n]*\n", 'T_START_HEREDOC'),
     ("\x00", 'T_END_HEREDOC'),  # generated artificially
+    ("\x00", 'T_NOWDOC'),  # generated artificially
     ("\x00", 'T_ENCAPSED_AND_WHITESPACE'),  # generated artificially
     ("\x00", 'T_IGNORE_THIS_TOKEN'),  # generated artificially
 
@@ -567,7 +571,28 @@ class Lexer(object):
 
         elif ctx == CONTEXT_NORMAL and tok.name == "T_START_HEREDOC":
             here_doc_id = tok.getstr().lstrip("b<<<").lstrip("<<<").strip()
-            if here_doc_id.startswith('"'):
+            if here_doc_id.startswith("'"):
+                if not here_doc_id.endswith("'"):
+                    raise LexerError("wrong marker", tok.source_pos)
+                end = len(here_doc_id) - 1
+                assert end >= 0
+                self.here_doc_id = here_doc_id[1:end]
+                token_end = tok.source_pos.idx + len(tok.source) - 1
+                assert token_end >= 0
+                try:
+                    self.scan_for_marker(search_start=token_end)
+                except MissingMarker:
+                    raise LexerError("unfinished nowdoc", tok.source_pos)
+                nowdoc_end = self.here_doc_end
+                assert nowdoc_end >= 0
+                if self.here_doc_pos >= nowdoc_end:
+                    content = ''
+                else:
+                    content = self.buf[self.here_doc_pos + 1:nowdoc_end]
+                self.lineno = self.here_doc_end_line
+                self.pos = nowdoc_end + len(self.here_doc_id)
+                return Token('T_NOWDOC', content, tok.source_pos)
+            elif here_doc_id.startswith('"'):
                 if not here_doc_id.endswith('"'):
                     raise LexerError("wrong marker", tok.source_pos)
                 end = len(here_doc_id) - 1
@@ -576,28 +601,10 @@ class Lexer(object):
             self.here_doc_id = here_doc_id
             token_end = tok.source_pos.idx + len(tok.source) - 1
             assert token_end >= 0
-            search_string = '\n' + self.here_doc_id
-            id_len = len(search_string)
-            search_start = token_end
-            while True:
-                candidate = self.buf[search_start:].find(search_string)
-                if candidate < 0:
-                    raise LexerError("unfinished heredoc", tok.source_pos)
-                try:
-                    semicolon = 0
-                    if self.buf[search_start + candidate + id_len] == ';':
-                        semicolon = 1
-                    if self.buf[search_start + candidate + id_len + semicolon] == '\n':
-                        here_doc_end = search_start + candidate
-                        break
-                except IndexError:
-                    here_doc_end = search_start + candidate
-                    break
-                search_start = search_start + candidate + id_len
-            heredoc_content = self.buf[token_end:here_doc_end]
-            self.here_doc_pos = token_end
-            self.here_doc_end = here_doc_end
-            self.here_doc_end_line = self.lineno + heredoc_content.count("\n")
+            try:
+                self.scan_for_marker(search_start=token_end)
+            except MissingMarker:
+                raise LexerError("unfinished heredoc", tok.source_pos)
             self.context_stack.append(CONTEXT_HEREDOC)
 
         elif ((ctx == CONTEXT_DOUBLEQUOTE or
@@ -606,7 +613,6 @@ class Lexer(object):
                 self.context_stack.append(CONTEXT_BRACKETS)
 
         elif ctx == CONTEXT_HEREDOC:
-
             if self.here_doc_finish:
                 tok.source = self.here_doc_id
                 tok.name = 'T_END_HEREDOC'
@@ -623,7 +629,6 @@ class Lexer(object):
                 self.here_doc_finish = False
 
             elif tok.source_pos.idx + len(tok.source) > self.here_doc_end:
-
                 start = tok.source_pos.idx
                 assert start >= 0
                 stop = self.here_doc_end
@@ -673,3 +678,27 @@ class Lexer(object):
                 backslash = False
             p += 1
         assert False
+
+    def scan_for_marker(self, search_start):
+        search_string = '\n' + self.here_doc_id
+        id_len = len(search_string)
+        pos = search_start
+        while True:
+            candidate = self.buf[pos:].find(search_string)
+            if candidate < 0:
+                raise MissingMarker
+            try:
+                semicolon = 0
+                if self.buf[pos + candidate + id_len] == ';':
+                    semicolon = 1
+                if self.buf[pos + candidate + id_len + semicolon] == '\n':
+                    here_doc_end = pos + candidate
+                    break
+            except IndexError:
+                here_doc_end = pos + candidate
+                break
+            pos = pos + candidate + id_len
+        content = self.buf[search_start:here_doc_end]
+        self.here_doc_pos = search_start
+        self.here_doc_end = here_doc_end
+        self.here_doc_end_line = self.lineno + content.count("\n")

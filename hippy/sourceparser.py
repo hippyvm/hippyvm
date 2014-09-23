@@ -872,6 +872,10 @@ class SourceParser(BaseParser):
     def heredoc_empty(self, p):
         return ConstantStr("")
 
+    @pg.production("common_scalar : T_NOWDOC")
+    def nowdoc(self, p):
+        return ConstantStr(p[0].getstr(), lineno=p[0].getsourcepos())
+
     @pg.production("static_scalar : common_scalar")
     def static_scalar_common_scalar(self, p):
         return p[0]
