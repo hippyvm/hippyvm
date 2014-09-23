@@ -3,6 +3,44 @@ import pytest
 
 class TestPyPyBridgeArgPassing(BaseTestInterpreter):
 
+    def test_php2py_obj_by_ref(self):
+        phspace = self.space
+        output = self.run('''
+            $src = <<<EOD
+            def f(x):
+                x.v = 1337
+            EOD;
+
+            $f = embed_py_func($src);
+
+            class A {
+                function __construct($v) {
+                    $this->v = $v;
+                }
+            };
+
+            $in = new A(666);
+            $f($in);
+            echo $in->v;
+        ''')
+        assert phspace.int_w(output[0]) == 1337
+
+    def test_php2py_str_by_ref(self):
+        phspace = self.space
+        output = self.run('''
+            $src = <<<EOD
+            def f(s):
+                s.replace("1", "x") # strs immutible, returns new str!
+            EOD;
+
+            $f = embed_py_func($src);
+
+            $in = "123";
+            $f($in);
+            echo $in;
+        ''')
+        assert phspace.str_w(output[0]) == "123" # i.e. unchanged
+
     def test_php2py_mixed_key_array_by_ref(self):
         phspace = self.space
         output = self.run('''
@@ -33,6 +71,8 @@ class TestPyPyBridgeArgPassing(BaseTestInterpreter):
             echo $in[3];
         ''')
         assert phspace.str_w(output[0]) == "a"
+
+    # ---
 
     def test_py2php_list_by_val(self):
         phspace = self.space
