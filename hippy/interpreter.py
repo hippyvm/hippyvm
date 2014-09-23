@@ -1458,8 +1458,10 @@ class Interpreter(object):
 
         # Special arg passing semantics for PHP->Py calls.
         if func.is_py_call():
-            # For now we always pass a reference to Python and the conversion
-            # code decides whether to dereference it. This may change.
+            # We always pass a reference to Python and the conversion
+            # code decides whether to dereference it. This is needed because
+            # the only way to mutate a PHP array in hippy is through
+            # a reference.
             w_argument = ptr_argument.get_ref(self)
         elif func.needs_value(arg):
             w_argument = ptr_argument.deref(self, give_notice=True)

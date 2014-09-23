@@ -112,7 +112,7 @@ class W_Reference(W_Root):
     def to_py(self, interp):
         wph_inside = self.deref_temp()
 
-        # Arrays are special, passed by reference
+        # Arrays are special, must wrap up a reference to allow mutation.
         from hippy.objects.arrayobject import W_ArrayObject
         if isinstance(wph_inside, W_ArrayObject):
             from hippy.module.pypy_bridge.py_wrappers import (
