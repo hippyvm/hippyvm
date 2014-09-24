@@ -142,8 +142,7 @@ class W_Globals(W_RDictArrayObject):
         assert isinstance(r_var, W_Reference)
         self.dct_w[name] = r_var
 
-    def _setitem_str(self, key, w_value, as_ref,
-                     unique_array=False, unique_item=False):
+    def _setitem_str(self, key, w_value, as_ref, unique_item=False):
         dct_w = self.dct_w
         if not as_ref:
             try:
