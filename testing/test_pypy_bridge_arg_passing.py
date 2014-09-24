@@ -110,6 +110,44 @@ class TestPyPyBridgeArgPassing(BaseTestInterpreter):
         ''')
         assert phspace.int_w(output[0]) == 666
 
+    def test_py2php_dict_by_val(self):
+        phspace = self.space
+        output = self.run('''
+            $src = <<<EOD
+            def f():
+                d = { "a" : "b", "b": "c" }
+                g(d)
+                return d["a"]
+            EOD;
+
+            function g($d) { $d["a"] = "z"; }
+
+            $f = embed_py_func($src);
+            $r = $f();
+            echo $r;
+        ''')
+        assert phspace.str_w(output[0]) == "b"
+
+    def test_py2php_dict_by_ref2(self):
+        phspace = self.space
+        output = self.run('''
+            $src = <<<EOD
+            def f():
+                d = { "a" : "b", "b": "c" }
+                d_ref = PRef(d)
+                g(d_ref)
+                return d_ref.deref()["a"]
+            EOD;
+
+            function g(&$d) { $d["a"] = "z"; }
+
+            $f = embed_py_func($src);
+            $r = $f();
+            echo $r;
+        ''')
+        assert phspace.str_w(output[0]) == "z"
+
+
     def test_py2php_int_by_val(self):
         phspace = self.space
         output = self.run('''

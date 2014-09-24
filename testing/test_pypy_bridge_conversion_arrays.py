@@ -108,6 +108,25 @@ class TestPyPyBridgeArrayConversions(BaseTestInterpreter):
         assert phspace.str_w(output[0]) == "apples"
         assert phspace.str_w(output[1]) == "zero"
 
+    def test_py_list_is_copy_on_write_in_php2(self):
+        phspace = self.space
+        output = self.run('''
+            $src = <<<EOD
+            def f(): return ["zero", "one", "two"]
+            EOD;
+
+            $f = embed_py_func($src);
+            $ar1 = $f();
+            $ar2 = $ar1;
+
+            $ar2[0] = "apples";
+            echo($ar1[0]);
+            echo($ar2[0]);
+
+        ''')
+        assert phspace.str_w(output[0]) == "zero"
+        assert phspace.str_w(output[1]) == "apples"
+
     def test_py_dict_is_copy_on_write_in_php(self):
         phspace = self.space
         output = self.run('''
@@ -126,6 +145,25 @@ class TestPyPyBridgeArrayConversions(BaseTestInterpreter):
         ''')
         assert phspace.str_w(output[0]) == "apples"
         assert phspace.str_w(output[1]) == "a"
+
+    def test_py_dict_is_copy_on_write_in_php2(self):
+        phspace = self.space
+        output = self.run('''
+            $src = <<<EOD
+            def f(): return { "aa" : "a", "bb" : "b", "cc" : "c" }
+            EOD;
+
+            $f = embed_py_func($src);
+            $ar1 = $f();
+            $ar2 = $ar1;
+
+            $ar2["aa"] = "apples";
+            echo($ar1["aa"]);
+            echo($ar2["aa"]);
+
+        ''')
+        assert phspace.str_w(output[0]) == "a"
+        assert phspace.str_w(output[1]) == "apples"
 
     def test_py_list_append_in_php(self):
         phspace = self.space
