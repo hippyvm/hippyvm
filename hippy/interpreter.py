@@ -76,15 +76,13 @@ import hippy.module.ctype
 import hippy.module.date.datetime_klass
 import hippy.module.date.dateinterval_klass
 import hippy.module.date.datetimezone_klass
+import hippy.module.hash.funcs
 
 from hippy.module.date import default_timezone
 from hippy.buffering import Buffer
 
 if is_optional_extension_enabled("mysql"):
     import ext_module.mysql.funcs
-
-if is_optional_extension_enabled("hash"):
-    import ext_module.hash.funcs
 
 if is_optional_extension_enabled("xml"):
     import ext_module.xml.interface
