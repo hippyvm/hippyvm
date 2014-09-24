@@ -15,6 +15,7 @@ from pypy.objspace.std.dictmultiobject import (AbstractTypedStrategy,
       EmptyDictStrategy)
 from pypy.objspace.std.dictmultiobject import (
         W_DictMultiObject as WPy_DictMultiObject)
+from pypy.interpreter.error import OperationError
 
 from hippy.objects.base import W_Root as WPHP_Root
 from hippy.objects.arrayobject import W_ListArrayObject, W_RDictArrayObject
@@ -152,7 +153,6 @@ class W_EmbeddedPHPFunc(W_Root):
             if self.wph_func.needs_ref(arg_no):
                 # if you try to pass a reference argument by value, fail.
                 if not isinstance(wpy_arg, W_PRef):
-                    from pypy.interpreter.error import OperationError
                     err_str = "Arg %d of PHP func '%s' is pass by reference" % \
                             (arg_no + 1, self.wph_func.name)
                     raise OperationError(
@@ -161,7 +161,6 @@ class W_EmbeddedPHPFunc(W_Root):
             else:
                 # if you pass a value argument by reference, fail.
                 if isinstance(wpy_arg, W_PRef):
-                    from pypy.interpreter.error import OperationError
                     err_str = "Arg %d of PHP func '%s' is pass by value" % \
                             (arg_no + 1, self.wph_func.name)
                     raise OperationError(
