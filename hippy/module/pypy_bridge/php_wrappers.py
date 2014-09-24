@@ -287,6 +287,11 @@ class W_PyBridgeDictProxy(W_ArrayObject):
         self.py_space = py_space
         self.wpy_dict = wpy_dict
 
+    def copy(self):
+        # used for copy on write semantics of PHP
+        wpy_dict_copy = self.wpy_dict.descr_copy(self.py_space)
+        return W_PyBridgeDictProxy(self.py_space, wpy_dict_copy)
+
     def get_wrapped_py_obj(self):
         return self.wpy_dict
 

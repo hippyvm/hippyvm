@@ -108,6 +108,25 @@ class TestPyPyBridgeArrayConversions(BaseTestInterpreter):
         assert phspace.str_w(output[0]) == "apples"
         assert phspace.str_w(output[1]) == "zero"
 
+    def test_py_dict_is_copy_on_write_in_php(self):
+        phspace = self.space
+        output = self.run('''
+            $src = <<<EOD
+            def f(): return { "aa" : "a", "bb" : "b", "cc" : "c" }
+            EOD;
+
+            $f = embed_py_func($src);
+            $ar1 = $f();
+            $ar2 = $ar1;
+
+            $ar1["aa"] = "apples";
+            echo($ar1["aa"]);
+            echo($ar2["aa"]);
+
+        ''')
+        assert phspace.str_w(output[0]) == "apples"
+        assert phspace.str_w(output[1]) == "a"
+
     def test_py_list_append_in_php(self):
         phspace = self.space
         output = self.run('''
