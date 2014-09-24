@@ -208,6 +208,11 @@ class W_PyBridgeListProxy(W_ArrayObject):
         py_space = self.py_space
         return py_space.int_w(py_space.len(self.wpy_list))
 
+    def copy(self):
+        # used for copy on write semantics of PHP
+        wpy_list_copy = self.wpy_list.clone()
+        return W_PyBridgeListProxy(self.py_space, wpy_list_copy)
+
     def _getitem_int(self, index):
         py_space = self.py_space
         wpy_val = py_space.getitem(self.wpy_list, py_space.wrap(index))
