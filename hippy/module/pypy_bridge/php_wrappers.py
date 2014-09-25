@@ -85,10 +85,20 @@ class W_EmbeddedPyCallable(W_InvokeCall):
     def call_args(self, interp, args_w,
             w_this=None, thisclass=None, closureargs=None):
 
+        py_space = interp.pyspace
+
         wpy_args_elems = [ x.to_py(interp) for x in args_w ]
 
-        rv = interp.pyspace.call_args(
-                self.wpy_func, Arguments(interp.pyspace, wpy_args_elems))
+        try:
+            rv = py_space.call_args(
+                    self.wpy_func, Arguments(py_space, wpy_args_elems))
+        except OperationError as e:
+            # Convert the Python exception to a PHP one.
+            from hippy.module.pypy_bridge.py_wrappers import W_PyException, k_PyException
+            from hippy.error import Throw
+            w_php_exn = W_PyException(interp, e.get_w_value(py_space), [])
+            raise Throw(w_php_exn)
+
         return rv.to_php(interp)
 
     def needs_ref(self, i):
