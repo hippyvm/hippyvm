@@ -195,6 +195,22 @@ class TestLexer(object):
 
         assert excinfo.value.message == 'unfinished heredoc'
 
+    def test_nowdoc_1(self):
+        r = self.lex("<<< 'HERE'\n sadsadasdas \nHERE;\n $var")
+        assert r == ['T_NOWDOC', ';', 'T_VARIABLE']
+
+        r = self.lex("<<< 'HERE'\n sadsadasdas \nHERE\n $var")
+        assert r == ['T_NOWDOC', 'T_VARIABLE']
+
+        source = "<<< 'HERE'\n\n sadsa $x;\nHERE"
+        self.lexer.input(source, 0, 0)
+        tokens = list(self.lexer.token())
+        assert tokens[0].source == "\n sadsa $x;"
+
+    def test_nowdoc_2(self):
+        r = self.lex("<<< 'HERE'\n$a {$b} sadsadasdas \nHERE;\n $var")
+        assert r == ['T_NOWDOC', ';', 'T_VARIABLE']
+
     def test_string_backslash(self):
         r = self.lex('$rp .= "+(\\\\$i)";')
         assert r == ['T_VARIABLE', 'T_CONCAT_EQUAL', '"',

@@ -269,8 +269,7 @@ class W_ArrayObject(W_Object):
     def _setitem_int(self, index, w_value, as_ref, unique_item=False):
         raise NotImplementedError("abstract")
 
-    def _setitem_str(self, key, w_value, as_ref,
-                     unique_array=False, unique_item=False):
+    def _setitem_str(self, key, w_value, as_ref, unique_item=False):
         # Note: might be occasionally called with a string like "5" too
         raise NotImplementedError("abstract")
 
@@ -428,6 +427,10 @@ class W_ListArrayObject(W_ArrayObject):
     def as_list_w(self):
         return self.lst_w[:]
 
+    def as_pair_list(self, space):
+        return [(space.newint(i), values)
+                for i, values in enumerate(self.lst_w)]
+
     def as_unique_arraydict(self):
         self._note_making_a_copy()
         d = self.as_rdict()   # make a fresh dictionary
@@ -505,8 +508,7 @@ class W_ListArrayObject(W_ArrayObject):
         self.lst_w[index] = w_value
         return self
 
-    def _setitem_str(self, key, w_value, as_ref,
-                     unique_array=False, unique_item=False):
+    def _setitem_str(self, key, w_value, as_ref, unique_item=False):
         try:
             i = try_convert_str_to_int(key)
         except ValueError:
@@ -642,6 +644,14 @@ class W_RDictArrayObject(W_ArrayObject):
     def as_list_w(self):
         return self.dct_w.values()
 
+    def as_pair_list(self, space):
+        keylist = self._getkeylist()
+        result = []
+        for key in keylist:
+            w_key = wrap_array_key(space, key)
+            result.append((w_key, self.dct_w[key]))
+        return result
+
     def _getkeylist(self):
         keylist = self._keylist
         if keylist is None:
@@ -691,8 +701,7 @@ class W_RDictArrayObject(W_ArrayObject):
     def _setitem_int(self, index, w_value, as_ref, unique_item=False):
         return self._setitem_str(str(index), w_value, as_ref, unique_item)
 
-    def _setitem_str(self, key, w_value, as_ref,
-                     unique_array=False, unique_item=False):
+    def _setitem_str(self, key, w_value, as_ref, unique_item=False):
         # If overwriting an existing W_Reference object, we only update
         # the value in the reference and return 'self'.
         if not as_ref:

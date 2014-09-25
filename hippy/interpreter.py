@@ -143,8 +143,7 @@ class W_Globals(W_RDictArrayObject):
         assert isinstance(r_var, W_Reference)
         self.dct_w[name] = r_var
 
-    def _setitem_str(self, key, w_value, as_ref,
-                     unique_array=False, unique_item=False):
+    def _setitem_str(self, key, w_value, as_ref, unique_item=False):
         dct_w = self.dct_w
         if not as_ref:
             try:
@@ -1821,18 +1820,13 @@ class Interpreter(object):
         assert isinstance(w_name, W_StringObject)
         name = w_name.unwrap()
 
-        if self._class_is_defined(name):
-            cls = self._class_get(name)
-            assert cls is not None
-        else:
-            cls = None
-
-        if cls is not None and cls.is_interface():
+        k_hint = self.lookup_class_or_intf(name, autoload=False)
+        if k_hint is not None and k_hint.is_interface():
             msg = "implement interface "
         else:
             msg = "be an instance of "
-        if (not space.is_object(w_obj)
-                  or not space.instanceof_w(w_obj, w_name)):
+        if (k_hint is None or not space.is_object(w_obj)
+                  or not space.instanceof_w(w_obj, k_hint)):
             self._fail_typehint(frame, space, argnum, msg + name, w_obj)
         return pc
 

@@ -2732,6 +2732,85 @@ class TestKlass(BaseTestInterpreter):
             "myIterator::valid",
         ]
 
+    def test_iterator_aggregate(self):
+        output = self.run('''
+
+            class SubKlass {
+                public $value;
+
+                function __construct($value) {
+                    $this->value = $value;
+                }
+            }
+
+            class Klass implements IteratorAggregate {
+
+                function __construct($aggregation) {
+                    $this->aggregation = $aggregation;
+                }
+
+                function getIterator()
+                {
+                    return new ArrayIterator($this->aggregation);
+                }
+            }
+
+            $values = array(
+                new SubKlass(1),
+                new SubKlass(2),
+                new SubKlass(3)
+            );
+
+            $iter = new Klass($values);
+
+            foreach ($iter as $element) {
+                echo $element->value;
+            }
+
+        ''')
+
+        assert self.space.int_w(output[0]) == 1
+        assert self.space.int_w(output[1]) == 2
+        assert self.space.int_w(output[2]) == 3
+
+    def test_iterator_aggregate_object(self):
+        output = self.run('''
+
+            class Klass implements IteratorAggregate {
+                public $property1 = "Public property one";
+                public $property2 = "Public property two";
+                public $property3 = "Public property three";
+
+                function __construct() {
+                    $this->property4 = "last property";
+                }
+
+                function getIterator()
+                {
+                    return new ArrayIterator($this);
+                }
+            }
+
+            $obj = new Klass;
+
+            foreach($obj as $key => $value) {
+                echo $key . ' -> ' . $value;
+            }
+
+        ''')
+
+        assert self.space.str_w(output[0]) == 'property1 -> Public property one'
+        assert self.space.str_w(output[1]) == 'property2 -> Public property two'
+        assert self.space.str_w(output[2]) == 'property3 -> Public property three'
+        assert self.space.str_w(output[3]) == 'property4 -> last property'
+
+    def test_iterator_aggregate_error(self):
+        with self.warnings(['Fatal error: Class X cannot implement both '
+                            'Iterator and IteratorAggregate at the same time']):
+            self.run('''
+            abstract class X implements IteratorAggregate, Iterator {}
+            ''')
+
     def test_instanceof_self(self):
         output = self.run("""
 
