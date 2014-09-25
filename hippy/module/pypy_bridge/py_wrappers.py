@@ -42,7 +42,7 @@ class W_PHPProxyGeneric(W_Root):
     def get_php_interp(self):
         return self.interp
 
-    def to_php(self, php_interp, copy=False):
+    def to_php(self, php_interp):
         return self.wph_inst
 
     def is_w(self, space, other):
@@ -167,7 +167,7 @@ class W_EmbeddedPHPFunc(W_Root):
                             self.space.w_ValueError, self.space.wrap(err_str))
                 # Copy is needed to ensure mutable Python types such as lists
                 # appear to not be mutated when passed by value.
-                wph_args_elems.append(wpy_arg.to_php(php_interp, copy=True))
+                wph_args_elems.append(wpy_arg.to_php(php_interp))
 
         res = self.wph_func.call_args(php_interp, wph_args_elems)
 
