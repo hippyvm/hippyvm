@@ -231,8 +231,7 @@ class W_PyBridgeListProxy(W_ArrayObject):
         py_space.setitem(self.wpy_list, wpy_index, wpy_val)
         return self
 
-    def _setitem_str(self, key, w_value, as_ref,
-                     unique_array=False, unique_item=False):
+    def _setitem_str(self, key, w_value, as_ref, unique_item=False):
         py_space = self.py_space
         wpy_val = w_value.to_py(py_space.get_php_interp())
         wpy_key = py_space.wrap(key)
@@ -315,8 +314,7 @@ class W_PyBridgeDictProxy(W_ArrayObject):
         py_space.setitem(self.wpy_dict, wpy_index, wpy_val)
         return self
 
-    def _setitem_str(self, key, w_value, as_ref,
-                     unique_array=False, unique_item=False):
+    def _setitem_str(self, key, w_value, as_ref, unique_item=False):
         py_space = self.py_space
         wpy_val = w_value.to_py(py_space.get_php_interp())
         wpy_key = py_space.wrap(key)
