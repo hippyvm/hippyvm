@@ -17,9 +17,10 @@ def _bzcompress(source, blocksize=4, workfactor=0):
                                          ll_source, len(source),
                                          blocksize, 0, workfactor)
     if res == 0:
-        s = ll_destLen[0]
+        s = rffi.cast(rffi.SIGNED, ll_destLen[0])
         lltype.free(ll_destLen, flavor='raw')
         return rffi.charpsize2str(ll_dest, s)
+    lltype.free(ll_destLen, flavor='raw')
     return res
 
 
@@ -35,9 +36,10 @@ def _bzdecompress(source, small=0):
                                            ll_source, len(source),
                                            small, 0)
     if res == 0:
-        s = ll_destLen[0]
+        s = rffi.cast(rffi.SIGNED, ll_destLen[0])
         lltype.free(ll_destLen, flavor='raw')
         return rffi.charpsize2str(ll_dest, s)
+    lltype.free(ll_destLen, flavor='raw')
     return res
 
 
