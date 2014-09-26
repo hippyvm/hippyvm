@@ -168,8 +168,6 @@ class W_EmbeddedPHPFunc(W_Root):
                             (arg_no + 1, self.wph_func.name)
                     raise OperationError(
                             self.space.w_ValueError, self.space.wrap(err_str))
-                # Copy is needed to ensure mutable Python types such as lists
-                # appear to not be mutated when passed by value.
                 wph_args_elems.append(wpy_arg.to_php(php_interp))
 
         res = self.wph_func.call_args(php_interp, wph_args_elems)
