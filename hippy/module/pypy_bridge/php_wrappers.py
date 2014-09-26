@@ -366,4 +366,4 @@ def wpy_exc_getMessage(interp, this):
     return this.interp.space.wrap(msg)
 
 k_PyException = def_class('PyException',
-    [wpy_exc_getMessage], [], instance_class=W_PyException, extends=k_Exception)
+    [wpy_exc_getMessage], [], instance_class=W_PyException)
