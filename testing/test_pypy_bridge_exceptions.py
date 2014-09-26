@@ -15,3 +15,5 @@ class TestPyPyBridgeExceptions(BaseTestInterpreter):
             }
         ''')
         assert php_space.str_w(output[0]) == "yes"
+
+        # XXX more tests that check line number, trace, filename etc.
