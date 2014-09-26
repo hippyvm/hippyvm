@@ -32,7 +32,6 @@ from hippy.astcompiler import compile_ast
 from hippy.module.standard.directory import php_dir
 from hippy.module.standard.glob import php_glob
 from hippy.module.spl import spl
-from hippy.module.phar import phar
 from hippy import rpath
 from rpython.rlib.objectmodel import we_are_translated
 from rpython.rlib import jit

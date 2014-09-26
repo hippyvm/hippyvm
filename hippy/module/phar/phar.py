@@ -1,9 +1,10 @@
 from hippy.module.spl.spl import W_RecursiveDirectoryIterator
 from hippy.builtin import (wrap_method, ThisUnwrapper, Optional,
                            handle_as_exception)
-from hippy.builtin_klass import def_class
-from hippy.objects.iterator import W_InstanceIterator
-from hippy.objects.arrayobject import W_ArrayObject
+from hippy.builtin_klass import def_class, k_ArrayAccess
+from hippy.module.spl.interface import k_Countable
+from hippy.module.spl.spl import k_RecursiveDirectoryIterator, k_SplFileInfo
+from hippy.objects.base import W_Root
 from hippy.module.phar import utils
 
 
@@ -440,6 +441,6 @@ PharClass = def_class(
      phar_unlink_archive,
      phar_web_phar,
      ],
-    implements=['Countable', 'ArrayAccess'],
+    implements=[k_Countable, k_ArrayAccess],
     instance_class=W_Phar,
-    extends='RecursiveDirectoryIterator',)
+    extends=k_RecursiveDirectoryIterator,)
