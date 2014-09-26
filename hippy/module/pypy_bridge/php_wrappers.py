@@ -11,6 +11,7 @@ from hippy.function import AbstractFunction
 from hippy.objects.iterator import BaseIterator
 from hippy.objects.arrayobject import wrap_array_key, W_ArrayObject
 from hippy.objects.reference import W_Reference
+from hippy.builtin_klass import W_ExceptionObject, k_Exception
 
 from pypy.interpreter.argument import Arguments
 from pypy.interpreter.error import OperationError
@@ -94,7 +95,6 @@ class W_EmbeddedPyCallable(W_InvokeCall):
                     self.wpy_func, Arguments(py_space, wpy_args_elems))
         except OperationError as e:
             # Convert the Python exception to a PHP one.
-            from hippy.module.pypy_bridge.py_wrappers import W_PyException, k_PyException
             from hippy.error import Throw
             w_php_exn = W_PyException(interp, e.get_w_value(py_space), [])
             raise Throw(w_php_exn)
@@ -336,3 +336,34 @@ class W_PyBridgeDictProxy(W_ArrayObject):
 
     def to_py(self, interp):
         return self.wpy_dict
+
+class W_PyException(W_ExceptionObject):
+    """ Wraps up a Python exception """
+
+    def __init__(self, php_interp, w_py_exn, dct_w):
+        W_ExceptionObject.__init__(self, k_PyException, dct_w)
+        self.php_interp = php_interp
+        self.w_py_exn = w_py_exn
+        self.setup(php_interp)
+
+        # XXX these need to be properly populated to give the user a
+        # meaningful error message. The comments show how these fields
+        # would be populated if they were a standard PHP exception.
+
+        #this.setattr(interp, 'file', space.wrap(this.traceback[0][0]), k_Exception)
+        self.file = None
+        #this.setattr(interp, 'line', space.wrap(this.traceback[0][2]), k_Exception)
+        self.line = -1
+        #this.setattr(interp, 'message', space.wrap(message), k_Exception)
+        self.message = "xxx"
+        #this.setattr(interp, 'code', space.wrap(code), k_Exception)
+        self.code = None
+
+@wrap_method(['interp', 'this'], name='PyException::getMessage')
+def wpy_exc_getMessage(interp, this):
+    py_space = this.php_interp.pyspace
+    msg = py_space.str_w(py_space.str(e.get_w_value(py_space)))
+    return this.interp.space.wrap(msg)
+
+k_PyException = def_class('PyException',
+    [wpy_exc_getMessage], [], instance_class=W_PyException, extends=k_Exception)

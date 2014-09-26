@@ -79,10 +79,9 @@ import hippy.module.date.datetimezone_klass
 
 from hippy.module.date import default_timezone
 from hippy.buffering import Buffer
-from hippy.module.pypy_bridge import php_wrappers
 
-# Needed so that PyException is defined early enough to hit the class cache.
-from hippy.module.pypy_bridge import py_wrappers
+# Also needed so that PyException is defined early enough to hit the class cache.
+from hippy.module.pypy_bridge import php_wrappers
 
 if is_optional_extension_enabled("mysql"):
     import ext_module.mysql.funcs

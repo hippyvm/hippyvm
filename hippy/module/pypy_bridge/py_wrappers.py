@@ -22,7 +22,6 @@ from hippy.objects.arrayobject import W_ListArrayObject, W_RDictArrayObject
 from hippy.objects.arrayiter import ListArrayIteratorRef, RDictArrayIteratorRef
 from hippy.module.pypy_bridge.errors import raise_python_bridge_error
 from hippy.objects.reference import W_Reference
-from hippy.builtin_klass import W_ExceptionObject, k_Exception
 from hippy.klass import def_class
 from hippy.builtin import wrap_method
 
@@ -419,35 +418,3 @@ W_PRef.typedef = TypeDef("PRef",
     __new__ = interp2app(W_PRef.descr_new),
     deref = interp2app(W_PRef.deref),
 )
-
-# XXX move into php_wrappers
-class W_PyException(W_ExceptionObject):
-    """ Wraps up a Python exception """
-
-    def __init__(self, php_interp, w_py_exn, dct_w):
-        W_ExceptionObject.__init__(self, k_PyException, dct_w)
-        self.php_interp = php_interp
-        self.w_py_exn = w_py_exn
-        self.setup(php_interp)
-
-        # XXX these need to be properly populated to give the user a
-        # meaningful error message. The comments show how these fields
-        # would be populated if they were a standard PHP exception.
-
-        #this.setattr(interp, 'file', space.wrap(this.traceback[0][0]), k_Exception)
-        self.file = None
-        #this.setattr(interp, 'line', space.wrap(this.traceback[0][2]), k_Exception)
-        self.line = -1
-        #this.setattr(interp, 'message', space.wrap(message), k_Exception)
-        self.message = "xxx"
-        #this.setattr(interp, 'code', space.wrap(code), k_Exception)
-        self.code = None
-
-@wrap_method(['interp', 'this'], name='PyException::getMessage')
-def wpy_exc_getMessage(interp, this):
-    py_space = this.php_interp.pyspace
-    msg = py_space.str_w(py_space.str(e.get_w_value(py_space)))
-    return this.interp.space.wrap(msg)
-
-k_PyException = def_class('PyException',
-    [wpy_exc_getMessage], [], instance_class=W_PyException, extends=k_Exception)
