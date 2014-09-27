@@ -8,7 +8,8 @@ from hippy.lexer import Token, BaseLexer
 from hippy.sourceparser import BaseParser
 
 EXTENSIONS = ['session', 'standard', 'mysql', 'pcre', 'posix', 'Core',
-              'xml', 'ctype', 'hash', 'spl', 'mbstring', 'mcrypt']
+              'xml', 'ctype', 'hash', 'spl', 'mbstring', 'mcrypt', 'bz2',
+              'zlib']
 
 
 class Config(object):
