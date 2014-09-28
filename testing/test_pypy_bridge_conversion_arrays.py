@@ -377,10 +377,10 @@ class TestPyPyBridgeArrayConversions(BaseTestInterpreter):
             def f(a):
                 try:
                     a.as_list() # boom
-                except PHPException: # XXX read message
-                    return True
+                except PHPException as e:
+                    return e.message
                 else:
-                    return False
+                    return "fail"
             EOD;
 
             $f = embed_py_func($src);
@@ -388,7 +388,8 @@ class TestPyPyBridgeArrayConversions(BaseTestInterpreter):
             echo($f($in));
         ''')
 
-        assert self.space.is_true(output[0])
+        e_str = "can only apply as_list() to a wrapped PHP array in dict form"
+        assert phspace.str_w(output[0]) == e_str
 
     def test_as_list_invalidates(self):
         phspace = self.space
@@ -400,7 +401,7 @@ class TestPyPyBridgeArrayConversions(BaseTestInterpreter):
                 try:
                     arry_l[0] # stale!
                 except PHPException as e:
-                    return e.args[0]
+                    return e.message
             EOD;
 
             $f = embed_py_func($src);
