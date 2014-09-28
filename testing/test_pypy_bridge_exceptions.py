@@ -82,3 +82,27 @@ class TestPyPyBridgeExceptions(BaseTestInterpreter):
         assert php_space.str_w(output[0]) == "oh no!"
 
         # XXX more tests that check line number, trace, filename etc.
+
+    def test_exns_can_pass_pass_thru_multiple_langs(self):
+        php_space = self.space
+        output = self.run('''
+            $src = "def py_f1(): php_f()";
+            $py_f1 = embed_py_func($src);
+
+            $src2 = "def py_f2(): raise ValueError('explosion')";
+            $py_f2 = embed_py_func($src2);
+
+            function php_f() {
+                global $py_f2;
+                $py_f2();
+            }
+
+            try {
+                $py_f1();
+                echo "fail";
+            } catch (PyException $e) {
+                echo $e->getMessage();
+            }
+        ''')
+        assert php_space.str_w(output[0]) == "explosion"
+
