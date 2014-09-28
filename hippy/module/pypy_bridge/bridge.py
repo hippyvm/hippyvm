@@ -16,7 +16,6 @@ from pypy.interpreter.typedef import TypeDef
 from pypy.interpreter.gateway import interp2app, unwrap_spec
 from pypy.interpreter.baseobjspace import W_Root as Wpy_Root
 from pypy.interpreter.function import Function as Py_Function
-from pypy.objspace.std import StdObjSpace
 from pypy.interpreter.argument import Arguments
 from pypy.module.__builtin__ import compiling as py_compiling
 

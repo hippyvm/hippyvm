@@ -20,11 +20,10 @@ from pypy.interpreter.error import OperationError
 from hippy.objects.base import W_Root as WPHP_Root
 from hippy.objects.arrayobject import W_ListArrayObject, W_RDictArrayObject
 from hippy.objects.arrayiter import ListArrayIteratorRef, RDictArrayIteratorRef
-from hippy.module.pypy_bridge.errors import raise_python_bridge_error
 from hippy.objects.reference import W_Reference
 from hippy.klass import def_class
 from hippy.builtin import wrap_method
-
+from hippy.error import Throw
 
 from rpython.rlib import jit, rerased
 from rpython.rlib.objectmodel import import_from_mixin
@@ -170,7 +169,13 @@ class W_EmbeddedPHPFunc(W_Root):
                             self.space.w_ValueError, self.space.wrap(err_str))
                 wph_args_elems.append(wpy_arg.to_php(php_interp))
 
-        res = self.wph_func.call_args(php_interp, wph_args_elems)
+        try:
+            res = self.wph_func.call_args(php_interp, wph_args_elems)
+        except Throw as w_php_throw:
+            w_php_exn = w_php_throw.w_exc
+            from pypy.module.__builtin__.hippy_bridge import raise_phpexception
+            msg = phspace.str_w(w_php_exn.get_message(php_interp))
+            raise_phpexception(pyspace, msg)
 
         return res.to_py(php_interp)
 
@@ -181,7 +186,8 @@ W_EmbeddedPHPFunc.typedef = TypeDef("EmbeddedPHPFunc",
 def make_wrapped_int_key_php_array(interp, wphp_arry_ref):
     wphp_arry_tmp = wphp_arry_ref.deref_temp()
     if not isinstance(wphp_arry_tmp, W_ListArrayObject):
-        raise_python_bridge_error(interp,
+        from pypy.module.__builtin__.hippy_bridge import raise_phpexception
+        raise_phpexception(interp.pyspace,
                 "can only apply as_list() to a wrapped PHP array in dict form")
 
     strategy = interp.pyspace.fromcache(WrappedPHPArrayStrategy)
@@ -201,7 +207,8 @@ class WrappedPHPArrayStrategy(ListStrategy):
         wphp_arry = self.unerase(w_list.lstorage).deref_temp()
         if not isinstance(wphp_arry, W_ListArrayObject):
             interp = self.space.get_php_interp()
-            raise_python_bridge_error(interp,
+            from pypy.module.__builtin__.hippy_bridge import raise_phpexception
+            raise_phpexception(interp.pyspace,
                     "Stale wrapped PHP array. No longer integer keyed!")
 
     def wrap(self, wphp_val):
