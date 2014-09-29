@@ -721,21 +721,21 @@ class TestPharUtils(BaseTestInterpreter):
         phar = utils.read_phar(self.space, phar_data)
         new_phar_data = utils.write_phar(self.space, phar, stub)
         assert new_phar_data == phar_data
-        assert phar['files_count'] == 2
-        assert len(phar['files']) == 2
+        assert phar.files_count == 2
+        assert len(phar.files) == 2
 
-        assert 'test.php' in phar['files'].keys()
-        assert 'test2.php' in phar['files'].keys()
+        assert 'test.php' in phar.files.keys()
+        assert 'test2.php' in phar.files.keys()
 
-        assert phar['files']['test.php']['name_length'] == 8
-        assert phar['files']['test.php']['size_uncompressed'] == 18
-        assert phar['files']['test.php']['timestamp'] == 1401356104
-        assert phar['files']['test.php']['content'] == '<?php echo "seba";'
-        assert len(phar['files']['test.php']['content']) == 18
+        assert phar.files['test.php'].name_length == 8
+        assert phar.files['test.php'].size_uncompressed == 18
+        assert phar.files['test.php'].timestamp == 1401356104
+        assert phar.files['test.php'].content == '<?php echo "seba";'
+        assert len(phar.files['test.php'].content) == 18
 
 
-        assert phar['files']['test2.php']['name_length'] == 9
-        assert phar['files']['test2.php']['size_uncompressed'] == 18
-        assert phar['files']['test2.php']['timestamp'] == 1401356104
-        assert phar['files']['test2.php']['content'] == '<?php echo "ALA";\n'
-        assert len(phar['files']['test2.php']['content']) == 18
+        assert phar.files['test2.php'].name_length == 9
+        assert phar.files['test2.php'].size_uncompressed == 18
+        assert phar.files['test2.php'].timestamp == 1401356104
+        assert phar.files['test2.php'].content == '<?php echo "ALA";\n'
+        assert len(phar.files['test2.php'].content) == 18
