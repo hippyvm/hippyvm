@@ -145,9 +145,9 @@ class W_EmbeddedPHPFunc(W_Root):
         (args, kwargs) = __args__.unpack()
 
         # PHP has no equivalent to keyword arguments.
-        # For now if the user passes any kwargs, we crap out.
-        # XXX raise PHP exception
-        assert not kwargs
+        if kwargs:
+            _raise_py_bridgeerror(
+                    self.space, "Cannot use kwargs when calling PHP functions")
 
         pyspace = self.space
         php_interp = self.space.get_php_interp()

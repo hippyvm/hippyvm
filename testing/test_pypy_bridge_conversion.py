@@ -258,3 +258,23 @@ class TestPyPyBridgeConversions(BaseTestInterpreter):
         ''')
         err_s = "Wrapped PHP instance has no attribute 'no_exist'"
         assert php_space.str_w(output[0]) == err_s
+
+    def test_wrapped_using_kwargs_to_a_php_func_raises(self):
+        php_space = self.space
+        output = self.run('''
+        function php_func($a) {
+        }
+
+        $src = <<<EOD
+        def py_func():
+            try:
+                php_func(a=1)
+                return "test fail"
+            except BridgeError as e:
+                return e.message
+        EOD;
+        $py_func = embed_py_func($src);
+        echo($py_func());
+        ''')
+        err_s = "Cannot use kwargs when calling PHP functions"
+        assert php_space.str_w(output[0]) == err_s
