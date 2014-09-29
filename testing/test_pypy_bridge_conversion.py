@@ -237,3 +237,24 @@ class TestPyPyBridgeConversions(BaseTestInterpreter):
         echo(null === $n());
         ''')
         assert phspace.is_true(output[0])
+
+    def test_wrapped_php_instance_attributeerror(self):
+        php_space = self.space
+        output = self.run('''
+        class A {};
+
+        $src = <<<EOD
+        def f(a):
+            try:
+                x = a.no_exist
+            except AttributeError as e:
+                return e.message
+            return "test failed"
+        EOD;
+        $f = embed_py_func($src);
+
+        $inst = new A();
+        echo $f($inst);
+        ''')
+        err_s = "Wrapped PHP instance has no attribute 'no_exist'"
+        assert php_space.str_w(output[0]) == err_s

@@ -23,7 +23,7 @@ from hippy.objects.arrayiter import ListArrayIteratorRef, RDictArrayIteratorRef
 from hippy.objects.reference import W_Reference
 from hippy.klass import def_class
 from hippy.builtin import wrap_method
-from hippy.error import Throw
+from hippy.error import Throw, VisibilityError
 
 from rpython.rlib import jit, rerased
 from rpython.rlib.objectmodel import import_from_mixin
@@ -64,10 +64,14 @@ class W_PHPProxyGeneric(W_Root):
         wph_target = wph_inst.getattr(interp, name, None, fail_with_none=True)
 
         if wph_target is None:
-            wph_target = wph_inst.getmeth(php_space, name, None) # XXX what if this raises a VisibilityError?
-            if not wph_target:
-                print "can't lookup", name
-                assert False # XXX raise exception
+            try:
+                wph_target = wph_inst.getmeth(php_space, name, None)
+            except VisibilityError:
+                wph_target = None
+
+            if wph_target is None:
+                raise OperationError(py_space.w_AttributeError, py_space.wrap(
+                        "Wrapped PHP instance has no attribute '%s'" % name))
         return wph_target.to_py(interp)
 
     # XXX unwrap spec
