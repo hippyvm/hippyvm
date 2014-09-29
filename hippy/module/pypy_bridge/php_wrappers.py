@@ -95,8 +95,8 @@ class W_EmbeddedPyCallable(W_InvokeCall):
                     self.wpy_func, Arguments(py_space, wpy_args_elems))
         except OperationError as e:
             # Convert the Python exception to a PHP one.
-            w_php_exn = k_PyException.call_args(interp, [])
-            w_php_exn.set_w_py_exception(interp, e.get_w_value(py_space))
+            w_py_exn = e.get_w_value(py_space)
+            w_php_exn = w_py_exn.to_php(interp)
             from hippy.error import Throw
             raise Throw(w_php_exn)
 
