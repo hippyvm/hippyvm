@@ -55,6 +55,31 @@ class TestPyPyBridgeExceptions(BaseTestInterpreter):
         ''')
         assert php_space.str_w(output[0]) == "ok"
 
+    def test_php_exn_str_in_py(self):
+        php_space = self.space
+        output = self.run('''
+            $src = <<<EOD
+            def catch_php_exn():
+                #x = PHPException # forces PHPException to exist
+                try:
+                    raise_php_exn();
+                    return "bad"
+                except PHPException as e:
+                    return str(e)
+            EOD;
+
+            $catch_php_exn = embed_py_func($src);
+
+            function raise_php_exn() {
+                throw new RuntimeException("oh no!");
+            }
+
+            $r = $catch_php_exn();
+            echo $r;
+
+        ''')
+        assert php_space.str_w(output[0]) == "oh no!"
+
     def test_php_exn_message_in_py(self):
         php_space = self.space
         output = self.run('''
@@ -65,7 +90,6 @@ class TestPyPyBridgeExceptions(BaseTestInterpreter):
                     raise_php_exn();
                     return "bad"
                 except PHPException as e:
-                    return e.args[0]
                     return e.message
             EOD;
 
@@ -83,6 +107,7 @@ class TestPyPyBridgeExceptions(BaseTestInterpreter):
 
         # XXX more tests that check line number, trace, filename etc.
 
+    @pytest.mark.xfail
     def test_exns_can_pass_pass_thru_multiple_langs(self):
         php_space = self.space
         output = self.run('''

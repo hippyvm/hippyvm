@@ -119,6 +119,7 @@ class W_EmbeddedPHPFunc(W_Root):
     def __init__(self, space, wph_func):
         self.space = space
         self.wph_func = wph_func
+        self.w_phpexception = space.builtin.get("PHPException")
 
     def get_wrapped_php_obj(self):
         return self.wph_func
@@ -173,9 +174,7 @@ class W_EmbeddedPHPFunc(W_Root):
             res = self.wph_func.call_args(php_interp, wph_args_elems)
         except Throw as w_php_throw:
             w_php_exn = w_php_throw.w_exc
-            from pypy.module.__builtin__.hippy_bridge import raise_phpexception
-            msg = phspace.str_w(w_php_exn.get_message(php_interp))
-            raise_phpexception(pyspace, msg)
+            raise OperationError(self.w_phpexception, w_php_exn.to_py(php_interp))
 
         return res.to_py(php_interp)
 
