@@ -1,98 +1,90 @@
 import py
 import os
 import tempfile
-from testing.test_interpreter import BaseTestInterpreter
+from testing.test_interpreter import BaseTestInterpreter, hippy_fail
 
 from hippy.module.phar import utils
 
 
 class TestPhar(BaseTestInterpreter):
 
-    def test_phar_object(self):
+    def test_phar_object(self, tmpdir):
         output = self.run('''
-            $p = new Phar('/tmp/newphar.tar.phar', 0, 'newphar.tar.phar');
+            ini_set('phar.readonly', false);
+            $p = new Phar('%s/newphar.tar.phar', 0, 'newphar.tar.phar');
             echo get_class($p);
-        ''')
+        ''' % tmpdir)
 
         assert self.space.str_w(output[0]) == 'Phar'
 
     def test_count(self):
         phar_file = os.path.join(os.path.dirname(__file__), 'phar_files/phar.phar')
         output = self.run('''
-
             $p = new Phar('%s');
             echo $p->count();
-
         ''' % phar_file)
 
         assert self.space.int_w(output[0]) == 2
 
-    @py.test.mark.xfail(reason='Not implemented')
-    def test_create_phar(self):
+    @hippy_fail(reason='Not implemented')
+    def test_create_phar(self, tmpdir):
         output = self.run('''
-        if (Phar::canWrite()) {
-        $p = new Phar('/tmp/newphar.tar.phar', 0, 'newphar.tar.phar');
+        $p = new Phar('{0}/newphar.tar.phar', 0, 'newphar.tar.phar');
         $p->startBuffering();
         $p['file1.txt'] = 'Information';
         $p->stopBuffering();
-        }
-
-        $p2 = new Phar('newphar0.tar.phar', 0);
-        foreach (new RecursiveIteratorIterator($p2) as $file) {
+        $p2 = new Phar('{0}/newphar.tar.phar', 0);
+        foreach (new RecursiveIteratorIterator($p2) as $file) {{
             echo $file->getFileName();
             echo file_get_contents($file->getPathName());
-            }
+            }}
         unset($p);
         unset($p2);
-        Phar::unlinkArchive('/tmp/newphar.tar.phar');
-        ''')
+        Phar::unlinkArchive('{0}/newphar.tar.phar');
+        '''.format(tmpdir))
         assert len(output) == 2
         assert self.space.str_w(output[0]) == 'file1.txt'
         assert self.space.str_w(output[1]) == 'Information'
 
-    @py.test.mark.xfail(reason='Not implemented')
-    def test_add_empty_dir(self):
-        tempdir = tempfile.mkdtemp()
+    @hippy_fail(reason='Not implemented')
+    def test_add_empty_dir(self, tmpdir):
+        tmpdir.mkdir('subdir')
         output = self.run('''
-        if (Phar::canWrite()) {
-        $p = new Phar('/tmp/newphar.tar.phar', 0, 'newphar.tar.phar');
+        $p = new Phar('{0}/newphar.tar.phar', 0, 'newphar.tar.phar');
         $p->startBuffering();
         $p['file1.txt'] = 'Information';
         $p->stopBuffering();
-        }
 
-        $p2 = new Phar('newphar.tar.phar', 0);
-        $p2->addEmptyDir('%s');
-        echo $p2['%s']->isDir();        // TODO: Catch exception on failure
+        $p2 = new Phar('{0}/newphar.tar.phar', 0);
+        $p2->addEmptyDir('{0}/subdir');
+        echo $p2['{0}/subdir']->isDir();        // TODO: Catch exception on failure
         unset($p);
         unset($p2);
-        Phar::unlinkArchive('/tmp/newphar.tar.phar');
-        ''' % (tempdir, tempdir))
+        Phar::unlinkArchive('{0}/newphar.tar.phar');
+        '''.format(tmpdir))
         assert output[0] == self.space.w_True
 
-    def test_add_file(self):
-        f = py.path.local(tempfile.mkstemp()[1])
-        f.write('Foo')
+    def test_add_file(self, tmpdir):
+        tmpdir.join('foo.txt').write('Foo')
         output = self.run('''
-        $p = new Phar('/tmp/newphar.tar.phar', 0, 'newphar.tar.phar');
-        $p->addFile('%s');
-        echo $p['%s']->getContent();
+        $p = new Phar('{0}/newphar.tar.phar', 0, 'newphar.tar.phar');
+        $p->addFile('{0}/foo.txt');
+        echo $p['{0}/foo.txt']->getContent();
         unset($p);
-        Phar::unlinkArchive('/tmp/newphar.tar.phar');
-        ''' % (f, f))
+        Phar::unlinkArchive('{0}/newphar.tar.phar');
+        '''.format(tmpdir))
         assert self.space.str_w(output[0]) == 'Foo'
 
-    def test_add_from_string(self):
+    def test_add_from_string(self, tmpdir):
         output = self.run('''
-        $p = new Phar('/tmp/newphar.tar.phar', 0, 'newphar.tar.phar');
+        $p = new Phar('{0}/newphar.tar.phar', 0, 'newphar.tar.phar');
         $p->addFromString('test/path/foo.txt', 'Bar');
         echo $p['test/path/foo.txt']->getContent();
         unset($p);
-        Phar::unlinkArchive('/tmp/newphar.tar.phar');
-       ''')
+        Phar::unlinkArchive('{0}/newphar.tar.phar');
+       '''.format(tmpdir))
         assert self.space.str_w(output[0]) == 'Bar'
 
-    # @py.test.mark.xfail(reason='Not implemented')
     def test_api_version(self):
         output = self.run('''
         echo Phar::apiVersion();
@@ -110,23 +102,21 @@ class TestPhar(BaseTestInterpreter):
         ''' % phar_file)
         assert self.space.str_w(output[0]) == '1.1.0' # 1.1.1 will be for phar having at least one dir inside
 
-    @py.test.mark.xfail(reason='Not implemented')
-    def test_build_from_directory(self):            # XXX: Doesn't work on first run
+    @hippy_fail(reason='Not implemented')
+    def test_build_from_directory(self, tmpdir):
         tempdir = py.path.local(tempfile.mkdtemp())
-        f = tempdir.join('foo.txt')
-        f.write('test file 1')
-        f = tempdir.join('bar.txt')
-        f.write('test file 2')
+        tmpdir.join('foo.txt').write('test file 1')
+        tmpdir.join('bar.txt').write('test file 2')
         output = self.run('''
-        $p = new Phar('/tmp/newphar4.tar.phar', 0, 'newphar4.tar.phar');
-        $p->buildFromDirectory(dirname('%s'));
-        foreach (new RecursiveIteratorIterator($p) as $file) {
+        $p = new Phar('{0}/newphar4.tar.phar', 0, 'newphar4.tar.phar');
+        $p->buildFromDirectory('{0}');
+
+        $p = new Phar('{0}/newphar4.tar.phar');
+        foreach (new RecursiveIteratorIterator($p) as $file) {{
             echo $file->getFileName();
             echo file_get_contents($file->getPathName());
-            }
-//        unset($p);
-//        Phar::unlinkArchive('/tmp/newphar.tar.phar');
-        ''' % f)
+            }}
+        '''.format(tmpdir))
 
         assert len(output) == 4
         assert self.space.newstr('foo.txt') in output
@@ -165,52 +155,50 @@ class TestPhar(BaseTestInterpreter):
         }
         ''' % phar_file)
         assert self.space.str_w(output[0]) == 'PharFileInfo'
-        assert self.space.str_w(output[1]) == ''
+        assert self.space.str_w(output[1]) == 'Foo'
         assert self.space.str_w(output[2]) == 'Entry bar.txt does not exist'
 
-    def test_offset_unset(self):
+    def test_offset_unset(self, tmpdir):
         output = self.run('''
-        $p = new Phar('/tmp/newphar.tar.phar', 0, 'newphar.tar.phar');
+        $p = new Phar('{0}/newphar.tar.phar', 0, 'newphar.tar.phar');
         $p['foo.txt'] = "File exists";
-        try {
+        try {{
             echo $p['foo.txt']->getContent();
             unset($p['foo.txt']);
             echo $p['foo.txt']->getContent();
-        } catch (BadMethodCallException $e) {
+        }} catch (BadMethodCallException $e) {{
             echo $e->getMessage();
-        }
+        }}
         unset($p);
-        Phar::unlinkArchive('/tmp/newphar.tar.phar');
-        ''')
+        Phar::unlinkArchive('{0}/newphar.tar.phar');
+        '''.format(tmpdir))
         assert self.space.str_w(output[0]) == 'File exists'
         assert self.space.str_w(output[1]) == 'Entry foo.txt does not exist'
 
-    def test_is_buffering(self):
+    def test_is_buffering(self, tmpdir):
         output = self.run('''
-        $p1 = new Phar('/tmp/newphar1.tar.phar', 0, 'newphar1.tar.phar');
+        $p1 = new Phar('{0}/newphar1.tar.phar', 0, 'newphar1.tar.phar');
         $p1['foo.txt'] = "Foo";
-        $p2 = new Phar('/tmp/newphar2.tar.phar', 0, 'newphar2.tar.phar');
+        $p2 = new Phar('{0}/newphar2.tar.phar', 0, 'newphar2.tar.phar');
         $p2['bar.txt'] = "Bar";
         $p1->startBuffering();
         echo $p1->isBuffering();
         echo $p2->isBuffering();
         $p1->stopBuffering();
         echo $p1->isBuffering();
-        unset($p1);
-        unset($p2);
-        Phar::unlinkArchive('/tmp/newphar1.tar.phar');
-        Phar::unlinkArchive('/tmp/newphar2.tar.phar');
-        ''')
+        '''.format(tmpdir))
         assert output[0] == self.space.w_True
         assert output[1] == self.space.w_False
         assert output[2] == self.space.w_False
 
-    @py.test.mark.xfail(reason='Not implemented')
-    def test_compress_files_gz(self):       # XXX: Doesn't pass on first runs
+    @hippy_fail(reason='Not implemented')
+    def test_compress_files_gz(self, tmpdir):
         output = self.run('''
-        $p = new Phar('/tmp/newphar000.phar', 0, 'newphar000.phar');
+        $p = new Phar('%s/newphar000.phar', 0, 'newphar000.phar');
         $p['myfile1.txt'] = 'Foo.';
         $p['myfile2.txt'] = 'Bar.';
+        // XXX: why is this needed??
+        $p = new Phar('%s/newphar000.phar', 0, 'newphar000.phar');
         foreach ($p as $file) {
             echo $file->isCompressed();
             echo $file->isCompressed(Phar::GZ);
@@ -222,9 +210,7 @@ class TestPhar(BaseTestInterpreter):
             echo $file->isCompressed(Phar::GZ);
             echo $file->isCompressed(Phar::BZ2);
         }
-//        unset($p);
-//        Phar::unlinkArchive('/tmp/newphar000.phar');
-        ''')
+        ''' % (tmpdir, tmpdir))
         assert len(output) == 12
         for i in range(6):
             assert output[i] == self.space.w_False
@@ -235,13 +221,14 @@ class TestPhar(BaseTestInterpreter):
             assert output[i+2] == self.space.w_False
             i = i + 3
 
-    @py.test.mark.xfail(reason='Not implemented')
-    def test_compress_files_bz2(self):      # XXX: Doesn't pass on first runs
-
+    @hippy_fail(reason='Not implemented')
+    def test_compress_files_bz2(self, tmpdir):
         output = self.run('''
-        $p = new Phar('/tmp/newphar001.phar', 0, 'newphar001.phar');
+        $p = new Phar('%s/newphar001.phar', 0, 'newphar001.phar');
         $p['myfile1.txt'] = 'Foo.';
         $p['myfile2.txt'] = 'Bar.';
+        unset($p);  // XXX: why is this needed??
+        $p = new Phar('%s/newphar001.phar', 0, 'newphar001.phar');
         foreach ($p as $file) {
             echo $file->isCompressed();
             echo $file->isCompressed(Phar::GZ);
@@ -253,9 +240,7 @@ class TestPhar(BaseTestInterpreter):
             echo $file->isCompressed(Phar::GZ);
             echo $file->isCompressed(Phar::BZ2);
         }
-//        unset($p);
-//        Phar::unlinkArchive('/tmp/newphar001.phar');
-        ''')
+        ''' % (tmpdir, tmpdir))
         assert len(output) == 12
         for i in range(6):
             assert output[i] == self.space.w_False
@@ -266,44 +251,36 @@ class TestPhar(BaseTestInterpreter):
             assert output[i+2] == self.space.w_True
             i = i + 3
 
-    @py.test.mark.xfail(reason='Not implemented')
-    def test_compress_gz(self):
+    @hippy_fail(reason='Not implemented')
+    def test_compress_gz(self, tmpdir):
         output = self.run('''
-        $p = new Phar('/tmp/newphar.phar', 0, 'newphar.phar');
+        $p = new Phar('{0}/newphar.phar', 0, 'newphar.phar');
         $p['myfile1.txt'] = 'Foo';
         $p['myfile2.txt'] = 'Bar';
         $p1 = $p->compress(Phar::GZ);
         echo get_class($p1);
         echo $p1->isCompressed();
-        unset($p);
-        unset($p1);
-        Phar::unlinkArchive('/tmp/newphar.phar');
-        Phar::unlinkArchive('/tmp/newphar.phar.gz');
-        ''')
+        '''.format(tmpdir))
         assert self.space.str_w(output[0]) == 'Phar'
         assert self.space.int_w(output[1]) == 4096
 
-    @py.test.mark.xfail(reason='Not implemented')
-    def test_compress_bz2(self):
+    @hippy_fail(reason='Not implemented')
+    def test_compress_bz2(self, tmpdir):
         output = self.run('''
-        $p = new Phar('/tmp/newphar.phar', 0, 'newphar.phar');
+        $p = new Phar('{0}/newphar.phar', 0, 'newphar.phar');
         $p['myfile1.txt'] = 'Foo';
         $p['myfile2.txt'] = 'Bar';
         $p1 = $p->compress(Phar::BZ2);
         echo get_class($p1);
         echo $p1->isCompressed();
-        unset($p);
-        unset($p1);
-        Phar::unlinkArchive('/tmp/newphar.phar');
-        Phar::unlinkArchive('/tmp/newphar.phar.bz2');
-        ''')
+        '''.format(tmpdir))
         assert self.space.str_w(output[0]) == 'Phar'
         assert self.space.int_w(output[1]) == 8192
 
-    @py.test.mark.xfail(reason='Not implemented')
-    def test_compress_none(self):
+    @hippy_fail(reason='Not implemented')
+    def test_compress_none(self, tmpdir):
         output = self.run('''
-        $p = new Phar('/tmp/newphar.phar', 0, 'newphar.phar');
+        $p = new Phar('%s/newphar.phar', 0, 'newphar.phar');
         $p['myfile1.txt'] = 'Foo';
         $p['myfile2.txt'] = 'Bar';
         try{
@@ -311,26 +288,24 @@ class TestPhar(BaseTestInterpreter):
         } catch (BadMethodCallException $e) {
             echo $e->getMessage();
         }
-        unset($p);
-        Phar::unlinkArchive('/tmp/newphar.phar');
-        ''')
-        assert self.space.str_w(output[0]) == 'Unable to add newly converted phar "/tmp/newphar.phar" to the list of phars, a phar with that name already exists'
+        ''' % tmpdir)
+        assert self.space.str_w(output[0]) == (
+            'Unable to add newly converted phar "%s/newphar.phar" to the list '
+            'of phars, a phar with that name already exists' % tmpdir)
 
-    def test_copy(self):
+    def test_copy(self, tmpdir):
         output = self.run('''
-        $p = new Phar('/tmp/newphar.phar', 0, 'newphar.phar');
+        $p = new Phar('%s/newphar.phar', 0, 'newphar.phar');
         $p['a'] = 'foo';
         echo $p->copy('a', 'b');
         echo $p['b']->getContent();
-        unset($p);
-        Phar::unlinkArchive('/tmp/newphar.phar');
-        ''')
+        ''' % tmpdir)
         assert output[0] == self.space.w_True
         assert self.space.str_w(output[1]) == 'foo'
 
-    def test_metadata(self):    # XXX: Implemented hasMetadata()
+    def test_metadata(self, tmpdir):    # XXX: Implemented hasMetadata()
         output = self.run('''
-        $p = new Phar('/tmp/newphar.phar', 0, 'newphar.phar');
+        $p = new Phar('%s/newphar.phar', 0, 'newphar.phar');
         $p['file.php'] = '<?php echo "hello";';
         echo $p->hasMetadata();
         $p->setMetadata(array('bootstrap' => 'file.php'));
@@ -338,9 +313,7 @@ class TestPhar(BaseTestInterpreter):
         echo $p->getMetadata();
         echo $p->delMetadata();
         echo $p->hasMetadata();
-        unset($p);
-        Phar::unlinkArchive('/tmp/newphar.phar');
-        ''')
+        ''' % tmpdir)
         assert output[0] == self.space.w_False
         assert output[1] == self.space.w_True
         from hippy.objects.arrayobject import W_RDictArrayObject
@@ -351,95 +324,82 @@ class TestPhar(BaseTestInterpreter):
         assert output[3] == self.space.w_True
         assert output[4] == self.space.w_False
 
-    @py.test.mark.xfail(reason='Not implemented')
-    def test_running(self):
+    @hippy_fail(reason='Not implemented')
+    def test_running(self, tmpdir):
         output = self.run('''
         echo Phar::running();
-        $p = new Phar('/tmp/newphar.phar', 0, 'newphar.phar');
+        $p = new Phar('{0}/newphar.phar', 0, 'newphar.phar');
         $p['foo.php'] = '<?php echo Phar::running(); echo Phar::running(false); ?>';
-        include 'phar:///tmp/newphar.phar/foo.php';
+        include 'phar://{0}/newphar.phar/foo.php';
         echo Phar::running();
-        unset($p);
-        Phar::unlinkArchive('/tmp/newphar.phar');
-        ''')
+        '''.format(tmpdir))
         assert len(output) == 4
         assert self.space.str_w(output[0]) == ''
-        assert self.space.str_w(output[1]) == 'phar:///tmp/newphar.phar'
-        assert self.space.str_w(output[2]) == '/tmp/newphar.phar'
+        assert self.space.str_w(output[1]) == 'phar://%s/newphar.phar' % tmpdir
+        assert self.space.str_w(output[2]) == '%s/newphar.phar' % tmpdir
         assert self.space.str_w(output[3]) == ''
 
-    @py.test.mark.xfail(reason='Not implemented')
-    def test_intercept_file_funcs(self):
+    @hippy_fail(reason='Not implemented')
+    def test_intercept_file_funcs(self, tmpdir):
         output = self.run('''
-        $p = new Phar('/tmp/newphar.phar', 0, 'newphar.phar');
+        $p = new Phar('{0}/newphar.phar', 0, 'newphar.phar');
         $p['foo.txt'] = 'Test file.';
         $p['file.php'] = "<?php echo file_get_contents('foo.txt'); ?>";
         Phar::interceptFileFuncs();
-        include 'phar:///tmp/newphar.phar/file.php';
-        unset($p);
-        Phar::unlinkArchive('/tmp/newphar.phar');
-        ''')
+        include 'phar://{0}/newphar.phar/file.php';
+        '''.format(tmpdir))
         assert self.space.str_w(output[0]) == 'Test file.'
 
-    @py.test.mark.xfail(reason='Not implemented')
-    def test_modified(self):
+    @hippy_fail(reason='Not implemented')
+    def test_modified(self, tmpdir):
         output = self.run('''
-        $p = new Phar('/tmp/newphar.phar', 0, 'newphar.phar');
+        $p = new Phar('%s/newphar.phar', 0, 'newphar.phar');
         echo $p->getModified();
         $p['a'] = 'foo';
         $p->compressFiles(Phar::GZ);
         echo $p->getModified();
-        unset($p);
-        Phar::unlinkArchive('/tmp/newphar.phar');
-        ''')
+        ''' % tmpdir)
         assert output[0] == self.space.w_False
         assert output[1] == self.space.w_True
 
-    def test_signature(self):
+    def test_signature(self, tmpdir):
         output = self.run('''
-        $p = new Phar('/tmp/newphar.phar', 0, 'newphar.phar');
+        $p = new Phar('%s/newphar.phar', 0, 'newphar.phar');
         $p['a'] = 'foo';
         echo $p->getSignature();
-        unset($p);
-        Phar::unlinkArchive('/tmp/newphar.phar');
-        ''')
+        ''' % tmpdir)
         from hippy.objects.arrayobject import W_RDictArrayObject
         assert isinstance(output[0], W_RDictArrayObject)
         for key, w_value in output[0].dct_w.iteritems():
             assert key in ['hash', 'hash_type']
 
-    @py.test.mark.xfail(reason='Not implemented')
-    def test_load_phar(self):
+    @hippy_fail(reason='Not implemented')
+    def test_load_phar(self, tmpdir):
         output = self.run('''
-        $p = new Phar('/tmp/newphar.phar');
+        $p = new Phar('{0}/newphar.phar');
         $p['foo.txt'] = 'Foo';
-        Phar::loadPhar('/tmp/newphar.phar', 'test.phar');
+        Phar::loadPhar('{0}/newphar.phar', 'test.phar');
         echo file_get_contents('phar://test.phar/foo.txt');
-        unset($p);
-        Phar::unlinkArchive('/tmp/newphar.phar');
-        ''')
+        '''.format(tmpdir))
         assert self.space.str_w(output[0]) == 'Foo'
 
-    @py.test.mark.xfail(reason='Not implemented')
-    def test_set_alias(self):
+    @hippy_fail(reason='Not implemented')
+    def test_set_alias(self, tmpdir):
         output = self.run('''
-        $p = new Phar('/tmp/newphar.phar');
+        $p = new Phar('%s/newphar.phar');
         $p['foo.txt'] = 'Foo';
         $p->setAlias('test.phar');
         echo file_get_contents('phar://test.phar/foo.txt');
-        unset($p);
-        Phar::unlinkArchive('/tmp/newphar.phar');
-        ''')
+        ''' % tmpdir)
         assert self.space.str_w(output[0]) == 'Foo'
 
-    @py.test.mark.xfail(reason='Will only pass on first run - edits file')
-    def test_uncompressallfiles(self):
-        phar_file = os.path.join(
-            os.path.dirname(__file__),
-            'phar_files/testfilesbz2.phar')
+    @hippy_fail(reason='Not implemented')
+    def test_uncompressallfiles(self, tmpdir):
+        orig = py.path.local(__file__).join('../phar_files/testfilesbz2.phar')
+        orig.copy(tmpdir.join('testfilesbz2.phar'))
 
         output = self.run('''
-        $p = new Phar('%s');
+        $p = new Phar('%s/testfilesbz2.phar');
         foreach ($p as $file) {
             echo $file->isCompressed();
             echo $file->isCompressed(Phar::GZ);
@@ -451,65 +411,54 @@ class TestPhar(BaseTestInterpreter):
             echo $file->isCompressed(Phar::GZ);
             echo $file->isCompressed(Phar::BZ2);
         }
-        ''' % phar_file)
+        ''' % tmpdir)
         assert len(output) == 12
         i = 0
         while i < 6:
             assert output[i] == self.space.w_True
-            assert output[i+1] == self.space.w_True
-            assert output[i+2] == self.space.w_False
+            assert output[i+1] == self.space.w_False
+            assert output[i+2] == self.space.w_True
             i += 3
         while i < 12:
             assert output[i] == self.space.w_False
             i += 1
 
-    @py.test.mark.xfail(reason='no compression supported')
-    def test_decompress_bz2_phar(self):
-        phar_file = os.path.join(
-            os.path.dirname(__file__),
-            'phar_files/testbz2.phar.bz2'
-        )
-
+    @hippy_fail(reason='Not implemented')
+    def test_decompress_bz2_phar(self, tmpdir):
+        orig = py.path.local(__file__).join('../phar_files/testbz2.phar.bz2')
+        orig.copy(tmpdir.join('testbz2.phar.bz2'))
         output = self.run('''
-
-            $p = new Phar('%s');
+            $p = new Phar('%s/testbz2.phar.bz2');
             echo $p->isCompressed();
 
             $p1 = $p->decompress();
             echo get_class($p1);
             echo $p1->isCompressed();
-
-        ''' % phar_file)
+        ''' % tmpdir)
         assert self.space.int_w(output[0]) == 8192
         assert self.space.str_w(output[1]) == 'Phar'
         assert output[2] == self.space.w_False
 
-    @py.test.mark.xfail(reason='no compression supported')
-    def test_decompress_gz_phar(self):
-        phar_file = os.path.join(
-            os.path.dirname(__file__),
-            'phar_files/testgz.phar.gz'
-        )
-
+    @hippy_fail(reason='Not implemented')
+    def test_decompress_gz_phar(self, tmpdir):
+        orig = py.path.local(__file__).join('../phar_files/testgz.phar.gz')
+        orig.copy(tmpdir.join('testgz.phar.gz'))
         output = self.run('''
-
-            $p = new Phar('%s');
+            $p = new Phar('%s/testgz.phar.gz');
             echo $p->isCompressed();
 
             $p1 = $p->decompress();
             echo get_class($p1);
             echo $p1->isCompressed();
-
-        ''' % phar_file)
+        ''' % tmpdir)
         assert self.space.int_w(output[0]) == 4096
         assert self.space.str_w(output[1]) == 'Phar'
         assert output[2] == self.space.w_False
 
-    @py.test.mark.xfail(reason='Not implemented')
-    def test_stub(self):
+    @hippy_fail(reason='Not implemented')
+    def test_stub(self, tmpdir):
         output = self.run('''
-        try {
-            $p = new Phar('/tmp/brandnewphar.phar', 0, 'brandnewphar.phar');
+            $p = new Phar('%s/brandnewphar.phar', 0, 'brandnewphar.phar');
             $p['a.php'] = '<?php echo "Hello";';
             $p->setStub('<?php var_dump("First"); Phar::mapPhar("brandnewphar.phar"); __HALT_COMPILER(); ?>');
             include 'phar://brandnewphar.phar/a.php';
@@ -519,33 +468,28 @@ class TestPhar(BaseTestInterpreter):
             include 'phar://brandnewphar.phar/b.php';
             echo $p->getStub();
             unset($p);
-            Phar::unlinkArchive('/tmp/brandnewphar.phar');
-        } catch (Exception $e) {
-            echo 'Write operations failed on brandnewphar.phar: ', $e;
-        }
-        ''')
+            Phar::unlinkArchive('%s/brandnewphar.phar');
+        ''' % (tmpdir, tmpdir))
         assert len(output) == 4
         assert self.space.str_w(output[0]) == 'Hello'
         assert self.space.str_w(output[1]) == '<?php var_dump("First"); Phar::mapPhar("brandnewphar.phar"); __HALT_COMPILER(); ?>\r\n'
         assert self.space.str_w(output[2]) == 'World'
         assert self.space.str_w(output[3]) == '<?php var_dump("Second"); Phar::mapPhar("brandnewphar.phar"); __HALT_COMPILER(); ?>\r\n'
 
-    @py.test.mark.xfail(reason='Not implemented')
-    def test_is_file_format(self):
+    @hippy_fail(reason='Not implemented')
+    def test_is_file_format(self, tmpdir):
         output = self.run('''
-        $p = new Phar('/tmp/newphar.phar', 0, 'newphar.phar');
+        $p = new Phar('%s/newphar.phar', 0, 'newphar.phar');
         $p['myfile1.txt'] = 'Foo';
         echo $p->isFileFormat(Phar::PHAR);
         echo $p->isFileFormat(Phar::TAR);
         echo $p->isFileFormat(Phar::ZIP);
-        unset($p);
-        Phar::unlinkArchive('/tmp/newphar.phar');
-        ''')
+        ''' % tmpdir)
         assert output[0] == self.space.w_True
         assert output[1] == self.space.w_False
         assert output[2] == self.space.w_False
 
-    @py.test.mark.xfail(reason='Not implemented')
+    @hippy_fail(reason='Not implemented')
     def test_is_valid_phar_filename(self):
         output = self.run('''
         echo Phar::isValidPharFilename('anyNameWillDo.phar');
@@ -560,28 +504,23 @@ class TestPhar(BaseTestInterpreter):
         assert output[3] == self.space.w_False
         assert output[4] == self.space.w_True
 
-    def test_is_writable(self):
+    def test_is_writable(self, tmpdir):
         output = self.run('''
-        $p = new Phar('/tmp/newphar.phar', 0, 'newphar.phar');
+        $p = new Phar('%s/newphar.phar', 0, 'newphar.phar');
         $p['myfile1.txt'] = 'Foo';
         echo $p->isWritable();
-        unset($p);
-        Phar::unlinkArchive('/tmp/newphar.phar');
-        ''')
+        ''' % tmpdir)
         assert output[0] == self.space.w_True
 
-    # @py.test.mark.xfail(reason='Not implemented')
-    def test_delete(self):
+    def test_delete(self, tmpdir):
         output = self.run('''
-        $p = new Phar('/tmp/newphar.phar', 0, 'newphar.phar');
+        $p = new Phar('%s/newphar.phar', 0, 'newphar.phar');
         $p['foo.txt'] = 'Foo';
         $p['bar.txt'] = 'Bar';
         echo $p->count();
         echo $p->delete('foo.txt');
         echo $p->count();
-        unset($p);
-        Phar::unlinkArchive('/tmp/newphar.phar');
-        ''')
+        ''' % tmpdir)
         assert self.space.int_w(output[0]) == 2
         assert output[1] == self.space.w_True
         assert self.space.int_w(output[2]) == 1
@@ -589,61 +528,52 @@ class TestPhar(BaseTestInterpreter):
 
 class TestPharFileInfo(BaseTestInterpreter):
 
-    @py.test.mark.xfail(reason='Not implemented')
-    def test_chmod(self):
+    @hippy_fail(reason='Not implemented')
+    def test_chmod(self, tmpdir):
         output = self.run('''
-        @unlink('/tmp/newphar.phar');
-        $p = new Phar('/tmp/newphar.phar', 0, 'newphar.phar');
+        $p = new Phar('%s/newphar.phar', 0, 'newphar.phar');
         $p['foo.sh'] = '#!/usr/local/lib/php <?php echo "Testing!"; ?>';
         echo $p['foo.sh']->isExecutable();
         $p['foo.sh']->chmod(0555);
         echo $p['foo.sh']->isExecutable();
-        unset($p);
-        Phar::unlinkArchive('/tmp/newphar.phar');
-        ''')
+        ''' % tmpdir)
         assert output[0] == self.space.w_False
         assert output[1] == self.space.w_True
 
-    @py.test.mark.xfail(reason='Not implemented')
-    def test_compress(self):
+    @hippy_fail(reason='Not implemented')
+    def test_compress(self, tmpdir):
         output = self.run('''
-        $p = new Phar('/tmp/newphar.phar', 0, 'newphar.phar');
+        $p = new Phar('%s/newphar.phar', 0, 'newphar.phar');
         $p['myfile.txt'] = 'hi';
         $file = $p['myfile.txt'];
         echo $file->isCompressed(Phar::BZ2);
         echo $p['myfile.txt']->compress(Phar::BZ2);
         echo $file->isCompressed(Phar::BZ2);
-        unset($p);
-        Phar::unlinkArchive('/tmp/newphar.phar');
-        ''')
+        ''' % tmpdir)
         assert output[0] == self.space.w_False
         assert output[1] == self.space.w_True
         assert output[2] == self.space.w_True
 
-    @py.test.mark.xfail(reason='Only passes on first run - edits archive')
-    def test_decompress(self):
+    @hippy_fail(reason='Not implemented')
+    def test_decompress(self, tmpdir):
         output = self.run('''
-        $p = new Phar('/tmp/newphar.phar', 0, 'newphar.phar');
+        $p = new Phar('%s/newphar.phar', 0, 'newphar.phar');
         $p['myfile.txt'] = 'hi';
         $file = $p['myfile.txt'];
         $file->compress(Phar::BZ2);
         echo $file->isCompressed(Phar::BZ2);
         echo $file->decompress();
         echo $file->isCompressed();
-        unset($p);
-        Phar::unlinkArchive('/tmp/newphar.phar');
-        ''')
+        ''' % tmpdir)
         assert output[0] == self.space.w_True
         assert output[1] == self.space.w_True
         assert output[2] == self.space.w_False
 
     def test_is_compressed(self):
-
         phar_file = os.path.join(
             os.path.dirname(__file__),
             'phar_files/onefilein.phar'
         )
-
         output = self.run('''
             $p = new Phar('%s');
             $file_info = $p['foo.txt'];
@@ -651,10 +581,9 @@ class TestPharFileInfo(BaseTestInterpreter):
         ''' % phar_file)
         assert output[0] == self.space.w_False
 
-    # @py.test.mark.xfail(reason='Not implemented')
-    def test_metadata(self):
+    def test_metadata(self, tmpdir):
         output = self.run('''
-        $p = new Phar('/tmp/newphar.phar', 0, 'newphar.phar');
+        $p = new Phar('{0}/newphar.phar', 0, 'newphar.phar');
         $p['foo'] = 'Foo.';
         $p['foo']->setMetadata('Bar');
         echo $p['foo']->hasMetadata();
@@ -663,9 +592,7 @@ class TestPharFileInfo(BaseTestInterpreter):
         echo $p['foo']->hasMetadata();
         echo $p['foo']->getMetadata();
         echo $p['foo']->delMetadata();
-        unset($p);
-        Phar::unlinkArchive('/tmp/newphar.phar');
-        ''')
+        '''.format(tmpdir))
         assert output[0] == self.space.w_True
         assert self.space.str_w(output[1]) == 'Bar'
         assert output[2] == self.space.w_True
