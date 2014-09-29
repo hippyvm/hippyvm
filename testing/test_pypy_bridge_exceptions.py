@@ -35,7 +35,6 @@ class TestPyPyBridgeExceptions(BaseTestInterpreter):
         output = self.run('''
             $src = <<<EOD
             def catch_php_exn():
-                #x = PHPException # forces PHPException to exist
                 try:
                     raise_php_exn();
                     return "bad"
@@ -60,7 +59,6 @@ class TestPyPyBridgeExceptions(BaseTestInterpreter):
         output = self.run('''
             $src = <<<EOD
             def catch_php_exn():
-                #x = PHPException # forces PHPException to exist
                 try:
                     raise_php_exn();
                     return "bad"
@@ -129,4 +127,3 @@ class TestPyPyBridgeExceptions(BaseTestInterpreter):
             }
         ''')
         assert php_space.str_w(output[0]) == "explosion"
-
