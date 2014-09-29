@@ -6,11 +6,13 @@ from rpython.rtyper.lltypesystem import rffi, lltype
 eci = ExternalCompilationInfo(includes=['bzlib.h', ],
                               include_dirs=['/usr/include/'],
                               library_dirs=['/usr/lib/x86_64-linux-gnu/', ],
-                              libraries=['libbz2'])
+                              libraries=['bz2'])
 
 
 class CConfig:
     _compilation_info_ = eci
+    BZ_OK = platform.DefinedConstantInteger('BZ_OK')
+    BZ_STREAM_END = platform.DefinedConstantInteger('BZ_STREAM_END')
 
 
 globals().update(platform.configure(CConfig))

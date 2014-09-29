@@ -1,9 +1,14 @@
 from hippy.builtin import wrap, Optional
 from rpython.rtyper.lltypesystem import rffi, lltype
 
-from hippy.module.bzip2.c_bzip2 import c_bz_buff_to_buff_compress
-from hippy.module.bzip2.c_bzip2 import c_bz_buff_to_buff_decompress
+from hippy.module.bzip2.c_bzip2 import (
+    c_bz_buff_to_buff_compress, c_bz_buff_to_buff_decompress,
+    BZ_OK, BZ_STREAM_END)
 
+
+class Bz2Error(Exception):
+    def __init__(self, errno):
+        self.errno = errno
 
 def _bzcompress(source, blocksize=4, workfactor=0):
     source_len = len(source)
@@ -13,15 +18,15 @@ def _bzcompress(source, blocksize=4, workfactor=0):
     ll_dest = lltype.malloc(rffi.CCHARP.TO, dest_len, flavor='raw')
 
     with rffi.scoped_str2charp(source) as ll_source:
-        res = c_bz_buff_to_buff_compress(ll_dest, ll_destLen,
-                                         ll_source, len(source),
-                                         blocksize, 0, workfactor)
-    if res == 0:
+        errno = c_bz_buff_to_buff_compress(
+            ll_dest, ll_destLen, ll_source, len(source),
+            blocksize, 0, workfactor)
+    if errno == BZ_OK:
         s = rffi.cast(rffi.SIGNED, ll_destLen[0])
         lltype.free(ll_destLen, flavor='raw')
         return rffi.charpsize2str(ll_dest, s)
     lltype.free(ll_destLen, flavor='raw')
-    return res
+    raise Bz2Error(errno)
 
 
 def _bzdecompress(source, small=0):
@@ -32,27 +37,29 @@ def _bzdecompress(source, small=0):
     ll_dest = lltype.malloc(rffi.CCHARP.TO, dest_len, flavor='raw')
 
     with rffi.scoped_str2charp(source) as ll_source:
-        res = c_bz_buff_to_buff_decompress(ll_dest, ll_destLen,
-                                           ll_source, len(source),
-                                           small, 0)
-    if res == 0:
+        errno = c_bz_buff_to_buff_decompress(
+            ll_dest, ll_destLen, ll_source, len(source), small, 0)
+    if errno == BZ_OK or errno == BZ_STREAM_END:
         s = rffi.cast(rffi.SIGNED, ll_destLen[0])
         lltype.free(ll_destLen, flavor='raw')
         return rffi.charpsize2str(ll_dest, s)
     lltype.free(ll_destLen, flavor='raw')
-    return res
+    raise Bz2Error(errno)
 
 
 @wrap(['interp', str, Optional(int), Optional(int)])
 def bzcompress(interp, source, blocksize=4, workfactor=0):
-    res = _bzcompress(source,
-                      blocksize=blocksize,
-                      workfactor=workfactor)
-    return interp.space.wrap(res)
+    try:
+        res = _bzcompress(source, blocksize=blocksize, workfactor=workfactor)
+        return interp.space.wrap(res)
+    except Bz2Error as e:
+        return interp.space.newint(e.errno)
 
 
 @wrap(['interp', str, Optional(int)])
 def bzdecompress(interp, source, small=0):
-    res = _bzdecompress(source,
-                        small=small)
-    return interp.space.wrap(res)
+    try:
+        res = _bzdecompress(source, small=small)
+        return interp.space.wrap(res)
+    except Bz2Error as e:
+        return interp.space.newint(e.errno)
