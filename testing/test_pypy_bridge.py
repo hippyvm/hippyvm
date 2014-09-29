@@ -366,7 +366,7 @@ class TestPyPyBridge(BaseTestInterpreter):
         ''')
         assert phspace.str_w(output[0]) == "sys"
 
-    def test_inplace_function(self):
+    def test_embed_py_func(self):
         phspace = self.space
         output = self.run('''
             $src = <<<EOD
@@ -378,7 +378,7 @@ class TestPyPyBridge(BaseTestInterpreter):
         ''')
         assert phspace.str_w(output[0]) == "jibble"
 
-    def test_inplace_function_args(self):
+    def test_embed_py_func_args(self):
         phspace = self.space
         output = self.run('''
             $src = <<<EOD
