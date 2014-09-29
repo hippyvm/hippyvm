@@ -186,13 +186,16 @@ W_EmbeddedPHPFunc.typedef = TypeDef("EmbeddedPHPFunc",
     __call__ = interp2app(W_EmbeddedPHPFunc.descr_call),
 )
 
+def _raise_py_bridgeerror(py_space, msg):
+    w_bridgeerror = py_space.builtin.get("BridgeError")
+    raise OperationError(w_bridgeerror, py_space.wrap(msg))
+
 def make_wrapped_int_key_php_array(interp, wphp_arry_ref):
     wphp_arry_tmp = wphp_arry_ref.deref_temp()
     if not isinstance(wphp_arry_tmp, W_ListArrayObject):
         py_space = interp.pyspace
-        w_bridgeerror = py_space.builtin.get("BridgeError")
-        raise OperationError(w_bridgeerror, py_space.wrap(
-                "can only apply as_list() to a wrapped PHP array in dict form"))
+        _raise_py_bridgeerror(py_space,
+                "can only apply as_list() to a wrapped PHP array in dict form")
 
 
     strategy = interp.pyspace.fromcache(WrappedPHPArrayStrategy)
@@ -213,9 +216,8 @@ class WrappedPHPArrayStrategy(ListStrategy):
         if not isinstance(wphp_arry, W_ListArrayObject):
             interp = self.space.get_php_interp()
             py_space = interp.pyspace
-            w_bridgeerror = py_space.builtin.get("BridgeError")
-            raise OperationError(w_bridgeerror, py_space.wrap(
-                "Stale wrapped PHP array. No longer integer keyed!"))
+            _raise_py_bridgeerror(py_space,
+                "Stale wrapped PHP array. No longer integer keyed!")
 
     def wrap(self, wphp_val):
         return wphp_val.to_py(self.space.get_php_interp())
