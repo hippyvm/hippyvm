@@ -40,10 +40,9 @@ class PharManifest(object):
     alias = ""
     signature_algo = "sha1"
     signature_length = 20
-    files = OrderedDict()
 
     def __init__(self):
-        pass
+        self.files = OrderedDict()
 
     def update(self, space):
         packed = utils.pack_manifest(space, self)
