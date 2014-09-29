@@ -718,7 +718,7 @@ class TestPharUtils(BaseTestInterpreter):
         phar_content = open(phar_file, 'r').read()
 
         stub, phar_data = utils.fetch_phar_data(phar_content)
-        phar = utils.read_phar(phar_data)
+        phar = utils.read_phar(self.space, phar_data)
         new_phar_data = utils.write_phar(self.space, phar, stub)
         assert new_phar_data == phar_data
         assert phar['files_count'] == 2

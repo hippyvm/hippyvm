@@ -199,7 +199,7 @@ def phar_map_phar(interp, alias='', dataoffset=0):
 
     content = open(filename, 'r').read()
     _, phar_data = utils.fetch_phar_data(content)
-    all_phars[alias] = utils.read_phar(phar_data)
+    all_phars[alias] = utils.read_phar(interp.space, phar_data)
 
     return interp.space.w_True
 
@@ -229,7 +229,7 @@ def phar_construct(interp, this, filename, flags=PHAR_NONE,
 
         this.basename = filename.purebasename
         this.stub, phar_data = utils.fetch_phar_data(content)
-        this.manifest = utils.read_phar(phar_data)
+        this.manifest = utils.read_phar(interp.space, phar_data)
 
 
 @wrap_method(['interp', ThisUnwrapper(W_Phar), str], name='Phar::addEmptyDir',

@@ -376,22 +376,23 @@ def get_signature(stub, packed_manifest, algo):
     return h
 
 
-def read_phar(data):
+def read_phar(space, data):
     from hippy.module.phar.phar import PharManifest, PharFile
     data = data.lstrip()
 
     cursor = 0
     shift = 4+4+2+4+4
 
-    manifest_data = phpstruct.Unpack("V/V/n/V/V", data[cursor:shift]).build()
+    manifest_data = phpstruct.Unpack(space, "V/V/n/V/V",
+                                     data[cursor:shift]).build()
 
     pm = PharManifest()
 
-    pm.length = manifest_data[0][1]
-    pm.files_count = manifest_data[1][1]
-    pm.api_version = manifest_data[2][1]
-    pm.flags = manifest_data[3][1]
-    pm.alias_length = manifest_data[4][1]
+    pm.length = space.int_w(manifest_data[0][1])
+    pm.files_count = space.int_w(manifest_data[1][1])
+    pm.api_version = space.int_w(manifest_data[2][1])
+    pm.flags = space.int_w(manifest_data[3][1])
+    pm.alias_length = space.int_w(manifest_data[4][1])
 
     if pm.alias_length:
         cursor = shift
@@ -401,7 +402,8 @@ def read_phar(data):
     cursor = shift
     shift = cursor+4
 
-    metadata_length = phpstruct.Unpack("V", data[cursor:shift]).build()[0][1]
+    metadata_length = space.int_w(
+        phpstruct.Unpack(space, "V", data[cursor:shift]).build()[0][1])
     pm.metadata_length = metadata_length
 
     if metadata_length:
@@ -414,26 +416,27 @@ def read_phar(data):
         shift = cursor+4
         pf = PharFile()
 
-        pf.name_length = phpstruct.Unpack("V",
-                                          data[cursor:shift]).build()[0][1]
+        pf.name_length = space.int_w(
+            phpstruct.Unpack(space, "V", data[cursor:shift]).build()[0][1])
 
         cursor = shift
         shift = cursor + pf.name_length
 
-        pf.localname = phpstruct.Unpack("a*",
-                                        data[cursor:shift]).build()[0][1]
+        pf.localname = space.str_w(
+            phpstruct.Unpack(space, "a*", data[cursor:shift]).build()[0][1])
 
         cursor = shift
         shift = cursor+4+4+4+4+4+4
-        file_data = phpstruct.Unpack("V/V/V/V/V/V", data[cursor:shift]).build()
+        file_data = phpstruct.Unpack(space, "V/V/V/V/V/V",
+                                     data[cursor:shift]).build()
 
         cursor = shift
-        pf.size_uncompressed = file_data[0][1]
-        pf.timestamp = file_data[1][1]
-        pf.size_compressed = file_data[2][1]
-        pf.crc_uncompressed = file_data[3][1]
-        pf.flags = file_data[4][1]
-        pf.metadata_length = file_data[5][1]
+        pf.size_uncompressed = space.int_w(file_data[0][1])
+        pf.timestamp = space.int_w(file_data[1][1])
+        pf.size_compressed = space.int_w(file_data[2][1])
+        pf.crc_uncompressed = space.int_w(file_data[3][1])
+        pf.flags = space.int_w(file_data[4][1])
+        pf.metadata_length = space.int_w(file_data[5][1])
 
         if pf.metadata_length:
             cursor = shift
