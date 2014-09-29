@@ -231,7 +231,9 @@ class W_PyBridgeListProxy(W_ArrayObject):
         return wpy_val.to_php(py_space.get_php_interp())
 
     def _getitem_str(self, index):
-        assert False # XXX proper exception (accessing string key of py list)
+        from hippy.module.pypy_bridge.bridge import _raise_php_bridgeexception
+        _raise_php_bridgeexception(self.py_space.get_php_interp(),
+               "Cannot access string keys of wrapped Python list")
 
     def _appenditem(self, w_obj, as_ref=False):
         self.wpy_list.append(w_obj.to_py(self.py_space.get_php_interp()))
@@ -244,11 +246,9 @@ class W_PyBridgeListProxy(W_ArrayObject):
         return self
 
     def _setitem_str(self, key, w_value, as_ref, unique_item=False):
-        py_space = self.py_space
-        wpy_val = w_value.to_py(py_space.get_php_interp())
-        wpy_key = py_space.wrap(key)
-        py_space.setitem(self.wpy_list, wpy_key, wpy_val)
-        return self
+        from hippy.module.pypy_bridge.bridge import _raise_php_bridgeexception
+        _raise_php_bridgeexception(self.py_space.get_php_interp(),
+               "Cannot set string keys of wrapped Python list")
 
     def create_iter(self, space, contextclass=None):
         return W_PyBridgeListProxyIterator(self.py_space, self.wpy_list)

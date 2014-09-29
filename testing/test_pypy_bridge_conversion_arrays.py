@@ -34,6 +34,38 @@ class TestPyPyBridgeArrayConversions(BaseTestInterpreter):
         for i in range(3):
             assert phspace.int_w(output[i]) == 3 - i
 
+    def test_cannot_getitem_str_on_py_list_in_php(self):
+        phspace = self.space
+        output = self.run('''
+            $src = "def f(): return [3, 2, 1]";
+            $f = embed_py_func($src);
+
+            $ar = $f();
+            try {
+                $ar["k"];
+            } catch(BridgeException $e) {
+                echo $e->getMessage();
+            }
+        ''')
+        err_s = "Cannot access string keys of wrapped Python list"
+        assert phspace.str_w(output[0]) == err_s
+
+    def test_cannot_setitem_str_on_py_list_in_php(self):
+        phspace = self.space
+        output = self.run('''
+            $src = "def f(): return [3, 2, 1]";
+            $f = embed_py_func($src);
+
+            $ar = $f();
+            try {
+                $ar["k"] = "oops";
+            } catch(BridgeException $e) {
+                echo $e->getMessage();
+            }
+        ''')
+        err_s = "Cannot set string keys of wrapped Python list"
+        assert phspace.str_w(output[0]) == err_s
+
     def test_iter_vals_py_list_in_php(self):
         phspace = self.space
         output = self.run('''
