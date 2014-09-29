@@ -3,7 +3,7 @@ from hippy.objects.base import W_Root as Wph_Root
 from hippy.objects.instanceobject import W_InstanceObject
 from hippy.klass import def_class, Method
 from hippy.module.pypy_bridge.scopes import PHP_Scope
-from hippy.module.pypy_bridge.php_wrappers import new_embedded_py_func
+from hippy.module.pypy_bridge.php_wrappers import new_embedded_py_func, k_BridgeException
 from hippy.builtin_klass import k_Exception, W_ExceptionObject
 from hippy.error import PHPException
 
@@ -46,6 +46,11 @@ def embed_py_mod(interp, mod_name, mod_source):
 
     return wpy_module.to_php(interp)
 
+def _raise_php_bridgeexception(interp, msg):
+    w_php_exn = k_BridgeException.call_args(interp, [interp.space.wrap(msg)])
+    from hippy.error import Throw
+    raise Throw(w_php_exn)
+
 def _compile_py_func_from_string(interp, func_source):
     """ compiles a string returning a <name, func> pair """
 
@@ -68,8 +73,10 @@ def _compile_py_func_from_string(interp, func_source):
     wpy_func = pyspace.getitem(wpy_vals, wpy_zero)
 
     # The user should have defined one function.
-    assert pyspace.int_w(pyspace.len(wpy_keys)) == 1
-    assert isinstance(wpy_func, Py_Function)
+    if pyspace.int_w(pyspace.len(wpy_keys)) != 1 or \
+            not isinstance(wpy_func, Py_Function):
+        _raise_php_bridgeexception(interp,
+                "embed_py_func: Python source must define exactly one function")
 
     ph_frame = interp.get_frame()
     wpy_func.php_scope = PHP_Scope(interp, ph_frame)

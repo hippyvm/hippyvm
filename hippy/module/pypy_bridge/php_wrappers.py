@@ -378,3 +378,7 @@ def wpy_exc_getMessage(interp, this):
 
 k_PyException = def_class('PyException',
     [wpy_exc_getMessage], [], instance_class=W_PyException)
+
+from hippy.builtin_klass import k_Exception
+# Indicates an error in PHP->Py glue code
+k_BridgeException = def_class('BridgeException', [], [], extends=k_Exception)

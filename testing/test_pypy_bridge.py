@@ -378,6 +378,38 @@ class TestPyPyBridge(BaseTestInterpreter):
         ''')
         assert phspace.str_w(output[0]) == "jibble"
 
+    def test_embed_py_func_accepts_only_a_func(self):
+        phspace = self.space
+        output = self.run('''
+            $src = <<<EOD
+            import os # <--- nope
+            def test():
+                return "jibble"
+            EOD;
+
+            try {
+                $test = embed_py_func($src);
+                echo "test failed";
+            } catch(BridgeException $e) {
+                echo $e->getMessage();
+            }
+        ''')
+        err_s = "embed_py_func: Python source must define exactly one function"
+        assert phspace.str_w(output[0]) == err_s
+
+    def test_embed_py_func_accepts_only_a_func2(self):
+        phspace = self.space
+        output = self.run('''
+            $src = "import os"; // not a func
+            try {
+                $test = embed_py_func($src);
+            } catch(BridgeException $e) {
+                echo $e->getMessage();
+            }
+        ''')
+        err_s = "embed_py_func: Python source must define exactly one function"
+        assert phspace.str_w(output[0]) == err_s
+
     def test_embed_py_func_args(self):
         phspace = self.space
         output = self.run('''
