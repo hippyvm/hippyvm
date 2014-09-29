@@ -377,7 +377,7 @@ class TestPyPyBridgeArrayConversions(BaseTestInterpreter):
             def f(a):
                 try:
                     a.as_list() # boom
-                except PHPException as e:
+                except BridgeError as e:
                     return e.message
                 else:
                     return "fail"
@@ -400,7 +400,7 @@ class TestPyPyBridgeArrayConversions(BaseTestInterpreter):
                 arry_d["x"] = 890 #non-integer keyed
                 try:
                     arry_l[0] # stale!
-                except PHPException as e:
+                except BridgeError as e:
                     return e.message
             EOD;
 

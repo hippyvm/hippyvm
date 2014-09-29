@@ -107,7 +107,6 @@ class TestPyPyBridgeExceptions(BaseTestInterpreter):
 
         # XXX more tests that check line number, trace, filename etc.
 
-    @pytest.mark.xfail
     def test_exns_can_pass_pass_thru_multiple_langs(self):
         php_space = self.space
         output = self.run('''

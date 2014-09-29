@@ -349,7 +349,7 @@ class W_PyException(W_ExceptionObject):
         W_ExceptionObject.setup(self, php_interp)
         self.w_py_exn = w_py_exn
 
-        py_space = php_interp.pyspace
+        php_space, py_space = php_interp.space, php_interp.pyspace
 
         # XXX these need to be properly populated to give the user a
         # meaningful error message. The comments show how these fields
@@ -362,16 +362,16 @@ class W_PyException(W_ExceptionObject):
         self.line = -1
 
         #this.setattr(interp, 'message', space.wrap(message), k_Exception)
-        w_py_exn_str = py_space.str(self.w_py_exn)
+        w_py_exn_str = py_space.getattr(self.w_py_exn, py_space.wrap("message"))
         msg = py_space.str_w(w_py_exn_str)
-        self.message = php_interp.space.wrap(msg)
+        self.setattr(php_interp, 'message', php_space.wrap(msg), k_PyException)
 
         #this.setattr(interp, 'code', space.wrap(code), k_Exception)
         self.code = None
 
 @wrap_method(['interp', ThisUnwrapper(W_PyException)], name='PyException::getMessage')
 def wpy_exc_getMessage(interp, this):
-    return this.message
+    return this.getattr(interp, "message")
 
 k_PyException = def_class('PyException',
     [wpy_exc_getMessage], [], instance_class=W_PyException)
