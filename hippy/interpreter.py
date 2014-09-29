@@ -24,6 +24,7 @@ from hippy.builtin_klass import W_ExceptionObject, k_Exception
 from hippy.klass import ClassDeclaration, ClassBase, get_interp_decl_key
 from hippy.function import Function
 from hippy.frame import Frame, CatchBlock, Unsilence
+from hippy.globals import W_Globals
 from hippy.config import Config
 from hippy import constants
 from hippy import pointer
@@ -115,68 +116,6 @@ driver = jit.JitDriver(reds=['frame', 'self'],
                        )
 
 
-class W_Globals(W_RDictArrayObject):
-    """The $GLOBALS array."""
-    def __init__(self, space):
-        W_RDictArrayObject.__init__(self, space, new_rdict(), 0)
-
-    def as_unique_arraydict(self):
-        return self
-
-    def lookup_var(self, name):
-        try:
-            return self.dct_w[name]
-        except KeyError:
-            return None
-
-    def get_var(self, space, name, give_notice=False):
-        r_glob = self.lookup_var(name)
-        if r_glob is None:
-            r_glob = space.empty_ref()
-            self._setitem_str(name, r_glob, as_ref=True)
-        return r_glob
-
-    def set_var(self, name, r_var):
-        assert isinstance(r_var, W_Reference)
-        self.dct_w[name] = r_var
-
-    def _setitem_str(self, key, w_value, as_ref, unique_item=False):
-        dct_w = self.dct_w
-        if not as_ref:
-            try:
-                w_old = dct_w[key]
-            except KeyError:
-                w_value = W_Reference(w_value)
-            else:
-                assert isinstance(w_old, W_Reference)
-                w_old.store(w_value, unique_item)
-                return self
-        assert isinstance(w_value, W_Reference)
-
-        dct_w[key] = w_value
-        gframe = self.space.ec.interpreter.global_frame
-        if gframe is not None:
-            gframe.set_ref_by_name(key, w_value)
-        return self
-
-    def unset_var(self, name):
-        try:
-            del self.dct_w[name]
-        except KeyError:
-            pass
-
-    def _unsetitem_str(self, key):
-        self.unset_var(key)
-        gframe = self.space.ec.interpreter.global_frame
-        if gframe is not None:
-            gframe.set_ref_by_name(key, None)
-        return self
-
-    def _inplace_pop(self, space):
-        space.ec.hippy_warn("array_pop($GLOBALS) ignored")
-        return space.w_Null
-
-
 err_dct = {
     constants.E_ERROR: 'Fatal error',
     constants.E_RECOVERABLE_ERROR: 'Catchable fatal error',
@@ -209,7 +148,7 @@ class Interpreter(object):
     """ Interpreter keeps the state of the current run. There will be a new
     interpreter instance per run of script
     """
-    _immutable_fields_ = ['debugger?']
+    _immutable_fields_ = ['debugger?', 'globals']
     cgi = 0
     web_config = None
     debugger = None
