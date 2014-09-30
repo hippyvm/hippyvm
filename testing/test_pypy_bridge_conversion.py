@@ -47,11 +47,11 @@ class TestPyPyBridgeConversions(BaseTestInterpreter):
     def test_py_list_of_ph_array(self):
         pytest.skip("XXX disabled list conversions for now")
         interp = self.new_interp()
-        phspace, py_space = interp.space, interp.py_space
+        php_space, py_space = interp.space, interp.py_space
 
         input = [1, 2, 3, "a", "b", "c" ]
-        wph_elems = [ phspace.wrap(i) for i in input ]
-        wph_arr = phspace.new_array_from_list(wph_elems)
+        wph_elems = [ php_space.wrap(i) for i in input ]
+        wph_arr = php_space.new_array_from_list(wph_elems)
         wpy_converted = wph_arr.to_py(interp)
 
         wpy_expect = py_space.newlist([ py_space.wrap(i) for i in input ])
@@ -60,21 +60,21 @@ class TestPyPyBridgeConversions(BaseTestInterpreter):
     def test_py_list_of_ph_array_nested(self):
         pytest.skip("XXX disabled list conversions for now")
         interp = self.new_interp()
-        phspace, py_space = interp.space, interp.py_space
+        php_space, py_space = interp.space, interp.py_space
 
         # We will build a PHP list looking like this:
         # [ 666, False, [ 1, "a" ]]
 
         # inner list
         input_inner = [1, "a"]
-        wph_elems_inner = [ phspace.wrap(i) for i in input_inner ]
-        wph_arr_inner = phspace.new_array_from_list(wph_elems_inner)
+        wph_elems_inner = [ php_space.wrap(i) for i in input_inner ]
+        wph_arr_inner = php_space.new_array_from_list(wph_elems_inner)
 
         # outer list
         input_outer = [666, False]
-        wph_elems_outer = [ phspace.wrap(i) for i in input_outer ]
-        wph_arr_outer = phspace.new_array_from_list(wph_elems_outer)
-        wph_arr_outer.appenditem_inplace(phspace, wph_arr_inner)
+        wph_elems_outer = [ php_space.wrap(i) for i in input_outer ]
+        wph_arr_outer = php_space.new_array_from_list(wph_elems_outer)
+        wph_arr_outer.appenditem_inplace(php_space, wph_arr_inner)
 
         wpy_l = wph_arr_outer.to_py(interp)
 
@@ -91,7 +91,7 @@ class TestPyPyBridgeConversions(BaseTestInterpreter):
     # XXX Test mutating the list
 
     def test_unwrap_php(self):
-        phspace = self.space
+        php_space = self.space
         output = self.run('''
         $src = <<<EOD
         def dummy(x):
@@ -103,7 +103,7 @@ class TestPyPyBridgeConversions(BaseTestInterpreter):
         $x = new C();
         echo($dummy($x) === $x);
         ''')
-        assert phspace.is_true(output[0])
+        assert php_space.is_true(output[0])
 
     def test_ph_integer_of_py_int(self):
         interp = self.new_interp()
@@ -143,33 +143,33 @@ class TestPyPyBridgeConversions(BaseTestInterpreter):
     def test_ph_array_of_py_list(self):
         pytest.skip("XXX disabled list conversions for now")
         interp = self.new_interp()
-        phspace, py_space = interp.space, interp.py_space
+        php_space, py_space = interp.space, interp.py_space
 
         input = [1, 2, "wibble", "chunks", True]
-        wph_expect = phspace.new_array_from_list(
-                [ phspace.wrap(x) for x in input ])
+        wph_expect = php_space.new_array_from_list(
+                [ php_space.wrap(x) for x in input ])
 
         wpy_list = py_space.newlist([ py_space.wrap(x) for x in input ])
         wph_actual = wpy_list.to_php(interp)
 
-        assert phspace.is_true(phspace.eq(wph_actual, wph_expect))
+        assert php_space.is_true(php_space.eq(wph_actual, wph_expect))
 
     def test_ph_array_of_py_list_nested(self):
         pytest.skip("XXX disabled list conversions for now")
         interp = self.new_interp()
-        phspace, py_space = interp.space, interp.py_space
+        php_space, py_space = interp.space, interp.py_space
 
         # Test the following list converts OK:
         # [1, 2, ["a", "b", "c"]]
 
         input_inner = ["a", "b", "c"]
-        wph_input_inner = [ phspace.wrap(x) for x in input_inner ]
-        wph_expect_inner = phspace.new_array_from_list(wph_input_inner)
+        wph_input_inner = [ php_space.wrap(x) for x in input_inner ]
+        wph_expect_inner = php_space.new_array_from_list(wph_input_inner)
 
         input_outer = [1, 2] # and we append the inner list also
-        wph_input_outer = [ phspace.wrap(x) for x in input_outer ] + \
+        wph_input_outer = [ php_space.wrap(x) for x in input_outer ] + \
                 [ wph_expect_inner ]
-        wph_expect_outer = phspace.new_array_from_list(wph_input_outer)
+        wph_expect_outer = php_space.new_array_from_list(wph_input_outer)
 
         wpy_input_inner = [ py_space.wrap(x) for x in input_inner ]
         wpy_list_inner = py_space.newlist(wpy_input_inner)
@@ -179,7 +179,7 @@ class TestPyPyBridgeConversions(BaseTestInterpreter):
         wpy_list_outer = py_space.newlist(wpy_list_outer)
 
         wph_got = wpy_list_outer.to_php(interp)
-        assert phspace.is_true(phspace.eq(wph_expect_outer, wph_got))
+        assert php_space.is_true(php_space.eq(wph_expect_outer, wph_got))
 
     def test_ph_closure_of_py_function(self):
         interp = self.new_interp()
@@ -206,7 +206,7 @@ class TestPyPyBridgeConversions(BaseTestInterpreter):
     # XXX Test mutating the list.
 
     def test_unwrap_py(self):
-        phspace = self.space
+        php_space = self.space
         output = self.run('''
         function dummy($x) {
             return $x;
@@ -223,10 +223,10 @@ class TestPyPyBridgeConversions(BaseTestInterpreter):
 
         echo($tst());
         ''')
-        assert phspace.is_true(output[0])
+        assert php_space.is_true(output[0])
 
     def test_php_null(self):
-        phspace = self.space
+        php_space = self.space
         output = self.run('''
         $src = <<<EOD
         def n():
@@ -236,7 +236,7 @@ class TestPyPyBridgeConversions(BaseTestInterpreter):
 
         echo(null === $n());
         ''')
-        assert phspace.is_true(output[0])
+        assert php_space.is_true(output[0])
 
     def test_wrapped_php_instance_attributeerror(self):
         php_space = self.space

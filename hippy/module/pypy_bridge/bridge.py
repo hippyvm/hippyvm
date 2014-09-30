@@ -28,7 +28,7 @@ k_PyPyException = def_class('PyPyException',
 
 @wrap(['interp', str, str], name='embed_py_mod')
 def embed_py_mod(interp, mod_name, mod_source):
-    phspace = interp.space
+    php_space = interp.space
 
     # create a new Python module in which to inject code
     wpy_mod_name = interp.py_space.wrap(mod_name)
@@ -85,7 +85,7 @@ def _compile_py_func_from_string(interp, func_source):
 
 @wrap(['interp', str], name='embed_py_func')
 def embed_py_func(interp, func_source):
-    phspace, py_space = interp.space, interp.py_space
+    php_space, py_space = interp.space, interp.py_space
 
     # Compile
     wpy_func_name, wpy_func = _compile_py_func_from_string(interp, func_source)

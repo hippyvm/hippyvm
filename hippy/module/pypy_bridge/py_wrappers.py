@@ -166,7 +166,7 @@ class W_EmbeddedPHPFunc(W_Root):
 
         py_space = self.space
         php_interp = self.space.get_php_interp()
-        phspace = self.space.get_php_interp().space
+        php_space = self.space.get_php_interp().space
 
         wph_args_elems = []
         for arg_no in xrange(len(args)):
