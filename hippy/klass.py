@@ -928,8 +928,9 @@ class UserClass(ClassBase):
             immediate_parents.append(self.parentclass)
         if decl.base_interface_names:
             if 'Traversable' in decl.base_interface_names:
-                interp.fatal("Class %s must implement interface Traversable as"
-                             " part of either Iterator or IteratorAggregate" % self.name)
+                interp.fatal(
+                    "Class %s must implement interface Traversable as part "
+                    "of either Iterator or IteratorAggregate" % self.name)
             for intfname in decl.base_interface_names:
                 intf = interp.lookup_class_or_intf(intfname)
                 if intf is None:

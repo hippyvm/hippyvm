@@ -1,4 +1,5 @@
 from collections import OrderedDict
+import os
 
 from hippy import consts
 from hippy.module.spl.spl import W_RecursiveDirectoryIterator, W_SplFileInfo
@@ -12,7 +13,6 @@ from hippy.module.spl.exception import (
 from hippy.module.spl.interface import k_Countable
 from hippy.module.spl.spl import k_RecursiveDirectoryIterator, k_SplFileInfo
 from hippy.objects.base import W_Root
-from hippy.module.phar import utils
 from hippy.module.serialize import unserialize
 from hippy.module.bzip2.funcs import _bzdecompress
 from hippy.module.zlib.funcs import _decode, ZLIB_ENCODING_GZIP
@@ -21,92 +21,11 @@ from hippy.objects.instanceobject import W_InstanceObject
 from hippy.rpath import exists, dirname, abspath
 import time as pytime
 from hippy.module.hash.funcs import _get_hash_algo
-import os
 
-PHAR_ENT_PERM_DEF_FILE = 0x000001B6
-PHAR_ENT_PERM_DEF_DIR = 0x000001FF
-PHAR_API_VERSION = 0x1110
-PHAR_API_VERSION_NODIR = 0x1100
-
-
-class PharManifest(object):
-    length = 0
-    files_count = 0
-    api_version = PHAR_API_VERSION_NODIR
-    flags = 65536  # ???
-    metadata = ""
-    metadata_length = 0
-    alias_length = 0
-    alias = ""
-    signature_algo = "sha1"
-    signature_length = 20
-
-    def __init__(self):
-        self.files = OrderedDict()
-
-    def update(self, space):
-        packed = utils.pack_manifest(space, self)
-        self.length = len(packed)
-
-    def __repr__(self):
-        return """PharManifest(length:%d, files_count:%d,
-        api:%d, flags:%d, meta:%s,
-        meta_len:%d,
-        alias:%s, alias_len:%d,
-        signature_algo:%s, signature_len:%d)""" % (self.length,
-                                                   self.files_count,
-                                                   self.api_version,
-                                                   self.flags,
-                                                   self.metadata,
-                                                   self.metadata_length,
-                                                   self.alias,
-                                                   self.alias_length,
-                                                   self.signature_algo,
-                                                   self.signature_length)
-
-
-class PharFile(object):
-    realname = None
-    localname = None
-    content = None
-    name_length = 0
-    size_uncompressed = 0
-    size_compressed = 0
-    timestamp = int(pytime.time())
-    crc_uncompressed = 0
-    flags = PHAR_ENT_PERM_DEF_FILE
-    metadata = 0
-
-    def __init__(self):
-        pass
-
-    def __repr__(self):
-        return """PharFile(real:%s, local:%s, name_len:%d,
-        size_u:%d, size_c:%d, timestamp:%d,
-        crc:%d, flags:%d, metadata:%d,
-        content:%s)""" % (self.realname,
-                          self.localname,
-                          self.name_length,
-                          self.size_uncompressed,
-                          self.size_compressed,
-                          self.timestamp,
-                          self.crc_uncompressed,
-                          self.flags,
-                          self.metadata,
-                          self.content)
-
-    def copy(self):
-        new_pf = PharFile()
-        new_pf.realname = self.realname
-        new_pf.localnam = self.localname
-        new_pf.content = self.content
-        new_pf.name_length = self.name_length
-        new_pf.size_uncompressed = self.size_uncompressed
-        new_pf.size_compressed = self.size_compressed
-        new_pf.crc_uncompressed = self.crc_uncompressed
-        new_pf.flags = self.flags
-        new_pf.metadata = self.metadata
-        return new_pf
+from hippy.module.phar.utils import (
+    PharFile, PharManifest, PHAR_ENT_PERM_DEF_FILE, PHAR_ENT_PERM_DEF_DIR,
+    PHAR_API_VERSION, PHAR_API_VERSION_NODIR, read_phar, write_phar,
+    fetch_phar_data, generate_stub, pack_manifest, get_signature)
 
 
 class W_Phar(W_RecursiveDirectoryIterator):
@@ -117,7 +36,7 @@ class W_Phar(W_RecursiveDirectoryIterator):
         if not self.buffering:
             content = open(self.filename, 'w+')
             content.write(self.stub)
-            content.write(utils.write_phar(space, self.manifest, self.stub))
+            content.write(write_phar(space, self.manifest, self.stub))
 
     def add_file(self, interp, realname, localname):
         if not exists(realname):
@@ -198,8 +117,8 @@ def phar_map_phar(interp, alias='', dataoffset=0):
     alias = alias or filename
 
     content = open(filename, 'r').read()
-    _, phar_data = utils.fetch_phar_data(content)
-    all_phars[alias] = utils.read_phar(interp.space, phar_data)
+    _, phar_data = fetch_phar_data(content)
+    all_phars[alias] = read_phar(interp.space, phar_data)
 
     return interp.space.w_True
 
@@ -214,7 +133,7 @@ def phar_construct(interp, this, filename, flags=PHAR_NONE,
     this.flags = flags
     if not exists(filename):
         this.manifest = PharManifest()
-        this.stub = utils.generate_stub('index.php', 'index.php')
+        this.stub = generate_stub('index.php', 'index.php')
         this.basename = abspath(filename)
     else:
         filename = abspath(filename)
@@ -228,8 +147,8 @@ def phar_construct(interp, this, filename, flags=PHAR_NONE,
             content = _decode(content, ZLIB_ENCODING_GZIP)
 
         this.basename = dirname(filename)
-        this.stub, phar_data = utils.fetch_phar_data(content)
-        this.manifest = utils.read_phar(interp.space, phar_data)
+        this.stub, phar_data = fetch_phar_data(content)
+        this.manifest = read_phar(interp.space, phar_data)
 
 
 @wrap_method(['interp', ThisUnwrapper(W_Phar), str], name='Phar::addEmptyDir',
@@ -333,7 +252,7 @@ def phar_count(interp, this):
 @wrap_method(['interp', ThisUnwrapper(W_Phar), Optional(str), Optional(str)],
              name='Phar::createDefaultStub', error_handler=handle_as_exception)
 def phar_create_default_stub(interp, this, indexfile='', webindexfile=''):
-    return interp.space.newstr(utils.generate_stub(indexfile, webindexfile))
+    return interp.space.newstr(generate_stub(indexfile, webindexfile))
 
 
 @wrap_method(['interp', ThisUnwrapper(W_Phar), Optional(str)],
@@ -421,9 +340,9 @@ def phar_get_signature(interp, this):
         'md5': 'MD5'
     }
     space = interp.space
-    packed_manifest = utils.pack_manifest(space, this.manifest)
+    packed_manifest = pack_manifest(space, this.manifest)
     algo = this.manifest.signature_algo
-    sig = utils.get_signature(this.stub, packed_manifest, algo)
+    sig = get_signature(this.stub, packed_manifest, algo)
     rdict_w = OrderedDict()
     rdict_w['hash'] = space.newstr(sig.hexdigest().upper())
     rdict_w['hash_type'] = space.newstr(hash_type[algo])
@@ -599,7 +518,7 @@ def phar_set_default_stub(interp, this, index='', webindex=''):
         raise PHPException(k_UnexpectedValueException.call_args(
             interp, [interp.space.wrap(
                 "Cannot change stub: phar.readonly=1")]))
-    this.stub = utils.generate_stub(index, webindex)
+    this.stub = generate_stub(index, webindex)
     return interp.space.w_True
 
 

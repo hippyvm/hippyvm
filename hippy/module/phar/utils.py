@@ -1,5 +1,9 @@
 from collections import OrderedDict
+import time as pytime
+
 from rpython.rlib.objectmodel import we_are_translated
+from rpython.rlib.rstring import StringBuilder
+from rpython.rlib.unroll import unrolling_iterable
 
 from hippy.module import phpstruct
 from hippy.sourceparser import get_lexer
@@ -309,15 +313,126 @@ def generate_stub(web, index):
     return template % (web, index, stub_len)
 
 
+PHAR_ENT_PERM_DEF_FILE = 0x000001B6
+PHAR_ENT_PERM_DEF_DIR = 0x000001FF
+PHAR_API_VERSION = 0x1110
+PHAR_API_VERSION_NODIR = 0x1100
+
+
+class PharManifest(object):
+    length = 0
+    files_count = 0
+    api_version = PHAR_API_VERSION_NODIR
+    flags = 65536  # ???
+    metadata = ""
+    metadata_length = 0
+    alias_length = 0
+    alias = ""
+    signature_algo = "sha1"
+    signature_length = 20
+
+    fmt = unrolling_iterable([
+        ('V', 'length'),
+        ('V', 'files_count'),
+        ('n', 'api_version'),
+        ('V', 'flags'),
+        ('V', 'alias_length'),
+        ('a*', 'alias'),
+        ('V', 'metadata_length'),
+        ('a*', 'metadata'),
+    ])
+
+    def __init__(self):
+        self.files = OrderedDict()
+
+    def update(self, space):
+        packed = pack_manifest(space, self)
+        self.length = len(packed)
+
+    def __repr__(self):
+        return """PharManifest(length:%d, files_count:%d,
+        api:%d, flags:%d, meta:%s,
+        meta_len:%d,
+        alias:%s, alias_len:%d,
+        signature_algo:%s, signature_len:%d)""" % (self.length,
+                                                   self.files_count,
+                                                   self.api_version,
+                                                   self.flags,
+                                                   self.metadata,
+                                                   self.metadata_length,
+                                                   self.alias,
+                                                   self.alias_length,
+                                                   self.signature_algo,
+                                                   self.signature_length)
+
+
+class PharFile(object):
+    realname = None
+    localname = None
+    content = None
+    name_length = 0
+    size_uncompressed = 0
+    size_compressed = 0
+    timestamp = int(pytime.time())
+    crc_uncompressed = 0
+    flags = PHAR_ENT_PERM_DEF_FILE
+    metadata = 0
+
+    fmt = unrolling_iterable([
+        ('V', 'name_length'),
+        ('a*', 'localname'),
+        ('V', 'size_uncompressed'),
+        ('V', 'timestamp'),
+        ('V', 'size_compressed'),
+        ('V', 'crc_uncompressed'),
+        ('V', 'flags'),
+        ('V', 'metadata'),
+    ])
+
+    def __init__(self):
+        pass
+
+    def __repr__(self):
+        return """PharFile(real:%s, local:%s, name_len:%d,
+        size_u:%d, size_c:%d, timestamp:%d,
+        crc:%d, flags:%d, metadata:%d,
+        content:%s)""" % (self.realname,
+                          self.localname,
+                          self.name_length,
+                          self.size_uncompressed,
+                          self.size_compressed,
+                          self.timestamp,
+                          self.crc_uncompressed,
+                          self.flags,
+                          self.metadata,
+                          self.content)
+
+    def copy(self):
+        new_pf = PharFile()
+        new_pf.realname = self.realname
+        new_pf.localname = self.localname
+        new_pf.content = self.content
+        new_pf.name_length = self.name_length
+        new_pf.size_uncompressed = self.size_uncompressed
+        new_pf.size_compressed = self.size_compressed
+        new_pf.crc_uncompressed = self.crc_uncompressed
+        new_pf.flags = self.flags
+        new_pf.metadata = self.metadata
+        return new_pf
+
+
 def fetch_phar_data(content):
     lexer = get_lexer(we_are_translated())
     lexer.input(content, 0, 0)
 
     for token in lexer.token():
         if token.name == "T_HALT_COMPILER":
-            ending_tag = content[token.source_pos.idx:].find("?>")
+            lexer_pos = token.source_pos.idx
+            assert lexer_pos >= 0
+            ending_tag = content[lexer_pos:].find("?>")
+            assert ending_tag >= 0
             if ending_tag != 1:
-                pos = token.source_pos.idx + ending_tag + 2
+                pos = lexer_pos + ending_tag + 2
                 data = content[pos:]
                 stub = content[:pos]
                 return stub, data
@@ -325,35 +440,19 @@ def fetch_phar_data(content):
 
 
 def pack_manifest(space, manifest):
-    to_pack = [
-        ('V', manifest.length),
-        ('V', manifest.files_count),
-        ('n', manifest.api_version),
-        ('V', manifest.flags),
-        ('V', manifest.alias_length),
-        ('a*', manifest.alias),
-        ('V', manifest.metadata_length),
-        ('a*', manifest.metadata),
-
-    ]
-    for fname, fdata in manifest.files.items():
-        to_pack.append(('V', fdata.name_length))
-        to_pack.append(('a*', fname))
-        to_pack.append(('V', fdata.size_uncompressed))
-        to_pack.append(('V', fdata.timestamp))
-        to_pack.append(('V', fdata.size_compressed))
-        to_pack.append(('V', fdata.crc_uncompressed))
-        to_pack.append(('V', fdata.flags))
-        to_pack.append(('V', fdata.metadata))
-
-    for _, fdata in manifest.files.items():
-        to_pack.append(('a*', fdata.content))
-
-    format = ""
+    format = StringBuilder()
     args = []
-    for fmt, val in to_pack:
-        format += fmt
-        args.append(space.wrap(val))
+    for fmt, attr in PharManifest.fmt:
+        format.append(fmt)
+        args.append(space.wrap(getattr(manifest, attr)))
+    for fdata in manifest.files.values():
+        for fmt, attr in PharFile.fmt:
+            format.append(fmt)
+            args.append(space.wrap(getattr(fdata, attr)))
+    for fdata in manifest.files.values():
+        format.append('a*')
+        args.append(space.wrap(fdata.content))
+    format = format.build()
     return phpstruct.Pack(space, format, args).build()
 
 
@@ -377,7 +476,6 @@ def get_signature(stub, packed_manifest, algo):
 
 
 def read_phar(space, data):
-    from hippy.module.phar.phar import PharManifest, PharFile
     data = data.lstrip()
 
     cursor = 0
