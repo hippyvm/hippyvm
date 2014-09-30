@@ -247,7 +247,7 @@ class TestPyPyBridgeConversions(BaseTestInterpreter):
         def f(a):
             try:
                 x = a.no_exist
-            except AttributeError as e:
+            except BridgeError as e:
                 return e.message
             return "test failed"
         EOD;

@@ -70,8 +70,8 @@ class W_PHPProxyGeneric(W_Root):
                 wph_target = None
 
             if wph_target is None:
-                raise OperationError(py_space.w_AttributeError, py_space.wrap(
-                        "Wrapped PHP instance has no attribute '%s'" % name))
+                _raise_py_bridgeerror(py_space,
+                        "Wrapped PHP instance has no attribute '%s'" % name)
         return wph_target.to_py(interp)
 
     # XXX unwrap spec
