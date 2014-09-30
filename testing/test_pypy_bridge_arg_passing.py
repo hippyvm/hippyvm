@@ -335,7 +335,7 @@ class TestPyPyBridgeArgPassing(BaseTestInterpreter):
                 try:
                     g(i) # is an error since we passed a ref to a non-ref arg
                     return "No exception!"
-                except ValueError as e:
+                except BridgeError as e:
                     return e.message
             EOD;
 
@@ -357,7 +357,7 @@ class TestPyPyBridgeArgPassing(BaseTestInterpreter):
                 try:
                     g(i) # is an error since we passed a ref to a non-ref arg
                     return "No exception!"
-                except ValueError as e:
+                except BridgeError as e:
                     return e.message
             EOD;
 

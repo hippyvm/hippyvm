@@ -171,16 +171,16 @@ class W_EmbeddedPHPFunc(W_Root):
                 if not isinstance(wpy_arg, W_PRef):
                     err_str = "Arg %d of PHP func '%s' is pass by reference" % \
                             (arg_no + 1, self.wph_func.name)
-                    raise OperationError(
-                            self.space.w_ValueError, self.space.wrap(err_str))
+                    _raise_py_bridgeerror(pyspace, err_str)
+
                 wph_args_elems.append(wpy_arg.ref)
             else:
                 # if you pass a value argument by reference, fail.
                 if isinstance(wpy_arg, W_PRef):
                     err_str = "Arg %d of PHP func '%s' is pass by value" % \
                             (arg_no + 1, self.wph_func.name)
-                    raise OperationError(
-                            self.space.w_ValueError, self.space.wrap(err_str))
+                    _raise_py_bridgeerror(pyspace, err_str)
+
                 wph_args_elems.append(wpy_arg.to_php(php_interp))
 
         try:
