@@ -162,14 +162,13 @@ class W_EmbeddedPyMod(WPh_Object):
             if not e.match(py_space, py_space.w_AttributeError):
                 raise
             raise space.ec.fatal("No such member %s in module" % name)
-        return w_obj.to_php(py_space.get_php_interp())
+        return w_obj.to_php(interp)
 
     def getmeth(self, space, name, contextclass=None, for_callback=None):
         interp = self.py_space.get_php_interp()
         return self._getattr(interp, space, name)
 
     def getattr(self, interp, name, contextclass=None, give_notice=False, fail_with_none=False):
-        interp = self.py_space.get_php_interp()
         return self._getattr(interp, interp.space, name)
 
 class W_PyBridgeListProxyIterator(BaseIterator):
