@@ -86,9 +86,9 @@ class W_PHPProxyGeneric(W_Root):
 
     @jit.unroll_safe
     def descr_call(self, __args__):
-        wpy_args, wpy_kwargs = __args__.unpack()
+        w_py_args, w_py_kwargs = __args__.unpack()
 
-        if wpy_kwargs:
+        if w_py_kwargs:
             _raise_py_bridgeerror(self.interp.py_space,
                     "Cannot use kwargs with callable PHP instances")
 
@@ -96,7 +96,7 @@ class W_PHPProxyGeneric(W_Root):
         if isinstance(self.wph_inst, ClassBase):
             # user is calling a PHP class in Python, i.e. instantiating it.
             # XXX PHP classes should have a dedicated wrapper for performance.
-            wph_args_elems = [ x.to_php(self.interp) for x in wpy_args ]
+            wph_args_elems = [ x.to_php(self.interp) for x in w_py_args ]
             wph_rv = self.wph_inst.call_args(self.interp, wph_args_elems)
             return wph_rv.to_py(self.interp)
         else:
@@ -106,7 +106,7 @@ class W_PHPProxyGeneric(W_Root):
                 _raise_py_bridgeerror(self.interp.py_space,
                         "Wrapped PHP instance is not callable")
 
-            wph_args_elems = [ x.to_php(self.interp) for x in wpy_args ]
+            wph_args_elems = [ x.to_php(self.interp) for x in w_py_args ]
             wph_rv = wph_callable.call_args(self.interp, wph_args_elems)
             return wph_rv.to_py(self.interp)
 
@@ -170,24 +170,24 @@ class W_EmbeddedPHPFunc(W_Root):
 
         wph_args_elems = []
         for arg_no in xrange(len(args)):
-            wpy_arg = args[arg_no]
+            w_py_arg = args[arg_no]
 
             if self.wph_func.needs_ref(arg_no):
                 # if you try to pass a reference argument by value, fail.
-                if not isinstance(wpy_arg, W_PRef):
+                if not isinstance(w_py_arg, W_PRef):
                     err_str = "Arg %d of PHP func '%s' is pass by reference" % \
                             (arg_no + 1, self.wph_func.name)
                     _raise_py_bridgeerror(py_space, err_str)
 
-                wph_args_elems.append(wpy_arg.ref)
+                wph_args_elems.append(w_py_arg.ref)
             else:
                 # if you pass a value argument by reference, fail.
-                if isinstance(wpy_arg, W_PRef):
+                if isinstance(w_py_arg, W_PRef):
                     err_str = "Arg %d of PHP func '%s' is pass by value" % \
                             (arg_no + 1, self.wph_func.name)
                     _raise_py_bridgeerror(py_space, err_str)
 
-                wph_args_elems.append(wpy_arg.to_php(php_interp))
+                wph_args_elems.append(w_py_arg.to_php(php_interp))
 
         try:
             res = self.wph_func.call_args(php_interp, wph_args_elems)

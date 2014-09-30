@@ -24,36 +24,36 @@ class W_PyProxyGeneric(W_InstanceObject):
     """Generic proxy for wrapping Python objects in Hippy when no more specific
     proxy is available."""
 
-    _immutable_fields_ = ["interp", "wpy_inst"]
+    _immutable_fields_ = ["interp", "w_py_inst"]
 
-    def setup_instance(self, interp, wpy_inst):
+    def setup_instance(self, interp, w_py_inst):
         self.interp = interp
-        self.wpy_inst = wpy_inst
+        self.w_py_inst = w_py_inst
 
     def get_wrapped_py_obj(self):
-        return self.wpy_inst
+        return self.w_py_inst
 
     # Use this as a low level ctor instead of the above.
     @classmethod
-    def from_wpy_inst(cls, interp, wpy_inst):
+    def from_w_py_inst(cls, interp, w_py_inst):
         wph_pxy = cls(interp, [])
-        wph_pxy.set_instance(wpy_inst)
+        wph_pxy.set_instance(w_py_inst)
         return wph_pxy
 
     def get_callable(self):
         """ PHP interpreter calls this when calls a wrapped Python var  """
-        return W_EmbeddedPyCallable(self.wpy_inst)
+        return W_EmbeddedPyCallable(self.w_py_inst)
 
     def to_py(self, interp):
-        return self.wpy_inst
+        return self.w_py_inst
 
 @wrap_method(['interp', ThisUnwrapper(W_PyProxyGeneric), str],
         name='GenericPyProxy::__get')
 def generic__get(interp, this, name):
     interp = this.interp
     py_space = interp.py_space
-    wpy_target = py_space.getattr(this.wpy_inst, py_space.wrap(name))
-    return wpy_target.to_php(interp)
+    w_py_target = py_space.getattr(this.w_py_inst, py_space.wrap(name))
+    return w_py_target.to_php(interp)
 
 @wrap_method(['interp', ThisUnwrapper(W_PyProxyGeneric), str, Wph_Root],
         name='GenericPyProxy::__call')
@@ -63,12 +63,12 @@ def generic__call(interp, this, func_name, wph_args):
     assert isinstance(interp, Interpreter)
 
     py_space = interp.py_space
-    wpy_func_name = py_space.wrap(func_name)
-    wpy_func = py_space.getattr(this.wpy_inst, wpy_func_name)
+    w_py_func_name = py_space.wrap(func_name)
+    w_py_func = py_space.getattr(this.w_py_inst, w_py_func_name)
 
-    wpy_args_items = [ x.to_py(interp) for x in wph_args.as_list_w() ]
-    wpy_rv = interp.py_space.call(wpy_func, interp.py_space.newlist(wpy_args_items))
-    return wpy_rv.to_php(interp)
+    w_py_args_items = [ x.to_py(interp) for x in wph_args.as_list_w() ]
+    w_py_rv = interp.py_space.call(w_py_func, interp.py_space.newlist(w_py_args_items))
+    return w_py_rv.to_php(interp)
 
 k_PyBridgeProxy = def_class('PyBridgeProxy',
     [generic__get, generic__call],
@@ -77,11 +77,11 @@ k_PyBridgeProxy = def_class('PyBridgeProxy',
 
 class W_EmbeddedPyCallable(W_InvokeCall):
 
-    _immutable_fields_ = [ "wpy_func" ]
+    _immutable_fields_ = [ "w_py_func" ]
 
-    def __init__(self, wpy_func):
+    def __init__(self, w_py_func):
         W_InvokeCall.__init__(self, None, None, None)
-        self.wpy_func = wpy_func
+        self.w_py_func = w_py_func
 
     @jit.unroll_safe
     def call_args(self, interp, args_w,
@@ -89,11 +89,11 @@ class W_EmbeddedPyCallable(W_InvokeCall):
 
         py_space = interp.py_space
 
-        wpy_args_elems = [ x.to_py(interp) for x in args_w ]
+        w_py_args_elems = [ x.to_py(interp) for x in args_w ]
 
         try:
             rv = py_space.call_args(
-                    self.wpy_func, Arguments(py_space, wpy_args_elems))
+                    self.w_py_func, Arguments(py_space, w_py_args_elems))
         except OperationError as e:
             # Convert the Python exception to a PHP one.
             w_py_exn = e.get_w_value(py_space)
@@ -176,9 +176,9 @@ class W_PyBridgeListProxyIterator(BaseIterator):
 
     _immutable_fields_ = ["py_space", "storage_w"]
 
-    def __init__(self, py_space, wpy_list):
+    def __init__(self, py_space, w_py_list):
         self.py_space = py_space
-        self.storage_w = py_space.listview(wpy_list)
+        self.storage_w = py_space.listview(w_py_list)
         self.index = 0
         self.finished = len(self.storage_w) == 0
 
@@ -189,46 +189,46 @@ class W_PyBridgeListProxyIterator(BaseIterator):
 
     def next(self, space):
         index = self.index
-        wpy_value = self.storage_w[index]
+        w_py_value = self.storage_w[index]
         self.index = index + 1
         self.finished = self.index == len(self.storage_w)
-        return wpy_value.to_php(self.py_space.get_php_interp())
+        return w_py_value.to_php(self.py_space.get_php_interp())
 
     def next_item(self, space):
         index = self.index
-        wpy_value = self.storage_w[index]
+        w_py_value = self.storage_w[index]
         self.index = index + 1
         self.finished = self.index == len(self.storage_w)
-        return space.wrap(index), wpy_value.to_php(self.py_space.get_php_interp())
+        return space.wrap(index), w_py_value.to_php(self.py_space.get_php_interp())
 
 class W_PyBridgeListProxy(W_ArrayObject):
     """ Wraps a Python list as PHP array. """
 
-    _immutable_fields_ = ["py_space", "wpy_list"]
+    _immutable_fields_ = ["py_space", "w_py_list"]
 
     _has_string_keys = False
 
-    def __init__(self, py_space, wpy_list):
-        assert isinstance(wpy_list, WPy_ListObject)
+    def __init__(self, py_space, w_py_list):
+        assert isinstance(w_py_list, WPy_ListObject)
         self.py_space = py_space
-        self.wpy_list = wpy_list
+        self.w_py_list = w_py_list
 
     def get_wrapped_py_obj(self):
-        return self.wpy_list
+        return self.w_py_list
 
     def arraylen(self):
         py_space = self.py_space
-        return py_space.int_w(py_space.len(self.wpy_list))
+        return py_space.int_w(py_space.len(self.w_py_list))
 
     def copy(self):
         # used for copy on write semantics of PHP
-        wpy_list_copy = self.wpy_list.clone()
-        return W_PyBridgeListProxy(self.py_space, wpy_list_copy)
+        w_py_list_copy = self.w_py_list.clone()
+        return W_PyBridgeListProxy(self.py_space, w_py_list_copy)
 
     def _getitem_int(self, index):
         py_space = self.py_space
-        wpy_val = py_space.getitem(self.wpy_list, py_space.wrap(index))
-        return wpy_val.to_php(py_space.get_php_interp())
+        w_py_val = py_space.getitem(self.w_py_list, py_space.wrap(index))
+        return w_py_val.to_php(py_space.get_php_interp())
 
     def _getitem_str(self, index):
         from hippy.module.pypy_bridge.bridge import _raise_php_bridgeexception
@@ -236,13 +236,13 @@ class W_PyBridgeListProxy(W_ArrayObject):
                "Cannot access string keys of wrapped Python list")
 
     def _appenditem(self, w_obj, as_ref=False):
-        self.wpy_list.append(w_obj.to_py(self.py_space.get_php_interp()))
+        self.w_py_list.append(w_obj.to_py(self.py_space.get_php_interp()))
 
     def _setitem_int(self, index, w_value, as_ref, unique_item=False):
         py_space = self.py_space
-        wpy_val = w_value.to_py(py_space.get_php_interp())
-        wpy_index = py_space.wrap(index)
-        py_space.setitem(self.wpy_list, wpy_index, wpy_val)
+        w_py_val = w_value.to_py(py_space.get_php_interp())
+        w_py_index = py_space.wrap(index)
+        py_space.setitem(self.w_py_list, w_py_index, w_py_val)
         return self
 
     def _setitem_str(self, key, w_value, as_ref, unique_item=False):
@@ -251,18 +251,18 @@ class W_PyBridgeListProxy(W_ArrayObject):
                "Cannot set string keys of wrapped Python list")
 
     def create_iter(self, space, contextclass=None):
-        return W_PyBridgeListProxyIterator(self.py_space, self.wpy_list)
+        return W_PyBridgeListProxyIterator(self.py_space, self.w_py_list)
 
     def to_py(self, interp):
-        return self.wpy_list
+        return self.w_py_list
 
 class W_PyBridgeDictProxyIterator(BaseIterator):
 
-    _immutable_fields_ = ["interp", "wpy_iter"]
+    _immutable_fields_ = ["interp", "w_py_iter"]
 
     def __init__(self, py_space, rdct_w):
         self.py_space = py_space
-        self.wpy_iter = rdct_w.iteritems()
+        self.w_py_iter = rdct_w.iteritems()
         self.remaining = py_space.int_w(py_space.len(rdct_w))
         self.finished = self.remaining == 0
 
@@ -275,16 +275,16 @@ class W_PyBridgeDictProxyIterator(BaseIterator):
         py_space = self.py_space
         self.remaining -= 1
         self.finished = self.remaining == 0
-        wpy_v = self.wpy_iter.next_item()[1]
-        return wpy_v.to_php(py_space.get_php_interp())
+        w_py_v = self.w_py_iter.next_item()[1]
+        return w_py_v.to_php(py_space.get_php_interp())
 
     def next_item(self, space):
         py_space = self.py_space
         interp = py_space.get_php_interp()
         self.remaining -= 1
         self.finished = self.remaining == 0
-        wpy_k, wpy_v = self.wpy_iter.next_item()
-        return wpy_k.to_php(interp), wpy_v.to_php(interp)
+        w_py_k, w_py_v = self.w_py_iter.next_item()
+        return w_py_k.to_php(interp), w_py_v.to_php(interp)
 
     def to_py(self, interp):
         return None
@@ -292,52 +292,52 @@ class W_PyBridgeDictProxyIterator(BaseIterator):
 class W_PyBridgeDictProxy(W_ArrayObject):
     """ Wraps a Python dict as something PHP array. """
 
-    _immutable_fields_ = ["py_space", "wpy_dict"]
+    _immutable_fields_ = ["py_space", "w_py_dict"]
 
-    def __init__(self, py_space, wpy_dict):
+    def __init__(self, py_space, w_py_dict):
         self.py_space = py_space
-        self.wpy_dict = wpy_dict
+        self.w_py_dict = w_py_dict
 
     def copy(self):
         # used for copy on write semantics of PHP
-        wpy_dict_copy = self.wpy_dict.descr_copy(self.py_space)
-        return W_PyBridgeDictProxy(self.py_space, wpy_dict_copy)
+        w_py_dict_copy = self.w_py_dict.descr_copy(self.py_space)
+        return W_PyBridgeDictProxy(self.py_space, w_py_dict_copy)
 
     def get_wrapped_py_obj(self):
-        return self.wpy_dict
+        return self.w_py_dict
 
     def arraylen(self):
-        return self.py_space.int_w(self.py_space.len(self.wpy_dict))
+        return self.py_space.int_w(self.py_space.len(self.w_py_dict))
 
     def _getitem_int(self, index):
         py_space = self.py_space
-        wpy_val = py_space.getitem(self.wpy_dict, py_space.wrap(index))
-        return wpy_val.to_php(py_space.get_php_interp())
+        w_py_val = py_space.getitem(self.w_py_dict, py_space.wrap(index))
+        return w_py_val.to_php(py_space.get_php_interp())
 
     def _getitem_str(self, index):
         py_space = self.py_space
-        wpy_val = py_space.getitem(self.wpy_dict, py_space.wrap(index))
-        return wpy_val.to_php(py_space.get_php_interp())
+        w_py_val = py_space.getitem(self.w_py_dict, py_space.wrap(index))
+        return w_py_val.to_php(py_space.get_php_interp())
 
     def _setitem_int(self, index, w_value, as_ref, unique_item=False):
         py_space = self.py_space
-        wpy_val = w_value.to_py(py_space.get_php_interp())
-        wpy_index = py_space.wrap(index)
-        py_space.setitem(self.wpy_dict, wpy_index, wpy_val)
+        w_py_val = w_value.to_py(py_space.get_php_interp())
+        w_py_index = py_space.wrap(index)
+        py_space.setitem(self.w_py_dict, w_py_index, w_py_val)
         return self
 
     def _setitem_str(self, key, w_value, as_ref, unique_item=False):
         py_space = self.py_space
-        wpy_val = w_value.to_py(py_space.get_php_interp())
-        wpy_key = py_space.wrap(key)
-        py_space.setitem(self.wpy_dict, wpy_key, wpy_val)
+        w_py_val = w_value.to_py(py_space.get_php_interp())
+        w_py_key = py_space.wrap(key)
+        py_space.setitem(self.w_py_dict, w_py_key, w_py_val)
         return self
 
     def create_iter(self, space, contextclass=None):
-        return W_PyBridgeDictProxyIterator(self.py_space, self.wpy_dict)
+        return W_PyBridgeDictProxyIterator(self.py_space, self.w_py_dict)
 
     def to_py(self, interp):
-        return self.wpy_dict
+        return self.w_py_dict
 
 class W_PyException(W_ExceptionObject):
     """ Wraps up a Python exception """
@@ -373,11 +373,11 @@ class W_PyException(W_ExceptionObject):
         self.code = None
 
 @wrap_method(['interp', ThisUnwrapper(W_PyException)], name='PyException::getMessage')
-def wpy_exc_getMessage(interp, this):
+def w_py_exc_getMessage(interp, this):
     return this.getattr(interp, "message")
 
 k_PyException = def_class('PyException',
-    [wpy_exc_getMessage], [], instance_class=W_PyException)
+    [w_py_exc_getMessage], [], instance_class=W_PyException)
 
 from hippy.builtin_klass import k_Exception
 # Indicates an error in PHP->Py glue code

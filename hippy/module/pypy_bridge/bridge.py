@@ -31,20 +31,20 @@ def embed_py_mod(interp, mod_name, mod_source):
     php_space = interp.space
 
     # create a new Python module in which to inject code
-    wpy_mod_name = interp.py_space.wrap(mod_name)
-    wpy_module = Module(interp.py_space, wpy_mod_name)
+    w_py_mod_name = interp.py_space.wrap(mod_name)
+    w_py_module = Module(interp.py_space, w_py_mod_name)
 
     # Register it in sys.modules
-    wpy_sys_modules = interp.py_space.sys.get('modules')
-    interp.py_space.setitem(wpy_sys_modules, wpy_mod_name, wpy_module)
+    w_py_sys_modules = interp.py_space.sys.get('modules')
+    interp.py_space.setitem(w_py_sys_modules, w_py_mod_name, w_py_module)
 
     # Inject code into the fresh module
     # Get php file name in place of XXX
     pycompiler = interp.py_space.createcompiler() # XXX use just one
     code = pycompiler.compile(mod_source, 'XXX', 'exec', 0)
-    code.exec_code(interp.py_space, wpy_module.w_dict,wpy_module.w_dict)
+    code.exec_code(interp.py_space, w_py_module.w_dict,w_py_module.w_dict)
 
-    return wpy_module.to_php(interp)
+    return w_py_module.to_php(interp)
 
 def _raise_php_bridgeexception(interp, msg):
     w_php_exn = k_BridgeException.call_args(interp, [interp.space.wrap(msg)])
@@ -57,41 +57,41 @@ def _compile_py_func_from_string(interp, func_source):
     py_space = interp.py_space
 
     # compile the user's code
-    wpy_code = py_compiling.compile(
+    w_py_code = py_compiling.compile(
             py_space, py_space.wrap(func_source), "<string>", "exec")
 
     # Eval it into a dict
-    wpy_fake_locals = py_space.newdict()
-    py_compiling.eval(py_space, wpy_code, py_space.newdict(), wpy_fake_locals)
+    w_py_fake_locals = py_space.newdict()
+    py_compiling.eval(py_space, w_py_code, py_space.newdict(), w_py_fake_locals)
 
     # Extract the users function from the dict
-    wpy_keys = wpy_fake_locals.descr_keys(py_space)
-    wpy_vals = wpy_fake_locals.descr_values(py_space)
+    w_py_keys = w_py_fake_locals.descr_keys(py_space)
+    w_py_vals = w_py_fake_locals.descr_values(py_space)
 
-    wpy_zero = py_space.wrap(0)
-    wpy_func_name = py_space.getitem(wpy_keys, wpy_zero)
-    wpy_func = py_space.getitem(wpy_vals, wpy_zero)
+    w_py_zero = py_space.wrap(0)
+    w_py_func_name = py_space.getitem(w_py_keys, w_py_zero)
+    w_py_func = py_space.getitem(w_py_vals, w_py_zero)
 
     # The user should have defined one function.
-    if py_space.int_w(py_space.len(wpy_keys)) != 1 or \
-            not isinstance(wpy_func, Py_Function):
+    if py_space.int_w(py_space.len(w_py_keys)) != 1 or \
+            not isinstance(w_py_func, Py_Function):
         _raise_php_bridgeexception(interp,
                 "embed_py_func: Python source must define exactly one function")
 
     ph_frame = interp.get_frame()
-    wpy_func.php_scope = PHP_Scope(interp, ph_frame)
+    w_py_func.php_scope = PHP_Scope(interp, ph_frame)
 
-    return wpy_func_name, wpy_func
+    return w_py_func_name, w_py_func
 
 @wrap(['interp', str], name='embed_py_func')
 def embed_py_func(interp, func_source):
     php_space, py_space = interp.space, interp.py_space
 
     # Compile
-    wpy_func_name, wpy_func = _compile_py_func_from_string(interp, func_source)
+    w_py_func_name, w_py_func = _compile_py_func_from_string(interp, func_source)
 
     # Masquerade it as a PHP function.
-    return new_embedded_py_func(interp, wpy_func)
+    return new_embedded_py_func(interp, w_py_func)
 
 @wrap(['interp', str], name='import_py_mod')
 def import_py_mod(interp, modname):
