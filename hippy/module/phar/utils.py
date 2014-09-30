@@ -1,7 +1,8 @@
 from collections import OrderedDict
+from rpython.rlib.objectmodel import we_are_translated
 
 from hippy.module import phpstruct
-from hippy.lexer import Lexer
+from hippy.sourceparser import get_lexer
 from hippy.module.hash.funcs import _get_hash_algo
 
 def get_stub(web, index):
@@ -309,8 +310,7 @@ def generate_stub(web, index):
 
 
 def fetch_phar_data(content):
-
-    lexer = Lexer()
+    lexer = get_lexer(we_are_translated())
     lexer.input(content, 0, 0)
 
     for token in lexer.token():

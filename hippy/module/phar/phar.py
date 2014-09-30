@@ -6,7 +6,9 @@ from hippy.builtin import (wrap_method, ThisUnwrapper, Optional,
                            handle_as_exception)
 from hippy.error import PHPException
 from hippy.builtin_klass import def_class, k_ArrayAccess
-from hippy.module.spl.exception import k_BadMethodCallException
+from hippy.module.spl.exception import (
+        k_RuntimeException, k_UnexpectedValueException,
+        k_BadMethodCallException)
 from hippy.module.spl.interface import k_Countable
 from hippy.module.spl.spl import k_RecursiveDirectoryIterator, k_SplFileInfo
 from hippy.objects.base import W_Root
@@ -16,11 +18,9 @@ from hippy.module.bzip2.funcs import _bzdecompress
 from hippy.module.zlib.funcs import _decode, ZLIB_ENCODING_GZIP
 from hippy.objects.intobject import W_IntObject
 from hippy.objects.instanceobject import W_InstanceObject
-from rpython.rlib import rpath
-from hippy.rpath import exists
+from hippy.rpath import exists, dirname, abspath
 import time as pytime
 from hippy.module.hash.funcs import _get_hash_algo
-import py
 import os
 
 PHAR_ENT_PERM_DEF_FILE = 0x000001B6
@@ -215,19 +215,19 @@ def phar_construct(interp, this, filename, flags=PHAR_NONE,
     if not exists(filename):
         this.manifest = PharManifest()
         this.stub = utils.generate_stub('index.php', 'index.php')
-        this.basename = py.path.local(filename)
+        this.basename = abspath(filename)
     else:
-        filename = py.path.local(filename)
+        filename = abspath(filename)
         content = open(this.filename, 'r').read()
 
-        if filename.ext == ".bz2":
+        if filename.endswith(".bz2"):
             this.flags = this.flags | PHAR_BZ2
             content = _bzdecompress(content)
-        if filename.ext == ".gz":
+        if filename.endswith(".gz"):
             this.flags = this.flags | PHAR_GZ
             content = _decode(content, ZLIB_ENCODING_GZIP)
 
-        this.basename = filename.purebasename
+        this.basename = dirname(filename)
         this.stub, phar_data = utils.fetch_phar_data(content)
         this.manifest = utils.read_phar(interp.space, phar_data)
 
@@ -339,7 +339,7 @@ def phar_create_default_stub(interp, this, indexfile='', webindexfile=''):
 @wrap_method(['interp', ThisUnwrapper(W_Phar), Optional(str)],
              name='Phar::decompress', error_handler=handle_as_exception)
 def phar_decompress(interp, this, extension=''):
-    decompressed_filename = rpath.dirname(this.filename) + '/' + this.basename
+    decompressed_filename = dirname(this.filename) + '/' + this.basename
     open(decompressed_filename, "wb").write(this.content)
     res = PharClass.call_args(interp, [interp.space.wrap(
         decompressed_filename)])
@@ -549,7 +549,8 @@ def phar_offset_get(interp, this, offset):
             interp, [interp.space.wrap(
                 "Entry %s does not exist" % offset)]))
 
-    w_pfi = PharFileInfoClass.call_args(interp, [interp.space.wrap(entry)])
+    w_pfi = k_PharFileInfo.call_args(interp, [interp.space.wrap(entry)])
+    assert isinstance(w_pfi, W_PharFileInfo)
     w_pfi.data = this.manifest.files[offset]
     return w_pfi
 
@@ -887,7 +888,7 @@ def pfi_set_metadata(interp, this, w_obj):
     return interp.space.w_True
 
 
-PharFileInfoClass = def_class(
+k_PharFileInfo = def_class(
     'PharFileInfo',
     [pfi_chmod,
      pfi_compress,
