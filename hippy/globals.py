@@ -62,7 +62,7 @@ class W_Globals(W_RDictArrayObject):
         if not as_ref:
             cell = self._get_cell(jit.promote(self._globals_version), key)
             if cell is not None:
-                w_old = self.dct_w[key]
+                w_old = cell.ref
                 assert isinstance(w_old, W_Reference)
                 w_old.store(w_value, unique_item)
                 return self
