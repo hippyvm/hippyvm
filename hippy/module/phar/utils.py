@@ -376,7 +376,7 @@ class PharFile(object):
     timestamp = int(pytime.time())
     crc_uncompressed = 0
     flags = PHAR_ENT_PERM_DEF_FILE
-    metadata = 0
+    metadata = ""
 
     fmt = unrolling_iterable([
         ('V', 'name_length'),
@@ -490,11 +490,13 @@ def read_phar(space, data):
     pm.files_count = space.int_w(manifest_data[1][1])
     pm.api_version = space.int_w(manifest_data[2][1])
     pm.flags = space.int_w(manifest_data[3][1])
-    pm.alias_length = space.int_w(manifest_data[4][1])
+    alias_length = space.int_w(manifest_data[4][1])
+    assert alias_length >= 0
+    pm.alias_length = alias_length
 
-    if pm.alias_length:
+    if alias_length:
         cursor = shift
-        shift = cursor + pm.alias_length
+        shift = cursor + alias_length
         pm.alias = data[cursor:shift]
 
     cursor = shift
@@ -502,11 +504,12 @@ def read_phar(space, data):
 
     metadata_length = space.int_w(
         phpstruct.Unpack(space, "V", data[cursor:shift]).build()[0][1])
+    assert metadata_length >= 0
     pm.metadata_length = metadata_length
 
     if metadata_length:
         cursor = shift
-        shift = cursor + pm.metadata_length
+        shift = cursor + metadata_length
         pm.metadata = data[cursor:shift]  # serialized meta
 
     for _ in range(pm.files_count):
@@ -514,12 +517,13 @@ def read_phar(space, data):
         shift = cursor+4
         pf = PharFile()
 
-        pf.name_length = space.int_w(
+        name_length = space.int_w(
             phpstruct.Unpack(space, "V", data[cursor:shift]).build()[0][1])
+        assert name_length >= 0
+        pf.name_length = name_length
 
         cursor = shift
-        shift = cursor + pf.name_length
-
+        shift = cursor + name_length
         pf.localname = space.str_w(
             phpstruct.Unpack(space, "a*", data[cursor:shift]).build()[0][1])
 
@@ -534,27 +538,33 @@ def read_phar(space, data):
         pf.size_compressed = space.int_w(file_data[2][1])
         pf.crc_uncompressed = space.int_w(file_data[3][1])
         pf.flags = space.int_w(file_data[4][1])
-        pf.metadata_length = space.int_w(file_data[5][1])
+        metadata_length = space.int_w(file_data[5][1])
+        assert metadata_length >= 0
+        pf.metada_length = metadata_length
 
-        if pf.metadata_length:
+        if metadata_length:
             cursor = shift
-            shift = cursor + pf.metadata_length
+            shift = cursor + metadata_length
             pf.metadata = data[cursor:shift]  # serialized meta
 
         pm.files[pf.localname] = pf
 
     # right now only plain phar files are supported
     for file_name, file_data in pm.files.items():
-        shift = cursor + file_data.size_uncompressed
+        size = file_data.size_uncompressed
+        assert size >= 0
+        shift = cursor + size
         file_data.content = data[cursor:shift]
         cursor = shift
 
     gbmb = data.find("GBMB")
-    if gbmb == -1:
+    if gbmb < 0:
         # raise something, but for now
         raise NotImplementedError
+    gbmb_start = gbmb -4
+    assert gbmb_start >= 0
 
-    signature_type = data[gbmb-4:gbmb]
+    signature_type = data[gbmb_start:gbmb]
 
     if signature_type == '\x01\x00\x00\x00':
         signature_length = 16

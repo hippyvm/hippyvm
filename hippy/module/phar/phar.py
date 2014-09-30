@@ -59,7 +59,7 @@ class W_Phar(W_RecursiveDirectoryIterator):
         h = _get_hash_algo('crc32b')
         h.update(pf.content)
         pf.crc_uncompressed = int(h.hexdigest(), 16)
-        pf.metadata = 0
+        pf.metadata = ""
         self.manifest.files[localname or realname] = pf
         self.manifest.files_count += 1
         self.manifest.update(interp.space)
@@ -77,7 +77,7 @@ class W_Phar(W_RecursiveDirectoryIterator):
         pf.size_uncompressed = 0
         pf.size_compressed = 0
         pf.crc_uncompressed = 0
-        pf.metadata = 0
+        pf.metadata = ""
         pf.flags = PHAR_ENT_PERM_DEF_DIR
         self.manifest.files[dirname] = pf
         self.manifest.files_count += 1
@@ -795,7 +795,7 @@ def pfi_is_compressed(interp, this, compression_type=9021976):
     if this.data.size_uncompressed == this.data.size_compressed:
         return interp.space.w_False
     else:
-        return (this.data.flags & compression_type)
+        return interp.space.newint(this.data.flags & compression_type)
 
 
 @wrap_method(['interp', ThisUnwrapper(W_PharFileInfo), W_Root],
