@@ -295,3 +295,13 @@ class TestLexer(object):
         r = self.lex("namespace Foo\\Bar;")
         assert r == ["T_NAMESPACE",
                      "T_STRING", "T_NS_SEPARATOR", "T_STRING", ";"]
+
+    def test_stop_compiler(self):
+        r = self.lex("""
+
+            "test";
+            __HALT_COMPILER();
+            "test";
+
+        """)
+        assert r[:3] == ['T_CONSTANT_ENCAPSED_STRING', ';', 'T_HALT_COMPILER']

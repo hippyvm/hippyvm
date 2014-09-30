@@ -513,14 +513,10 @@ class Lexer(object):
 
                 if tok.name not in ('H_NEW_LINE', 'H_WHITESPACE',
                                     'T_COMMENT', 'H_TABULATURE'):
-
                     tok = self.maybe_change_context(ctx, tok, runner)
-
                     if tok:
                         self.last_token = tok
                         yield tok
-
-
             except StopIteration:
                 break
 
