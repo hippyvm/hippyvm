@@ -222,13 +222,13 @@ class Interpreter(object):
     last_strtok_str = None
     last_strtok_pos = 0
 
-    def __init__(self, space, pyspace=None):
+    def __init__(self, space, py_space=None):
         self.space = space
 
         # PyPy Bridge
-        self.pyspace = pyspace
-        if pyspace is not None:
-            self.pyspace.set_php_interp(self) # stash a back ref
+        self.py_space = py_space
+        if py_space is not None:
+            self.py_space.set_php_interp(self) # stash a back ref
 
         self.constant_names = []
         self.class_names = []

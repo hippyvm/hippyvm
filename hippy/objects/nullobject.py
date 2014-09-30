@@ -45,6 +45,6 @@ class W_NullObject(W_Object):
         return True
 
     def to_py(self, interp):
-        return interp.pyspace.w_None
+        return interp.py_space.w_None
 
 w_Null = W_NullObject()

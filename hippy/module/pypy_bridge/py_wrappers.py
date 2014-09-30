@@ -57,7 +57,7 @@ class W_PHPProxyGeneric(W_Root):
         """ Python is asking for an attribute of a proxied PHP object """
         interp = self.interp
         php_space = interp.space
-        py_space = interp.pyspace
+        py_space = interp.py_space
 
         wph_inst = self.wph_inst
         wph_target = wph_inst.getattr(interp, name, None, fail_with_none=True)
@@ -77,7 +77,7 @@ class W_PHPProxyGeneric(W_Root):
     def descr_set(self, name, w_obj):
         interp = self.interp
         php_space = self.interp.space
-        py_space = self.interp.pyspace
+        py_space = self.interp.py_space
 
         wph_inst = self.wph_inst
         self.wph_inst.setattr(interp, name, w_obj.to_php(interp), None)
@@ -89,7 +89,7 @@ class W_PHPProxyGeneric(W_Root):
         wpy_args, wpy_kwargs = __args__.unpack()
 
         if wpy_kwargs:
-            _raise_py_bridgeerror(self.interp.pyspace,
+            _raise_py_bridgeerror(self.interp.py_space,
                     "Cannot use kwargs with callable PHP instances")
 
         from hippy.klass import ClassBase
@@ -103,7 +103,7 @@ class W_PHPProxyGeneric(W_Root):
             # calling an instance
             wph_callable = self.wph_inst.get_callable()
             if wph_callable is None: # not callable
-                _raise_py_bridgeerror(self.interp.pyspace,
+                _raise_py_bridgeerror(self.interp.py_space,
                         "Wrapped PHP instance is not callable")
 
             wph_args_elems = [ x.to_php(self.interp) for x in wpy_args ]
@@ -164,7 +164,7 @@ class W_EmbeddedPHPFunc(W_Root):
             _raise_py_bridgeerror(
                     self.space, "Cannot use kwargs when calling PHP functions")
 
-        pyspace = self.space
+        py_space = self.space
         php_interp = self.space.get_php_interp()
         phspace = self.space.get_php_interp().space
 
@@ -177,7 +177,7 @@ class W_EmbeddedPHPFunc(W_Root):
                 if not isinstance(wpy_arg, W_PRef):
                     err_str = "Arg %d of PHP func '%s' is pass by reference" % \
                             (arg_no + 1, self.wph_func.name)
-                    _raise_py_bridgeerror(pyspace, err_str)
+                    _raise_py_bridgeerror(py_space, err_str)
 
                 wph_args_elems.append(wpy_arg.ref)
             else:
@@ -185,7 +185,7 @@ class W_EmbeddedPHPFunc(W_Root):
                 if isinstance(wpy_arg, W_PRef):
                     err_str = "Arg %d of PHP func '%s' is pass by value" % \
                             (arg_no + 1, self.wph_func.name)
-                    _raise_py_bridgeerror(pyspace, err_str)
+                    _raise_py_bridgeerror(py_space, err_str)
 
                 wph_args_elems.append(wpy_arg.to_php(php_interp))
 
@@ -208,16 +208,16 @@ def _raise_py_bridgeerror(py_space, msg):
 def make_wrapped_int_key_php_array(interp, wphp_arry_ref):
     wphp_arry_tmp = wphp_arry_ref.deref_temp()
     if not isinstance(wphp_arry_tmp, W_ListArrayObject):
-        py_space = interp.pyspace
+        py_space = interp.py_space
         _raise_py_bridgeerror(py_space,
                 "can only apply as_list() to a wrapped PHP array in dict form")
 
 
-    strategy = interp.pyspace.fromcache(WrappedPHPArrayStrategy)
+    strategy = interp.py_space.fromcache(WrappedPHPArrayStrategy)
     storage = strategy.erase(wphp_arry_ref)
 
     return WPy_ListObject.from_storage_and_strategy(
-            interp.pyspace, storage, strategy)
+            interp.py_space, storage, strategy)
 
 class WrappedPHPArrayStrategy(ListStrategy):
     """ Wrapping of a PHP list is implemented as a PyPy list strategy """
@@ -230,7 +230,7 @@ class WrappedPHPArrayStrategy(ListStrategy):
         wphp_arry = self.unerase(w_list.lstorage).deref_temp()
         if not isinstance(wphp_arry, W_ListArrayObject):
             interp = self.space.get_php_interp()
-            py_space = interp.pyspace
+            py_space = interp.py_space
             _raise_py_bridgeerror(py_space,
                 "Stale wrapped PHP array. No longer integer keyed!")
 
@@ -369,7 +369,7 @@ class WrappedPHPArrayDictStrategy(DictStrategy):
         # cast to mimick PHP semantics.
 
         interp = self.space.get_php_interp()
-        pyspace = self.space
+        py_space = self.space
 
         wphp_arry = self.unerase(w_dict.dstorage)
         wphp_key = w_key.to_php(interp)
@@ -418,10 +418,10 @@ class WrappedPHPArrayDictStrategy(DictStrategy):
 create_iterator_classes(WrappedPHPArrayDictStrategy)
 
 def make_wrapped_mixed_key_php_array(interp, wphp_arry_ref):
-    strategy = interp.pyspace.fromcache(WrappedPHPArrayDictStrategy)
+    strategy = interp.py_space.fromcache(WrappedPHPArrayDictStrategy)
     storage = strategy.erase(wphp_arry_ref)
 
-    return WPy_DictMultiObject(interp.pyspace, strategy, storage)
+    return WPy_DictMultiObject(interp.py_space, strategy, storage)
 
 
 class W_PRef(W_Root):

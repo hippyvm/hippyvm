@@ -51,8 +51,8 @@ class W_PyProxyGeneric(W_InstanceObject):
         name='GenericPyProxy::__get')
 def generic__get(interp, this, name):
     interp = this.interp
-    pyspace = interp.pyspace
-    wpy_target = pyspace.getattr(this.wpy_inst, pyspace.wrap(name))
+    py_space = interp.py_space
+    wpy_target = py_space.getattr(this.wpy_inst, py_space.wrap(name))
     return wpy_target.to_php(interp)
 
 @wrap_method(['interp', ThisUnwrapper(W_PyProxyGeneric), str, Wph_Root],
@@ -62,12 +62,12 @@ def generic__call(interp, this, func_name, wph_args):
     from hippy.interpreter import Interpreter
     assert isinstance(interp, Interpreter)
 
-    pyspace = interp.pyspace
-    wpy_func_name = pyspace.wrap(func_name)
-    wpy_func = pyspace.getattr(this.wpy_inst, wpy_func_name)
+    py_space = interp.py_space
+    wpy_func_name = py_space.wrap(func_name)
+    wpy_func = py_space.getattr(this.wpy_inst, wpy_func_name)
 
     wpy_args_items = [ x.to_py(interp) for x in wph_args.as_list_w() ]
-    wpy_rv = interp.pyspace.call(wpy_func, interp.pyspace.newlist(wpy_args_items))
+    wpy_rv = interp.py_space.call(wpy_func, interp.py_space.newlist(wpy_args_items))
     return wpy_rv.to_php(interp)
 
 k_PyBridgeProxy = def_class('PyBridgeProxy',
@@ -87,7 +87,7 @@ class W_EmbeddedPyCallable(W_InvokeCall):
     def call_args(self, interp, args_w,
             w_this=None, thisclass=None, closureargs=None):
 
-        py_space = interp.pyspace
+        py_space = interp.py_space
 
         wpy_args_elems = [ x.to_py(interp) for x in args_w ]
 
@@ -352,7 +352,7 @@ class W_PyException(W_ExceptionObject):
         W_ExceptionObject.setup(self, php_interp)
         self.w_py_exn = w_py_exn
 
-        php_space, py_space = php_interp.space, php_interp.pyspace
+        php_space, py_space = php_interp.space, php_interp.py_space
 
         # XXX these need to be properly populated to give the user a
         # meaningful error message. The comments show how these fields

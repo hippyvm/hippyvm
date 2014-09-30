@@ -76,7 +76,7 @@ class AbstractFunction(W_Root):
 
     def to_py(self, interp):
         from hippy.module.pypy_bridge import py_wrappers
-        return py_wrappers.W_EmbeddedPHPFunc(interp.pyspace, self)
+        return py_wrappers.W_EmbeddedPHPFunc(interp.py_space, self)
 
     def is_py_call(self):
         return False
@@ -174,4 +174,4 @@ class Function(AbstractFunction):
 
     def to_py(self, interp):
         from hippy.module.pypy_bridge import py_wrappers
-        return py_wrappers.W_EmbeddedPHPFunc(interp.pyspace, self)
+        return py_wrappers.W_EmbeddedPHPFunc(interp.py_space, self)

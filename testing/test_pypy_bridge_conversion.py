@@ -12,55 +12,55 @@ class TestPyPyBridgeConversions(BaseTestInterpreter):
         interp = self.new_interp()
         wph_integer = interp.space.newint(666)
         py_int = wph_integer.to_py(interp)
-        assert interp.pyspace.int_w(py_int) == 666
+        assert interp.py_space.int_w(py_int) == 666
 
     def test_py_none_of_ph_null(self):
         interp = self.new_interp()
         wpy_none = interp.space.w_Null.to_py(interp)
-        assert wpy_none is interp.pyspace.w_None
+        assert wpy_none is interp.py_space.w_None
 
     def test_py_str_of_ph_string(self):
         interp = self.new_interp()
         wph_string = interp.space.wrap("smeg")
         wpy_str = wph_string.to_py(interp)
-        assert interp.pyspace.str_w(wpy_str) == "smeg"
+        assert interp.py_space.str_w(wpy_str) == "smeg"
 
     def test_py_str_of_ph_string2(self):
         interp = self.new_interp()
         wph_string = interp.space.wrap("123") # can be interpreted as int
         wpy_str = wph_string.to_py(interp)
-        assert interp.pyspace.str_w(wpy_str) == "123"
+        assert interp.py_space.str_w(wpy_str) == "123"
 
     def test_py_float_of_ph_float(self):
         interp = self.new_interp()
         wph_float = interp.space.wrap(1.337)
         wpy_float = wph_float.to_py(interp)
-        assert interp.pyspace.float_w(wpy_float) == 1.337
+        assert interp.py_space.float_w(wpy_float) == 1.337
 
     def test_py_bool_of_ph_boolean(self):
         interp = self.new_interp()
         for polarity in [True, False]:
             wph_boolean = interp.space.wrap(polarity)
             wpy_bool = wph_boolean.to_py(interp)
-            assert interp.pyspace.bool_w(wpy_bool) == polarity
+            assert interp.py_space.bool_w(wpy_bool) == polarity
 
     def test_py_list_of_ph_array(self):
         pytest.skip("XXX disabled list conversions for now")
         interp = self.new_interp()
-        phspace, pyspace = interp.space, interp.pyspace
+        phspace, py_space = interp.space, interp.py_space
 
         input = [1, 2, 3, "a", "b", "c" ]
         wph_elems = [ phspace.wrap(i) for i in input ]
         wph_arr = phspace.new_array_from_list(wph_elems)
         wpy_converted = wph_arr.to_py(interp)
 
-        wpy_expect = pyspace.newlist([ pyspace.wrap(i) for i in input ])
-        assert pyspace.is_true(pyspace.eq(wpy_converted, wpy_expect))
+        wpy_expect = py_space.newlist([ py_space.wrap(i) for i in input ])
+        assert py_space.is_true(py_space.eq(wpy_converted, wpy_expect))
 
     def test_py_list_of_ph_array_nested(self):
         pytest.skip("XXX disabled list conversions for now")
         interp = self.new_interp()
-        phspace, pyspace = interp.space, interp.pyspace
+        phspace, py_space = interp.space, interp.py_space
 
         # We will build a PHP list looking like this:
         # [ 666, False, [ 1, "a" ]]
@@ -78,15 +78,15 @@ class TestPyPyBridgeConversions(BaseTestInterpreter):
 
         wpy_l = wph_arr_outer.to_py(interp)
 
-        consts = [ pyspace.wrap(i) for i in range(3) ]
+        consts = [ py_space.wrap(i) for i in range(3) ]
 
-        assert pyspace.int_w(pyspace.len(wpy_l)) == 3
-        assert pyspace.int_w(pyspace.getitem(wpy_l, consts[0])) == 666
-        assert pyspace.bool_w(pyspace.getitem(wpy_l, consts[1])) == False
+        assert py_space.int_w(py_space.len(wpy_l)) == 3
+        assert py_space.int_w(py_space.getitem(wpy_l, consts[0])) == 666
+        assert py_space.bool_w(py_space.getitem(wpy_l, consts[1])) == False
 
-        wpy_innr = pyspace.getitem(wpy_l, consts[2])
-        assert pyspace.int_w(pyspace.getitem(wpy_innr, consts[0])) == 1
-        assert pyspace.str_w(pyspace.getitem(wpy_innr, consts[1])) == "a"
+        wpy_innr = py_space.getitem(wpy_l, consts[2])
+        assert py_space.int_w(py_space.getitem(wpy_innr, consts[0])) == 1
+        assert py_space.str_w(py_space.getitem(wpy_innr, consts[1])) == "a"
 
     # XXX Test mutating the list
 
@@ -107,27 +107,27 @@ class TestPyPyBridgeConversions(BaseTestInterpreter):
 
     def test_ph_integer_of_py_int(self):
         interp = self.new_interp()
-        py_int = interp.pyspace.newint(666)
+        py_int = interp.py_space.newint(666)
         wph_integer = py_int.to_php(interp)
         assert interp.space.int_w(wph_integer) == 666
         assert wph_integer.tp == interp.space.tp_int
 
     def test_ph_float_of_py_float(self):
         interp = self.new_interp()
-        py_float = interp.pyspace.newfloat(3.1415)
+        py_float = interp.py_space.newfloat(3.1415)
         wph_float = py_float.to_php(interp)
         assert interp.space.float_w(wph_float) == 3.1415
         assert wph_float.tp == interp.space.tp_float
 
     def test_ph_null_of_py_none(self):
         interp = self.new_interp()
-        wph_null = interp.pyspace.w_None.to_php(interp)
+        wph_null = interp.py_space.w_None.to_php(interp)
         assert wph_null is interp.space.w_Null
         assert wph_null.tp == interp.space.tp_null
 
     def test_ph_string_of_py_str(self):
         interp = self.new_interp()
-        wpy_str = interp.pyspace.wrap("transmogrification")
+        wpy_str = interp.py_space.wrap("transmogrification")
         wph_string = wpy_str.to_php(interp)
         assert interp.space.str_w(wph_string) == "transmogrification"
         assert wph_string.tp == interp.space.tp_str
@@ -135,7 +135,7 @@ class TestPyPyBridgeConversions(BaseTestInterpreter):
     def test_ph_boolean_of_py_bool(self):
         interp = self.new_interp()
         for b in [True, False]:
-            wpy_bool = interp.pyspace.wrap(b)
+            wpy_bool = interp.py_space.wrap(b)
             wph_boolean = wpy_bool.to_php(interp)
             assert wph_boolean.boolval == b
             assert wph_boolean.tp == interp.space.tp_bool
@@ -143,13 +143,13 @@ class TestPyPyBridgeConversions(BaseTestInterpreter):
     def test_ph_array_of_py_list(self):
         pytest.skip("XXX disabled list conversions for now")
         interp = self.new_interp()
-        phspace, pyspace = interp.space, interp.pyspace
+        phspace, py_space = interp.space, interp.py_space
 
         input = [1, 2, "wibble", "chunks", True]
         wph_expect = phspace.new_array_from_list(
                 [ phspace.wrap(x) for x in input ])
 
-        wpy_list = pyspace.newlist([ pyspace.wrap(x) for x in input ])
+        wpy_list = py_space.newlist([ py_space.wrap(x) for x in input ])
         wph_actual = wpy_list.to_php(interp)
 
         assert phspace.is_true(phspace.eq(wph_actual, wph_expect))
@@ -157,7 +157,7 @@ class TestPyPyBridgeConversions(BaseTestInterpreter):
     def test_ph_array_of_py_list_nested(self):
         pytest.skip("XXX disabled list conversions for now")
         interp = self.new_interp()
-        phspace, pyspace = interp.space, interp.pyspace
+        phspace, py_space = interp.space, interp.py_space
 
         # Test the following list converts OK:
         # [1, 2, ["a", "b", "c"]]
@@ -171,12 +171,12 @@ class TestPyPyBridgeConversions(BaseTestInterpreter):
                 [ wph_expect_inner ]
         wph_expect_outer = phspace.new_array_from_list(wph_input_outer)
 
-        wpy_input_inner = [ pyspace.wrap(x) for x in input_inner ]
-        wpy_list_inner = pyspace.newlist(wpy_input_inner)
+        wpy_input_inner = [ py_space.wrap(x) for x in input_inner ]
+        wpy_list_inner = py_space.newlist(wpy_input_inner)
 
-        wpy_list_outer = [ pyspace.wrap(x) for x in input_outer ] + \
+        wpy_list_outer = [ py_space.wrap(x) for x in input_outer ] + \
                 [ wpy_list_inner ]
-        wpy_list_outer = pyspace.newlist(wpy_list_outer)
+        wpy_list_outer = py_space.newlist(wpy_list_outer)
 
         wph_got = wpy_list_outer.to_php(interp)
         assert phspace.is_true(phspace.eq(wph_expect_outer, wph_got))
@@ -188,15 +188,15 @@ class TestPyPyBridgeConversions(BaseTestInterpreter):
         interp = MockInterpreter(interp.space)
 
         pysource = "def f(x): return x + 1"
-        pycompiler = interp.pyspace.createcompiler()
+        pycompiler = interp.py_space.createcompiler()
         code = pycompiler.compile(pysource, 'XXX', 'exec', 0)
 
         from pypy.interpreter.module import Module
-        wpy_mod_name = interp.pyspace.wrap("tests")
-        wpy_module = Module(interp.pyspace, wpy_mod_name)
-        code.exec_code(interp.pyspace, wpy_module.w_dict, wpy_module.w_dict)
-        func = interp.pyspace.getattr(wpy_module, interp.pyspace.wrap("f"))
-        wpy_func = interp.pyspace.wrap(func)
+        wpy_mod_name = interp.py_space.wrap("tests")
+        wpy_module = Module(interp.py_space, wpy_mod_name)
+        code.exec_code(interp.py_space, wpy_module.w_dict, wpy_module.w_dict)
+        func = interp.py_space.getattr(wpy_module, interp.py_space.wrap("f"))
+        wpy_func = interp.py_space.wrap(func)
 
         wph_closure = wpy_func.to_php(interp)
         # XXX until interp.space.tp_closure

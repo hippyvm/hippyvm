@@ -33,7 +33,7 @@ def _run_fastcgi_server(server_port):
     print "Running fcgi server on port %d" % (server_port,)
     return run_fcgi_server(port=server_port)
 
-def mk_entry_point(pyspace=None):
+def mk_entry_point(py_space=None):
   # XXX 2 space indent to make merging with master less painful XXX
   def entry_point(argv):
     i = 1
@@ -98,15 +98,15 @@ def mk_entry_point(pyspace=None):
         assert s is not None
         rest_of_args.append(s)
     return main(fname, rest_of_args, cgi, gcdump, debugger_pipes,
-                bench_mode, bench_no, pyspace=pyspace)
+                bench_mode, bench_no, py_space=py_space)
   return entry_point
 
 def main(filename, rest_of_args, cgi, gcdump, debugger_pipes=(-1, -1),
-         bench_mode=False, bench_no=-1, pyspace=None):
+         bench_mode=False, bench_no=-1, py_space=None):
     space = getspace()
-    if pyspace is not None:
-        pyspace.startup() # must be called once prior to use
-    interp = Interpreter(space, pyspace=pyspace)
+    if py_space is not None:
+        py_space.startup() # must be called once prior to use
+    interp = Interpreter(space, py_space=py_space)
 
     try:
         ini_data = open('hippy.ini').read(-1)
@@ -184,7 +184,7 @@ def main(filename, rest_of_args, cgi, gcdump, debugger_pipes=(-1, -1),
         if exitcode:
             return exitcode
         if i < no - 1:
-            interp = Interpreter(space, pyspace=pyspace)
+            interp = Interpreter(space, py_space=py_space)
             if ini_data is not None:
                 try:
                     load_ini(interp, ini_data)
@@ -206,7 +206,7 @@ if __name__ == '__main__':
     enable_translationmodules(pypy_config)
 
     from pypy.objspace.std import StdObjSpace as PyStdObjSpace
-    pyspace = PyStdObjSpace(pypy_config)
+    py_space = PyStdObjSpace(pypy_config)
 
-    entry_point = mk_entry_point(pyspace)
+    entry_point = mk_entry_point(py_space)
     sys.exit(entry_point(sys.argv))

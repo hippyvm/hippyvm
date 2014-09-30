@@ -141,7 +141,7 @@ class W_FloatObject(W_Object):
         return True
 
     def to_py(self, interp):
-        return interp.pyspace.newfloat(interp.space.float_w(self))
+        return interp.py_space.newfloat(interp.space.float_w(self))
 
 for _name in BINOP_LIST:
     if hasattr(W_FloatObject, _name):

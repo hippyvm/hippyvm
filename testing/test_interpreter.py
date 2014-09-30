@@ -41,11 +41,11 @@ class BaseTestInterpreter(object):
 
     def init_space(self):
         self.space = getspace()
-        self.pyspace = PyStdObjSpace()
+        self.py_space = PyStdObjSpace()
         if option.runappdirect:
-            self.engine = self.DirectRunner(self.space, self.pyspace)
+            self.engine = self.DirectRunner(self.space, self.py_space)
         else:
-            self.engine = self.Engine(self.space, self.pyspace)
+            self.engine = self.Engine(self.space, self.py_space)
             self.engine.Interpreter = self.interpreter
 
 
@@ -57,8 +57,8 @@ class BaseTestInterpreter(object):
         os.environ = self.env_copy
         self.engine = None
         self.space = None
-        self.pyspace.set_php_interp(None) # fd leak when testing on linux
-	self.pyspace = None
+        self.py_space.set_php_interp(None) # fd leak when testing on linux
+	self.py_space = None
 
     def run(self, source, expected_warnings=[], extra_func=None,
             inp_stream=None, **kwds):

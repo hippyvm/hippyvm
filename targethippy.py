@@ -171,9 +171,9 @@ def target(driver, args):
     # Python objectspace ctor is not Rpython so create it here and
     # encapsulate it inside the entry point with a closure.
     from pypy.objspace.std import StdObjSpace as PyStdObjSpace
-    pyspace = PyStdObjSpace(config)
+    py_space = PyStdObjSpace(config)
 
-    return mk_entry_point(pyspace), None, PyPyAnnotatorPolicy()
+    return mk_entry_point(py_space), None, PyPyAnnotatorPolicy()
 
 def handle_config(config, translateconfig):
     TRANSLATECONFIG[0] = translateconfig # XXX better way to get at this?

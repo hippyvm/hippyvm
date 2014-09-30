@@ -31,18 +31,18 @@ def embed_py_mod(interp, mod_name, mod_source):
     phspace = interp.space
 
     # create a new Python module in which to inject code
-    wpy_mod_name = interp.pyspace.wrap(mod_name)
-    wpy_module = Module(interp.pyspace, wpy_mod_name)
+    wpy_mod_name = interp.py_space.wrap(mod_name)
+    wpy_module = Module(interp.py_space, wpy_mod_name)
 
     # Register it in sys.modules
-    wpy_sys_modules = interp.pyspace.sys.get('modules')
-    interp.pyspace.setitem(wpy_sys_modules, wpy_mod_name, wpy_module)
+    wpy_sys_modules = interp.py_space.sys.get('modules')
+    interp.py_space.setitem(wpy_sys_modules, wpy_mod_name, wpy_module)
 
     # Inject code into the fresh module
     # Get php file name in place of XXX
-    pycompiler = interp.pyspace.createcompiler() # XXX use just one
+    pycompiler = interp.py_space.createcompiler() # XXX use just one
     code = pycompiler.compile(mod_source, 'XXX', 'exec', 0)
-    code.exec_code(interp.pyspace, wpy_module.w_dict,wpy_module.w_dict)
+    code.exec_code(interp.py_space, wpy_module.w_dict,wpy_module.w_dict)
 
     return wpy_module.to_php(interp)
 
@@ -54,26 +54,26 @@ def _raise_php_bridgeexception(interp, msg):
 def _compile_py_func_from_string(interp, func_source):
     """ compiles a string returning a <name, func> pair """
 
-    pyspace = interp.pyspace
+    py_space = interp.py_space
 
     # compile the user's code
     wpy_code = py_compiling.compile(
-            pyspace, pyspace.wrap(func_source), "<string>", "exec")
+            py_space, py_space.wrap(func_source), "<string>", "exec")
 
     # Eval it into a dict
-    wpy_fake_locals = pyspace.newdict()
-    py_compiling.eval(pyspace, wpy_code, pyspace.newdict(), wpy_fake_locals)
+    wpy_fake_locals = py_space.newdict()
+    py_compiling.eval(py_space, wpy_code, py_space.newdict(), wpy_fake_locals)
 
     # Extract the users function from the dict
-    wpy_keys = wpy_fake_locals.descr_keys(pyspace)
-    wpy_vals = wpy_fake_locals.descr_values(pyspace)
+    wpy_keys = wpy_fake_locals.descr_keys(py_space)
+    wpy_vals = wpy_fake_locals.descr_values(py_space)
 
-    wpy_zero = pyspace.wrap(0)
-    wpy_func_name = pyspace.getitem(wpy_keys, wpy_zero)
-    wpy_func = pyspace.getitem(wpy_vals, wpy_zero)
+    wpy_zero = py_space.wrap(0)
+    wpy_func_name = py_space.getitem(wpy_keys, wpy_zero)
+    wpy_func = py_space.getitem(wpy_vals, wpy_zero)
 
     # The user should have defined one function.
-    if pyspace.int_w(pyspace.len(wpy_keys)) != 1 or \
+    if py_space.int_w(py_space.len(wpy_keys)) != 1 or \
             not isinstance(wpy_func, Py_Function):
         _raise_php_bridgeexception(interp,
                 "embed_py_func: Python source must define exactly one function")
@@ -85,7 +85,7 @@ def _compile_py_func_from_string(interp, func_source):
 
 @wrap(['interp', str], name='embed_py_func')
 def embed_py_func(interp, func_source):
-    phspace, pyspace = interp.space, interp.pyspace
+    phspace, py_space = interp.space, interp.py_space
 
     # Compile
     wpy_func_name, wpy_func = _compile_py_func_from_string(interp, func_source)
@@ -95,17 +95,17 @@ def embed_py_func(interp, func_source):
 
 @wrap(['interp', str], name='import_py_mod')
 def import_py_mod(interp, modname):
-    pyspace = interp.pyspace
+    py_space = interp.py_space
 
-    assert not pyspace.config.objspace.honor__builtins__
+    assert not py_space.config.objspace.honor__builtins__
 
-    w_import = pyspace.builtin.getdictvalue(pyspace, '__import__')
+    w_import = py_space.builtin.getdictvalue(py_space, '__import__')
     if w_import is None:
-        raise OperationError(pyspace.w_ImportError,
-                             pyspace.wrap("__import__ not found"))
+        raise OperationError(py_space.w_ImportError,
+                             py_space.wrap("__import__ not found"))
 
-    w_modname = pyspace.wrap(modname)
-    w_obj = pyspace.call_function(w_import, w_modname, pyspace.w_None,
-                                  pyspace.w_None, pyspace.wrap(modname.split(".")[-1]))
+    w_modname = py_space.wrap(modname)
+    w_obj = py_space.call_function(w_import, w_modname, py_space.w_None,
+                                  py_space.w_None, py_space.wrap(modname.split(".")[-1]))
 
     return w_obj.to_php(interp)
