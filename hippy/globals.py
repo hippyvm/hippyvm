@@ -23,7 +23,7 @@ class W_Globals(W_RDictArrayObject):
     # with dct_w directly. Then we could turn everything to do with globals into
     # reading/writing from mutable cells.
 
-    _immutable_fields_ = ["_globals_arr?", "_globals_map", "_globals_version?"]
+    _immutable_fields_ = ["_globals_map", "_globals_version?"]
 
     def __init__(self, space):
         W_RDictArrayObject.__init__(self, space, new_rdict(), 0)
