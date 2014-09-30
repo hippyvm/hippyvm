@@ -32,24 +32,24 @@ class W_PHPProxyGeneric(W_Root):
     """Generic proxy for wrapping PHP objects in PyPy when no more specific
     proxy is available."""
 
-    _immutable_fields_ = ["interp", "wph_inst"]
+    _immutable_fields_ = ["interp", "w_php_inst"]
 
-    def __init__(self, interp, wph_inst):
-        self.wph_inst = wph_inst
+    def __init__(self, interp, w_php_inst):
+        self.w_php_inst = w_php_inst
         self.interp = interp
 
     def get_wrapped_php_obj(self):
-        return self.wph_inst
+        return self.w_php_inst
 
     def get_php_interp(self):
         return self.interp
 
     def to_php(self, php_interp):
-        return self.wph_inst
+        return self.w_php_inst
 
     def is_w(self, space, other):
         if isinstance(other, W_PHPProxyGeneric):
-            return self.wph_inst is other.wph_inst
+            return self.w_php_inst is other.w_php_inst
         return False
 
     @unwrap_spec(name=str)
@@ -59,19 +59,19 @@ class W_PHPProxyGeneric(W_Root):
         php_space = interp.space
         py_space = interp.py_space
 
-        wph_inst = self.wph_inst
-        wph_target = wph_inst.getattr(interp, name, None, fail_with_none=True)
+        w_php_inst = self.w_php_inst
+        w_php_target = w_php_inst.getattr(interp, name, None, fail_with_none=True)
 
-        if wph_target is None:
+        if w_php_target is None:
             try:
-                wph_target = wph_inst.getmeth(php_space, name, None)
+                w_php_target = w_php_inst.getmeth(php_space, name, None)
             except VisibilityError:
-                wph_target = None
+                w_php_target = None
 
-            if wph_target is None:
+            if w_php_target is None:
                 _raise_py_bridgeerror(py_space,
                         "Wrapped PHP instance has no attribute '%s'" % name)
-        return wph_target.to_py(interp)
+        return w_php_target.to_py(interp)
 
     @unwrap_spec(name=str)
     def descr_set(self, name, w_obj):
@@ -79,8 +79,8 @@ class W_PHPProxyGeneric(W_Root):
         php_space = self.interp.space
         py_space = self.interp.py_space
 
-        wph_inst = self.wph_inst
-        self.wph_inst.setattr(interp, name, w_obj.to_php(interp), None)
+        w_php_inst = self.w_php_inst
+        self.w_php_inst.setattr(interp, name, w_obj.to_php(interp), None)
 
         return py_space.w_None
 
@@ -93,28 +93,28 @@ class W_PHPProxyGeneric(W_Root):
                     "Cannot use kwargs with callable PHP instances")
 
         from hippy.klass import ClassBase
-        if isinstance(self.wph_inst, ClassBase):
+        if isinstance(self.w_php_inst, ClassBase):
             # user is calling a PHP class in Python, i.e. instantiating it.
             # XXX PHP classes should have a dedicated wrapper for performance.
-            wph_args_elems = [ x.to_php(self.interp) for x in w_py_args ]
-            wph_rv = self.wph_inst.call_args(self.interp, wph_args_elems)
-            return wph_rv.to_py(self.interp)
+            w_php_args_elems = [ x.to_php(self.interp) for x in w_py_args ]
+            w_php_rv = self.w_php_inst.call_args(self.interp, w_php_args_elems)
+            return w_php_rv.to_py(self.interp)
         else:
             # calling an instance
-            wph_callable = self.wph_inst.get_callable()
-            if wph_callable is None: # not callable
+            w_php_callable = self.w_php_inst.get_callable()
+            if w_php_callable is None: # not callable
                 _raise_py_bridgeerror(self.interp.py_space,
                         "Wrapped PHP instance is not callable")
 
-            wph_args_elems = [ x.to_php(self.interp) for x in w_py_args ]
-            wph_rv = wph_callable.call_args(self.interp, wph_args_elems)
-            return wph_rv.to_py(self.interp)
+            w_php_args_elems = [ x.to_php(self.interp) for x in w_py_args ]
+            w_php_rv = w_php_callable.call_args(self.interp, w_php_args_elems)
+            return w_php_rv.to_py(self.interp)
 
     def descr_eq(self, space, w_other):
         if isinstance(w_other, W_PHPProxyGeneric):
             php_interp = self.interp
             php_space = php_interp.space
-            if php_space.eq_w(self.wph_inst, w_other.wph_inst):
+            if php_space.eq_w(self.w_php_inst, w_other.w_php_inst):
                 return space.w_True
         return space.w_False
 
@@ -133,27 +133,27 @@ W_PHPProxyGeneric.typedef = TypeDef("PhBridgeProxy",
 class W_EmbeddedPHPFunc(W_Root):
     """ A Python callable that actually executes a PHP function """
 
-    _immutable_fields_ = ["space", "wph_func"]
+    _immutable_fields_ = ["space", "w_php_func"]
 
-    def __init__(self, space, wph_func):
+    def __init__(self, space, w_php_func):
         self.space = space
-        self.wph_func = wph_func
+        self.w_php_func = w_php_func
         self.w_phpexception = space.builtin.get("PHPException")
 
     def get_wrapped_php_obj(self):
-        return self.wph_func
+        return self.w_php_func
 
     def get_php_interp(self):
         return self.space.get_php_interp()
 
     def is_w(self, space, other):
         if isinstance(other, W_EmbeddedPHPFunc):
-            return self.wph_func is other.wph_func
+            return self.w_php_func is other.w_php_func
         return False
 
     @property
     def name(self):
-        return self.wph_func.name
+        return self.w_php_func.name
 
     @jit.unroll_safe
     def descr_call(self, __args__):
@@ -168,29 +168,29 @@ class W_EmbeddedPHPFunc(W_Root):
         php_interp = self.space.get_php_interp()
         php_space = self.space.get_php_interp().space
 
-        wph_args_elems = []
+        w_php_args_elems = []
         for arg_no in xrange(len(args)):
             w_py_arg = args[arg_no]
 
-            if self.wph_func.needs_ref(arg_no):
+            if self.w_php_func.needs_ref(arg_no):
                 # if you try to pass a reference argument by value, fail.
                 if not isinstance(w_py_arg, W_PRef):
                     err_str = "Arg %d of PHP func '%s' is pass by reference" % \
-                            (arg_no + 1, self.wph_func.name)
+                            (arg_no + 1, self.w_php_func.name)
                     _raise_py_bridgeerror(py_space, err_str)
 
-                wph_args_elems.append(w_py_arg.ref)
+                w_php_args_elems.append(w_py_arg.ref)
             else:
                 # if you pass a value argument by reference, fail.
                 if isinstance(w_py_arg, W_PRef):
                     err_str = "Arg %d of PHP func '%s' is pass by value" % \
-                            (arg_no + 1, self.wph_func.name)
+                            (arg_no + 1, self.w_php_func.name)
                     _raise_py_bridgeerror(py_space, err_str)
 
-                wph_args_elems.append(w_py_arg.to_php(php_interp))
+                w_php_args_elems.append(w_py_arg.to_php(php_interp))
 
         try:
-            res = self.wph_func.call_args(php_interp, wph_args_elems)
+            res = self.w_php_func.call_args(php_interp, w_php_args_elems)
         except Throw as w_php_throw:
             w_php_exn = w_php_throw.w_exc
             raise OperationError(self.w_phpexception, w_php_exn.to_py(php_interp))
@@ -292,7 +292,7 @@ class WrappedPHPArrayStrategy(ListStrategy):
 # level so that we can use create_iterator_classes().
 class W_ArrayKeyIteratorWrap(object):
 
-    _immutable_fields_ = ["interp", "wph_arry", "self.itr"]
+    _immutable_fields_ = ["interp", "w_php_arry", "self.itr"]
 
     def __init__(self, interp, wphp_arry_ref):
 
@@ -313,7 +313,7 @@ class W_ArrayKeyIteratorWrap(object):
 
 class W_ArrayValIteratorWrap(object):
 
-    _immutable_fields_ = ["interp", "wph_arry", "self.itr"]
+    _immutable_fields_ = ["interp", "w_php_arry", "self.itr"]
 
     def __init__(self, interp, wphp_arry_ref):
 
@@ -334,7 +334,7 @@ class W_ArrayValIteratorWrap(object):
 
 class W_ArrayItemIteratorWrap(object):
 
-    _immutable_fields_ = ["interp", "wph_arry", "self.itr"]
+    _immutable_fields_ = ["interp", "w_php_arry", "self.itr"]
 
     def __init__(self, interp, wphp_arry_ref):
 

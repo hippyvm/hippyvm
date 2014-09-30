@@ -36,9 +36,9 @@ class W_PyProxyGeneric(W_InstanceObject):
     # Use this as a low level ctor instead of the above.
     @classmethod
     def from_w_py_inst(cls, interp, w_py_inst):
-        wph_pxy = cls(interp, [])
-        wph_pxy.set_instance(w_py_inst)
-        return wph_pxy
+        w_php_pxy = cls(interp, [])
+        w_php_pxy.set_instance(w_py_inst)
+        return w_php_pxy
 
     def get_callable(self):
         """ PHP interpreter calls this when calls a wrapped Python var  """
@@ -58,7 +58,7 @@ def generic__get(interp, this, name):
 @wrap_method(['interp', ThisUnwrapper(W_PyProxyGeneric), str, Wph_Root],
         name='GenericPyProxy::__call')
 @jit.unroll_safe
-def generic__call(interp, this, func_name, wph_args):
+def generic__call(interp, this, func_name, w_php_args):
     from hippy.interpreter import Interpreter
     assert isinstance(interp, Interpreter)
 
@@ -66,7 +66,7 @@ def generic__call(interp, this, func_name, wph_args):
     w_py_func_name = py_space.wrap(func_name)
     w_py_func = py_space.getattr(this.w_py_inst, w_py_func_name)
 
-    w_py_args_items = [ x.to_py(interp) for x in wph_args.as_list_w() ]
+    w_py_args_items = [ x.to_py(interp) for x in w_php_args.as_list_w() ]
     w_py_rv = interp.py_space.call(w_py_func, interp.py_space.newlist(w_py_args_items))
     return w_py_rv.to_php(interp)
 

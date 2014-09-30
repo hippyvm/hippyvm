@@ -392,8 +392,8 @@ class W_ArrayObject(W_Object):
         # within Python code.
         from hippy.module.pypy_bridge.py_wrappers import (
                 make_wrapped_mixed_key_php_array)
-        wph_arry_ref = W_Reference(self)
-        return make_wrapped_mixed_key_php_array(interp, wph_arry_ref)
+        w_php_arry_ref = W_Reference(self)
+        return make_wrapped_mixed_key_php_array(interp, w_php_arry_ref)
 
 class ListItemVRef(VirtualReference):
     def __init__(self, w_array, index):

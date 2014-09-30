@@ -501,11 +501,11 @@ class Interpreter(object):
         frame = self.topframeref()
         py_scope = frame.bytecode.py_scope
         if py_scope is not None:
-            wph_v = py_scope.ph_lookup(name)
-            if wph_v is not None:
-                if not isinstance(wph_v, php_wrappers.W_EmbeddedPyCallable):
+            w_php_v = py_scope.ph_lookup(name)
+            if w_php_v is not None:
+                if not isinstance(w_php_v, php_wrappers.W_EmbeddedPyCallable):
                     self.fatal("Can only call Python functions from PHP")
-                return wph_v
+                return w_php_v
         self.fatal("Call to undefined function %s()" % name)
 
     def get_this(self, frame):

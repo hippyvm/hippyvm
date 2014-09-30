@@ -110,17 +110,17 @@ class W_Reference(W_Root):
     w_value = property(None, None)
 
     def to_py(self, interp):
-        wph_inside = self.deref_temp()
+        w_php_inside = self.deref_temp()
 
         # Arrays are special, must wrap up a reference to allow mutation.
         from hippy.objects.arrayobject import W_ArrayObject
-        if isinstance(wph_inside, W_ArrayObject):
+        if isinstance(w_php_inside, W_ArrayObject):
             from hippy.module.pypy_bridge.py_wrappers import (
                     make_wrapped_mixed_key_php_array)
             return make_wrapped_mixed_key_php_array(interp, self) # pass in ref
         else:
-            wph_inside = self.deref()
-            return wph_inside.to_py(interp)
+            w_php_inside = self.deref()
+            return w_php_inside.to_py(interp)
 
 class VirtualReference(W_Reference):
     """A handle to an object stored in some container.
