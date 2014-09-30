@@ -104,8 +104,7 @@ class W_PHPProxyGeneric(W_Root):
             wph_callable = self.wph_inst.get_callable()
             if wph_callable is None: # not callable
                 _raise_py_bridgeerror(self.interp.pyspace,
-                        "Wrapped PHP instance of type '%s' is not callable" %
-                        self.wph_inst.klass.name)
+                        "Wrapped PHP instance is not callable")
 
             wph_args_elems = [ x.to_php(self.interp) for x in wpy_args ]
             wph_rv = wph_callable.call_args(self.interp, wph_args_elems)

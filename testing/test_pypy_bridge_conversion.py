@@ -339,7 +339,7 @@ class TestPyPyBridgeConversions(BaseTestInterpreter):
         $inst = new A();
         echo($py_func($inst));
         ''')
-        err_s = "Wrapped PHP instance of type 'A' is not callable"
+        err_s = "Wrapped PHP instance is not callable"
         assert php_space.str_w(output[0]) == err_s
 
 
