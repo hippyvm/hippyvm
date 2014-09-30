@@ -92,15 +92,24 @@ class W_PHPProxyGeneric(W_Root):
             _raise_py_bridgeerror(self.interp.pyspace,
                     "Cannot use kwargs with callable PHP instances")
 
-        wph_callable = self.wph_inst.get_callable()
-        if wph_callable is None: # not callable
-            _raise_py_bridgeerror(self.interp.pyspace,
-                    "Wrapped PHP instance of type '%s' is not callable" %
-                    self.wph_inst.klass.name)
+        from hippy.klass import ClassBase
+        if isinstance(self.wph_inst, ClassBase):
+            # user is calling a PHP class in Python, i.e. instantiating it.
+            # XXX PHP classes should have a dedicated wrapper for performance.
+            wph_args_elems = [ x.to_php(self.interp) for x in wpy_args ]
+            wph_rv = self.wph_inst.call_args(self.interp, wph_args_elems)
+            return wph_rv.to_py(self.interp)
+        else:
+            # calling an instance
+            wph_callable = self.wph_inst.get_callable()
+            if wph_callable is None: # not callable
+                _raise_py_bridgeerror(self.interp.pyspace,
+                        "Wrapped PHP instance of type '%s' is not callable" %
+                        self.wph_inst.klass.name)
 
-        wph_args_elems = [ x.to_php(self.interp) for x in wpy_args ]
-        wph_rv = wph_callable.call_args(self.interp, wph_args_elems)
-        return wph_rv.to_py(self.interp)
+            wph_args_elems = [ x.to_php(self.interp) for x in wpy_args ]
+            wph_rv = wph_callable.call_args(self.interp, wph_args_elems)
+            return wph_rv.to_py(self.interp)
 
     def descr_eq(self, space, w_other):
         if isinstance(w_other, W_PHPProxyGeneric):

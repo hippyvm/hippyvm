@@ -222,7 +222,9 @@ class TestPyPyBridgeScope(BaseTestInterpreter):
             class C {
                 function m() { return "c.m"; }
             }
-            echo($ref()->m());
+
+            $inst = $ref();
+            echo $inst->m();
         ''')
         assert phspace.str_w(output[0]) == "c.m"
 
