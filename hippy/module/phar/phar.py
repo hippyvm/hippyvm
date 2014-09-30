@@ -32,9 +32,11 @@ class W_Phar(W_RecursiveDirectoryIterator):
 
     buffering = False
 
-    def write_to_disc(self, space):
+    def write_to_disc(self, space, filename=None):
         if not self.buffering:
-            content = open(self.filename, 'w+')
+            if filename is None:
+                filename = self.filename
+            content = open(filename, 'w+')
             content.write(self.stub)
             content.write(write_phar(space, self.manifest, self.stub))
 
@@ -259,7 +261,7 @@ def phar_create_default_stub(interp, this, indexfile='', webindexfile=''):
              name='Phar::decompress', error_handler=handle_as_exception)
 def phar_decompress(interp, this, extension=''):
     decompressed_filename = dirname(this.filename) + '/' + this.basename
-    open(decompressed_filename, "wb").write(this.content)
+    this.write_to_disc(interp.space, decompressed_filename)
     res = PharClass.call_args(interp, [interp.space.wrap(
         decompressed_filename)])
     return res
@@ -749,7 +751,7 @@ def pfi_get_content(interp, this):
              name='PharFileInfo::getCRC32',
              error_handler=handle_as_exception)
 def pfi_get_crc32(interp, this):
-    return interp.space.newint(this.data.size_crc_uncompressed)
+    return interp.space.newint(this.data.crc_uncompressed)
 
 
 @wrap_method(['interp', ThisUnwrapper(W_PharFileInfo)],

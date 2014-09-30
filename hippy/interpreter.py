@@ -1849,11 +1849,13 @@ class Interpreter(object):
 
             name = name[7:]
             split = name.find('/')
+            assert split > 0  # XXX
 
             phar_name = name[:split]
             phar_filename = name[split+1:]
 
             data = all_phars[phar_name].files[phar_filename].content
+            assert data is not None  # XXX
 
             bc = compile_php(name, data, self.space)
 
