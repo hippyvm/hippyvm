@@ -16,12 +16,20 @@ class W_Globals(W_RDictArrayObject):
     # We model this as a normal array, so that $GLOBALS operates as expected,
     # with a shadow dictionary pointing at mutable cells. The shadow dictionary
     # allows us to make reads elidable (writes, however, remain somewhat
-    # expensive).
+    # expensive). XXX The shadow dictionary means that any changes to
+    # W_RDictArrayObject which read/write to dct_w need to be considered
+    # carefully in the context of this class.
     #
     # To get good performance for writes, we would need to subclass
     # W_RDictArrayObject and override all its methods so that nothing fiddles
     # with dct_w directly. Then we could turn everything to do with globals into
     # reading/writing from mutable cells.
+    #
+    # In practise, however, this is less of a performance hit than it might
+    # seem. When a PHP function says "global $x", it gets a reference to $x
+    # which is stored in the frame, so reads/writes to that are very cheap. Only
+    # if someone explicitly writes a value to the $GLOBALS array do we hit the
+    # worst case.
 
     _immutable_fields_ = ["_globals_map", "_globals_version?"]
 
