@@ -1108,7 +1108,6 @@ markers[classes_test_dir] = {
     'interface_method_private.phpt': 'error message wording',
     'interfaces_003.phpt': 'typehinting for constructor',
     'iterators_002.phpt': "missing __destruct()",
-    'iterators_005.phpt': "missing fatal (implements Traversable)",
     'new_001.phpt': 'deprecated in PHP',
     'serialize_001.phpt': "need review",
     'static_properties_undeclared_read.phpt': "missing fatal",
