@@ -205,16 +205,16 @@ def _raise_py_bridgeerror(py_space, msg):
     w_bridgeerror = py_space.builtin.get("BridgeError")
     raise OperationError(w_bridgeerror, py_space.wrap(msg))
 
-def make_wrapped_int_key_php_array(interp, wphp_arry_ref):
-    wphp_arry_tmp = wphp_arry_ref.deref_temp()
-    if not isinstance(wphp_arry_tmp, W_ListArrayObject):
+def make_wrapped_int_key_php_array(interp, w_php_arry_ref):
+    w_php_arry_tmp = w_php_arry_ref.deref_temp()
+    if not isinstance(w_php_arry_tmp, W_ListArrayObject):
         py_space = interp.py_space
         _raise_py_bridgeerror(py_space,
                 "can only apply as_list() to a wrapped PHP array in dict form")
 
 
     strategy = interp.py_space.fromcache(WrappedPHPArrayStrategy)
-    storage = strategy.erase(wphp_arry_ref)
+    storage = strategy.erase(w_php_arry_ref)
 
     return WPy_ListObject.from_storage_and_strategy(
             interp.py_space, storage, strategy)
@@ -227,15 +227,15 @@ class WrappedPHPArrayStrategy(ListStrategy):
     def _check_valid_wrap(self, w_list):
         """ If at any point we find that we no longer wrap a int-keyed
         PHP array then we are invalid """
-        wphp_arry = self.unerase(w_list.lstorage).deref_temp()
-        if not isinstance(wphp_arry, W_ListArrayObject):
+        w_php_arry = self.unerase(w_list.lstorage).deref_temp()
+        if not isinstance(w_php_arry, W_ListArrayObject):
             interp = self.space.get_php_interp()
             py_space = interp.py_space
             _raise_py_bridgeerror(py_space,
                 "Stale wrapped PHP array. No longer integer keyed!")
 
-    def wrap(self, wphp_val):
-        return wphp_val.to_py(self.space.get_php_interp())
+    def wrap(self, w_php_val):
+        return w_php_val.to_py(self.space.get_php_interp())
 
     erase, unerase = rerased.new_erasing_pair("php_int_key_array")
     erase = staticmethod(erase)
@@ -250,8 +250,8 @@ class WrappedPHPArrayStrategy(ListStrategy):
     def length(self, w_list):
         self._check_valid_wrap(w_list)
 
-        wphp_arry = self.unerase(w_list.lstorage).deref_temp()
-        return wphp_arry.arraylen()
+        w_php_arry = self.unerase(w_list.lstorage).deref_temp()
+        return w_php_arry.arraylen()
 
     def getitem(self, w_list, index):
         self._check_valid_wrap(w_list)
@@ -259,34 +259,34 @@ class WrappedPHPArrayStrategy(ListStrategy):
         interp = self.space.get_php_interp()
         py_space, php_space = self.space, interp.space
 
-        wphp_arry_ref = self.unerase(w_list.lstorage)
-        wphp_index = php_space.wrap(index)
+        w_php_arry_ref = self.unerase(w_list.lstorage)
+        w_php_index = php_space.wrap(index)
         # XXX will not do the right thing if the index does not exist
-        wphp_elem = wphp_arry_ref.getitem_ref(php_space, wphp_index)
+        w_php_elem = w_php_arry_ref.getitem_ref(php_space, w_php_index)
 
-        return self.wrap(wphp_elem)
+        return self.wrap(w_php_elem)
 
     def setitem(self, w_list, key, w_value):
         # XXX again with the implicit cast on the key if not str or int
         interp = self.space.get_php_interp()
         py_space, php_space = self.space, interp.space
 
-        wphp_arry_ref = self.unerase(w_list.lstorage)
-        wphp_key = php_space.wrap(key) # key always an int
-        wphp_value = w_value.to_php(interp)
+        w_php_arry_ref = self.unerase(w_list.lstorage)
+        w_php_key = php_space.wrap(key) # key always an int
+        w_php_value = w_value.to_php(interp)
 
-        wphp_arry_ref.setitem_ref(php_space, wphp_key, wphp_value)
+        w_php_arry_ref.setitem_ref(php_space, w_php_key, w_php_value)
 
     def append(self, w_list, w_item):
         interp = self.space.get_php_interp()
         py_space, php_space = self.space, interp.space
 
-        wphp_arry_ref = self.unerase(w_list.lstorage)
-        wphp_item = w_item.to_php(interp)
-        wphp_arry = wphp_arry_ref.deref_temp()
-        wphp_next_idx = php_space.wrap(wphp_arry.arraylen())
+        w_php_arry_ref = self.unerase(w_list.lstorage)
+        w_php_item = w_item.to_php(interp)
+        w_php_arry = w_php_arry_ref.deref_temp()
+        w_php_next_idx = php_space.wrap(w_php_arry.arraylen())
 
-        wphp_arry_ref.setitem_ref(php_space, wphp_next_idx, wphp_item)
+        w_php_arry_ref.setitem_ref(php_space, w_php_next_idx, w_php_item)
 
 # The following types make the PHP array iterators iterable at the RPython
 # level so that we can use create_iterator_classes().
@@ -294,15 +294,15 @@ class W_ArrayKeyIteratorWrap(object):
 
     _immutable_fields_ = ["interp", "w_php_arry", "self.itr"]
 
-    def __init__(self, interp, wphp_arry_ref):
+    def __init__(self, interp, w_php_arry_ref):
 
-        wphp_arry = wphp_arry_ref.deref_temp()
+        w_php_arry = w_php_arry_ref.deref_temp()
         self.interp = interp
 
-        if isinstance(wphp_arry, W_ListArrayObject):
-            self.itr = ListArrayIteratorRef(interp.space, wphp_arry_ref)
-        elif isinstance(wphp_arry, W_RDictArrayObject):
-            self.itr = RDictArrayIteratorRef(interp.space, wphp_arry_ref)
+        if isinstance(w_php_arry, W_ListArrayObject):
+            self.itr = ListArrayIteratorRef(interp.space, w_php_arry_ref)
+        elif isinstance(w_php_arry, W_RDictArrayObject):
+            self.itr = RDictArrayIteratorRef(interp.space, w_php_arry_ref)
         else:
             assert False # can't happen
 
@@ -315,15 +315,15 @@ class W_ArrayValIteratorWrap(object):
 
     _immutable_fields_ = ["interp", "w_php_arry", "self.itr"]
 
-    def __init__(self, interp, wphp_arry_ref):
+    def __init__(self, interp, w_php_arry_ref):
 
-        wphp_arry = wphp_arry_ref.deref_temp()
+        w_php_arry = w_php_arry_ref.deref_temp()
         self.interp = interp
 
-        if isinstance(wphp_arry, W_ListArrayObject):
-            self.itr = ListArrayIteratorRef(interp.space, wphp_arry_ref)
-        elif isinstance(wphp_arry, W_RDictArrayObject):
-            self.itr = RDictArrayIteratorRef(interp.space, wphp_arry_ref)
+        if isinstance(w_php_arry, W_ListArrayObject):
+            self.itr = ListArrayIteratorRef(interp.space, w_php_arry_ref)
+        elif isinstance(w_php_arry, W_RDictArrayObject):
+            self.itr = RDictArrayIteratorRef(interp.space, w_php_arry_ref)
         else:
             assert False # can't happen
 
@@ -336,15 +336,15 @@ class W_ArrayItemIteratorWrap(object):
 
     _immutable_fields_ = ["interp", "w_php_arry", "self.itr"]
 
-    def __init__(self, interp, wphp_arry_ref):
+    def __init__(self, interp, w_php_arry_ref):
 
-        wphp_arry = wphp_arry_ref.deref_temp()
+        w_php_arry = w_php_arry_ref.deref_temp()
         self.interp = interp
 
-        if isinstance(wphp_arry, W_ListArrayObject):
-            self.itr = ListArrayIteratorRef(interp.space, wphp_arry_ref)
-        elif isinstance(wphp_arry, W_RDictArrayObject):
-            self.itr = RDictArrayIteratorRef(interp.space, wphp_arry_ref)
+        if isinstance(w_php_arry, W_ListArrayObject):
+            self.itr = ListArrayIteratorRef(interp.space, w_php_arry_ref)
+        elif isinstance(w_php_arry, W_RDictArrayObject):
+            self.itr = RDictArrayIteratorRef(interp.space, w_php_arry_ref)
         else:
             assert False # can't happen
 
@@ -371,20 +371,20 @@ class WrappedPHPArrayDictStrategy(DictStrategy):
         interp = self.space.get_php_interp()
         py_space = self.space
 
-        wphp_arry = self.unerase(w_dict.dstorage)
-        wphp_key = w_key.to_php(interp)
-        return interp.space.getitem(wphp_arry, wphp_key).to_py(interp)
+        w_php_arry = self.unerase(w_dict.dstorage)
+        w_php_key = w_key.to_php(interp)
+        return interp.space.getitem(w_php_arry, w_php_key).to_py(interp)
 
     def setitem(self, w_dict, w_key, w_value):
         # XXX again with the implicit cast on the key if not str or int
         interp = self.space.get_php_interp()
         py_space, php_space = self.space, interp.space
 
-        wphp_arry_ref = self.unerase(w_dict.dstorage)
-        wphp_key = w_key.to_php(interp)
-        wphp_value = w_value.to_php(interp)
+        w_php_arry_ref = self.unerase(w_dict.dstorage)
+        w_php_key = w_key.to_php(interp)
+        w_php_value = w_value.to_php(interp)
 
-        wphp_arry_ref.setitem_ref(php_space, wphp_key, wphp_value)
+        w_php_arry_ref.setitem_ref(php_space, w_php_key, w_php_value)
 
     def wrapkey(space, key):
         return key.to_py(space.get_php_interp())
@@ -393,33 +393,33 @@ class WrappedPHPArrayDictStrategy(DictStrategy):
         return val.to_py(space.get_php_interp())
 
     def length(self, w_dict):
-        wphp_arry = self.unerase(w_dict.dstorage).deref_temp()
-        return wphp_arry.arraylen()
+        w_php_arry = self.unerase(w_dict.dstorage).deref_temp()
+        return w_php_arry.arraylen()
 
     def getiterkeys(self, w_dict):
-        wphp_arry = self.unerase(w_dict.dstorage)
-        return W_ArrayKeyIteratorWrap(self.space.get_php_interp(), wphp_arry)
+        w_php_arry = self.unerase(w_dict.dstorage)
+        return W_ArrayKeyIteratorWrap(self.space.get_php_interp(), w_php_arry)
 
     def getitervalues(self, w_dict):
-        wphp_arry = self.unerase(w_dict.dstorage)
-        return W_ArrayValIteratorWrap(self.space.get_php_interp(), wphp_arry)
+        w_php_arry = self.unerase(w_dict.dstorage)
+        return W_ArrayValIteratorWrap(self.space.get_php_interp(), w_php_arry)
 
     def getiteritems(self, w_dict):
-        wphp_arry = self.unerase(w_dict.dstorage)
-        return W_ArrayItemIteratorWrap(self.space.get_php_interp(), wphp_arry)
+        w_php_arry = self.unerase(w_dict.dstorage)
+        return W_ArrayItemIteratorWrap(self.space.get_php_interp(), w_php_arry)
 
     def as_list(self, w_dict):
         """ 'Cast' a PHP array in Python dict form into Python list form """
 
         interp = self.space.get_php_interp()
-        wphp_arry_ref = self.unerase(w_dict.dstorage)
-        return make_wrapped_int_key_php_array(interp, wphp_arry_ref)
+        w_php_arry_ref = self.unerase(w_dict.dstorage)
+        return make_wrapped_int_key_php_array(interp, w_php_arry_ref)
 
 create_iterator_classes(WrappedPHPArrayDictStrategy)
 
-def make_wrapped_mixed_key_php_array(interp, wphp_arry_ref):
+def make_wrapped_mixed_key_php_array(interp, w_php_arry_ref):
     strategy = interp.py_space.fromcache(WrappedPHPArrayDictStrategy)
-    storage = strategy.erase(wphp_arry_ref)
+    storage = strategy.erase(w_php_arry_ref)
 
     return WPy_DictMultiObject(interp.py_space, strategy, storage)
 
