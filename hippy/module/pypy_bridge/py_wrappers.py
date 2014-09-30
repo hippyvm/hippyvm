@@ -429,8 +429,8 @@ class W_PRef(W_Root):
 
     def __init__(self, space, w_py_val):
         from hippy.objects.reference import W_Reference
-        w_ph_val = w_py_val.to_php(space.get_php_interp())
-        self.ref = W_Reference(w_ph_val)
+        w_php_val = w_py_val.to_php(space.get_php_interp())
+        self.ref = W_Reference(w_php_val)
         self.py_space = space
 
     def deref(self):
