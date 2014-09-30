@@ -52,14 +52,13 @@ class W_PHPProxyGeneric(W_Root):
             return self.wph_inst is other.wph_inst
         return False
 
-    # XXX unwrap spec
-    def descr_get(self, w_name):
+    @unwrap_spec(name=str)
+    def descr_get(self, name):
         """ Python is asking for an attribute of a proxied PHP object """
         interp = self.interp
         php_space = interp.space
         py_space = interp.pyspace
 
-        name = py_space.str_w(w_name)
         wph_inst = self.wph_inst
         wph_target = wph_inst.getattr(interp, name, None, fail_with_none=True)
 
@@ -74,13 +73,12 @@ class W_PHPProxyGeneric(W_Root):
                         "Wrapped PHP instance has no attribute '%s'" % name)
         return wph_target.to_py(interp)
 
-    # XXX unwrap spec
-    def descr_set(self, w_name, w_obj):
+    @unwrap_spec(name=str)
+    def descr_set(self, name, w_obj):
         interp = self.interp
         php_space = self.interp.space
         py_space = self.interp.pyspace
 
-        name = py_space.str_w(w_name)
         wph_inst = self.wph_inst
         self.wph_inst.setattr(interp, name, w_obj.to_php(interp), None)
 
