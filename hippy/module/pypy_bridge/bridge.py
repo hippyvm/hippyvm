@@ -105,7 +105,14 @@ def import_py_mod(interp, modname):
                              py_space.wrap("__import__ not found"))
 
     w_modname = py_space.wrap(modname)
-    w_obj = py_space.call_function(w_import, w_modname, py_space.w_None,
-                                  py_space.w_None, py_space.wrap(modname.split(".")[-1]))
+    try:
+        w_obj = py_space.call_function(w_import, w_modname, py_space.w_None,
+                py_space.w_None, py_space.wrap(modname.split(".")[-1]))
+    except OperationError as e: # import failed, pass exn up to PHP
+        e.normalize_exception(py_space)
+        w_py_exn = e.get_w_value(py_space)
+        w_php_exn = w_py_exn.to_php(interp)
+        from hippy.error import Throw
+        raise Throw(w_php_exn)
 
     return w_obj.to_php(interp)

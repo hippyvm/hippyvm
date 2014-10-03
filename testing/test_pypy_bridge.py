@@ -10,6 +10,19 @@ class TestPyPyBridge(BaseTestInterpreter):
         ''')
         assert php_space.int_w(output[0]) == 8
 
+    def test_import_py_mod_fails(self):
+        php_space = self.space
+        output = self.run('''
+            try {
+                $m = import_py_mod("__ThIs_DoEs_NoT_ExIsT");
+                echo "FAIL";
+            } catch(PyException $e) {
+                echo $e->getMessage();
+            }
+        ''')
+        err_s = "No module named __ThIs_DoEs_NoT_ExIsT"
+        assert php_space.str_w(output[0]) == err_s
+
     def test_import_py_mod_attr(self):
         import math
         php_space = self.space
