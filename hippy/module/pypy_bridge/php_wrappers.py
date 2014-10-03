@@ -341,8 +341,6 @@ class W_PyBridgeDictProxy(W_ArrayObject):
 class W_PyException(W_ExceptionObject):
     """ Wraps up a Python exception """
 
-    _immutable_fields_ = ["w_py_exn"]
-
     def __init__(self, klass, dct_w):
         W_ExceptionObject.__init__(self, klass, dct_w)
         self.w_py_exn = None
