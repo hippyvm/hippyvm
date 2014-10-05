@@ -341,7 +341,7 @@ static const uint32_t SHA256_K[64] = {
 /* {{{ SHA256Init
  * SHA256 initialization. Begins an SHA256 operation, writing a new context.
  */
-void SHA256Init(SHA256_CTX * context)
+void SHA256Init(PHP_SHA256_CTX * context)
 {
 	context->count[0] = context->count[1] = 0;
 	/* Load magic initialization constants.
@@ -499,7 +499,7 @@ void SHA224Final(unsigned char digest[28], SHA224_CTX * context)
    operation, processing another message block, and updating the
    context.
  */
-void SHA256Update(SHA256_CTX * context, const unsigned char *input, unsigned int inputLen)
+void SHA256Update(PHP_SHA256_CTX * context, const unsigned char *input, unsigned int inputLen)
 {
 	unsigned int i, index, partLen;
 
@@ -538,7 +538,7 @@ void SHA256Update(SHA256_CTX * context, const unsigned char *input, unsigned int
    SHA256 finalization. Ends an SHA256 message-digest operation, writing the
    the message digest and zeroizing the context.
  */
-void SHA256Final(unsigned char digest[32], SHA256_CTX * context)
+void SHA256Final(unsigned char digest[32], PHP_SHA256_CTX * context)
 {
 	unsigned char bits[8];
 	unsigned int index, padLen;
@@ -799,7 +799,7 @@ void SHA384Final(unsigned char digest[48], SHA384_CTX * context)
 /* {{{ SHA512Init
  * SHA512 initialization. Begins an SHA512 operation, writing a new context.
  */
-void SHA512Init(SHA512_CTX * context)
+void SHA512Init(PHP_SHA512_CTX * context)
 {
 	context->count[0] = context->count[1] = 0;
 	/* Load magic initialization constants.
@@ -820,7 +820,7 @@ void SHA512Init(SHA512_CTX * context)
    operation, processing another message block, and updating the
    context.
  */
-void SHA512Update(SHA512_CTX * context, const unsigned char *input, unsigned int inputLen)
+void SHA512Update(PHP_SHA512_CTX * context, const unsigned char *input, unsigned int inputLen)
 {
 	unsigned int i, index, partLen;
 
@@ -859,7 +859,7 @@ void SHA512Update(SHA512_CTX * context, const unsigned char *input, unsigned int
    SHA512 finalization. Ends an SHA512 message-digest operation, writing the
    the message digest and zeroizing the context.
  */
-void SHA512Final(unsigned char digest[64], SHA512_CTX * context)
+void SHA512Final(unsigned char digest[64], PHP_SHA512_CTX * context)
 {
 	unsigned char bits[16];
 	unsigned int index, padLen;

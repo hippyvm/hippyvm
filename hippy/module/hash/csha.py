@@ -22,9 +22,9 @@ class CConfig:
     _compilation_info_ = eci
     SHA1_CTX = platform.Struct('SHA1_CTX', [])
     SHA224_CTX = platform.Struct('SHA224_CTX', [])
-    SHA256_CTX = platform.Struct('SHA256_CTX', [])
+    SHA256_CTX = platform.Struct('PHP_SHA256_CTX', [])
     SHA384_CTX = platform.Struct('SHA384_CTX', [])
-    SHA512_CTX = platform.Struct('SHA512_CTX', [])
+    SHA512_CTX = platform.Struct('PHP_SHA512_CTX', [])
 
 globals().update(platform.configure(CConfig))
 
