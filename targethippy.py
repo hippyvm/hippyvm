@@ -115,12 +115,6 @@ def target(driver, args):
 
     #config.translation.check_str_without_nul = True
 
-    # XXX Translation clash on rsocket, we disable pypy's socket library.
-    # We can't call rsocket functions with different types.
-    # This seems like the correct thing to do for now, since hippy needs
-    # sockets for the fcgi server.
-    pypy_config.objspace.usemodules._socket = False
-
     # Makes C errors, e.g.: XXX
     # implement_18.c: In function
     #    'pypy_g_ccall_XML_ParserCreateNS__arrayPtr_Char':
