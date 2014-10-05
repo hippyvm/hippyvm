@@ -52,11 +52,11 @@ typedef struct {
 	uint32_t state[8];		/* state */
 	uint32_t count[2];		/* number of bits, modulo 2^64 */
 	unsigned char buffer[64];	/* input buffer */
-} SHA256_CTX;
+} PHP_SHA256_CTX;
 
-void SHA256Init(SHA256_CTX *);
-void SHA256Update(SHA256_CTX *, const unsigned char *, unsigned int);
-void SHA256Final(unsigned char[32], SHA256_CTX *);
+void SHA256Init(PHP_SHA256_CTX *);
+void SHA256Update(PHP_SHA256_CTX *, const unsigned char *, unsigned int);
+void SHA256Final(unsigned char[32], PHP_SHA256_CTX *);
 
 /* SHA384 context */
 typedef struct {
@@ -74,8 +74,8 @@ typedef struct {
 	uint64_t state[8];	/* state */
 	uint64_t count[2];	/* number of bits, modulo 2^128 */
 	unsigned char buffer[128];	/* input buffer */
-} SHA512_CTX;
+} PHP_SHA512_CTX;
 
-void SHA512Init(SHA512_CTX *);
-void SHA512Update(SHA512_CTX *, const unsigned char *, unsigned int);
-void SHA512Final(unsigned char[64], SHA512_CTX *);
+void SHA512Init(PHP_SHA512_CTX *);
+void SHA512Update(PHP_SHA512_CTX *, const unsigned char *, unsigned int);
+void SHA512Final(unsigned char[64], PHP_SHA512_CTX *);
