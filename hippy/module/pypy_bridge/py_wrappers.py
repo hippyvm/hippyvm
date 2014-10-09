@@ -110,17 +110,53 @@ class W_PHPProxyGeneric(W_Root):
             w_php_rv = w_php_callable.call_args(self.interp, w_php_args_elems)
             return w_php_rv.to_py(self.interp)
 
-    def descr_add(self, space, w_other):
+    def _descr_generic(self, space, w_other, name):
         interp = self.interp
         php_space = interp.space
         w_php_inst = self.w_php_inst
         try:
-            w_php_target = w_php_inst.getmeth(php_space, "__add__", None)
+            w_php_target = w_php_inst.getmeth(php_space, name, None)
         except VisibilityError:
             _raise_py_bridgeerror(interp.py_space,
-                    "Wrapped PHP instance has no __add__ method")
+                    "Wrapped PHP instance has no %s method" % name)
         else:
             return w_php_target.call_args(interp, [w_other.to_php(interp)]).to_py(interp)
+
+    def descr_add(self, space, w_other):
+        return self._descr_generic(space, w_other, "__add__")
+
+    def descr_sub(self, space, w_other):
+        return self._descr_generic(space, w_other, "__sub__")
+
+    def descr_mul(self, space, w_other):
+        return self._descr_generic(space, w_other, "__mul__")
+
+    def descr_floordiv(self, space, w_other):
+        return self._descr_generic(space, w_other, "__floordiv__")
+
+    def descr_mod(self, space, w_other):
+        return self._descr_generic(space, w_other, "__mod__")
+
+    def descr_divmod(self, space, w_other):
+        return self._descr_generic(space, w_other, "__divmod__")
+
+    def descr_pow(self, space, w_other):
+        return self._descr_generic(space, w_other, "__pow__")
+
+    def descr_lshift(self, space, w_other):
+        return self._descr_generic(space, w_other, "__lshift__")
+
+    def descr_rshift(self, space, w_other):
+        return self._descr_generic(space, w_other, "__rshift__")
+
+    def descr_and(self, space, w_other):
+        return self._descr_generic(space, w_other, "__and__")
+
+    def descr_xor(self, space, w_other):
+        return self._descr_generic(space, w_other, "__xor__")
+
+    def descr_or(self, space, w_other):
+        return self._descr_generic(space, w_other, "__or__")
 
     def descr_eq(self, space, w_other):
         if isinstance(w_other, W_PHPProxyGeneric):
@@ -138,6 +174,17 @@ W_PHPProxyGeneric.typedef = TypeDef("PhBridgeProxy",
     __getattr__ = interp2app(W_PHPProxyGeneric.descr_get),
     __setattr__ = interp2app(W_PHPProxyGeneric.descr_set),
     __add__ = interp2app(W_PHPProxyGeneric.descr_add),
+    __sub__ = interp2app(W_PHPProxyGeneric.descr_sub),
+    __mul__ = interp2app(W_PHPProxyGeneric.descr_mul),
+    __floordiv__ = interp2app(W_PHPProxyGeneric.descr_floordiv),
+    __mod__ = interp2app(W_PHPProxyGeneric.descr_mod),
+    __divmod__ = interp2app(W_PHPProxyGeneric.descr_divmod),
+    __pow__ = interp2app(W_PHPProxyGeneric.descr_pow),
+    __lshift__ = interp2app(W_PHPProxyGeneric.descr_lshift),
+    __rshift__ = interp2app(W_PHPProxyGeneric.descr_rshift),
+    __and__ = interp2app(W_PHPProxyGeneric.descr_and),
+    __xor__ = interp2app(W_PHPProxyGeneric.descr_xor),
+    __or__ = interp2app(W_PHPProxyGeneric.descr_or),
     __eq__ = interp2app(W_PHPProxyGeneric.descr_eq),
     __ne__ = interp2app(W_PHPProxyGeneric.descr_ne),
 )
