@@ -106,6 +106,7 @@ def main(filename, rest_of_args, cgi, gcdump, debugger_pipes=(-1, -1),
     space = getspace()
     if py_space is not None:
         py_space.startup() # must be called once prior to use
+
     interp = Interpreter(space, py_space=py_space)
 
     try:
@@ -200,9 +201,14 @@ if __name__ == '__main__':
     from pypy.config.pypyoption import get_pypy_config
     pypy_config = get_pypy_config(translating=False)
 
-    from pypy.config.pypyoption import enable_allworkingmodules
+
+    # Enabling all modules takes a while.
+    # It also maxes out the recursion limit on OpenBSD, even with a massive
+    # recursion limit and stack size set. XXX fix!
+    #from pypy.config.pypyoption import enable_allworkingmodules
+    #enable_allworkingmodules(pypy_config)
+
     from pypy.config.pypyoption import enable_translationmodules
-    enable_allworkingmodules(pypy_config)
     enable_translationmodules(pypy_config)
 
     from pypy.objspace.std import StdObjSpace as PyStdObjSpace
