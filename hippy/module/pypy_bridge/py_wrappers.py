@@ -110,6 +110,17 @@ class W_PHPProxyGeneric(W_Root):
             w_php_rv = w_php_callable.call_args(self.interp, w_php_args_elems)
             return w_php_rv.to_py(self.interp)
 
+    def descr_add(self, space, w_other):
+        interp = self.interp
+        php_space = interp.space
+        w_php_inst = self.w_php_inst
+        try:
+            w_php_target = w_php_inst.getmeth(php_space, "__add__", None)
+        except VisibilityError:
+            _raise_py_bridgeerror(interp.py_space,
+                    "Wrapped PHP instance has no __add__ method")
+        return w_php_target.call_args(interp, [w_other.to_php(interp)]).to_py(interp)
+
     def descr_eq(self, space, w_other):
         if isinstance(w_other, W_PHPProxyGeneric):
             php_interp = self.interp
@@ -125,6 +136,7 @@ W_PHPProxyGeneric.typedef = TypeDef("PhBridgeProxy",
     __call__ = interp2app(W_PHPProxyGeneric.descr_call),
     __getattr__ = interp2app(W_PHPProxyGeneric.descr_get),
     __setattr__ = interp2app(W_PHPProxyGeneric.descr_set),
+    __add__ = interp2app(W_PHPProxyGeneric.descr_add),
     __eq__ = interp2app(W_PHPProxyGeneric.descr_eq),
     __ne__ = interp2app(W_PHPProxyGeneric.descr_ne),
 )
