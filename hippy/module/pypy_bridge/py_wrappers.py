@@ -119,7 +119,8 @@ class W_PHPProxyGeneric(W_Root):
         except VisibilityError:
             _raise_py_bridgeerror(interp.py_space,
                     "Wrapped PHP instance has no __add__ method")
-        return w_php_target.call_args(interp, [w_other.to_php(interp)]).to_py(interp)
+        else:
+            return w_php_target.call_args(interp, [w_other.to_php(interp)]).to_py(interp)
 
     def descr_eq(self, space, w_other):
         if isinstance(w_other, W_PHPProxyGeneric):
