@@ -19,7 +19,7 @@ class PHP_Scope(WPy_Root):
     def py_lookup(self, n):
         """Lookup 'n' in this scope and return it as a PyPy object or None
         if not found."""
-    
+
         ph_interp = self.ph_interp
         ph_frame = self.ph_frame
 
