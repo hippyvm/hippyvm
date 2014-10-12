@@ -83,6 +83,7 @@ class W_EmbeddedPyCallable(W_InvokeCall):
         W_InvokeCall.__init__(self, None, None, None)
         self.w_py_func = w_py_func
 
+    @jit.unroll_safe
     def call_args(self, interp, args_w,
             w_this=None, thisclass=None, closureargs=None):
 
