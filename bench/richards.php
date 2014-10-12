@@ -436,6 +436,6 @@ $res = $r->run($number_of_runs);
 $t1 = microtime(true);
 
 $total = $t1 - $t0;
-printf($total * 1000 / $number_of_runs);
+printf("Richards (%s) took %.2fms, %.2fms per run\n", $number_of_runs, $total * 1000, $total * 1000 / $number_of_runs);
 
 ?>

@@ -35,7 +35,7 @@ There are two alternative ways to achieve this, both equally functional:
 #### 3. Get the build dependencies:
 
     pip install -r requirements.txt
-    sudo apt-get install libmysqlclient-dev libpcre3-dev librhash-dev libbz2-dev php5-cli
+    sudo apt-get install libmysqlclient-dev libpcre3-dev librhash-dev libbz2-dev php5-cli libffi-dev
 
 
 #### 4. The building process goes like this:
