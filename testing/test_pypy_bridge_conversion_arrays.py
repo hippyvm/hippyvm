@@ -736,3 +736,42 @@ class TestPyPyBridgeArrayConversionsInterp(BaseTestInterpreter):
         assert py_space.str_w(py_space.getitem(w_py_innr, consts[1])) == "a"
 
     # XXX Test mutating the list
+
+    def test_ph_array_of_py_list(self, interp):
+        php_space, py_space = interp.space, interp.py_space
+
+        input = [1, 2, "wibble", "chunks", True]
+        w_php_expect = php_space.new_array_from_list(
+                [ php_space.wrap(x) for x in input ])
+
+        w_py_list = py_space.newlist([ py_space.wrap(x) for x in input ])
+        w_php_actual = w_py_list.to_php(interp)
+
+        assert php_space.is_true(php_space.eq(w_php_actual, w_php_expect))
+
+    @pytest.mark.xfail
+    def test_py_list_to_php_array_nested(self, interp):
+        php_space, py_space = interp.space, interp.py_space
+
+        # Test the following list converts OK:
+        # [1, 2, ["a", "b", "c"]]
+
+        input_inner = ["a", "b", "c"]
+        w_php_input_inner = [ php_space.wrap(x) for x in input_inner ]
+        w_php_expect_inner = php_space.new_array_from_list(w_php_input_inner)
+
+        input_outer = [1, 2] # and we append the inner list also
+        w_php_input_outer = [ php_space.wrap(x) for x in input_outer ] + \
+                [ w_php_expect_inner ]
+        w_php_expect_outer = php_space.new_array_from_list(w_php_input_outer)
+
+        w_py_input_inner = [ py_space.wrap(x) for x in input_inner ]
+        w_py_list_inner = py_space.newlist(w_py_input_inner)
+
+        w_py_list_outer = [ py_space.wrap(x) for x in input_outer ] + \
+                [ w_py_list_inner ]
+        w_py_list_outer = py_space.newlist(w_py_list_outer)
+
+        w_php_got = w_py_list_outer.to_php(interp)
+        assert php_space.is_true(php_space.eq(w_php_expect_outer, w_php_got))
+
