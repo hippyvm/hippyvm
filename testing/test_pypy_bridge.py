@@ -412,7 +412,6 @@ class TestPyPyBridge(BaseTestInterpreter):
         assert php_space.str_w(output[0]) == "t-minus-10"
 
     def test_return_function_to_php(self):
-        pytest.skip("broken in some bizarre way. calling fdopen!")
         php_space = self.space
         output = self.run('''
             $src = <<<EOD
@@ -422,12 +421,8 @@ class TestPyPyBridge(BaseTestInterpreter):
             EOD;
 
             $cwd = embed_py_func($src);
-
-            echo "111111\n";
             $x = $cwd();
-            echo "222222\n";
             echo $x();
-            echo "333333\n";
         ''')
         import os
         assert php_space.int_w(output[0]) == os.getpid()
