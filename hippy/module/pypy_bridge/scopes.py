@@ -107,10 +107,21 @@ class Py_Scope(WPHP_Root):
         py_interp = self.py_interp
 
         # Look in regular Python scope
-        py_frame.fast2locals()
-        py_v = py_interp.finditem_str(py_frame.w_locals, n)
-        if py_v is not None:
-            return py_v
+        if py_frame.w_locals is None:
+            # If no-one has called fast2locals, we can bypass the slow
+            # dictionary lookup by accessing locals_stack_w directly.
+            co = py_frame.pycode
+            try:
+                off = co.getvarnames().index(n)
+            except ValueError:
+                pass
+            else:
+                return py_frame.locals_stack_w[off]
+        else:
+            py_frame.fast2locals()
+            py_v = py_interp.finditem_str(py_frame.w_locals, n)
+            if py_v is not None:
+                return py_v
 
         # Look in Python globals
         py_v = py_interp.finditem_str(py_frame.w_globals, n)
