@@ -419,6 +419,24 @@ class TestPyPyBridgeScope(BaseTestInterpreter):
         ''')
         assert php_space.int_w(output[0]) == 45
 
+    def test_py2php_cross_lang_closure_is_late_binding3(self):
+        php_space = self.space
+        output = self.run('''
+            $src = <<<EOD
+            def f():
+                x = 44
+                php_src = "function g() { return \$x; }"
+                g = embed_php_func(php_src)
+                x += 1
+                return g
+            EOD;
+            $f = embed_py_func($src);
+            $g = $f();
+
+            echo($g());
+        ''')
+        assert php_space.int_w(output[0]) == 45
+
     def test_get_php_range(self):
         php_space = self.space
         output = self.run('''
