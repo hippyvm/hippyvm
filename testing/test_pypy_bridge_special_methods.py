@@ -16,5 +16,4 @@ class TestPyPyBridgeScope(BaseTestInterpreter):
 
             echo($f());
         ''')
-        print output
         assert self.space.str_w(output[0]) == "C.__toString"
