@@ -688,3 +688,51 @@ class TestPyPyBridgeArrayConversionsInstances(BaseTestInterpreter):
             echo($a->v);
         ''')
         assert php_space.int_w(output[0]) == 666
+
+class TestPyPyBridgeArrayConversionsInterp(BaseTestInterpreter):
+
+    @pytest.fixture
+    def interp(self):
+        return self.engine.new_interp(None, None)
+
+    def test_py_list_of_ph_array(self, interp):
+        php_space, py_space = interp.space, interp.py_space
+
+        input = [1, 2, 3, "a", "b", "c" ]
+        w_php_elems = [ php_space.wrap(i) for i in input ]
+        w_php_arr = php_space.new_array_from_list(w_php_elems)
+        w_py_converted = w_php_arr.to_py(interp).descr_as_list(interp)
+
+        w_py_expect = py_space.newlist([ py_space.wrap(i) for i in input ])
+        assert py_space.is_true(py_space.eq(w_py_converted, w_py_expect))
+
+    def test_py_list_of_ph_array_nested(self, interp):
+        php_space, py_space = interp.space, interp.py_space
+
+        # We will build a PHP list looking like this:
+        # [ 666, False, [ 1, "a" ]]
+
+        # inner list
+        input_inner = [1, "a"]
+        w_php_elems_inner = [ php_space.wrap(i) for i in input_inner ]
+        w_php_arr_inner = php_space.new_array_from_list(w_php_elems_inner)
+
+        # outer list
+        input_outer = [666, False]
+        w_php_elems_outer = [ php_space.wrap(i) for i in input_outer ]
+        w_php_arr_outer = php_space.new_array_from_list(w_php_elems_outer)
+        w_php_arr_outer.appenditem_inplace(php_space, w_php_arr_inner)
+
+        w_py_l = w_php_arr_outer.to_py(interp)
+
+        consts = [ py_space.wrap(i) for i in range(3) ]
+
+        assert py_space.int_w(py_space.len(w_py_l)) == 3
+        assert py_space.int_w(py_space.getitem(w_py_l, consts[0])) == 666
+        assert py_space.bool_w(py_space.getitem(w_py_l, consts[1])) == False
+
+        w_py_innr = py_space.getitem(w_py_l, consts[2])
+        assert py_space.int_w(py_space.getitem(w_py_innr, consts[0])) == 1
+        assert py_space.str_w(py_space.getitem(w_py_innr, consts[1])) == "a"
+
+    # XXX Test mutating the list
