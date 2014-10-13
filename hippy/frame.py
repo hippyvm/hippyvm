@@ -270,11 +270,10 @@ class Frame(object):
 
     def lookup_name(self, name):
         """Get a reference to the variable `$name`."""
-        try:
-            no = jit.promote(self.bytecode).var_to_pos[name]
-        except KeyError:
+        no = self.bytecode.lookup_var_pos(name)
+        if no == -1:
             if self.extra_variables is None:
-                self.extra_variables = new_rdict()
+                return None
             try:
                 ph_v = self.extra_variables[name]
             except KeyError:
@@ -284,9 +283,8 @@ class Frame(object):
 
     def get_ref_by_name(self, name, create_new=True):
         """Get or create a reference to the variable `$name`."""
-        try:
-            no = self.bytecode.var_to_pos[name]
-        except KeyError:
+        no = self.bytecode.lookup_var_pos(name)
+        if no == -1:
             if self.extra_variables is None:
                 if not create_new:
                     return None
@@ -299,30 +297,26 @@ class Frame(object):
                 w_ref = self.interp.space.empty_ref()
                 self.extra_variables[name] = w_ref
             return w_ref
-        else:
-            return self.load_ref(no)
+        return self.load_ref(no)
 
     def lookup_ref_by_name(self, name):
         """Get an existing reference to the variable `$name`.
 
         Returns None if the variable does not exist.
         """
-        try:
-            no = self.bytecode._lookup_pos(name)
-        except KeyError:
+        no = self.bytecode.lookup_var_pos(name)
+        if no == -1:
             if self.extra_variables is None:
                 return None
             try:
                 return self.extra_variables[name]
             except KeyError:
                 return None
-        else:
-            return self.load_ref(no)
+        return self.load_ref(no)
 
     def set_ref_by_name(self, name, r_value):
-        try:
-            no = self.bytecode.var_to_pos[name]
-        except KeyError:
+        no = self.bytecode.lookup_var_pos(name)
+        if no == -1:
             if self.extra_variables is None:
                 self.extra_variables = new_rdict()
             self.extra_variables[name] = r_value
@@ -331,9 +325,8 @@ class Frame(object):
             self.vars_w[no] = r_value
 
     def unset_ref_by_name(self, name):
-        try:
-            no = self.bytecode.var_to_pos[name]
-        except KeyError:
+        no = self.bytecode.lookup_var_pos(name)
+        if no == -1:
             if self.extra_variables is not None:
                 try:
                     del self.extra_variables[name]
