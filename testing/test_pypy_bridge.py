@@ -63,16 +63,6 @@ class TestPyPyBridge(BaseTestInterpreter):
         ''')
         assert php_space.int_w(output[0]) == 666
 
-    def test_call_nonexist(self):
-        pytest.skip("broken")
-        php_space = self.space
-        with pytest.raises(Exception) as excinfo:
-            output = self.run('''
-            $m = embed_py_mod("mymod", "def f(x): return x+1");
-            echo($m->g(665));
-            ''')
-        assert excinfo.value.message.startswith("No such callable")
-
     def test_multiple_modules(self):
         php_space = self.space
         output = self.run('''
@@ -333,20 +323,6 @@ class TestPyPyBridge(BaseTestInterpreter):
         ''')
         assert php_space.str_w(output[0]) == "False True"
 
-    def test_pystone(self):
-        pytest.skip("need to enable time module in pypy")
-        output = self.run('''
-            $src = <<<EOD
-            def mystone():
-                    from test import pystone
-                    pystone.main()
-            EOD;
-
-            $mystone = embed_py_func($src);
-            $mystone();
-        ''')
-        # just check it runs
-
     def test_callback_to_php(self):
         php_space = self.space
         output = self.run('''
@@ -436,7 +412,6 @@ class TestPyPyBridge(BaseTestInterpreter):
         assert php_space.str_w(output[0]) == "t-minus-10"
 
     def test_return_function_to_php(self):
-        pytest.skip("broken in some bizarre way. calling fdopen!")
         php_space = self.space
         output = self.run('''
             $src = <<<EOD
@@ -446,12 +421,8 @@ class TestPyPyBridge(BaseTestInterpreter):
             EOD;
 
             $cwd = embed_py_func($src);
-
-            echo "111111\n";
             $x = $cwd();
-            echo "222222\n";
             echo $x();
-            echo "333333\n";
         ''')
         import os
         assert php_space.int_w(output[0]) == os.getpid()
