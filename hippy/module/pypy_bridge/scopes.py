@@ -27,15 +27,15 @@ class PHP_Scope(WPy_Root):
         if ph_v is not None:
             return ph_v.to_py(ph_interp)
 
-        ph_v = ph_interp.lookup_constant(n)
-        if ph_v is not None:
-            return ph_v.to_py(ph_interp)
-
         ph_v = ph_interp.lookup_function(n)
         if ph_v is not None:
             return ph_v.to_py(ph_interp)
 
         ph_v = ph_interp.lookup_class_or_intf(n)
+        if ph_v is not None:
+            return ph_v.to_py(ph_interp)
+
+        ph_v = ph_interp.lookup_constant(n)
         if ph_v is not None:
             return ph_v.to_py(ph_interp)
 
