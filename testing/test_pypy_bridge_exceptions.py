@@ -182,3 +182,68 @@ class TestPyPyBridgeExceptions(BaseTestInterpreter):
         err_s = "XXX"
         assert php_space.str_w(output[0]) == err_s
 
+    def test_using_kwargs_to_a_php_func_raises(self):
+        php_space = self.space
+        output = self.run('''
+        function php_func($a) {
+        }
+
+        $src = <<<EOD
+        def py_func():
+            try:
+                php_func(a=1)
+                return "test fail"
+            except BridgeError as e:
+                return e.message
+        EOD;
+        $py_func = embed_py_func($src);
+        echo($py_func());
+        ''')
+        err_s = "Cannot use kwargs when calling PHP functions"
+        assert php_space.str_w(output[0]) == err_s
+
+    def test_calling_a_non_callable_php_instance_in_py_raises(self):
+        php_space = self.space
+        output = self.run('''
+        class A {
+                // has no __invoke
+        };
+
+        $src = <<<EOD
+        def py_func(inst):
+            try:
+                return inst()
+                return "fail"
+            except BridgeError as e:
+                return e.message
+        EOD;
+        $py_func = embed_py_func($src);
+
+        $inst = new A();
+        echo($py_func($inst));
+        ''')
+        err_s = "Wrapped PHP instance is not callable"
+        assert php_space.str_w(output[0]) == err_s
+
+    def test_calling_a_callable_php_instance_with_kwargs_in_py_raises(self):
+        php_space = self.space
+        output = self.run('''
+        class A {
+                function __invoke($x) { }
+        };
+
+        $src = <<<EOD
+        def py_func(inst):
+            try:
+                return inst(x=1)
+                return "fail"
+            except BridgeError as e:
+                return e.message
+        EOD;
+        $py_func = embed_py_func($src);
+
+        $inst = new A();
+        echo($py_func($inst));
+        ''')
+        err_s = "Cannot use kwargs with callable PHP instances"
+        assert php_space.str_w(output[0]) == err_s
