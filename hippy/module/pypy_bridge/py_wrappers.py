@@ -110,6 +110,21 @@ class W_PHPProxyGeneric(W_Root):
             w_php_rv = w_php_callable.call_args(self.interp, w_php_args_elems)
             return w_php_rv.to_py(self.interp)
 
+    def _descr_generic_unop(self, space, name):
+        interp = self.interp
+        php_space = interp.space
+        w_php_inst = self.w_php_inst
+        try:
+            w_php_target = w_php_inst.getmeth(php_space, name, None)
+        except VisibilityError:
+            _raise_py_bridgeerror(interp.py_space,
+                    "Wrapped PHP instance has no %s method" % name)
+        else:
+            return w_php_target.call_args(interp, []).to_py(interp)
+
+    def descr_str(self, space):
+        return self._descr_generic_unop(space, "__toString")
+
     def _descr_generic_binop(self, space, w_other, name):
         interp = self.interp
         php_space = interp.space
@@ -173,6 +188,7 @@ W_PHPProxyGeneric.typedef = TypeDef("PhBridgeProxy",
     __call__ = interp2app(W_PHPProxyGeneric.descr_call),
     __getattr__ = interp2app(W_PHPProxyGeneric.descr_get),
     __setattr__ = interp2app(W_PHPProxyGeneric.descr_set),
+    __str__ = interp2app(W_PHPProxyGeneric.descr_str),
     __add__ = interp2app(W_PHPProxyGeneric.descr_add),
     __sub__ = interp2app(W_PHPProxyGeneric.descr_sub),
     __mul__ = interp2app(W_PHPProxyGeneric.descr_mul),
