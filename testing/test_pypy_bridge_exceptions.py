@@ -129,16 +129,21 @@ class TestPyPyBridgeExceptions(BaseTestInterpreter):
         assert php_space.str_w(output[0]) == "explosion"
 
     def test_python_lookup_missing_php_attr(self):
-        pytest.skip("BROKEN")
         php_space = self.space
         output = self.run("""
             $src = <<<EOD
             def ref():
-                return C().x
+                c = C()
+                try:
+                    c.x # boom
+                    return "fails"
+                except BridgeError as e:
+                    return e.message
             EOD;
             $ref = embed_py_func($src);
 
             class C {}
-            $ref();
+            echo($ref());
         """)
-        assert php_space.int_w(output[0]) == 2
+        e_str = "Wrapped PHP instance has no attribute 'x'"
+        assert php_space.str_w(output[0]) == e_str
