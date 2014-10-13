@@ -365,3 +365,13 @@ class TestPyPyBridgeConversions(BaseTestInterpreter):
         ''')
         err_s = "Cannot use kwargs with callable PHP instances"
         assert php_space.str_w(output[0]) == err_s
+
+    @pytest.mark.xfail
+    def test_py_module_is_stringable(self):
+        php_space = self.space
+        output = self.run('''
+        $m = import_py_mod("os");
+        echo($m); // crashes
+        ''')
+        err_s = "XXX" # decide what it should say XXX
+        assert php_space.str_w(output[0]) == err_s
