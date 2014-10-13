@@ -323,20 +323,6 @@ class TestPyPyBridge(BaseTestInterpreter):
         ''')
         assert php_space.str_w(output[0]) == "False True"
 
-    def test_pystone(self):
-        pytest.skip("need to enable time module in pypy")
-        output = self.run('''
-            $src = <<<EOD
-            def mystone():
-                    from test import pystone
-                    pystone.main()
-            EOD;
-
-            $mystone = embed_py_func($src);
-            $mystone();
-        ''')
-        # just check it runs
-
     def test_callback_to_php(self):
         php_space = self.space
         output = self.run('''
