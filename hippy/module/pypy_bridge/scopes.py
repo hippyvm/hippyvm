@@ -58,17 +58,17 @@ class W_PHPGlobalScope(WPy_Root):
     def descr_get(self, w_name):
         ph_interp = self.interp
         py_space = ph_interp.py_space
-
         n = py_space.str_w(w_name)
-        ph_v = ph_interp.lookup_constant(n)
-        if ph_v is not None:
-            return ph_v.to_py(ph_interp)
 
         ph_v = ph_interp.lookup_function(n)
         if ph_v is not None:
             return ph_v.to_py(ph_interp)
 
         ph_v = ph_interp.lookup_class_or_intf(n)
+        if ph_v is not None:
+            return ph_v.to_py(ph_interp)
+
+        ph_v = ph_interp.lookup_constant(n)
         if ph_v is not None:
             return ph_v.to_py(ph_interp)
 
