@@ -166,3 +166,19 @@ class TestPyPyBridgeExceptions(BaseTestInterpreter):
         """)
         e_str = "test"
         assert php_space.str_w(output[0]) == e_str
+
+    @pytest.mark.xfail
+    def test_call_nonexist(self):
+        php_space = self.space
+
+        output = self.run('''
+        $m = import_py_mod("os");
+        try {
+            echo($m->wibble); // nonexistent
+        } catch(BridgeException $e) {
+            echo($e->getMessage());
+        }
+        ''')
+        err_s = "XXX"
+        assert php_space.str_w(output[0]) == err_s
+

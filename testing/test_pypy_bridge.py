@@ -63,16 +63,6 @@ class TestPyPyBridge(BaseTestInterpreter):
         ''')
         assert php_space.int_w(output[0]) == 666
 
-    def test_call_nonexist(self):
-        pytest.skip("broken")
-        php_space = self.space
-        with pytest.raises(Exception) as excinfo:
-            output = self.run('''
-            $m = embed_py_mod("mymod", "def f(x): return x+1");
-            echo($m->g(665));
-            ''')
-        assert excinfo.value.message.startswith("No such callable")
-
     def test_multiple_modules(self):
         php_space = self.space
         output = self.run('''
