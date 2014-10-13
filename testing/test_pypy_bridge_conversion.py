@@ -94,27 +94,6 @@ class TestPyPyBridgeConversions(BaseTestInterpreter):
             assert w_php_boolean.boolval == b
             assert w_php_boolean.tp == interp.space.tp_bool
 
-    def test_ph_closure_of_py_function(self):
-        interp = self.new_interp()
-        pytest.skip("XXX")
-        interp.space = self.space
-        interp = MockInterpreter(interp.space)
-
-        pysource = "def f(x): return x + 1"
-        pycompiler = interp.py_space.createcompiler()
-        code = pycompiler.compile(pysource, 'XXX', 'exec', 0)
-
-        from pypy.interpreter.module import Module
-        w_py_mod_name = interp.py_space.wrap("tests")
-        w_py_module = Module(interp.py_space, w_py_mod_name)
-        code.exec_code(interp.py_space, w_py_module.w_dict, w_py_module.w_dict)
-        func = interp.py_space.getattr(w_py_module, interp.py_space.wrap("f"))
-        w_py_func = interp.py_space.wrap(func)
-
-        w_php_closure = w_py_func.to_php(interp)
-        # XXX until interp.space.tp_closure
-        assert type(w_php_closure) is W_ClosureObject
-
     # XXX List slices
     # XXX Test mutating the list.
 
