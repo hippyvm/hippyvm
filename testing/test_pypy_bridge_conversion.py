@@ -5,40 +5,35 @@ import pytest
 class TestPyPyBridgeConversions(BaseTestInterpreter):
     """ Interpreter level conversion code tests """
 
-    def new_interp(self):
+    @pytest.fixture
+    def interp(self):
         return self.engine.new_interp(None, None)
 
-    def test_py_int_of_ph_integer(self):
-        interp = self.new_interp()
+    def test_py_int_of_ph_integer(self, interp):
         w_php_integer = interp.space.newint(666)
         py_int = w_php_integer.to_py(interp)
         assert interp.py_space.int_w(py_int) == 666
 
-    def test_py_none_of_ph_null(self):
-        interp = self.new_interp()
+    def test_py_none_of_ph_null(self, interp):
         w_py_none = interp.space.w_Null.to_py(interp)
         assert w_py_none is interp.py_space.w_None
 
-    def test_py_str_of_ph_string(self):
-        interp = self.new_interp()
+    def test_py_str_of_ph_string(self, interp):
         w_php_string = interp.space.wrap("smeg")
         w_py_str = w_php_string.to_py(interp)
         assert interp.py_space.str_w(w_py_str) == "smeg"
 
-    def test_py_str_of_ph_string2(self):
-        interp = self.new_interp()
+    def test_py_str_of_ph_string2(self, interp):
         w_php_string = interp.space.wrap("123") # can be interpreted as int
         w_py_str = w_php_string.to_py(interp)
         assert interp.py_space.str_w(w_py_str) == "123"
 
-    def test_py_float_of_ph_float(self):
-        interp = self.new_interp()
+    def test_py_float_of_ph_float(self, interp):
         w_php_float = interp.space.wrap(1.337)
         w_py_float = w_php_float.to_py(interp)
         assert interp.py_space.float_w(w_py_float) == 1.337
 
-    def test_py_bool_of_ph_boolean(self):
-        interp = self.new_interp()
+    def test_py_bool_of_ph_boolean(self, interp):
         for polarity in [True, False]:
             w_php_boolean = interp.space.wrap(polarity)
             w_py_bool = w_php_boolean.to_py(interp)
@@ -59,35 +54,30 @@ class TestPyPyBridgeConversions(BaseTestInterpreter):
         ''')
         assert php_space.is_true(output[0])
 
-    def test_ph_integer_of_py_int(self):
-        interp = self.new_interp()
+    def test_ph_integer_of_py_int(self, interp):
         py_int = interp.py_space.newint(666)
         w_php_integer = py_int.to_php(interp)
         assert interp.space.int_w(w_php_integer) == 666
         assert w_php_integer.tp == interp.space.tp_int
 
-    def test_ph_float_of_py_float(self):
-        interp = self.new_interp()
+    def test_ph_float_of_py_float(self, interp):
         py_float = interp.py_space.newfloat(3.1415)
         w_php_float = py_float.to_php(interp)
         assert interp.space.float_w(w_php_float) == 3.1415
         assert w_php_float.tp == interp.space.tp_float
 
-    def test_ph_null_of_py_none(self):
-        interp = self.new_interp()
+    def test_ph_null_of_py_none(self, interp):
         w_php_null = interp.py_space.w_None.to_php(interp)
         assert w_php_null is interp.space.w_Null
         assert w_php_null.tp == interp.space.tp_null
 
-    def test_ph_string_of_py_str(self):
-        interp = self.new_interp()
+    def test_ph_string_of_py_str(self, interp):
         w_py_str = interp.py_space.wrap("transmogrification")
         w_php_string = w_py_str.to_php(interp)
         assert interp.space.str_w(w_php_string) == "transmogrification"
         assert w_php_string.tp == interp.space.tp_str
 
-    def test_ph_boolean_of_py_bool(self):
-        interp = self.new_interp()
+    def test_ph_boolean_of_py_bool(self, interp):
         for b in [True, False]:
             w_py_bool = interp.py_space.wrap(b)
             w_php_boolean = w_py_bool.to_php(interp)
