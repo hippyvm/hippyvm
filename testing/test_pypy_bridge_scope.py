@@ -90,12 +90,12 @@ class TestPyPyBridgeScope(BaseTestInterpreter):
         assert php_space.int_w(output[0]) == 668
 
     def test_increment_outer_php_scope_from_python(self):
-        pytest.skip("BROKEN")
         php_space = self.space
         output = self.run('''
             $x = 44;
             $src = <<<EOD
             def f():
+                global x
                 php_src = "function g() { return \$x; }"
                 g = embed_php_func(php_src)
                 x += 1
