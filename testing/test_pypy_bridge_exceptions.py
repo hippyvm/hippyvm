@@ -127,3 +127,18 @@ class TestPyPyBridgeExceptions(BaseTestInterpreter):
             }
         ''')
         assert php_space.str_w(output[0]) == "explosion"
+
+    def test_python_lookup_missing_php_attr(self):
+        pytest.skip("BROKEN")
+        php_space = self.space
+        output = self.run("""
+            $src = <<<EOD
+            def ref():
+                return C().x
+            EOD;
+            $ref = embed_py_func($src);
+
+            class C {}
+            $ref();
+        """)
+        assert php_space.int_w(output[0]) == 2
