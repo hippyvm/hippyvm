@@ -418,3 +418,56 @@ class TestPyPyBridgeScope(BaseTestInterpreter):
             echo($f());
         ''')
         assert php_space.int_w(output[0]) == 45
+
+    def test_get_php_range(self):
+        php_space = self.space
+        output = self.run('''
+            $src = <<<EOD
+            def f():
+                php_src = "function g() { return range(0, 2); }"
+                g = embed_php_func(php_src)
+                return g()
+            EOD;
+            $f = embed_py_func($src);
+
+            foreach ($f() as $i) {
+                echo($i);
+            }
+        ''')
+        assert len(output) == 3 \
+           and php_space.str_w(output[0]) == "0" \
+           and php_space.str_w(output[1]) == "1" \
+           and php_space.str_w(output[2]) == "2"
+
+    def test_get_py_range(self):
+        php_space = self.space
+        output = self.run('''
+            $src = <<<EOD
+            def f():
+                return range(0, 2)
+            EOD;
+            $f = embed_py_func($src);
+
+            foreach ($f() as $i) {
+                echo($i);
+            }
+        ''')
+        assert len(output) == 2 \
+           and php_space.str_w(output[0]) == "0" \
+           and php_space.str_w(output[1]) == "1"
+
+    def test_get_php_count(self):
+        php_space = self.space
+        output = self.run('''
+            $src = <<<EOD
+            def f():
+                def count(x): return -1
+                php_src = "function g() { return count(array(0, 1)); }"
+                g = embed_php_func(php_src)
+                return g()
+            EOD;
+            $f = embed_py_func($src);
+
+            echo($f());
+        ''')
+        assert self.space.int_w(output[0]) == 2
