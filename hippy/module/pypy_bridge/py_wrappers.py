@@ -110,7 +110,7 @@ class W_PHPProxyGeneric(W_Root):
             w_php_rv = w_php_callable.call_args(self.interp, w_php_args_elems)
             return w_php_rv.to_py(self.interp)
 
-    def _descr_generic(self, space, w_other, name):
+    def _descr_generic_binop(self, space, w_other, name):
         interp = self.interp
         php_space = interp.space
         w_php_inst = self.w_php_inst
@@ -123,40 +123,40 @@ class W_PHPProxyGeneric(W_Root):
             return w_php_target.call_args(interp, [w_other.to_php(interp)]).to_py(interp)
 
     def descr_add(self, space, w_other):
-        return self._descr_generic(space, w_other, "__add__")
+        return self._descr_generic_binop(space, w_other, "__add__")
 
     def descr_sub(self, space, w_other):
-        return self._descr_generic(space, w_other, "__sub__")
+        return self._descr_generic_binop(space, w_other, "__sub__")
 
     def descr_mul(self, space, w_other):
-        return self._descr_generic(space, w_other, "__mul__")
+        return self._descr_generic_binop(space, w_other, "__mul__")
 
     def descr_floordiv(self, space, w_other):
-        return self._descr_generic(space, w_other, "__floordiv__")
+        return self._descr_generic_binop(space, w_other, "__floordiv__")
 
     def descr_mod(self, space, w_other):
-        return self._descr_generic(space, w_other, "__mod__")
+        return self._descr_generic_binop(space, w_other, "__mod__")
 
     def descr_divmod(self, space, w_other):
-        return self._descr_generic(space, w_other, "__divmod__")
+        return self._descr_generic_binop(space, w_other, "__divmod__")
 
     def descr_pow(self, space, w_other):
-        return self._descr_generic(space, w_other, "__pow__")
+        return self._descr_generic_binop(space, w_other, "__pow__")
 
     def descr_lshift(self, space, w_other):
-        return self._descr_generic(space, w_other, "__lshift__")
+        return self._descr_generic_binop(space, w_other, "__lshift__")
 
     def descr_rshift(self, space, w_other):
-        return self._descr_generic(space, w_other, "__rshift__")
+        return self._descr_generic_binop(space, w_other, "__rshift__")
 
     def descr_and(self, space, w_other):
-        return self._descr_generic(space, w_other, "__and__")
+        return self._descr_generic_binop(space, w_other, "__and__")
 
     def descr_xor(self, space, w_other):
-        return self._descr_generic(space, w_other, "__xor__")
+        return self._descr_generic_binop(space, w_other, "__xor__")
 
     def descr_or(self, space, w_other):
-        return self._descr_generic(space, w_other, "__or__")
+        return self._descr_generic_binop(space, w_other, "__or__")
 
     def descr_eq(self, space, w_other):
         if isinstance(w_other, W_PHPProxyGeneric):
