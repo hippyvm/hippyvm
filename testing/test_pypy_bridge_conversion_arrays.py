@@ -4,6 +4,10 @@ import pytest
 
 class TestPyPyBridgeArrayConversions(BaseTestInterpreter):
 
+    @pytest.fixture
+    def php_space(self):
+        return self.space
+
     def test_return_py_list_len_in_php(self):
         php_space = self.space
         output = self.run('''
@@ -665,6 +669,25 @@ class TestPyPyBridgeArrayConversions(BaseTestInterpreter):
             echo $out[3];
         ''')
         assert php_space.str_w(output[0]) == "a"
+
+    def test_py_php_py_list_id_gives_dict(self, php_space):
+        output = self.run('''
+            function f_id($x) { return $x; }
+
+            $src = <<<EOD
+            def f():
+                r = f_id([1, 2, 3])
+                if type(r) == dict:
+                    return True
+                else:
+                    return False
+            EOD;
+
+            $f = embed_py_func($src);
+            echo($f());
+        ''')
+        assert php_space.is_true(output[0])
+
 
 class TestPyPyBridgeArrayConversionsInstances(BaseTestInterpreter):
 

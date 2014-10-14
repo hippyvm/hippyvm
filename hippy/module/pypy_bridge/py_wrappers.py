@@ -522,3 +522,61 @@ W_PRef.typedef = TypeDef("PRef",
     __new__ = interp2app(W_PRef.descr_new),
     deref = interp2app(W_PRef.deref),
 )
+
+class WrappedPyListDictStrategy(DictStrategy):
+    """ Wraps a Python list, pretending to be a Python dictionary.
+    This is needed because anything which appears to be array-like in PHP
+    (i.e. a Python list) should become dict-like when passed to Python."""
+
+    erase, unerase = rerased.new_erasing_pair("WrappedPyListDictStrategy")
+    erase = staticmethod(erase)
+    unerase = staticmethod(unerase)
+
+    def wrap(self, unwrapped):
+        return unwrapped
+
+    def getitem(self, w_dict, w_key):
+        # XXX w_key must be integer
+        py_space = self.space
+        w_py_list = self.unerase(w_dict.dstorage)
+        return py_space.getitem(w_py_list, w_key)
+
+    def setitem(self, w_dict, w_key, w_value):
+        # XXX w_key must be integer
+        py_space = self.space
+        w_py_list = self.unerase(w_dict.dstorage)
+        py_space.setitem(w_py_list, w_key, w_value)
+
+    def wrapkey(space, key):
+        return key
+
+    def wrapvalue(space, val):
+        return val
+
+    def length(self, w_dict):
+        w_py_list = self.unerase(w_dict.dstorage)
+        return py_space.len(w_py_list)
+
+    def getiterkeys(self, w_dict):
+        w_py_list = self.unerase(w_dict.dstorage)
+        return py_space.builtin.xrange(w_py_list)
+
+    def getitervalues(self, w_dict):
+        w_py_list = self.unerase(w_dict.dstorage)
+        return py_space.builtin.iter(w_py_list)
+
+    def getiteritems(self, w_dict):
+        w_py_list = self.unerase(w_dict.dstorage)
+        return py_space.builtin.enumerate(w_py_list)
+
+    def as_list(self, w_dict):
+        """ make it a real Python list again """
+        return self.unerase(w_dict.dstorage)
+
+create_iterator_classes(WrappedPyListDictStrategy)
+
+def make_dict_like_py_list(interp, w_py_list):
+    strategy = interp.py_space.fromcache(WrappedPyListDictStrategy)
+    storage = strategy.erase(w_py_list)
+    return WPy_DictMultiObject(interp.py_space, strategy, storage)
+

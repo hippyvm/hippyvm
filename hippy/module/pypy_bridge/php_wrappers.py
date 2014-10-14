@@ -254,7 +254,11 @@ class W_PyBridgeListProxy(W_ArrayObject):
         return W_PyBridgeListProxyIterator(self.py_space, self.w_py_list)
 
     def to_py(self, interp):
-        return self.w_py_list
+        # array-like structures in PHP are always converted to a dict-like
+        # python structure. Here, a list pretending to be a dict.
+        from hippy.module.pypy_bridge.py_wrappers import (
+                make_dict_like_py_list)
+        return make_dict_like_py_list(interp, self.w_py_list)
 
 class W_PyBridgeDictProxyIterator(BaseIterator):
 
