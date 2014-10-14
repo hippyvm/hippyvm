@@ -670,7 +670,7 @@ class TestPyPyBridgeArrayConversions(BaseTestInterpreter):
         ''')
         assert php_space.str_w(output[0]) == "a"
 
-    def test_py_php_py_list_id_gives_dict(self, php_space):
+    def test_dict_like_py_list_works(self, php_space):
         output = self.run('''
             function f_id($x) { return $x; }
 
@@ -688,6 +688,112 @@ class TestPyPyBridgeArrayConversions(BaseTestInterpreter):
         ''')
         assert php_space.is_true(output[0])
 
+    def test_dict_like_py_list_getitem(self, php_space):
+        output = self.run('''
+            function f_id($x) { return $x; }
+
+            $src = <<<EOD
+            def f():
+                r = f_id([1, 2, 3])
+                for i in range(3):
+                    assert r[i] == i + 1
+            EOD;
+
+            $f = embed_py_func($src);
+            $f();
+        ''')
+        # will fail if py assert raises
+
+    def test_dict_like_py_list_setitem(self, php_space):
+        output = self.run('''
+            function f_id($x) { return $x; }
+
+            $src = <<<EOD
+            def f():
+                r = f_id([1, 2, 3])
+                r[0] = 666
+                assert r[0] == 666
+            EOD;
+
+            $f = embed_py_func($src);
+            $f();
+        ''')
+        # will fail if py assert raises
+
+    def test_dict_like_py_list_length(self, php_space):
+        output = self.run('''
+            function f_id($x) { return $x; }
+
+            $src = <<<EOD
+            def f():
+                r = f_id([1, 2, 3])
+                return len(r)
+            EOD;
+
+            $f = embed_py_func($src);
+            echo($f());
+        ''')
+        assert php_space.int_w(output[0]) == 3
+
+    def test_dict_like_py_list_iterkeys(self, php_space):
+        output = self.run('''
+            function f_id($x) { return $x; }
+
+            $src = <<<EOD
+            def f():
+                r = f_id([1, 2, 3])
+                return list(r.iterkeys())
+            EOD;
+
+            $f = embed_py_func($src);
+            $a = $f();
+            echo $a[0];
+            echo $a[1];
+            echo $a[2];
+        ''')
+        assert php_space.int_w(output[0]) == 0
+        assert php_space.int_w(output[1]) == 1
+        assert php_space.int_w(output[2]) == 2
+
+    def test_dict_like_py_list_itervalues(self, php_space):
+        output = self.run('''
+            function f_id($x) { return $x; }
+
+            $src = <<<EOD
+            def f():
+                r = f_id([6, 77, 888])
+                return list(r.itervalues())
+            EOD;
+
+            $f = embed_py_func($src);
+            $a = $f();
+            echo $a[0];
+            echo $a[1];
+            echo $a[2];
+        ''')
+        assert php_space.int_w(output[0]) == 6
+        assert php_space.int_w(output[1]) == 77
+        assert php_space.int_w(output[2]) == 888
+
+    def test_dict_like_py_list_iteritems(self, php_space):
+        output = self.run('''
+            function f_id($x) { return $x; }
+
+            $src = <<<EOD
+            def f():
+                r = f_id(["a", "b", "c"])
+                return [ "%s%s" % (k, v) for k, v in r.iteritems() ]
+            EOD;
+
+            $f = embed_py_func($src);
+            $a = $f();
+            echo $a[0];
+            echo $a[1];
+            echo $a[2];
+        ''')
+        assert php_space.str_w(output[0]) == "0a"
+        assert php_space.str_w(output[1]) == "1b"
+        assert php_space.str_w(output[2]) == "2c"
 
 class TestPyPyBridgeArrayConversionsInstances(BaseTestInterpreter):
 

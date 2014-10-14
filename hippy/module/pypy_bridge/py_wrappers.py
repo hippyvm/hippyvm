@@ -523,6 +523,53 @@ W_PRef.typedef = TypeDef("PRef",
     deref = interp2app(W_PRef.deref),
 )
 
+class W_PyListDictStrategyValueIterator(object):
+
+    _immutable_fields_ = ["py_space", "itr"]
+
+    def __init__(self, py_space, w_py_list):
+        self.py_space = py_space
+        from pypy.objspace.std.iterobject import W_FastListIterObject
+        self.itr = W_FastListIterObject(w_py_list)
+
+    def __iter__(self): return self
+
+    def next(self):
+        return self.itr.descr_next(self.py_space)
+
+class W_PyListDictStrategyKeyIterator(object):
+
+    _immutable_fields_ = ["py_space", "itr"]
+
+    def __init__(self, py_space, length):
+        self.py_space = py_space
+        self.itr = iter(xrange(length))
+
+    def __iter__(self): return self
+
+    def next(self):
+        return self.py_space.wrap(self.itr.next())
+
+class W_PyListDictStrategyItemsIterator(object):
+
+    _immutable_fields_ = ["py_space", "itr"]
+
+    def __init__(self, py_space, w_py_list):
+        self.py_space = py_space
+
+        length = py_space.int_w(py_space.len(w_py_list))
+        self.key_itr = iter(xrange(length))
+
+        from pypy.objspace.std.iterobject import W_FastListIterObject
+        self.w_py_val_itr = W_FastListIterObject(w_py_list)
+
+    def __iter__(self): return self
+
+    def next(self):
+        w_py_key = self.py_space.wrap(self.key_itr.next())
+        w_py_val = self.w_py_val_itr.descr_next(self.py_space)
+        return w_py_key, w_py_val
+
 class WrappedPyListDictStrategy(DictStrategy):
     """ Wraps a Python list, pretending to be a Python dictionary.
     This is needed because anything which appears to be array-like in PHP
@@ -554,20 +601,25 @@ class WrappedPyListDictStrategy(DictStrategy):
         return val
 
     def length(self, w_dict):
+        py_space = self.space
         w_py_list = self.unerase(w_dict.dstorage)
-        return py_space.len(w_py_list)
+        return py_space.int_w(py_space.len(w_py_list))
 
     def getiterkeys(self, w_dict):
+        py_space = self.space
         w_py_list = self.unerase(w_dict.dstorage)
-        return py_space.builtin.xrange(w_py_list)
+        length = self.length(w_dict)
+        return W_PyListDictStrategyKeyIterator(py_space, length)
 
     def getitervalues(self, w_dict):
+        py_space = self.space
         w_py_list = self.unerase(w_dict.dstorage)
-        return py_space.builtin.iter(w_py_list)
+        return W_PyListDictStrategyValueIterator(py_space, w_py_list)
 
     def getiteritems(self, w_dict):
+        py_space = self.space
         w_py_list = self.unerase(w_dict.dstorage)
-        return py_space.builtin.enumerate(w_py_list)
+        return W_PyListDictStrategyItemsIterator(py_space, w_py_list)
 
     def as_list(self, w_dict):
         """ make it a real Python list again """
