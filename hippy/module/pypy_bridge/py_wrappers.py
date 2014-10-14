@@ -313,7 +313,7 @@ class WrappedPHPArrayStrategy(ListStrategy):
     def wrap(self, w_php_val):
         return w_php_val.to_py(self.space.get_php_interp())
 
-    erase, unerase = rerased.new_erasing_pair("php_int_key_array")
+    erase, unerase = rerased.new_erasing_pair("WrappedPHPArrayStrategy")
     erase = staticmethod(erase)
     unerase = staticmethod(unerase)
 
@@ -366,7 +366,7 @@ class WrappedPHPArrayStrategy(ListStrategy):
 
 # The following types make the PHP array iterators iterable at the RPython
 # level so that we can use create_iterator_classes().
-class W_ArrayKeyIteratorWrap(object):
+class WrappedPHPArrayDictStrategyKeyIterator(object):
 
     _immutable_fields_ = ["interp", "w_php_arry", "self.itr"]
 
@@ -387,7 +387,7 @@ class W_ArrayKeyIteratorWrap(object):
     def next(self):
         return self.itr.next_item(self.interp.space)[0]
 
-class W_ArrayValIteratorWrap(object):
+class WrappedPHPArrayDictStrategyValueIterator(object):
 
     _immutable_fields_ = ["interp", "w_php_arry", "self.itr"]
 
@@ -408,7 +408,7 @@ class W_ArrayValIteratorWrap(object):
     def next(self):
         return self.itr.next(self.interp.space)
 
-class W_ArrayItemIteratorWrap(object):
+class WrappedPHPArrayDictStrategyItemIterator(object):
 
     _immutable_fields_ = ["interp", "w_php_arry", "self.itr"]
 
@@ -433,7 +433,7 @@ class W_ArrayItemIteratorWrap(object):
 class WrappedPHPArrayDictStrategy(DictStrategy):
     """ Wrapping a non-int keyed (mixed key) PHP array uses a special Dict strategy """
 
-    erase, unerase = rerased.new_erasing_pair("php_mixed_key_array")
+    erase, unerase = rerased.new_erasing_pair("WrappedPHPArrayDictStrategy")
     erase = staticmethod(erase)
     unerase = staticmethod(unerase)
 
@@ -474,15 +474,18 @@ class WrappedPHPArrayDictStrategy(DictStrategy):
 
     def getiterkeys(self, w_dict):
         w_php_arry = self.unerase(w_dict.dstorage)
-        return W_ArrayKeyIteratorWrap(self.space.get_php_interp(), w_php_arry)
+        return WrappedPHPArrayDictStrategyKeyIterator(
+                self.space.get_php_interp(), w_php_arry)
 
     def getitervalues(self, w_dict):
         w_php_arry = self.unerase(w_dict.dstorage)
-        return W_ArrayValIteratorWrap(self.space.get_php_interp(), w_php_arry)
+        return WrappedPHPArrayDictStrategyValueIterator(
+                self.space.get_php_interp(), w_php_arry)
 
     def getiteritems(self, w_dict):
         w_php_arry = self.unerase(w_dict.dstorage)
-        return W_ArrayItemIteratorWrap(self.space.get_php_interp(), w_php_arry)
+        return WrappedPHPArrayDictStrategyItemIterator(
+                self.space.get_php_interp(), w_php_arry)
 
     def as_list(self, w_dict):
         """ 'Cast' a PHP array in Python dict form into Python list form """
@@ -525,17 +528,17 @@ W_PRef.typedef = TypeDef("PRef",
 
 class W_PyListDictStrategyValueIterator(object):
 
-    _immutable_fields_ = ["py_space", "itr"]
+    _immutable_fields_ = ["py_space", "w_py_itr"]
 
     def __init__(self, py_space, w_py_list):
         self.py_space = py_space
         from pypy.objspace.std.iterobject import W_FastListIterObject
-        self.itr = W_FastListIterObject(w_py_list)
+        self.w_py_itr = W_FastListIterObject(w_py_list)
 
     def __iter__(self): return self
 
     def next(self):
-        return self.itr.descr_next(self.py_space)
+        return self.w_py_itr.descr_next(self.py_space)
 
 class W_PyListDictStrategyKeyIterator(object):
 
