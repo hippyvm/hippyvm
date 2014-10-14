@@ -16,6 +16,7 @@ from pypy.objspace.std.dictmultiobject import (AbstractTypedStrategy,
 from pypy.objspace.std.dictmultiobject import (
         W_DictMultiObject as WPy_DictMultiObject)
 from pypy.interpreter.error import OperationError
+from pypy.objspace.std.intobject import W_IntObject
 
 from hippy.objects.base import W_Root as WPHP_Root
 from hippy.objects.arrayobject import W_ListArrayObject, W_RDictArrayObject
@@ -586,13 +587,19 @@ class WrappedPyListDictStrategy(DictStrategy):
         return unwrapped
 
     def getitem(self, w_dict, w_key):
-        # XXX w_key must be integer
         py_space = self.space
+
+        # XXX decide what should happen
+        assert isinstance(w_key, W_IntObject)
+
         w_py_list = self.unerase(w_dict.dstorage)
         return py_space.getitem(w_py_list, w_key)
 
     def setitem(self, w_dict, w_key, w_value):
-        # XXX w_key must be integer
+
+        # XXX decide what should happen
+        assert isinstance(w_key, W_IntObject)
+
         py_space = self.space
         w_py_list = self.unerase(w_dict.dstorage)
         py_space.setitem(w_py_list, w_key, w_value)

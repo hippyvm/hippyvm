@@ -2,6 +2,11 @@ from testing.test_interpreter import BaseTestInterpreter
 import pytest
 
 class TestPyPyBridgeExceptions(BaseTestInterpreter):
+
+    @pytest.fixture
+    def php_space(self):
+        return self.space
+
     def test_py_exn_is_passed_up_to_phpc(self):
         php_space = self.space
         output = self.run('''
@@ -247,3 +252,75 @@ class TestPyPyBridgeExceptions(BaseTestInterpreter):
         ''')
         err_s = "Cannot use kwargs with callable PHP instances"
         assert php_space.str_w(output[0]) == err_s
+
+    def test_dict_like_py_list_setitem_out_of_range(self, php_space):
+        output = self.run('''
+            function f_id($x) { return $x; }
+
+            $src = <<<EOD
+            def f():
+                r = f_id([1, 2, 3])
+                try:
+                    r[999] = "lala"
+                    return "failed"
+                except IndexError as e:
+                    return e.message
+            EOD;
+
+            $f = embed_py_func($src);
+            echo($f());
+        ''')
+        err_s = "list index out of range"
+        assert php_space.str_w(output[0]) == err_s
+
+    def test_dict_like_py_list_getitem_out_of_range(self, php_space):
+        output = self.run('''
+            function f_id($x) { return $x; }
+
+            $src = <<<EOD
+            def f():
+                r = f_id([1, 2, 3])
+                try:
+                    x = r[999]
+                    return "failed"
+                except IndexError as e:
+                    return e.message
+            EOD;
+
+            $f = embed_py_func($src);
+            echo($f());
+        ''')
+        err_s = "list index out of range"
+        assert php_space.str_w(output[0]) == err_s
+
+    @pytest.mark.xfail
+    def test_dict_like_py_list_setitem_index_not_int(self, php_space):
+        output = self.run('''
+            function f_id($x) { return $x; }
+
+            $src = <<<EOD
+            def f():
+                r = f_id([1, 2, 3])
+                r["a"] = 0 # explodes
+            EOD;
+
+            $f = embed_py_func($src);
+            echo($f());
+        ''')
+        # XXX what should happen?
+
+    @pytest.mark.xfail
+    def test_dict_like_py_list_getitem_index_not_int(self, php_space):
+        output = self.run('''
+            function f_id($x) { return $x; }
+
+            $src = <<<EOD
+            def f():
+                r = f_id([1, 2, 3])
+                x = r["a"] # boom
+            EOD;
+
+            $f = embed_py_func($src);
+            echo($f());
+        ''')
+        # XXX what should happen?
