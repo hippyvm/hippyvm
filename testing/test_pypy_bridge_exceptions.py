@@ -324,3 +324,21 @@ class TestPyPyBridgeExceptions(BaseTestInterpreter):
             echo($f());
         ''')
         # XXX what should happen?
+
+    def test_py_dict_cant_as_list(self, php_space):
+        output = self.run('''
+            $src = <<<EOD
+            def f():
+                dct = {1 :  2}
+                try:
+                    dct.as_list()
+                    return "failed"
+                except BridgeError as e:
+                    return e.message
+            EOD;
+
+            $f = embed_py_func($src);
+            echo($f());
+        ''')
+        err_s = "as_list does not apply"
+        assert php_space.str_w(output[0]) == err_s
