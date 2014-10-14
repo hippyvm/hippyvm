@@ -795,6 +795,27 @@ class TestPyPyBridgeArrayConversions(BaseTestInterpreter):
         assert php_space.str_w(output[1]) == "1b"
         assert php_space.str_w(output[2]) == "2c"
 
+    def test_dict_like_py_list_as_list(self, php_space):
+        output = self.run('''
+            function f_id($x) { return $x; }
+
+            $src = <<<EOD
+            def f():
+                r = f_id([1, 2, 3])
+                r_l = r.as_list()
+                assert type(r_l) == list
+                return r_l
+            EOD;
+
+            $f = embed_py_func($src);
+            $lst = $f();
+            for ($i = 0; $i < 3; $i++) {
+                echo $lst[$i];
+            }
+        ''')
+        for i in range(3):
+            assert php_space.int_w(output[i]) == i + 1
+
 class TestPyPyBridgeArrayConversionsInstances(BaseTestInterpreter):
 
     def test_python_array_in_php_instance(self):
