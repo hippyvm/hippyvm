@@ -338,10 +338,13 @@ class WrappedPHPArrayStrategy(ListStrategy):
 
         w_php_arry_ref = self.unerase(w_list.lstorage)
         w_php_index = php_space.wrap(index)
-        # XXX will not do the right thing if the index does not exist
-        w_php_elem = w_php_arry_ref.getitem_ref(php_space, w_php_index)
+        w_php_elem = w_php_arry_ref.getitem_ref(
+                php_space, w_php_index, allow_undefined=False)
 
-        return self.wrap(w_php_elem)
+        if w_php_elem is None:
+            raise IndexError("list index out of range")
+        else:
+            return self.wrap(w_php_elem)
 
     def setitem(self, w_list, key, w_value):
         # XXX again with the implicit cast on the key if not str or int
@@ -490,6 +493,7 @@ class WrappedPHPArrayDictStrategy(DictStrategy):
 
     def as_list(self, w_dict):
         """ 'Cast' a PHP array in Python dict form into Python list form """
+
 
         interp = self.space.get_php_interp()
         w_php_arry_ref = self.unerase(w_dict.dstorage)

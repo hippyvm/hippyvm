@@ -816,6 +816,46 @@ class TestPyPyBridgeArrayConversions(BaseTestInterpreter):
         for i in range(3):
             assert php_space.int_w(output[i]) == i + 1
 
+    def test_php_array_as_list_val_iterator_in_py(self, php_space):
+        output = self.run('''
+            $a = array("a", "b", "c");
+
+            $src = <<<EOD
+            def f():
+                it = iter(a.as_list())
+                consume = [it.next() for x in range(3)]
+                print(72 * "-")
+                print(consume)
+                assert consume == ["a", "b", "c"]
+
+                try:
+                    x = it.next()
+                    print(x)
+                    return "fail"
+                except StopIteration:
+                    return "ok"
+            EOD;
+            $f = embed_py_func($src);
+            echo($f());
+        ''')
+        assert php_space.str_w(output[0]) == "ok"
+
+    def test_php_array_as_list_val_iterator_in_py2(self, php_space):
+        output = self.run('''
+            $a = array("a", "b", "c");
+
+            $src = <<<EOD
+            def f():
+                s = []
+                for i in a.as_list():
+                    s.append(i)
+                return "".join(s)
+            EOD;
+            $f = embed_py_func($src);
+            echo($f());
+        ''')
+        assert php_space.str_w(output[0]) == "abc"
+
 class TestPyPyBridgeArrayConversionsInstances(BaseTestInterpreter):
 
     def test_python_array_in_php_instance(self):

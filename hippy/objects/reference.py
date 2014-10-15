@@ -65,11 +65,14 @@ class W_Reference(W_Root):
         w_value = self.deref_temp()
         return w_value._lookup_item_ref(space, w_index)
 
-    def getitem_ref(self, space, w_index):
+    def getitem_ref(self, space, w_index, allow_undefined=True):
         r_result = self.lookup_item_ref(space, w_index)
         if r_result is None:
-            r_result = space.empty_ref()
-            self.setitem_ref(space, w_index, r_result)
+            if allow_undefined:
+                r_result = space.empty_ref()
+                self.setitem_ref(space, w_index, r_result)
+            else:
+                return None
         elif isinstance(r_result, VirtualReference):
             r_result = W_Reference(r_result.deref())
             self.setitem_ref(space, w_index, r_result)
