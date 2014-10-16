@@ -856,6 +856,17 @@ class TestPyPyBridgeArrayConversions(BaseTestInterpreter):
         ''')
         assert php_space.str_w(output[0]) == "abc"
 
+    def test_str_of_py_list_passed_to_php_and_back(self, php_space):
+        output = self.run('''
+            $mk = embed_py_func("def mk(): return [1,2,3]");
+            $str_ary = embed_py_func("def str_ary(a): return str(a)");
+
+            $x = $mk();
+            $s = $str_ary($x);
+            echo($s);
+        ''')
+        assert php_space.str_w(output[0]) == "{0: 1, 1: 2, 2: 3}"
+
 class TestPyPyBridgeArrayConversionsInstances(BaseTestInterpreter):
 
     def test_python_array_in_php_instance(self):
