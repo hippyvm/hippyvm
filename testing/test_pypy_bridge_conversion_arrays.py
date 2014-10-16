@@ -867,6 +867,21 @@ class TestPyPyBridgeArrayConversions(BaseTestInterpreter):
         ''')
         assert php_space.str_w(output[0]) == "{0: 1, 1: 2, 2: 3}"
 
+    def test_setdefault_on_wrapped_php_array(self, php_space):
+        output = self.run('''
+            $src = <<<EOD
+            def sd(ary, key, default):
+                return ary.setdefault(key, default)
+            EOD;
+            $sd = embed_py_func($src);
+
+            $ary = array("x" => "y");
+            echo $sd($ary, "x", "k");
+            echo $sd($ary, "y", "k");
+        ''')
+        assert php_space.str_w(output[0]) == "y"
+        assert php_space.str_w(output[1]) == "k"
+
 class TestPyPyBridgeArrayConversionsInstances(BaseTestInterpreter):
 
     def test_python_array_in_php_instance(self):

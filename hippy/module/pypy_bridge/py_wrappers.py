@@ -472,6 +472,22 @@ class WrappedPHPArrayDictStrategy(DictStrategy):
 
         w_php_arry_ref.setitem_ref(php_space, w_php_key, w_php_value)
 
+    def setdefault(self, w_dict, w_key, w_default):
+        interp = self.space.get_php_interp()
+        py_space, php_space = self.space, interp.space
+
+        w_php_key = w_key.to_php(interp)
+        w_php_ary_ref = self.unerase(w_dict.dstorage)
+
+        w_php_val = w_php_ary_ref.getitem_ref(
+                php_space, w_php_key, allow_undefined=False)
+        if w_php_val is None:
+            w_php_ary_ref.setitem_ref(
+                    php_space, w_php_key, w_default.to_php(interp))
+            return w_default
+        else:
+            return w_php_val.deref().to_py(interp)
+
     def wrapkey(space, key):
         return key.to_py(space.get_php_interp())
 
