@@ -117,11 +117,11 @@ class W_EmbeddedPyFunc(W_InstanceObject):
     """ A 'lexically scoped' embedded Python function.
     Essentially these instances behave a bit like a PHP closure."""
 
-    _immutable_fields_ = [ "interp", "py_func" ]
+    _immutable_fields_ = [ "interp", "w_py_func" ]
 
-    def __init__(self, interp, py_func, klass, storage_w):
+    def __init__(self, interp, w_py_func, klass, storage_w):
         self.interp = interp
-        self.py_func = py_func
+        self.w_py_func = w_py_func
         W_InstanceObject.__init__(self, klass, storage_w)
 
     def setattr(self, interp, attr, w_value, contextclass, unique_item=False):
@@ -136,15 +136,15 @@ class W_EmbeddedPyFunc(W_InstanceObject):
         raise NotImplementedError("Not implemented")
 
     def get_callable(self):
-        return W_EmbeddedPyCallable(self.py_func)
+        return W_EmbeddedPyCallable(self.w_py_func)
 
     def to_py(self, interp):
-        return self.py_func
+        return self.w_py_func
 
 k_EmbeddedPyFunc = def_class('EmbeddedPyFunc', [])
 
-def new_embedded_py_func(interp, py_func):
-    return W_EmbeddedPyFunc(interp, py_func, k_EmbeddedPyFunc,
+def new_embedded_py_func(interp, w_py_func):
+    return W_EmbeddedPyFunc(interp, w_py_func, k_EmbeddedPyFunc,
             k_EmbeddedPyFunc.get_initial_storage_w(interp.space)[:])
 
 class W_EmbeddedPyMod(WPh_Object):
