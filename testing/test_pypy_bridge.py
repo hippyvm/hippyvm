@@ -201,7 +201,6 @@ class TestPyPyBridge(BaseTestInterpreter):
         ''')
         assert php_space.int_w(output[0]) == 1332
 
-    @pytest.mark.xfail
     def test_kwargs_on_py_proxy3(self, php_space):
         output = self.run('''
             $f = embed_py_func("def f(a, b=0, c=0): return a + b + c");
@@ -210,7 +209,6 @@ class TestPyPyBridge(BaseTestInterpreter):
         ''')
         assert php_space.int_w(output[0]) == 4
 
-    @pytest.mark.xfail
     def test_kwargs_on_py_proxy4(self, php_space):
         output = self.run('''
             $mk_src = <<<EOD
