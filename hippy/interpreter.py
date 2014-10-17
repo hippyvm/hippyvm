@@ -24,7 +24,7 @@ from hippy.builtin_klass import W_ExceptionObject, k_Exception
 from hippy.klass import ClassDeclaration, ClassBase, get_interp_decl_key
 from hippy.function import Function
 from hippy.frame import Frame, CatchBlock, Unsilence
-from hippy.globals import W_Globals
+from hippy.vars import W_GlobalVars
 from hippy.config import Config
 from hippy import constants
 from hippy import pointer
@@ -174,7 +174,7 @@ class Interpreter(object):
         self.autoload_stack = []
         self.autoload_extensions = ['.inc', '.php']
         self.constants = OrderedDict()
-        self.globals = W_Globals(space)
+        self.globals = W_GlobalVars(space)
         self.w_globals_ref = W_Reference(self.globals)
         self.config = Config(space)
         self.cached_files = OrderedDict()
@@ -1486,14 +1486,14 @@ class Interpreter(object):
 
     def DECLARE_GLOBAL(self, bytecode, frame, space, arg, pc):
         name = bytecode.varnames[arg]
-        w_ref = self.globals.get_var(space, name)
+        w_ref = self.globals.get_var(name)
         frame.store_ref(arg, w_ref)
         return pc
 
     def DECLARE_GLOBAL_INDIRECT(self, bytecode, frame, space, arg, pc):
         w_name = frame.pop()
         name = space.str_w(w_name)
-        r_global = self.globals.get_var(space, name)
+        r_global = self.globals.get_var(name)
         frame.set_ref_by_name(name, r_global)
         return pc
 

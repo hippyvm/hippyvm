@@ -40,7 +40,7 @@ def get_defined_vars(frame, interp):
             if v:
                 pairs.append((space.wrap(k), v.deref()))
     else:
-        for k, v in frame.extra_variables.items():
+        for k, v in frame.extra_variables.as_rdict().items():
             if k != 'GLOBALS':
                 pairs.append((space.wrap(k), v.deref()))
     return space.new_array_from_pairs(pairs)
