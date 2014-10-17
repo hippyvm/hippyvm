@@ -138,6 +138,9 @@ class W_EmbeddedPyFunc(W_InstanceObject):
     def get_callable(self):
         return W_EmbeddedPyCallable(self.py_func)
 
+    def to_py(self, interp):
+        return self.py_func
+
 k_EmbeddedPyFunc = def_class('EmbeddedPyFunc', [])
 
 def new_embedded_py_func(interp, py_func):
