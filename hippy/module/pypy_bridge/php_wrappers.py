@@ -172,6 +172,9 @@ class W_EmbeddedPyMod(WPh_Object):
     def getattr(self, interp, name, contextclass=None, give_notice=False, fail_with_none=False):
         return self._getattr(interp, interp.space, name)
 
+    def to_py(self, interp):
+        return self.py_mod
+
 class W_PyBridgeListProxyIterator(BaseIterator):
 
     _immutable_fields_ = ["py_space", "storage_w"]
