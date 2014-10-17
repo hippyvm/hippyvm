@@ -1,4 +1,4 @@
-from hippy.objects.arrayobject import wrap_array_key
+from hippy.objects.arrayobject import wrap_array_key, _CellDictCell
 from hippy.objects.iterator import BaseIterator
 
 class ListArrayIterator(BaseIterator):
@@ -117,6 +117,98 @@ class RDictArrayIterator(BaseIterator):
 
 
 class RDictArrayIteratorRef(BaseIterator):
+    def __init__(self, space, r_array):
+        self.r_array = r_array
+        self.index = 0
+        self.finished = self.is_finished()
+
+    def get_current_value(self):
+        key = self._current_index()
+        w_array = self.r_array.deref()
+        return w_array._getitem_str(key)
+
+    def _current_index(self):
+        # NB: the array must be deref'd every time, in case it's been mutated
+        # between two calls to next()/next_item().
+        w_array = self.r_array.deref_temp()
+        keylist = w_array._getkeylist()
+        try:
+            return keylist[self.index]
+        except IndexError:
+            return None
+
+    def is_finished(self):
+        w_array = self.r_array.deref_temp()
+        return self.index == w_array.arraylen()
+
+    def next(self, space):
+        r_value = self.get_current_value()
+        self.index += 1
+        self.finished = self.is_finished()
+        return r_value
+
+    def next_item(self, space):
+        r_value = self.get_current_value()
+        key = self._current_index()
+        if key is None:
+            return None, None
+        self.index += 1
+        self.finished = self.is_finished()
+        return wrap_array_key(space, key), r_value
+
+class RCellDictArrayIterator(BaseIterator):
+    def __init__(self, w_array):
+        self.w_array = w_array
+        self.rewind(None)
+
+    def _current_index(self):
+        keylist = self.w_array._getkeylist()
+        try:
+            return keylist[self.index]
+        except IndexError:
+            return None
+
+    def current(self, interp):
+        key = self._current_index()
+        if key is None:
+            return None
+        v = self.w_array.dct_w.get(key, None)
+        if v is None:
+            return None
+        assert isinstance(v, _CellDictCell)
+        return v.v
+
+    def key(self, interp):
+        key = self._current_index()
+        if key is None:
+            return None
+        return wrap_array_key(interp.space, key)
+
+    def next(self, space):
+        w_value = self.current(None)
+        self.index += 1
+        self.finished = not self.valid(None)
+        return w_value
+
+    def next_item(self, space):
+        interp = space.ec.interpreter
+        w_value = self.current(interp)
+        w_key = self.key(interp)
+        if w_key is None:
+            return None, None
+        self.index += 1
+        self.finished = not self.valid(interp)
+        return w_key, w_value
+
+    def rewind(self, interp):
+        self.index = 0
+        self.finished = not self.valid(interp)
+
+    def valid(self, interp):
+        return self.index < self.w_array.arraylen()
+
+
+class RCellDictArrayIteratorRef(BaseIterator):
     def __init__(self, space, r_array):
         self.r_array = r_array
         self.index = 0

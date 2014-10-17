@@ -1,6 +1,7 @@
 
 from rpython.rlib import jit
 
+from hippy.vars import W_Vars
 from hippy.objects.base import W_Root
 from hippy.objects.reference import W_Reference
 from hippy.objects.arrayobject import new_rdict
@@ -285,17 +286,17 @@ class Frame(object):
         """Get or create a reference to the variable `$name`."""
         no = self.bytecode.lookup_var_pos(name)
         if no == -1:
-            if self.extra_variables is None:
+            ev = self.extra_variables
+            if ev is None:
                 if not create_new:
                     return None
-                self.extra_variables = new_rdict()
-            try:
-                w_ref = self.extra_variables[name]
-            except KeyError:
+                ev = self.extra_variables = W_Vars(self.interp.space)
+            w_ref = ev.lookup_var(name)
+            if w_ref is None:
                 if not create_new:
                     return None
                 w_ref = self.interp.space.empty_ref()
-                self.extra_variables[name] = w_ref
+                ev.set_var(name, w_ref)
             return w_ref
         return self.load_ref(no)
 
@@ -306,20 +307,19 @@ class Frame(object):
         """
         no = self.bytecode.lookup_var_pos(name)
         if no == -1:
-            if self.extra_variables is None:
+            ev = self.extra_variables
+            if ev is None:
                 return None
-            try:
-                return self.extra_variables[name]
-            except KeyError:
-                return None
+            return ev.lookup_var(name)
         return self.load_ref(no)
 
     def set_ref_by_name(self, name, r_value):
         no = self.bytecode.lookup_var_pos(name)
         if no == -1:
-            if self.extra_variables is None:
-                self.extra_variables = new_rdict()
-            self.extra_variables[name] = r_value
+            ev = self.extra_variables
+            if ev is None:
+                ev = self.extra_variables = W_Vars(self.interp.space)
+            ev.set_var(name, r_value)
         else:
             assert no >= 0
             self.vars_w[no] = r_value
@@ -327,25 +327,20 @@ class Frame(object):
     def unset_ref_by_name(self, name):
         no = self.bytecode.lookup_var_pos(name)
         if no == -1:
-            if self.extra_variables is not None:
-                try:
-                    del self.extra_variables[name]
-                except KeyError:
-                    pass
+            ev = self.extra_variables
+            if ev is not None:
+                ev.unset_var(name)
         else:
             self.unset_ref(no)
 
     @jit.unroll_safe
     def load_from_scope(self, scope):
-        self.extra_variables = scope.dct_w
+        self.extra_variables = scope
         varnames = self.bytecode.varnames
         for i in range(len(varnames)):
             name = varnames[i]
-            try:
-                w_ref = self.extra_variables[name]
-            except KeyError:
-                pass
-            else:
+            w_ref = scope.lookup_var(name)
+            if w_ref is not None:
                 self.vars_w[i] = w_ref
 
     @jit.unroll_safe
@@ -353,9 +348,11 @@ class Frame(object):
         self.thisclass = frame.thisclass
         self.w_this = frame.w_this
         for i, name in enumerate(frame.bytecode.varnames):
-            self.set_ref_by_name(name, frame.vars_w[i])
+            v = frame.vars_w[i]
+            if v is not None:
+                self.set_ref_by_name(name, frame.vars_w[i])
         if frame.extra_variables is not None:
-            for name, r_value in frame.extra_variables.iteritems():
+            for name, r_value in frame.extra_variables.as_rdict().items():
                 self.set_ref_by_name(name, r_value)
 
     @jit.unroll_safe

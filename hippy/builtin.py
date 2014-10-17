@@ -1236,13 +1236,6 @@ def sys_getloadavg(space):
                                       space.newfloat(load[1]),
                                       space.newfloat(load[2])])
 
-
-# def get_defined_vars(space):
-#     # XXX NOT WORKING CORRECTLY GLOBALS keeps refs, we need vals
-#     frame = space.ec.interpreter.topframeref()
-#     return space.new_array_from_rdict(frame.extra_variables)
-
-
 @wrap(['space', str])
 def extension_loaded(space, ext):
     if ext in config.EXTENSIONS:

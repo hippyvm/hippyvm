@@ -1647,8 +1647,8 @@ def extract(space, frame, w_arr, w_extr=None, prefix=None):
             valid = space.is_valid_varname(key)
 
             exists = False
-            if frame.extra_variables:
-                exists = key in frame.extra_variables
+            if frame.extra_variables is not None:
+                exists = frame.extra_variables.has_var(key)
 
             if extr == 0:  # EXTR_OVERWRITE
                 if key == 'GLOBALS':
