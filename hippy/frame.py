@@ -264,7 +264,7 @@ class Frame(object):
     def get_ref_by_name(self, name, create_new=True):
         """Get or create a reference to the variable `$name`."""
         try:
-            no = self.bytecode.var_to_pos[name]
+            no = self.bytecode.lookup_var_pos(name)
         except KeyError:
             ev = self.extra_variables
             if ev is None:
@@ -287,7 +287,7 @@ class Frame(object):
         Returns None if the variable does not exist.
         """
         try:
-            no = self.bytecode.var_to_pos[name]
+            no = self.bytecode.lookup_var_pos(name)
         except KeyError:
             ev = self.extra_variables
             if ev is None:
@@ -298,7 +298,7 @@ class Frame(object):
 
     def set_ref_by_name(self, name, r_value):
         try:
-            no = self.bytecode.var_to_pos[name]
+            no = self.bytecode.lookup_var_pos(name)
         except KeyError:
             ev = self.extra_variables
             if ev is None:
@@ -310,7 +310,7 @@ class Frame(object):
 
     def unset_ref_by_name(self, name):
         try:
-            no = self.bytecode.var_to_pos[name]
+            no = self.bytecode.lookup_var_pos(name)
         except KeyError:
             ev = self.extra_variables
             if ev is not None:

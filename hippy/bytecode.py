@@ -66,9 +66,8 @@ class ByteCode(object):
     def lookup_pos(self, v):
         return self.names_to_pos[v]
 
-    # XXX rename one or both of these two different functions!
     @jit.elidable
-    def _lookup_pos(self, v):
+    def lookup_var_pos(self, v):
         return self.var_to_pos[v]
 
     def next_arg(self, i):
