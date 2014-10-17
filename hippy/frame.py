@@ -263,9 +263,8 @@ class Frame(object):
 
     def get_ref_by_name(self, name, create_new=True):
         """Get or create a reference to the variable `$name`."""
-        try:
-            no = self.bytecode.lookup_var_pos(name)
-        except KeyError:
+        no = self.bytecode.lookup_var_pos(name)
+        if no == -1:
             ev = self.extra_variables
             if ev is None:
                 if not create_new:
@@ -278,28 +277,24 @@ class Frame(object):
                 w_ref = self.interp.space.empty_ref()
                 ev.set_var(name, w_ref)
             return w_ref
-        else:
-            return self.load_ref(no)
+        return self.load_ref(no)
 
     def lookup_ref_by_name(self, name):
         """Get an existing reference to the variable `$name`.
 
         Returns None if the variable does not exist.
         """
-        try:
-            no = self.bytecode.lookup_var_pos(name)
-        except KeyError:
+        no = self.bytecode.lookup_var_pos(name)
+        if no == -1:
             ev = self.extra_variables
             if ev is None:
                 return None
             return ev.lookup_var(name)
-        else:
-            return self.load_ref(no)
+        return self.load_ref(no)
 
     def set_ref_by_name(self, name, r_value):
-        try:
-            no = self.bytecode.lookup_var_pos(name)
-        except KeyError:
+        no = self.bytecode.lookup_var_pos(name)
+        if no == -1:
             ev = self.extra_variables
             if ev is None:
                 ev = self.extra_variables = W_Vars(self.interp.space)
@@ -309,9 +304,8 @@ class Frame(object):
             self.vars_w[no] = r_value
 
     def unset_ref_by_name(self, name):
-        try:
-            no = self.bytecode.lookup_var_pos(name)
-        except KeyError:
+        no = self.bytecode.lookup_var_pos(name)
+        if no == -1:
             ev = self.extra_variables
             if ev is not None:
                 ev.unset_var(name)
