@@ -145,20 +145,20 @@ def new_embedded_py_func(interp, py_func):
             k_EmbeddedPyFunc.get_initial_storage_w(interp.space)[:])
 
 class W_EmbeddedPyMod(WPh_Object):
-    _immutable_fields_ = ["py_space", "py_mod"]
+    _immutable_fields_ = ["py_space", "w_py_mod"]
 
-    def __init__(self, py_space, py_mod):
+    def __init__(self, py_space, w_py_mod):
         self.py_space = py_space
-        self.py_mod = py_mod
+        self.w_py_mod = w_py_mod
 
     def get_wrapped_py_obj(self):
-        return self.py_mod
+        return self.w_py_mod
 
     def _getattr(self, interp, space, name):
-        py_mod = self.py_mod
+        w_py_mod = self.w_py_mod
         py_space = self.py_space
         try:
-            w_obj = py_space.getattr(py_mod, py_space.wrap(name))
+            w_obj = py_space.getattr(w_py_mod, py_space.wrap(name))
         except OperationError, e:
             if not e.match(py_space, py_space.w_AttributeError):
                 raise
@@ -173,7 +173,7 @@ class W_EmbeddedPyMod(WPh_Object):
         return self._getattr(interp, interp.space, name)
 
     def to_py(self, interp):
-        return self.py_mod
+        return self.w_py_mod
 
 class W_PyBridgeListProxyIterator(BaseIterator):
 
