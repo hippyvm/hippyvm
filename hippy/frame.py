@@ -273,13 +273,10 @@ class Frame(object):
         """Get a reference to the variable `$name`."""
         no = self.bytecode.lookup_var_pos(name)
         if no == -1:
-            if self.extra_variables is None:
+            ev = self.extra_variables
+            if ev is None:
                 return None
-            try:
-                ph_v = self.extra_variables[name]
-            except KeyError:
-                return None
-            return ph_v
+            return ev.lookup_var(name)
         return self.lookup_deref(no, one_level=True)
 
     def get_ref_by_name(self, name, create_new=True):
