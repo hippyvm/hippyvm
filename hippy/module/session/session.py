@@ -169,10 +169,10 @@ class Session(object):
         return serialize_val
 
     def get_session_var(self, interp):
-        return interp.globals.get_var(interp.space, '_SESSION')
+        return interp.globals.get_var('_SESSION')
 
     def get_cookie_var(self, interp):
-        return interp.globals.get_var(interp.space, '_COOKIE')
+        return interp.globals.get_var('_COOKIE')
 
     def serialize(self, interp, w_ses):
         space = interp.space

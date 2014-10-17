@@ -4,7 +4,7 @@ from rpython.rlib.objectmodel import specialize, we_are_translated
 from rpython.rlib.rarithmetic import intmask
 from rpython.rlib.rstring import replace
 
-from hippy.objects.base import W_Object
+from hippy.objects.base import W_Object, W_Root
 from hippy.objects.reference import W_Reference, VirtualReference
 from hippy.objects.convert import force_float_to_int_in_any_way
 from hippy.objects.strobject import string_var_export
@@ -783,6 +783,266 @@ class W_RDictArrayObject(W_ArrayObject):
     def var_export(self, space, indent, recursion, suffix):
         return array_var_export(self.as_rdict(), space, indent, recursion,
                                 self, suffix)
+
+
+class _CellDictVersion(object): pass
+
+class _CellDictCell(object):
+    def __init__(self, v):
+        self.set_cell(v)
+
+    def set_cell(self, v):
+        assert v is not None
+        self.v = v
+
+class CellDictItemVRef(VirtualReference):
+    def __init__(self, w_array, index):
+        self.w_array = w_array
+        self.index = index
+
+    def deref(self):
+        return self.w_array.dct_w[self.index].v
+
+    def store(self, w_value, unique=False):
+        self.w_array.dct_w[self.index].set_cell(w_value)
+        self.w_array.version = _CellDictVersion()
+
+class W_RCellDictArrayObject(W_ArrayObject):
+    """A dictionary variant which stores its contents as cells. This is meant for
+    situations where a dictionary-like thing needs to masquerade as a dictionary
+    (e.g. $GLOBALS). Accesses can be turned into elidable lookups for those
+    situations where this makes sense."""
+    _has_string_keys = True
+    strategy_name = 'hash'
+
+    _keylist = None
+
+    def __init__(self, space, dct_w, next_idx, current_idx=0):
+        if not we_are_translated():
+            assert isinstance(dct_w, OrderedDict)
+        self.space = space
+        self.dct_w = OrderedDict()
+        for k, w_v in dct_w:
+            self.dct_w[k] = _CellDictCell(w_v)
+        self.version = _CellDictVersion()
+        self.next_idx = next_idx
+        self.current_idx = current_idx
+
+    def as_rdict(self):
+        new_dict = OrderedDict()
+        for key, cell in self.dct_w.iteritems():
+            assert isinstance(cell, _CellDictCell)
+            new_dict[key] = cell.v.copy_item()
+        return new_dict
+
+    def get_rdict_from_array(self):
+        new_dict = OrderedDict()
+        for key, cell in self.dct_w.iteritems():
+            assert isinstance(cell, _CellDictCell)
+            new_dict[key] = cell.v
+        return new_dict
+
+    def as_unique_arraydict(self):
+        self._note_making_a_copy()
+        return W_RDictArrayObject(self.space, self.as_rdict(),
+                                  next_idx=self.next_idx,
+                                  current_idx=self.current_idx)
+
+    def as_list_w(self):
+        r = []
+        for c in self.dct_w.values():
+            assert isinstance(c, _CellDictCell)
+            r.append(c.v)
+        return r
+
+    def as_pair_list(self, space):
+        keylist = self._getkeylist()
+        result = []
+        for key in keylist:
+            w_key = wrap_array_key(space, key)
+            c = self.dct_w[key]
+            assert isinstance(c, _CellDictCell)
+            result.append((w_key, c.v))
+        return result
+
+    def _getkeylist(self):
+        keylist = self._keylist
+        if keylist is None:
+            keylist = self.dct_w.keys()
+            self._keylist = keylist
+        return keylist
+
+    def _keylist_changed(self):
+        self._keylist = None
+
+    def _current(self):
+        keylist = self._getkeylist()
+        index = self.current_idx
+        if 0 <= index < len(keylist):
+            c = self.dct_w[keylist[index]]
+            assert isinstance(c, _CellDictCell)
+            return c.v
+        else:
+            return w_False
+
+    def _key(self, space):
+        keylist = self._getkeylist()
+        index = self.current_idx
+        if 0 <= index < len(keylist):
+            return wrap_array_key(space, keylist[index])
+        else:
+            return space.w_Null
+
+    def arraylen(self):
+        return len(self.dct_w)
+
+    def _getitem_int(self, index):
+        return self._getitem_str(str(index))
+
+    def _getitem_str(self, key):
+        try:
+            c = self.dct_w[key]
+        except KeyError:
+            return None
+
+        assert isinstance(c, _CellDictCell)
+        res = c.v
+        if isinstance(res, W_Reference):
+            return res
+        else:
+            return CellDictItemVRef(self, key)
+
+    def _appenditem(self, w_obj, as_ref=False):
+        res = self._setitem_int(self.next_idx, w_obj, as_ref)
+        assert res is self
+
+    def _setitem_int(self, index, w_value, as_ref, unique_item=False):
+        return self._setitem_str(str(index), w_value, as_ref, unique_item)
+
+    def _setitem_str(self, key, w_value, as_ref, unique_item=False):
+        # If overwriting an existing W_Reference object, we only update
+        # the value in the reference and return 'self'.
+        if not as_ref:
+            try:
+                c = self.dct_w[key]
+            except KeyError:
+                w_old = None
+            else:
+                assert isinstance(c, _CellDictCell)
+                w_old = c.v
+            if isinstance(w_old, W_Reference):   # and is not None
+                w_old.store(w_value, unique_item)
+                return self
+        # Else update the 'dct_w'.
+        if self._keylist is not None and key not in self.dct_w:
+            self._keylist_changed()
+        self.dct_w[key] = _CellDictCell(w_value)
+        self.version = _CellDictVersion()
+        # Blah
+        try:
+            i = try_convert_str_to_int(key)
+        except ValueError:
+            pass
+        else:
+            if self.next_idx <= i:
+                self.next_idx = i + 1
+        return self
+
+    def _unsetitem_int(self, index):
+        return self._unsetitem_str(str(index))
+
+    def _unsetitem_str(self, key):
+        if key not in self.dct_w:
+            return self
+        # XXX slow hacks to know if we must decrement current_idx or not:
+        # this is if and only if the removed item is before current_idx.
+        current_idx = self.current_idx
+        if current_idx > 0:
+            keylist = self._getkeylist()
+            length = len(self.dct_w)
+            if current_idx <= length // 2:
+                # look on the left of current_idx
+                for i in range(current_idx):
+                    if keylist[i] == key:
+                        # found: decrement current_idx
+                        self.current_idx = current_idx - 1
+                        break
+            else:
+                # look on the right of current_idx
+                for i in range(current_idx, length):
+                    if keylist[i] == key:
+                        # found: don't decrement current_idx
+                        break
+                else:
+                    # not found: decrement current_idx
+                    self.current_idx = current_idx - 1
+        
+        del self.dct_w[key]
+        self.version = _CellDictVersion()
+        self._keylist_changed()
+        return self
+
+    def _isset_int(self, index):
+        return self._isset_str(str(index))
+
+    def _isset_str(self, key):
+        return key in self.dct_w
+
+    def create_iter(self, space, contextclass=None):
+        from hippy.objects.arrayiter import RCellDictArrayIterator
+        return RCellDictArrayIterator(self)
+
+    def create_iter_ref(self, space, r_self, contextclass=None):
+        from hippy.objects.arrayiter import RCellDictArrayIteratorRef
+        return RCellDictArrayIteratorRef(space, r_self)
+
+    def copy(self):
+        return self.as_unique_arraydict()
+
+    def _inplace_pop(self, space):
+        key, cell = self.dct_w.popitem()
+        self._keylist_changed()
+        if key == str(self.next_idx - 1):
+            self.next_idx -= 1
+        self.current_idx = 0
+        return cell.v
+
+    def _values(self, space):
+        return self.as_list_w()
+
+    def var_export(self, space, indent, recursion, suffix):
+        return array_var_export(self.as_rdict(), space, indent, recursion,
+                                self, suffix)
+
+    @jit.elidable_promote()
+    def _lookup_cell(self, name, version):
+        try:
+            c = self.dct_w[name]
+        except KeyError:
+            return None
+        assert isinstance(c, _CellDictCell)
+        return c
+
+    # The public cell API
+
+    def lookup_cell(self, name):
+        return self._lookup_cell(name, self.version)
+
+    def set_cell(self, name, w_v):
+        if w_v is None:
+            self.unset_cell(name)
+            return
+        c = self._lookup_cell(name, self.version)
+        if c is not None:
+            c.set_cell(w_v)
+            return
+        self.dct_w[name] = _CellDictCell(w_v)
+        self.version = _CellDictVersion()
+
+    def unset_cell(self, name):
+        if self._lookup_cell(name, self.version) is not None:
+            del self.dct_w[name]
+            self.version = _CellDictVersion()
 
 
 def array_var_dump(dct_w, space, indent, recursion, w_reckey, header):
