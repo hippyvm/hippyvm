@@ -2,6 +2,11 @@ from testing.test_interpreter import BaseTestInterpreter
 import pytest
 
 class TestPyPyBridge(BaseTestInterpreter):
+
+    @pytest.fixture
+    def php_space(self):
+        return self.space
+
     def test_import_py_mod_func(self):
         php_space = self.space
         output = self.run('''
@@ -195,6 +200,34 @@ class TestPyPyBridge(BaseTestInterpreter):
             echo($f());
         ''')
         assert php_space.int_w(output[0]) == 1332
+
+    @pytest.mark.xfail
+    def test_kwargs_on_py_proxy3(self, php_space):
+        output = self.run('''
+            $f = embed_py_func("def f(a, b=0, c=0): return a + b + c");
+            $g = embed_py_func("def g(): return f(1, c=3)");
+            echo($g());
+        ''')
+        assert php_space.int_w(output[0]) == 4
+
+    @pytest.mark.xfail
+    def test_kwargs_on_py_proxy4(self, php_space):
+        output = self.run('''
+            $mk_src = <<<EOD
+            def mk():
+                code = 'def f(a, b=0, c=0): return a + b + c'
+                import imp
+                flibble = imp.new_module('flibble')
+                exec code in flibble.__dict__
+                return flibble
+            EOD;
+            $mk = embed_py_func($mk_src);
+            $mod = $mk();
+
+            $g = embed_py_func("def g(): return mod.f(1, c=3)");
+            echo($g());
+        ''')
+        assert php_space.int_w(output[0]) == 4
 
     def test_phbridgeproxy_equality1(self):
         php_space = self.space
