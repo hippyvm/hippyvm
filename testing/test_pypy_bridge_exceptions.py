@@ -342,3 +342,22 @@ class TestPyPyBridgeExceptions(BaseTestInterpreter):
         ''')
         err_s = "as_list does not apply"
         assert php_space.str_w(output[0]) == err_s
+
+    def test_kwargs_raise(self):
+        php_space = self.space
+        output = self.run('''
+            $src = <<<EOD
+            def f():
+                try:
+                    count(myarg=123)
+                    return "fail"
+                except BridgeError as e:
+                    return e.message
+            EOD;
+
+            $f = embed_py_func($src);
+            echo($f());
+        ''')
+        err_s = "Cannot use kwargs when calling PHP functions"
+        assert php_space.str_w(output[0]) == err_s
+

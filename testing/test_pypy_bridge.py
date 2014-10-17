@@ -166,6 +166,36 @@ class TestPyPyBridge(BaseTestInterpreter):
         ''')
         assert php_space.str_w(output[0]) == "abc-def-333"
 
+    def test_kwargs_on_py_proxy(self):
+        php_space = self.space
+        output = self.run('''
+            $mod = import_py_mod("itertools");
+            $src = <<<EOD
+            def f(mod):
+                it = mod.count(step=666) # should not explode
+                vs = [ it.next() for i in range(3) ]
+                return vs[-1]
+            EOD;
+            $f = embed_py_func($src);
+            echo($f($mod));
+        ''')
+        assert php_space.int_w(output[0]) == 1332
+
+    def test_kwargs_on_py_proxy2(self):
+        php_space = self.space
+        output = self.run('''
+            $mod = import_py_mod("itertools");
+            $src = <<<EOD
+            def f():
+                it = mod.count(step=666) # should not explode
+                vs = [ it.next() for i in range(3) ]
+                return vs[-1]
+            EOD;
+            $f = embed_py_func($src);
+            echo($f());
+        ''')
+        assert php_space.int_w(output[0]) == 1332
+
     def test_phbridgeproxy_equality1(self):
         php_space = self.space
         output = self.run('''
@@ -454,4 +484,3 @@ class TestPyPyBridge(BaseTestInterpreter):
             echo $f(4, 7);
         ''')
         assert php_space.int_w(output[0]) == 11
-
