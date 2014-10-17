@@ -66,21 +66,12 @@ class ByteCode(object):
     def lookup_pos(self, v):
         return self.names_to_pos[v]
 
-    @jit.elidable
+    @jit.elidable_promote()
     def lookup_var_pos(self, v):
         try:
             return self.var_to_pos[v]
         except KeyError:
             return -1
-
-
-    @jit.elidable_promote()
-    def lookup_var_pos(self, v):
-        try:
-            p = self.var_to_pos[v]
-        except KeyError:
-            p = -1
-        return p
 
     def next_arg(self, i):
         a = ord(self.code[i])
