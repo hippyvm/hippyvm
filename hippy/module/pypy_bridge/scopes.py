@@ -23,7 +23,7 @@ class PHP_Scope(WPy_Root):
         ph_interp = self.ph_interp
         ph_frame = self.ph_frame
 
-        ph_v = ph_frame.lookup_name(n)
+        ph_v = ph_frame.lookup_ref_by_name(n)
         if ph_v is not None:
             return ph_v.to_py(ph_interp)
 
