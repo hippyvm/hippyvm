@@ -53,7 +53,7 @@ class GlobalImmutCache(object):
                 cell.currently_declared = None
                 cell.constant_value_is_currently_declared = False
 
-    @jit.elidable
+    @jit.elidable_promote()
     def get_cell(self, name, version):
         if self.force_lowcase:
             name = name.lower()
@@ -70,20 +70,20 @@ class GlobalImmutCache(object):
         self.version = GlobalImmutCacheVersion()
 
     def has_definition(self, name):
-        cell = self.get_cell(name, jit.promote(self.version))
+        cell = self.get_cell(name, self.version)
         if cell is None:
             return False
         return cell.currently_declared is not None
 
     def locate(self, name):
-        cell = self.get_cell(name, jit.promote(self.version))
+        cell = self.get_cell(name, self.version)
         if cell is None:
             return None
         return cell.get_current_value()
 
     def declare_new(self, name, value):
         assert value is not None
-        cell = self.get_cell(name, jit.promote(self.version))
+        cell = self.get_cell(name, self.version)
         if cell is None:
             cell = ImmutCell(value)
             self.set_cell(name, cell)
@@ -97,7 +97,7 @@ class GlobalImmutCache(object):
 
     def create_class(self, interp, name, decl, key):
         "Special case for classes"
-        cell = self.get_cell(name, jit.promote(self.version))
+        cell = self.get_cell(name, self.version)
         if cell is not None:
             if cell._class_key == key:
                 cell.currently_declared = cell.constant_value
