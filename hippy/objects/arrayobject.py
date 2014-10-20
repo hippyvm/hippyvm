@@ -390,7 +390,7 @@ class W_ArrayObject(W_Object):
     def to_py(self, interp):
         # We have to wrap a reference so that the array can be mutable
         # within Python code.
-        from hippy.module.pypy_bridge.py_wrappers import (
+        from hippy.module.pypy_bridge.py_strategies import (
                 make_wrapped_mixed_key_php_array)
         w_php_arry_ref = W_Reference(self)
         return make_wrapped_mixed_key_php_array(interp, w_php_arry_ref)

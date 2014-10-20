@@ -3,7 +3,9 @@ from hippy.objects.base import W_Root as Wph_Root
 from hippy.objects.instanceobject import W_InstanceObject
 from hippy.klass import def_class, Method
 from hippy.module.pypy_bridge.scopes import PHP_Scope
-from hippy.module.pypy_bridge.php_wrappers import new_embedded_py_func, k_BridgeException
+from hippy.module.pypy_bridge.util import _raise_php_bridgeexception
+from hippy.module.pypy_bridge.php_wrappers import (
+        new_embedded_py_func, k_BridgeException)
 from hippy.builtin_klass import k_Exception, W_ExceptionObject
 from hippy.error import PHPException
 
@@ -45,11 +47,6 @@ def embed_py_mod(interp, mod_name, mod_source):
     code.exec_code(interp.py_space, w_py_module.w_dict,w_py_module.w_dict)
 
     return w_py_module.to_php(interp)
-
-def _raise_php_bridgeexception(interp, msg):
-    w_php_exn = k_BridgeException.call_args(interp, [interp.space.wrap(msg)])
-    from hippy.error import Throw
-    raise Throw(w_php_exn)
 
 def _compile_py_func_from_string(interp, func_source):
     """ compiles a string returning a <name, func> pair """

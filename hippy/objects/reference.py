@@ -118,7 +118,7 @@ class W_Reference(W_Root):
         # Arrays are special, must wrap up a reference to allow mutation.
         from hippy.objects.arrayobject import W_ArrayObject
         if isinstance(w_php_inside, W_ArrayObject):
-            from hippy.module.pypy_bridge.py_wrappers import (
+            from hippy.module.pypy_bridge.py_strategies import (
                     make_wrapped_mixed_key_php_array)
             return make_wrapped_mixed_key_php_array(interp, self) # pass in ref
         else:
