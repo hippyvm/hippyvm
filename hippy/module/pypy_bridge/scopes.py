@@ -131,7 +131,7 @@ class W_PHPGlobalScope(WPy_Root):
 
 W_PHPGlobalScope.typedef = TypeDef("PHPGlobalScope",
     __getattr__ = interp2app(W_PHPGlobalScope.descr_get),
-    #__setattr__ = interp2app(W_PHPProxyGeneric.descr_set),
+    #__setattr__ = interp2app(W_PHPGenericAdapter.descr_set),
 )
 
 

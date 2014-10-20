@@ -29,7 +29,7 @@ from hippy.error import Throw, VisibilityError
 from rpython.rlib import jit, rerased
 from rpython.rlib.objectmodel import import_from_mixin
 
-class W_PHPProxyGeneric(W_Root):
+class W_PHPGenericAdapter(W_Root):
     """Generic proxy for wrapping PHP objects in PyPy when no more specific
     proxy is available."""
 
@@ -49,7 +49,7 @@ class W_PHPProxyGeneric(W_Root):
         return self.w_php_inst
 
     def is_w(self, space, other):
-        if isinstance(other, W_PHPProxyGeneric):
+        if isinstance(other, W_PHPGenericAdapter):
             return self.w_php_inst is other.w_php_inst
         return False
 
@@ -175,7 +175,7 @@ class W_PHPProxyGeneric(W_Root):
         return self._descr_generic_binop(space, w_other, "__or__")
 
     def descr_eq(self, space, w_other):
-        if isinstance(w_other, W_PHPProxyGeneric):
+        if isinstance(w_other, W_PHPGenericAdapter):
             php_interp = self.interp
             php_space = php_interp.space
             if php_space.eq_w(self.w_php_inst, w_other.w_php_inst):
@@ -185,25 +185,25 @@ class W_PHPProxyGeneric(W_Root):
     def descr_ne(self, space, w_other):
         return space.not_(self.descr_eq(space, w_other))
 
-W_PHPProxyGeneric.typedef = TypeDef("PhBridgeProxy",
-    __call__ = interp2app(W_PHPProxyGeneric.descr_call),
-    __getattr__ = interp2app(W_PHPProxyGeneric.descr_get),
-    __setattr__ = interp2app(W_PHPProxyGeneric.descr_set),
-    __str__ = interp2app(W_PHPProxyGeneric.descr_str),
-    __add__ = interp2app(W_PHPProxyGeneric.descr_add),
-    __sub__ = interp2app(W_PHPProxyGeneric.descr_sub),
-    __mul__ = interp2app(W_PHPProxyGeneric.descr_mul),
-    __floordiv__ = interp2app(W_PHPProxyGeneric.descr_floordiv),
-    __mod__ = interp2app(W_PHPProxyGeneric.descr_mod),
-    __divmod__ = interp2app(W_PHPProxyGeneric.descr_divmod),
-    __pow__ = interp2app(W_PHPProxyGeneric.descr_pow),
-    __lshift__ = interp2app(W_PHPProxyGeneric.descr_lshift),
-    __rshift__ = interp2app(W_PHPProxyGeneric.descr_rshift),
-    __and__ = interp2app(W_PHPProxyGeneric.descr_and),
-    __xor__ = interp2app(W_PHPProxyGeneric.descr_xor),
-    __or__ = interp2app(W_PHPProxyGeneric.descr_or),
-    __eq__ = interp2app(W_PHPProxyGeneric.descr_eq),
-    __ne__ = interp2app(W_PHPProxyGeneric.descr_ne),
+W_PHPGenericAdapter.typedef = TypeDef("PhBridgeProxy",
+    __call__ = interp2app(W_PHPGenericAdapter.descr_call),
+    __getattr__ = interp2app(W_PHPGenericAdapter.descr_get),
+    __setattr__ = interp2app(W_PHPGenericAdapter.descr_set),
+    __str__ = interp2app(W_PHPGenericAdapter.descr_str),
+    __add__ = interp2app(W_PHPGenericAdapter.descr_add),
+    __sub__ = interp2app(W_PHPGenericAdapter.descr_sub),
+    __mul__ = interp2app(W_PHPGenericAdapter.descr_mul),
+    __floordiv__ = interp2app(W_PHPGenericAdapter.descr_floordiv),
+    __mod__ = interp2app(W_PHPGenericAdapter.descr_mod),
+    __divmod__ = interp2app(W_PHPGenericAdapter.descr_divmod),
+    __pow__ = interp2app(W_PHPGenericAdapter.descr_pow),
+    __lshift__ = interp2app(W_PHPGenericAdapter.descr_lshift),
+    __rshift__ = interp2app(W_PHPGenericAdapter.descr_rshift),
+    __and__ = interp2app(W_PHPGenericAdapter.descr_and),
+    __xor__ = interp2app(W_PHPGenericAdapter.descr_xor),
+    __or__ = interp2app(W_PHPGenericAdapter.descr_or),
+    __eq__ = interp2app(W_PHPGenericAdapter.descr_eq),
+    __ne__ = interp2app(W_PHPGenericAdapter.descr_ne),
 )
 
 

@@ -640,7 +640,7 @@ class ClassBase(AbstractFunction, AccessMixin):
 
     def to_py(self, interp):
         from hippy.module.pypy_bridge import py_wrappers
-        return py_wrappers.W_PHPProxyGeneric(interp, self)
+        return py_wrappers.W_PHPGenericAdapter(interp, self)
 
 def _get_instance_class(extends, instance_class):
     if extends is not None:
