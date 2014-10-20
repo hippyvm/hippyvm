@@ -207,7 +207,7 @@ W_PHPGenericAdapter.typedef = TypeDef("PhBridgeProxy",
 )
 
 
-class W_EmbeddedPHPFunc(W_Root):
+class W_PHPFuncAdapter(W_Root):
     """ A Python callable that actually executes a PHP function """
 
     _immutable_fields_ = ["space", "w_php_func"]
@@ -224,7 +224,7 @@ class W_EmbeddedPHPFunc(W_Root):
         return self.space.get_php_interp()
 
     def is_w(self, space, other):
-        if isinstance(other, W_EmbeddedPHPFunc):
+        if isinstance(other, W_PHPFuncAdapter):
             return self.w_php_func is other.w_php_func
         return False
 
@@ -274,8 +274,8 @@ class W_EmbeddedPHPFunc(W_Root):
 
         return res.to_py(php_interp)
 
-W_EmbeddedPHPFunc.typedef = TypeDef("EmbeddedPHPFunc",
-    __call__ = interp2app(W_EmbeddedPHPFunc.descr_call),
+W_PHPFuncAdapter.typedef = TypeDef("EmbeddedPHPFunc",
+    __call__ = interp2app(W_PHPFuncAdapter.descr_call),
 )
 
 def _raise_py_bridgeerror(py_space, msg):
