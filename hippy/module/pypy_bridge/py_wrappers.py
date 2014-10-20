@@ -251,7 +251,7 @@ class W_PHPFuncAdapter(W_Root):
 
             if self.w_php_func.needs_ref(arg_no):
                 # if you try to pass a reference argument by value, fail.
-                if not isinstance(w_py_arg, W_PRef):
+                if not isinstance(w_py_arg, W_PHPReferenceAdapter):
                     err_str = "Arg %d of PHP func '%s' is pass by reference" % \
                             (arg_no + 1, self.w_php_func.name)
                     _raise_py_bridgeerror(py_space, err_str)
@@ -259,7 +259,7 @@ class W_PHPFuncAdapter(W_Root):
                 w_php_args_elems.append(w_py_arg.ref)
             else:
                 # if you pass a value argument by reference, fail.
-                if isinstance(w_py_arg, W_PRef):
+                if isinstance(w_py_arg, W_PHPReferenceAdapter):
                     err_str = "Arg %d of PHP func '%s' is pass by value" % \
                             (arg_no + 1, self.w_php_func.name)
                     _raise_py_bridgeerror(py_space, err_str)
@@ -530,7 +530,7 @@ def make_wrapped_mixed_key_php_array(interp, w_php_arry_ref):
     return WPy_DictMultiObject(interp.py_space, strategy, storage)
 
 
-class W_PRef(W_Root):
+class W_PHPReferenceAdapter(W_Root):
     """ Represents a PHP reference """
 
     def __init__(self, space, w_py_val):
@@ -544,13 +544,13 @@ class W_PRef(W_Root):
 
     @staticmethod
     def descr_new(space, w_type, w_py_val):
-        w_obj = space.allocate_instance(W_PRef, w_type)
+        w_obj = space.allocate_instance(W_PHPReferenceAdapter, w_type)
         w_obj.__init__(space, w_py_val)
         return w_obj
 
-W_PRef.typedef = TypeDef("PRef",
-    __new__ = interp2app(W_PRef.descr_new),
-    deref = interp2app(W_PRef.deref),
+W_PHPReferenceAdapter.typedef = TypeDef("PRef",
+    __new__ = interp2app(W_PHPReferenceAdapter.descr_new),
+    deref = interp2app(W_PHPReferenceAdapter.deref),
 )
 
 class W_PyListDictStrategyValueIterator(object):
