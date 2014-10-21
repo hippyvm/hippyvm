@@ -266,7 +266,7 @@ class W_PyListAdapter(W_ArrayObject):
                 make_dict_like_py_list)
         return make_dict_like_py_list(interp, self.w_py_list)
 
-class W_PyBridgeDictProxyIterator(BaseIterator):
+class W_PyDictAdapterIterator(BaseIterator):
 
     _immutable_fields_ = ["interp", "w_py_iter"]
 
@@ -299,7 +299,7 @@ class W_PyBridgeDictProxyIterator(BaseIterator):
     def to_py(self, interp):
         return None
 
-class W_PyBridgeDictProxy(W_ArrayObject):
+class W_PyDictAdapter(W_ArrayObject):
     """ Wraps a Python dict as something PHP array. """
 
     _immutable_fields_ = ["py_space", "w_py_dict"]
@@ -311,7 +311,7 @@ class W_PyBridgeDictProxy(W_ArrayObject):
     def copy(self):
         # used for copy on write semantics of PHP
         w_py_dict_copy = self.w_py_dict.descr_copy(self.py_space)
-        return W_PyBridgeDictProxy(self.py_space, w_py_dict_copy)
+        return W_PyDictAdapter(self.py_space, w_py_dict_copy)
 
     def get_wrapped_py_obj(self):
         return self.w_py_dict
@@ -344,7 +344,7 @@ class W_PyBridgeDictProxy(W_ArrayObject):
         return self
 
     def create_iter(self, space, contextclass=None):
-        return W_PyBridgeDictProxyIterator(self.py_space, self.w_py_dict)
+        return W_PyDictAdapterIterator(self.py_space, self.w_py_dict)
 
     def to_py(self, interp):
         return self.w_py_dict
