@@ -113,7 +113,7 @@ class W_EmbeddedPyCallable(W_InvokeCall):
     def is_py_call(self):
         return True
 
-class W_EmbeddedPyFunc(W_InstanceObject):
+class W_PyFuncAdapter(W_InstanceObject):
     """ A 'lexically scoped' embedded Python function.
     Essentially these instances behave a bit like a PHP closure."""
 
@@ -126,11 +126,11 @@ class W_EmbeddedPyFunc(W_InstanceObject):
 
     def setattr(self, interp, attr, w_value, contextclass, unique_item=False):
         interp.catchable_fatal(
-                "W_EmbeddedPyFunc object cannot have properties")
+                "W_PyFuncAdapter object cannot have properties")
 
     def setattr_ref(self, interp, attr, w_value, contextclass):
         interp.catchable_fatal(
-                "W_EmbeddedPyFunc object cannot have properties")
+                "W_PyFuncAdapter object cannot have properties")
 
     def clone(self, interp, contextclass):
         raise NotImplementedError("Not implemented")
@@ -144,7 +144,7 @@ class W_EmbeddedPyFunc(W_InstanceObject):
 k_EmbeddedPyFunc = def_class('EmbeddedPyFunc', [])
 
 def new_embedded_py_func(interp, w_py_func):
-    return W_EmbeddedPyFunc(interp, w_py_func, k_EmbeddedPyFunc,
+    return W_PyFuncAdapter(interp, w_py_func, k_EmbeddedPyFunc,
             k_EmbeddedPyFunc.get_initial_storage_w(interp.space)[:])
 
 class W_EmbeddedPyMod(WPh_Object):
