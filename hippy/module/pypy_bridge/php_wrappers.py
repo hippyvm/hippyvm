@@ -20,7 +20,7 @@ from pypy.objspace.std.listobject import W_ListObject as WPy_ListObject
 from rpython.rlib import jit
 
 
-class W_PyProxyGeneric(W_InstanceObject):
+class W_PyGenericAdapter(W_InstanceObject):
     """Generic proxy for wrapping Python objects in Hippy when no more specific
     proxy is available."""
 
@@ -47,7 +47,7 @@ class W_PyProxyGeneric(W_InstanceObject):
     def to_py(self, interp):
         return self.w_py_inst
 
-@wrap_method(['interp', ThisUnwrapper(W_PyProxyGeneric), str],
+@wrap_method(['interp', ThisUnwrapper(W_PyGenericAdapter), str],
         name='GenericPyProxy::__get')
 def generic__get(interp, this, name):
     interp = this.interp
@@ -55,7 +55,7 @@ def generic__get(interp, this, name):
     w_py_target = py_space.getattr(this.w_py_inst, py_space.wrap(name))
     return w_py_target.to_php(interp)
 
-@wrap_method(['interp', ThisUnwrapper(W_PyProxyGeneric), str, Wph_Root],
+@wrap_method(['interp', ThisUnwrapper(W_PyGenericAdapter), str, Wph_Root],
         name='GenericPyProxy::__call')
 @jit.unroll_safe
 def generic__call(interp, this, func_name, w_php_args):
@@ -72,7 +72,7 @@ def generic__call(interp, this, func_name, w_php_args):
 
 k_PyBridgeProxy = def_class('PyBridgeProxy',
     [generic__get, generic__call],
-    [], instance_class=W_PyProxyGeneric
+    [], instance_class=W_PyGenericAdapter
 )
 
 class W_EmbeddedPyCallable(W_InvokeCall):
