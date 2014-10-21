@@ -11,7 +11,7 @@ from hippy.module.pypy_bridge.util import _raise_py_bridgeerror
 
 from rpython.rlib import rerased
 
-class WrappedPHPArrayStrategy(ListStrategy):
+class PHPArrayListStrategy(ListStrategy):
     """Wrapping of a PHP list is implemented as a PyPy list strategy"""
 
     _none_value = None
@@ -29,7 +29,7 @@ class WrappedPHPArrayStrategy(ListStrategy):
     def wrap(self, w_php_val):
         return w_php_val.to_py(self.space.get_php_interp())
 
-    erase, unerase = rerased.new_erasing_pair("WrappedPHPArrayStrategy")
+    erase, unerase = rerased.new_erasing_pair("PHPArrayListStrategy")
     erase = staticmethod(erase)
     unerase = staticmethod(unerase)
 
@@ -37,7 +37,7 @@ class WrappedPHPArrayStrategy(ListStrategy):
         return isinstance(w_obj, WPHP_Root)
 
     def list_is_correct_type(self, w_list):
-        return w_list.strategy is self.space.fromcache(WrappedPHPArrayStrategy)
+        return w_list.strategy is self.space.fromcache(PHPArrayListStrategy)
 
     def length(self, w_list):
         self._check_valid_wrap(w_list)
@@ -91,17 +91,17 @@ def make_wrapped_int_key_php_array(interp, w_php_arry_ref):
                 "can only apply as_list() to a wrapped PHP array in dict form")
 
 
-    strategy = interp.py_space.fromcache(WrappedPHPArrayStrategy)
+    strategy = interp.py_space.fromcache(PHPArrayListStrategy)
     storage = strategy.erase(w_php_arry_ref)
 
     return W_ListObject.from_storage_and_strategy(
             interp.py_space, storage, strategy)
 
-class WrappedPHPArrayDictStrategy(DictStrategy):
+class PHPArrayDictStrategy(DictStrategy):
     """Wrapping a non-int keyed (mixed key) PHP array uses a special
     dict strategy"""
 
-    erase, unerase = rerased.new_erasing_pair("WrappedPHPArrayDictStrategy")
+    erase, unerase = rerased.new_erasing_pair("PHPArrayDictStrategy")
     erase = staticmethod(erase)
     unerase = staticmethod(unerase)
 
@@ -158,17 +158,17 @@ class WrappedPHPArrayDictStrategy(DictStrategy):
 
     def getiterkeys(self, w_dict):
         w_php_arry = self.unerase(w_dict.dstorage)
-        return WrappedPHPArrayDictStrategyKeyIterator(
+        return PHPArrayDictStrategyKeyIterator(
                 self.space.get_php_interp(), w_php_arry)
 
     def getitervalues(self, w_dict):
         w_php_arry = self.unerase(w_dict.dstorage)
-        return WrappedPHPArrayDictStrategyValueIterator(
+        return PHPArrayDictStrategyValueIterator(
                 self.space.get_php_interp(), w_php_arry)
 
     def getiteritems(self, w_dict):
         w_php_arry = self.unerase(w_dict.dstorage)
-        return WrappedPHPArrayDictStrategyItemIterator(
+        return PHPArrayDictStrategyItemIterator(
                 self.space.get_php_interp(), w_php_arry)
 
     def as_list(self, w_dict):
@@ -178,7 +178,7 @@ class WrappedPHPArrayDictStrategy(DictStrategy):
         w_php_arry_ref = self.unerase(w_dict.dstorage)
         return make_wrapped_int_key_php_array(interp, w_php_arry_ref)
 
-class WrappedPHPArrayDictStrategyKeyIterator(object):
+class PHPArrayDictStrategyKeyIterator(object):
 
     _immutable_fields_ = ["interp", "w_php_arry", "self.itr"]
 
@@ -201,7 +201,7 @@ class WrappedPHPArrayDictStrategyKeyIterator(object):
     def next(self):
         return self.itr.next_item(self.interp.space)[0]
 
-class WrappedPHPArrayDictStrategyValueIterator(object):
+class PHPArrayDictStrategyValueIterator(object):
 
     _immutable_fields_ = ["interp", "w_php_arry", "self.itr"]
 
@@ -224,7 +224,7 @@ class WrappedPHPArrayDictStrategyValueIterator(object):
     def next(self):
         return self.itr.next(self.interp.space)
 
-class WrappedPHPArrayDictStrategyItemIterator(object):
+class PHPArrayDictStrategyItemIterator(object):
 
     _immutable_fields_ = ["interp", "w_php_arry", "self.itr"]
 
@@ -247,20 +247,20 @@ class WrappedPHPArrayDictStrategyItemIterator(object):
     def next(self):
         return self.itr.next_item(self.interp.space)
 
-create_iterator_classes(WrappedPHPArrayDictStrategy)
+create_iterator_classes(PHPArrayDictStrategy)
 
 def make_wrapped_mixed_key_php_array(interp, w_php_arry_ref):
-    strategy = interp.py_space.fromcache(WrappedPHPArrayDictStrategy)
+    strategy = interp.py_space.fromcache(PHPArrayDictStrategy)
     storage = strategy.erase(w_php_arry_ref)
 
     return W_DictMultiObject(interp.py_space, strategy, storage)
 
-class WrappedPyListDictStrategy(DictStrategy):
+class PyListDictStrategy(DictStrategy):
     """Wraps a Python list, pretending to be a Python dictionary.
     This is needed because anything which appears to be array-like in PHP
     (i.e. a Python list) should become dict-like when passed to Python."""
 
-    erase, unerase = rerased.new_erasing_pair("WrappedPyListDictStrategy")
+    erase, unerase = rerased.new_erasing_pair("PyListDictStrategy")
     erase = staticmethod(erase)
     unerase = staticmethod(unerase)
 
@@ -363,9 +363,9 @@ class W_PyListDictStrategyItemsIterator(object):
         w_py_val = self.w_py_val_itr.descr_next(self.py_space)
         return w_py_key, w_py_val
 
-create_iterator_classes(WrappedPyListDictStrategy)
+create_iterator_classes(PyListDictStrategy)
 
 def make_dict_like_py_list(interp, w_py_list):
-    strategy = interp.py_space.fromcache(WrappedPyListDictStrategy)
+    strategy = interp.py_space.fromcache(PyListDictStrategy)
     storage = strategy.erase(w_py_list)
     return W_DictMultiObject(interp.py_space, strategy, storage)
