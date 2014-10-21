@@ -70,7 +70,7 @@ def generic__call(interp, this, func_name, w_php_args):
     w_py_rv = interp.py_space.call(w_py_func, interp.py_space.newlist(w_py_args_items))
     return w_py_rv.to_php(interp)
 
-k_PyBridgeProxy = def_class('PyBridgeProxy',
+k_PyGenericAdapter = def_class('PyGenericAdapter',
     [generic__get, generic__call],
     [], instance_class=W_PyGenericAdapter
 )
@@ -141,11 +141,11 @@ class W_PyFuncAdapter(W_InstanceObject):
     def to_py(self, interp):
         return self.w_py_func
 
-k_EmbeddedPyFunc = def_class('EmbeddedPyFunc', [])
+k_PyFuncAdapter = def_class('PyFuncAdapter', [])
 
 def new_embedded_py_func(interp, w_py_func):
-    return W_PyFuncAdapter(interp, w_py_func, k_EmbeddedPyFunc,
-            k_EmbeddedPyFunc.get_initial_storage_w(interp.space)[:])
+    return W_PyFuncAdapter(interp, w_py_func, k_PyFuncAdapter,
+            k_PyFuncAdapter.get_initial_storage_w(interp.space)[:])
 
 class W_PyModAdapter(WPh_Object):
     _immutable_fields_ = ["py_space", "w_py_mod"]
@@ -375,7 +375,8 @@ class W_PyExceptionAdapter(W_ExceptionObject):
         #this.setattr(interp, 'message', space.wrap(message), k_Exception)
         w_py_exn_str = py_space.getattr(self.w_py_exn, py_space.wrap("message"))
         msg = py_space.str_w(w_py_exn_str)
-        self.setattr(php_interp, 'message', php_space.wrap(msg), k_PyException)
+        self.setattr(php_interp, 'message',
+                php_space.wrap(msg), k_PyExceptionAdapter)
 
         #this.setattr(interp, 'code', space.wrap(code), k_Exception)
         self.code = None
@@ -384,7 +385,7 @@ class W_PyExceptionAdapter(W_ExceptionObject):
 def w_py_exc_getMessage(interp, this):
     return this.getattr(interp, "message")
 
-k_PyException = def_class('PyException',
+k_PyExceptionAdapter = def_class('PyException',
     [w_py_exc_getMessage], [], instance_class=W_PyExceptionAdapter)
 
 from hippy.builtin_klass import k_Exception
