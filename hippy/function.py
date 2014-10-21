@@ -75,8 +75,8 @@ class AbstractFunction(W_Root):
         raise NotImplementedError("abstract base class")
 
     def to_py(self, interp):
-        from hippy.module.pypy_bridge import py_wrappers
-        return py_wrappers.W_PHPFuncAdapter(interp.py_space, self)
+        from hippy.module.pypy_bridge import php_adapters
+        return php_adapters.W_PHPFuncAdapter(interp.py_space, self)
 
     def is_py_call(self):
         return False
@@ -173,5 +173,5 @@ class Function(AbstractFunction):
         return w_res
 
     def to_py(self, interp):
-        from hippy.module.pypy_bridge import py_wrappers
-        return py_wrappers.W_PHPFuncAdapter(interp.py_space, self)
+        from hippy.module.pypy_bridge import php_adapters
+        return php_adapters.W_PHPFuncAdapter(interp.py_space, self)

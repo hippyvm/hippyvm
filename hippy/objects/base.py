@@ -241,5 +241,5 @@ class W_Object(W_Root):
         raise NotImplementedError # serialize need to be implemented by everyone
 
     def to_py(self, interp):
-        from hippy.module.pypy_bridge import py_wrappers
-        return py_wrappers.W_PHPGenericAdapter(interp, self)
+        from hippy.module.pypy_bridge import php_adapters
+        return php_adapters.W_PHPGenericAdapter(interp, self)
