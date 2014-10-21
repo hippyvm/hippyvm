@@ -817,7 +817,8 @@ def _fopen(space, fname, mode, use_include_path=False, w_ctx=None):
         w_res.open()
         return w_res
     except IOError, e:
-        return space.w_False
+        raise FopenError(
+                ["failed to open stream: %s" % e.strerror])
     except OSError:
         return space.w_False
 
