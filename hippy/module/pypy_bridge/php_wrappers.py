@@ -141,7 +141,7 @@ class W_PyFuncAdapter(W_InstanceObject):
     def to_py(self, interp):
         return self.w_py_func
 
-k_PyFuncAdapter = def_class('PyFuncAdapter', [])
+k_PyFuncAdapter = def_class('PyFunc', [])
 
 def new_embedded_py_func(interp, w_py_func):
     return W_PyFuncAdapter(interp, w_py_func, k_PyFuncAdapter,

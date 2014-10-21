@@ -174,7 +174,7 @@ class W_PHPGenericAdapter(W_Root):
     def descr_ne(self, space, w_other):
         return space.not_(self.descr_eq(space, w_other))
 
-W_PHPGenericAdapter.typedef = TypeDef("PhBridgeProxy",
+W_PHPGenericAdapter.typedef = TypeDef("PHPGenericAdapter",
     __call__ = interp2app(W_PHPGenericAdapter.descr_call),
     __getattr__ = interp2app(W_PHPGenericAdapter.descr_get),
     __setattr__ = interp2app(W_PHPGenericAdapter.descr_set),
@@ -240,7 +240,7 @@ class W_PHPFuncAdapter(W_Root):
 
             if self.w_php_func.needs_ref(arg_no):
                 # if you try to pass a reference argument by value, fail.
-                if not isinstance(w_py_arg, W_PHPReferenceAdapter):
+                if not isinstance(w_py_arg, W_PHPRefAdapter):
                     err_str = "Arg %d of PHP func '%s' is pass by reference" % \
                             (arg_no + 1, self.w_php_func.name)
                     _raise_py_bridgeerror(py_space, err_str)
@@ -248,7 +248,7 @@ class W_PHPFuncAdapter(W_Root):
                 w_php_args_elems.append(w_py_arg.ref)
             else:
                 # if you pass a value argument by reference, fail.
-                if isinstance(w_py_arg, W_PHPReferenceAdapter):
+                if isinstance(w_py_arg, W_PHPRefAdapter):
                     err_str = "Arg %d of PHP func '%s' is pass by value" % \
                             (arg_no + 1, self.w_php_func.name)
                     _raise_py_bridgeerror(py_space, err_str)
@@ -263,11 +263,11 @@ class W_PHPFuncAdapter(W_Root):
 
         return res.to_py(php_interp)
 
-W_PHPFuncAdapter.typedef = TypeDef("EmbeddedPHPFunc",
+W_PHPFuncAdapter.typedef = TypeDef("PHPFunc",
     __call__ = interp2app(W_PHPFuncAdapter.descr_call),
 )
 
-class W_PHPReferenceAdapter(W_Root):
+class W_PHPRefAdapter(W_Root):
     """ Represents a PHP reference """
 
     def __init__(self, space, w_py_val):
@@ -281,12 +281,12 @@ class W_PHPReferenceAdapter(W_Root):
 
     @staticmethod
     def descr_new(space, w_type, w_py_val):
-        w_obj = space.allocate_instance(W_PHPReferenceAdapter, w_type)
+        w_obj = space.allocate_instance(W_PHPRefAdapter, w_type)
         w_obj.__init__(space, w_py_val)
         return w_obj
 
-W_PHPReferenceAdapter.typedef = TypeDef("PRef",
-    __new__ = interp2app(W_PHPReferenceAdapter.descr_new),
-    deref = interp2app(W_PHPReferenceAdapter.deref),
+W_PHPRefAdapter.typedef = TypeDef("PHPRef",
+    __new__ = interp2app(W_PHPRefAdapter.descr_new),
+    deref = interp2app(W_PHPRefAdapter.deref),
 )
 

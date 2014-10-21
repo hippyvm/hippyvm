@@ -97,7 +97,7 @@ class TestPyPyBridgeArgPassing(BaseTestInterpreter):
         output = self.run('''
             $src = <<<EOD
             def f():
-                l = PRef([1,2,3])
+                l = PHPRef([1,2,3])
                 g(l)
                 return l.deref()[0]
             EOD;
@@ -134,7 +134,7 @@ class TestPyPyBridgeArgPassing(BaseTestInterpreter):
             $src = <<<EOD
             def f():
                 d = { "a" : "b", "b": "c" }
-                d_ref = PRef(d)
+                d_ref = PHPRef(d)
                 g(d_ref)
                 return d_ref.deref()["a"]
             EOD;
@@ -171,7 +171,7 @@ class TestPyPyBridgeArgPassing(BaseTestInterpreter):
         output = self.run('''
             $src = <<<EOD
             def f():
-                i = PRef(1337)
+                i = PHPRef(1337)
                 g(i)
                 return i.deref()
             EOD;
@@ -225,7 +225,7 @@ class TestPyPyBridgeArgPassing(BaseTestInterpreter):
         output = self.run('''
             $src = <<<EOD
             def f(a1, a2):
-                p1, p2 = PRef(a1), PRef(a2)
+                p1, p2 = PHPRef(a1), PHPRef(a2)
                 swap(p1, p2)
                 return [p1.deref(), p2.deref()]
             EOD;
@@ -295,7 +295,7 @@ class TestPyPyBridgeArgPassing(BaseTestInterpreter):
         output = self.run('''
             $src = <<<EOD
             def f():
-                i = PRef("old")
+                i = PHPRef("old")
                 g(i)
                 return i.deref()
             EOD;
@@ -313,7 +313,7 @@ class TestPyPyBridgeArgPassing(BaseTestInterpreter):
         output = self.run('''
             $src = <<<EOD
             def f():
-                i = PRef("old")
+                i = PHPRef("old")
                 g(i)
                 return i.deref()
             EOD;
@@ -331,7 +331,7 @@ class TestPyPyBridgeArgPassing(BaseTestInterpreter):
         output = self.run('''
             $src = <<<EOD
             def f():
-                i = PRef("old")
+                i = PHPRef("old")
                 try:
                     g(i) # is an error since we passed a ref to a non-ref arg
                     return "No exception!"
