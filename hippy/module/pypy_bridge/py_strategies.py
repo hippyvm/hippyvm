@@ -187,7 +187,7 @@ class PHPArrayDictStrategyKeyIterator(object):
         w_php_arry = w_php_arry_ref.deref_temp()
         self.interp = interp
 
-        from hippy.module.pypy_bridge.php_wrappers import W_PyListAdapter
+        from hippy.module.pypy_bridge.py_adapters import W_PyListAdapter
         if isinstance(w_php_arry, W_ListArrayObject) or \
                 isinstance(w_php_arry, W_PyListAdapter):
             self.itr = ListArrayIteratorRef(interp.space, w_php_arry_ref)
@@ -210,7 +210,7 @@ class PHPArrayDictStrategyValueIterator(object):
         w_php_arry = w_php_arry_ref.deref_temp()
         self.interp = interp
 
-        from hippy.module.pypy_bridge.php_wrappers import W_PyListAdapter
+        from hippy.module.pypy_bridge.py_adapters import W_PyListAdapter
         if isinstance(w_php_arry, W_ListArrayObject) or \
                 isinstance(w_php_arry, W_PyListAdapter):
             self.itr = ListArrayIteratorRef(interp.space, w_php_arry_ref)
@@ -233,7 +233,7 @@ class PHPArrayDictStrategyItemIterator(object):
         w_php_arry = w_php_arry_ref.deref_temp()
         self.interp = interp
 
-        from hippy.module.pypy_bridge.php_wrappers import W_PyListAdapter
+        from hippy.module.pypy_bridge.py_adapters import W_PyListAdapter
         if isinstance(w_php_arry, W_ListArrayObject) or \
                 isinstance(w_php_arry, W_PyListAdapter):
             self.itr = ListArrayIteratorRef(interp.space, w_php_arry_ref)

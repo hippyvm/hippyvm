@@ -85,7 +85,7 @@ from hippy.module.date import default_timezone
 from hippy.buffering import Buffer
 
 # Also needed so that PyException is defined early enough to hit the class cache.
-from hippy.module.pypy_bridge import php_wrappers
+from hippy.module.pypy_bridge import py_adapters
 
 if is_optional_extension_enabled("mysql"):
     import ext_module.mysql.funcs
@@ -442,7 +442,7 @@ class Interpreter(object):
         if py_scope is not None:
             w_php_v = py_scope.ph_lookup(name)
             if w_php_v is not None:
-                if not isinstance(w_php_v, php_wrappers.W_EmbeddedPyCallable):
+                if not isinstance(w_php_v, py_adapters.W_EmbeddedPyCallable):
                     self.fatal("Can only call Python functions from PHP")
                 return w_php_v
         self.fatal("Call to undefined function %s()" % name)
@@ -1255,7 +1255,7 @@ class Interpreter(object):
         return method.bind(w_this, klass)
 
     def getfunc(self, w_name, w_this, contextclass):
-        if isinstance(w_name, php_wrappers.W_EmbeddedPyCallable):
+        if isinstance(w_name, py_adapters.W_EmbeddedPyCallable):
             # We allow Python to return references to functions, rather than
             # merely referencing names.
             return w_name

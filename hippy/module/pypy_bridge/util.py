@@ -1,6 +1,6 @@
 from pypy.interpreter.error import OperationError
 
-from hippy.module.pypy_bridge.php_wrappers import k_BridgeException
+from hippy.module.pypy_bridge.py_adapters import k_BridgeException
 
 def _raise_py_bridgeerror(py_space, msg):
     w_bridgeerror = py_space.builtin.get("BridgeError")
