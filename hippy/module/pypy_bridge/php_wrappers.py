@@ -178,7 +178,7 @@ class W_PyModAdapter(WPh_Object):
     def to_py(self, interp):
         return self.w_py_mod
 
-class W_PyBridgeListProxyIterator(BaseIterator):
+class W_PyListAdapterIterator(BaseIterator):
 
     _immutable_fields_ = ["py_space", "storage_w"]
 
@@ -207,7 +207,7 @@ class W_PyBridgeListProxyIterator(BaseIterator):
         self.finished = self.index == len(self.storage_w)
         return space.wrap(index), w_py_value.to_php(self.py_space.get_php_interp())
 
-class W_PyBridgeListProxy(W_ArrayObject):
+class W_PyListAdapter(W_ArrayObject):
     """ Wraps a Python list as PHP array. """
 
     _immutable_fields_ = ["py_space", "w_py_list"]
@@ -229,7 +229,7 @@ class W_PyBridgeListProxy(W_ArrayObject):
     def copy(self):
         # used for copy on write semantics of PHP
         w_py_list_copy = self.w_py_list.clone()
-        return W_PyBridgeListProxy(self.py_space, w_py_list_copy)
+        return W_PyListAdapter(self.py_space, w_py_list_copy)
 
     def _getitem_int(self, index):
         py_space = self.py_space
@@ -257,7 +257,7 @@ class W_PyBridgeListProxy(W_ArrayObject):
                "Cannot set string keys of wrapped Python list")
 
     def create_iter(self, space, contextclass=None):
-        return W_PyBridgeListProxyIterator(self.py_space, self.w_py_list)
+        return W_PyListAdapterIterator(self.py_space, self.w_py_list)
 
     def to_py(self, interp):
         # array-like structures in PHP are always converted to a dict-like
