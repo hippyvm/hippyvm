@@ -349,7 +349,7 @@ class W_PyDictAdapter(W_ArrayObject):
     def to_py(self, interp):
         return self.w_py_dict
 
-class W_PyException(W_ExceptionObject):
+class W_PyExceptionAdapter(W_ExceptionObject):
     """ Wraps up a Python exception """
 
     def __init__(self, klass, dct_w):
@@ -380,12 +380,12 @@ class W_PyException(W_ExceptionObject):
         #this.setattr(interp, 'code', space.wrap(code), k_Exception)
         self.code = None
 
-@wrap_method(['interp', ThisUnwrapper(W_PyException)], name='PyException::getMessage')
+@wrap_method(['interp', ThisUnwrapper(W_PyExceptionAdapter)], name='PyException::getMessage')
 def w_py_exc_getMessage(interp, this):
     return this.getattr(interp, "message")
 
 k_PyException = def_class('PyException',
-    [w_py_exc_getMessage], [], instance_class=W_PyException)
+    [w_py_exc_getMessage], [], instance_class=W_PyExceptionAdapter)
 
 from hippy.builtin_klass import k_Exception
 # Indicates an error in PHP->Py glue code
