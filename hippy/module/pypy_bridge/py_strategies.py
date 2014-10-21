@@ -12,13 +12,13 @@ from hippy.module.pypy_bridge.util import _raise_py_bridgeerror
 from rpython.rlib import rerased
 
 class WrappedPHPArrayStrategy(ListStrategy):
-    """ Wrapping of a PHP list is implemented as a PyPy list strategy """
+    """Wrapping of a PHP list is implemented as a PyPy list strategy"""
 
     _none_value = None
 
     def _check_valid_wrap(self, w_list):
-        """ If at any point we find that we no longer wrap a int-keyed
-        PHP array then we are invalid """
+        """If at any point we find that we no longer wrap a int-keyed
+        PHP array then we are invalid"""
         w_php_arry = self.unerase(w_list.lstorage).deref_temp()
         if not isinstance(w_php_arry, W_ListArrayObject):
             interp = self.space.get_php_interp()
@@ -172,8 +172,7 @@ class WrappedPHPArrayDictStrategy(DictStrategy):
                 self.space.get_php_interp(), w_php_arry)
 
     def as_list(self, w_dict):
-        """ 'Cast' a PHP array in Python dict form into Python list form """
-
+        """'Cast' a PHP array in Python dict form into Python list form"""
 
         interp = self.space.get_php_interp()
         w_php_arry_ref = self.unerase(w_dict.dstorage)
@@ -257,7 +256,7 @@ def make_wrapped_mixed_key_php_array(interp, w_php_arry_ref):
     return W_DictMultiObject(interp.py_space, strategy, storage)
 
 class WrappedPyListDictStrategy(DictStrategy):
-    """ Wraps a Python list, pretending to be a Python dictionary.
+    """Wraps a Python list, pretending to be a Python dictionary.
     This is needed because anything which appears to be array-like in PHP
     (i.e. a Python list) should become dict-like when passed to Python."""
 
@@ -314,7 +313,7 @@ class WrappedPyListDictStrategy(DictStrategy):
         return W_PyListDictStrategyItemsIterator(py_space, w_py_list)
 
     def as_list(self, w_dict):
-        """ make it a real Python list again """
+        """make it a real Python list again"""
         return self.unerase(w_dict.dstorage)
 
 class W_PyListDictStrategyValueIterator(object):

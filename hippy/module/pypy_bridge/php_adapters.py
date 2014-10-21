@@ -19,8 +19,8 @@ from hippy.module.pypy_bridge.util import _raise_py_bridgeerror
 from rpython.rlib import jit, rerased
 
 class W_PHPGenericAdapter(W_Root):
-    """Generic proxy for wrapping PHP objects in PyPy when no more specific
-    proxy is available."""
+    """Generic adapter for PHP objects in Python.
+    Used when no more specific adapter is available."""
 
     _immutable_fields_ = ["interp", "w_php_inst"]
 
@@ -44,7 +44,7 @@ class W_PHPGenericAdapter(W_Root):
 
     @unwrap_spec(name=str)
     def descr_get(self, name):
-        """ Python is asking for an attribute of a proxied PHP object """
+        """Python is asking for an attribute of a proxied PHP object"""
         interp = self.interp
         php_space = interp.space
         py_space = interp.py_space
@@ -195,9 +195,8 @@ W_PHPGenericAdapter.typedef = TypeDef("PHPGenericAdapter",
     __ne__ = interp2app(W_PHPGenericAdapter.descr_ne),
 )
 
-
 class W_PHPFuncAdapter(W_Root):
-    """ A Python callable that actually executes a PHP function """
+    """A Python callable that actually executes a PHP function"""
 
     _immutable_fields_ = ["space", "w_php_func"]
 
@@ -227,8 +226,8 @@ class W_PHPFuncAdapter(W_Root):
 
         # PHP has no equivalent to keyword arguments.
         if kwargs:
-            _raise_py_bridgeerror(
-                    self.space, "Cannot use kwargs when calling PHP functions")
+            _raise_py_bridgeerror(self.space,
+                    "Cannot use kwargs when calling PHP functions")
 
         py_space = self.space
         php_interp = self.space.get_php_interp()
@@ -259,7 +258,8 @@ class W_PHPFuncAdapter(W_Root):
             res = self.w_php_func.call_args(php_interp, w_php_args_elems)
         except Throw as w_php_throw:
             w_php_exn = w_php_throw.w_exc
-            raise OperationError(self.w_phpexception, w_php_exn.to_py(php_interp))
+            raise OperationError(
+                    self.w_phpexception, w_php_exn.to_py(php_interp))
 
         return res.to_py(php_interp)
 
@@ -268,7 +268,7 @@ W_PHPFuncAdapter.typedef = TypeDef("PHPFunc",
 )
 
 class W_PHPRefAdapter(W_Root):
-    """ Represents a PHP reference """
+    """Represents a PHP reference"""
 
     def __init__(self, space, w_py_val):
         from hippy.objects.reference import W_Reference

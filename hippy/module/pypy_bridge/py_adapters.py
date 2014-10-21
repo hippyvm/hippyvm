@@ -21,8 +21,8 @@ from rpython.rlib import jit
 
 
 class W_PyGenericAdapter(W_InstanceObject):
-    """Generic proxy for wrapping Python objects in Hippy when no more specific
-    proxy is available."""
+    """Generic adapter for Python objects in PHP.
+    Used if no specific adapter exists"""
 
     _immutable_fields_ = ["interp", "w_py_inst"]
 
@@ -41,7 +41,7 @@ class W_PyGenericAdapter(W_InstanceObject):
         return w_php_pxy
 
     def get_callable(self):
-        """ PHP interpreter calls this when calls a wrapped Python var  """
+        """PHP interpreter calls this when calls a wrapped Python var"""
         return W_EmbeddedPyCallable(self.w_py_inst)
 
     def to_py(self, interp):
@@ -67,7 +67,8 @@ def generic__call(interp, this, func_name, w_php_args):
     w_py_func = py_space.getattr(this.w_py_inst, w_py_func_name)
 
     w_py_args_items = [ x.to_py(interp) for x in w_php_args.as_list_w() ]
-    w_py_rv = interp.py_space.call(w_py_func, interp.py_space.newlist(w_py_args_items))
+    w_py_rv = interp.py_space.call(w_py_func,
+            interp.py_space.newlist(w_py_args_items))
     return w_py_rv.to_php(interp)
 
 k_PyGenericAdapter = def_class('PyGenericAdapter',
@@ -114,7 +115,7 @@ class W_EmbeddedPyCallable(W_InvokeCall):
         return True
 
 class W_PyFuncAdapter(W_InstanceObject):
-    """ A 'lexically scoped' embedded Python function.
+    """A 'lexically scoped' embedded Python function.
     Essentially these instances behave a bit like a PHP closure."""
 
     _immutable_fields_ = [ "interp", "w_py_func" ]
@@ -172,7 +173,8 @@ class W_PyModAdapter(WPh_Object):
         interp = self.py_space.get_php_interp()
         return self._getattr(interp, space, name)
 
-    def getattr(self, interp, name, contextclass=None, give_notice=False, fail_with_none=False):
+    def getattr(self, interp, name, contextclass=None,
+            give_notice=False, fail_with_none=False):
         return self._getattr(interp, interp.space, name)
 
     def to_py(self, interp):
@@ -205,10 +207,11 @@ class W_PyListAdapterIterator(BaseIterator):
         w_py_value = self.storage_w[index]
         self.index = index + 1
         self.finished = self.index == len(self.storage_w)
-        return space.wrap(index), w_py_value.to_php(self.py_space.get_php_interp())
+        return space.wrap(index), \
+                w_py_value.to_php(self.py_space.get_php_interp())
 
 class W_PyListAdapter(W_ArrayObject):
-    """ Wraps a Python list as PHP array. """
+    """Wraps a Python list as PHP array."""
 
     _immutable_fields_ = ["py_space", "w_py_list"]
 
@@ -300,7 +303,7 @@ class W_PyDictAdapterIterator(BaseIterator):
         return None
 
 class W_PyDictAdapter(W_ArrayObject):
-    """ Wraps a Python dict as something PHP array. """
+    """Wraps a Python dict as a PHP array."""
 
     _immutable_fields_ = ["py_space", "w_py_dict"]
 
@@ -350,7 +353,7 @@ class W_PyDictAdapter(W_ArrayObject):
         return self.w_py_dict
 
 class W_PyExceptionAdapter(W_ExceptionObject):
-    """ Wraps up a Python exception """
+    """Wraps up a Python exception"""
 
     def __init__(self, klass, dct_w):
         W_ExceptionObject.__init__(self, klass, dct_w)
