@@ -29,7 +29,7 @@ def hippy_fail(*args, **kwargs):
     return py.test.mark.xfail("not config.option.runappdirect",
             *args, **kwargs)
 
-
+SHARED_PY_SPACE = PyStdObjSpace()
 
 class BaseTestInterpreter(object):
     Engine = MockEngine
@@ -41,7 +41,7 @@ class BaseTestInterpreter(object):
 
     def init_space(self):
         self.space = getspace()
-        self.py_space = PyStdObjSpace()
+        self.py_space = SHARED_PY_SPACE
         if option.runappdirect:
             self.engine = self.DirectRunner(self.space, self.py_space)
         else:
@@ -58,7 +58,6 @@ class BaseTestInterpreter(object):
         self.engine = None
         self.space = None
         self.py_space.set_php_interp(None) # fd leak when testing on linux
-	self.py_space = None
 
     def run(self, source, expected_warnings=[], extra_func=None,
             inp_stream=None, **kwds):
