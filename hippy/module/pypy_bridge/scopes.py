@@ -8,12 +8,36 @@ from pypy.interpreter.typedef import TypeDef
 from pypy.interpreter.gateway import interp2app
 
 
+PHP_UNKNOWN = 0
+PHP_FRAME   = 1
+PHP_FUNC    = 2
+PHP_CLASS   = 3
+PHP_CONST   = 4
+PHP_PARENT  = 5
+
+class NameMapVersion(object): pass
+
 class PHP_Scope(WPy_Root):
-    _immutable_fields_ = ["ph_interp", "ph_frame"]
+    _immutable_fields_ = ["ph_interp", "ph_frame", "name_map"]
 
     def __init__(self, ph_interp, ph_frame):
         self.ph_interp = ph_interp
         self.ph_frame = ph_frame
+        self.name_map = {}
+        self.name_map_version = NameMapVersion()
+
+
+    @jit.elidable_promote()
+    def _lookup_name_map(self, n, version):
+        try:
+            return self.name_map[n]
+        except KeyError:
+            return PHP_UNKNOWN
+
+    def _update_name_map(self, n, t):
+        assert n not in self.name_map
+        self.name_map[n] = t
+        self.name_map_version = NameMapVersion()
 
 
     def py_lookup(self, n):
@@ -23,24 +47,54 @@ class PHP_Scope(WPy_Root):
         ph_interp = self.ph_interp
         ph_frame = self.ph_frame
 
+        # If we've looked up n in the past, we use the same lookup scheme as
+        # before.
+
+        t = self._lookup_name_map(n, self.name_map_version)
+        if t == PHP_FRAME:
+            ph_v = self.ph_frame.lookup_ref_by_name(n)
+            if ph_v is None:
+                # Someone unset a variable. Raise an exception?
+                assert False
+            return ph_v.to_py(self.ph_interp)
+        elif t == PHP_FUNC:
+            return ph_interp.lookup_function(n).to_py(ph_interp)
+        elif t == PHP_CLASS:
+            return ph_interp.lookup_class_or_intf(n, autoload=False).to_py(ph_interp)
+        elif t == PHP_CONST:
+            return ph_interp.lookup_constant(n).to_py(ph_interp)
+        elif t == PHP_PARENT:
+            return self.ph_frame.bytecode.py_scope.py_lookup(n)
+
+        # If we haven't looked up n before, we have to slowly go through the
+        # possibilities and see which one matches.
+
+        assert t == PHP_UNKNOWN
+
         ph_v = ph_frame.lookup_ref_by_name(n)
         if ph_v is not None:
+            self._update_name_map(n, PHP_FRAME)
             return ph_v.to_py(ph_interp)
 
         ph_v = ph_interp.lookup_function(n)
         if ph_v is not None:
+            self._update_name_map(n, PHP_FUNC)
             return ph_v.to_py(ph_interp)
 
         ph_v = ph_interp.lookup_class_or_intf(n)
         if ph_v is not None:
+            self._update_name_map(n, PHP_CLASS)
             return ph_v.to_py(ph_interp)
 
         ph_v = ph_interp.lookup_constant(n)
         if ph_v is not None:
+            self._update_name_map(n, PHP_CONST)
             return ph_v.to_py(ph_interp)
 
+        assert ph_frame.bytecode.py_scope
         py_scope = ph_frame.bytecode.py_scope
         if py_scope is not None:
+            self._update_name_map(n, PHP_PARENT)
             return py_scope.py_lookup(n)
 
 
