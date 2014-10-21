@@ -147,7 +147,7 @@ def new_embedded_py_func(interp, w_py_func):
     return W_PyFuncAdapter(interp, w_py_func, k_EmbeddedPyFunc,
             k_EmbeddedPyFunc.get_initial_storage_w(interp.space)[:])
 
-class W_EmbeddedPyMod(WPh_Object):
+class W_PyModAdapter(WPh_Object):
     _immutable_fields_ = ["py_space", "w_py_mod"]
 
     def __init__(self, py_space, w_py_mod):
