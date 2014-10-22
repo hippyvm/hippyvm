@@ -60,7 +60,7 @@ class PHP_Scope(WPy_Root):
         elif t == PHP_FUNC:
             return ph_interp.lookup_function(n).to_py(ph_interp)
         elif t == PHP_CLASS:
-            return ph_interp.lookup_class_or_intf(n, autoload=False).to_py(ph_interp)
+            return ph_interp.lookup_class_or_intf(n).to_py(ph_interp)
         elif t == PHP_CONST:
             return ph_interp.lookup_constant(n).to_py(ph_interp)
         elif t == PHP_PARENT:
