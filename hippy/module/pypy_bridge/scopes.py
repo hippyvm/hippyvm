@@ -52,12 +52,10 @@ class PHP_Scope(WPy_Root):
 
         t = self._lookup_name_map(n, self.name_map_version)
         if t == PHP_FRAME:
-            ph_v = self.ph_frame.lookup_ref_by_name_no_create(n)
+            ph_v = self.ph_frame.lookup_ref_by_name(n)
             if ph_v is None:
-                # Someone unset a variable.
-                from hippy.module.pypy_bridge.bridge import _raise_php_bridgeexception
-                _raise_php_bridgeexception(ph_interp,
-                   "Variable '%s' has been unset" % n)
+                # Someone unset a variable. Raise an exception?
+                assert False
             return ph_v.to_py(self.ph_interp)
         elif t == PHP_FUNC:
             return ph_interp.lookup_function(n).to_py(ph_interp)
@@ -73,7 +71,7 @@ class PHP_Scope(WPy_Root):
 
         assert t == PHP_UNKNOWN
 
-        ph_v = ph_frame.lookup_ref_by_name_no_create(n)
+        ph_v = ph_frame.lookup_ref_by_name(n)
         if ph_v is not None:
             self._update_name_map(n, PHP_FRAME)
             return ph_v.to_py(ph_interp)
@@ -93,6 +91,7 @@ class PHP_Scope(WPy_Root):
             self._update_name_map(n, PHP_CONST)
             return ph_v.to_py(ph_interp)
 
+        assert ph_frame.bytecode.py_scope
         py_scope = ph_frame.bytecode.py_scope
         if py_scope is not None:
             self._update_name_map(n, PHP_PARENT)

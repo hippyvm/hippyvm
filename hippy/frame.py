@@ -300,28 +300,6 @@ class Frame(object):
             return ev.lookup_var(name)
         return self.load_ref(no)
 
-    def lookup_ref_by_name_no_create(self, name):
-        """Get an existing reference to the variable `$name`.
-
-        Returns None if the variable does not exist.
-        """
-        no = self.bytecode.lookup_var_pos(name)
-        if no == -1:
-            ev = self.extra_variables
-            if ev is None:
-                return None
-            return ev.lookup_var(name)
-        w_v = self.lookup_variable_temp(no)
-        if w_v is None:
-            return None
-        elif isinstance(w_v, W_Reference):
-            return w_v
-
-        r_value = self.interp.space.empty_ref()
-        r_value.store(w_v, unique=self.unique_items[no])
-        self.store_ref(no, r_value)
-        return r_value
-
     def set_ref_by_name(self, name, r_value):
         no = self.bytecode.lookup_var_pos(name)
         if no == -1:
