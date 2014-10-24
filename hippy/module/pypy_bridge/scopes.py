@@ -98,43 +98,6 @@ class PHP_Scope(WPy_Root):
             return py_scope.py_lookup(n)
 
 
-class W_PHPGlobalScope(WPy_Root):
-    """Proxy the global PHP namespace."""
-
-    _immutable_fields_ = ["interp"]
-
-    def __init__(self, interp):
-        self.interp = interp
-
-    def get_php_interp(self):
-        return self.interp
-
-    def descr_get(self, w_name):
-        ph_interp = self.interp
-        py_space = ph_interp.py_space
-        n = py_space.str_w(w_name)
-
-        ph_v = ph_interp.lookup_function(n)
-        if ph_v is not None:
-            return ph_v.to_py(ph_interp)
-
-        ph_v = ph_interp.lookup_class_or_intf(n)
-        if ph_v is not None:
-            return ph_v.to_py(ph_interp)
-
-        ph_v = ph_interp.lookup_constant(n)
-        if ph_v is not None:
-            return ph_v.to_py(ph_interp)
-
-        print "can't find", n
-        assert False
-
-W_PHPGlobalScope.typedef = TypeDef("PHPGlobalScope",
-    __getattr__ = interp2app(W_PHPGlobalScope.descr_get),
-    #__setattr__ = interp2app(W_PHPGenericAdapter.descr_set),
-)
-
-
 class Py_Scope(WPHP_Root):
     _immutable_fields_ = ["py_interp", "py_frame"]
 
