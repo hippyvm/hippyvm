@@ -476,3 +476,59 @@ class TestPyPyBridgeScope(BaseTestInterpreter):
             echo($f());
         ''')
         assert self.space.int_w(output[0]) == 2
+
+    def test_scopes_are_deterministic1(self):
+        php_space = self.space
+        output = self.run('''
+            function b() { return "b"; }
+            $src = <<<EOD
+            def f():
+                print "f", b
+                return b()
+            EOD;
+            $f = embed_py_func($src);
+            echo $f();
+            $a = "b";
+            $$a = 2;
+            echo $f();
+        ''')
+        assert self.space.str_w(output[0]) == "b" \
+          and self.space.str_w(output[1]) == "b"
+
+    def test_scopes_are_deterministic2(self):
+        php_space = self.space
+        output = self.run('''
+            class b { }
+            function b() { return "b"; }
+            $src = <<<EOD
+            def f():
+                return b()
+            EOD;
+            $f = embed_py_func($src);
+            echo $f();
+            echo $f();
+        ''')
+        assert self.space.str_w(output[0]) == "b" \
+          and self.space.str_w(output[1]) == "b"
+
+    def test_scopes_are_deterministic3(self):
+        php_space = self.space
+        output = self.run('''
+            $b = 2;
+            function b() { return "b"; }
+            $src = <<<EOD
+            def f():
+                return b
+            EOD;
+            $f = embed_py_func($src);
+            echo $f();
+            unset($b);
+            try {
+                echo $f();
+            }
+            catch (BridgeException $e) {
+                echo "caught";
+            }
+        ''')
+        assert self.space.int_w(output[0]) == 2 \
+               and self.space.str_w(output[1]) == "caught"
