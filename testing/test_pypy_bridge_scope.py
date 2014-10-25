@@ -536,6 +536,12 @@ class TestPyPyBridgeScope(BaseTestInterpreter):
             $f = embed_py_func($src);
             echo $f();
             unset($b);
-            echo $f();
+            try {
+                echo $f();
+            }
+            catch (BridgeException $e) {
+                echo "caught";
+            }
         ''')
-        assert self.space.int_w(output[0]) == 2
+        assert self.space.int_w(output[0]) == 2 \
+               and self.space.str_w(output[1]) == "caught"
