@@ -339,19 +339,6 @@ class TestPyPyBridgeScope(BaseTestInterpreter):
         ''')
         assert php_space.str_w(output[0]) == "a/b"
 
-    def test_import_global_php_ns(self):
-        php_space = self.space
-        output = self.run('''
-            $src = <<<EOD
-            def test():
-                php = php_global_ns()
-                return php.strlen("test")
-            EOD;
-            $test = embed_py_func($src);
-            echo($test());
-        ''')
-        assert php_space.int_w(output[0]) == 4
-
     def test_php2py_cross_lang_closure_is_late_binding(self):
         php_space = self.space
         output = self.run('''
