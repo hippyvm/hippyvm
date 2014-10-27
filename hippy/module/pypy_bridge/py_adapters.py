@@ -134,7 +134,7 @@ class W_PyFuncGlobalAdapter(AbstractFunction):
 
         # Methods are really just functions with self bound
         if w_this is not None:
-            wpy_args_elems = [w_this.to_py(interp)] + w_py_args_elems
+            w_py_args_elems = [w_this.to_py(interp)] + w_py_args_elems
 
         w_py_rv = py_space.call_args(self.w_py_callable,
                 Arguments(py_space, w_py_args_elems))

@@ -79,6 +79,7 @@ class ClassBase(AbstractFunction, AccessMixin):
         self.constants_w = {}
         self.properties = OrderedDict()
         self.methods = OrderedDict()
+        self.py_methods = OrderedDict()
         self.all_parents = {self.get_identifier(): None}  # classes and intfs
         self.base_map = Terminator()
         self.initial_storage_w = None
@@ -362,6 +363,24 @@ class ClassBase(AbstractFunction, AccessMixin):
             self._visibility_check(result, name, contextclass)
         return result
 
+    def embed_py_meth(self, name, w_php_func):
+        assert self.methods.get(name) == None and \
+                self.py_methods.get(name) == None # XXX
+
+        self.py_methods[name] = Method(w_php_func, 0, self)
+
+    def _lookup_py_method(self, name):
+        # XXX traits
+        worklist = [self]
+        while worklist:
+            w_php_class = worklist.pop()
+            w_php_meth = w_php_class.py_methods.get(name)
+
+            if w_php_meth is not None:
+                return w_php_meth
+
+            worklist.extend(w_php_class.immediate_parents)
+
     def locate_method(self, name, contextclass,
                       searchclass=None, check_visibility=True):
         if searchclass is None:
@@ -369,6 +388,12 @@ class ClassBase(AbstractFunction, AccessMixin):
         try:
             return self._lookup_method(name, contextclass, check_visibility)
         except VisibilityError:
+            # next try looking for Python methods
+            w_py_meth = self._lookup_py_method(name)
+            if w_py_meth is not None:
+                return w_py_meth
+
+            # finally, invoke __call
             call = searchclass.method__call
             if call is None:
                 raise

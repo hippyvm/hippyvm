@@ -538,3 +538,34 @@ class TestPyPyBridge(BaseTestInterpreter):
             echo($r);
         ''')
         assert php_space.w_Null == output[0]
+
+    def test_embed_py_meth(self, php_space):
+        php_space = self.space
+        output = self.run('''
+            class C {};
+
+            $src = <<<EOD
+            def myMeth(self):
+                return 10
+            EOD;
+            embed_py_meth("C", $src);
+            $c = new C();
+            echo($c->myMeth());
+        ''')
+        assert php_space.int_w(output[0]) == 10
+
+    def test_embed_py_meth_subclass(self, php_space):
+        php_space = self.space
+        output = self.run('''
+            class C {};
+            class D extends C {};
+
+            $src = <<<EOD
+            def myMeth(self):
+                return 10
+            EOD;
+            embed_py_meth("C", $src);
+            $d = new D();
+            echo($d->myMeth());
+        ''')
+        assert php_space.int_w(output[0]) == 10
