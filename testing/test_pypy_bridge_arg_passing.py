@@ -41,6 +41,34 @@ class TestPyPyBridgeArgPassing(BaseTestInterpreter):
         ''')
         assert php_space.str_w(output[0]) == "123" # i.e. unchanged
 
+    def test_php2py_str_literal_by_ref(self):
+        php_space = self.space
+        output = self.run('''
+            $src = <<<EOD
+            def f(s): pass
+            EOD;
+
+            $f = embed_py_func($src);
+
+            // passing a string constant by reference should not crash
+            $f("123");
+        ''')
+        # no assert, just no crash
+
+    def test_php2py_str_literal_by_ref_global_embed(self):
+        php_space = self.space
+        output = self.run('''
+            $src = <<<EOD
+            def f(s): pass
+            EOD;
+
+            embed_py_func_global($src);
+
+            // passing a string constant by reference should not crash
+            f("123");
+        ''')
+        # no assert, just no crash
+
     def test_php2py_mixed_key_array_by_ref(self):
         php_space = self.space
         output = self.run('''
