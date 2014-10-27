@@ -1384,9 +1384,11 @@ class Interpreter(object):
         w_argument = frame.pop().deref()
         func = frame.pop()
         assert isinstance(func, AbstractFunction)
-        if func.needs_ref(arg):
-            raise self.fatal("Cannot pass parameter %d by reference"
-                                 % (arg+1,))
+        # XXX We relax this in PyHyp, making it possible to pass
+        # non-variables by reference.
+        #if func.needs_ref(arg):
+        #    raise self.fatal("Cannot pass parameter %d by reference"
+        #                         % (arg+1,))
         frame.push(w_argument)
         frame.push(func)
         return pc
