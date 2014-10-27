@@ -397,3 +397,25 @@ class TestPyPyBridgeArgPassing(BaseTestInterpreter):
         ''')
         assert(php_space.str_w(output[0]) ==
                 "Arg 1 of PHP func 'g' is pass by reference")
+
+    def test_php2py_meth_args_by_ref(self, php_space):
+        php_space = self.space
+        output = self.run('''
+            class C {};
+
+            $src = <<<EOD
+            def myMeth(self, ary):
+                ary[3] = 123
+                return ary
+            EOD;
+            embed_py_meth("C", $src);
+            $c = new C();
+            $ary = $c->myMeth(array(1, 2, 3));
+            for ($i = 0; $i < count($ary); $i++) {
+                echo $ary[$i];
+            }
+        ''')
+        assert php_space.int_w(output[0]) == 1
+        assert php_space.int_w(output[1]) == 2
+        assert php_space.int_w(output[2]) == 3
+        assert php_space.int_w(output[3]) == 123
