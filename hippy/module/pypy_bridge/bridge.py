@@ -23,11 +23,6 @@ from pypy.module.__builtin__ import compiling as py_compiling
 
 from rpython.rlib import jit
 
-# XXX broken
-# All bridge errors will raise a PyPyException back up to PHP
-k_PyPyException = def_class('PyPyException',
-        [], extends=k_Exception, instance_class=W_ExceptionObject)
-
 @wrap(['interp', str, str], name='embed_py_mod')
 def embed_py_mod(interp, mod_name, mod_source):
     php_space = interp.space
