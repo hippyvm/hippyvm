@@ -515,3 +515,26 @@ class TestPyPyBridge(BaseTestInterpreter):
             echo $f(4, 7);
         ''')
         assert php_space.int_w(output[0]) == 11
+
+    def test_embed_py_func_global(self, php_space):
+        php_space = self.space
+        output = self.run('''
+            $src = <<<EOD
+            def test():
+                return "jibble"
+            EOD;
+            embed_py_func_global($src);
+            echo(test());
+        ''')
+        assert php_space.str_w(output[0]) == "jibble"
+
+    def test_embed_py_func_global_returns_nothing(self, php_space):
+        php_space = self.space
+        output = self.run('''
+            $src = <<<EOD
+            def test(): pass
+            EOD;
+            $r = embed_py_func_global($src);
+            echo($r);
+        ''')
+        assert php_space.w_Null == output[0]

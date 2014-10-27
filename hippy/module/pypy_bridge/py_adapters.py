@@ -114,6 +114,39 @@ class W_EmbeddedPyCallable(W_InvokeCall):
     def is_py_call(self):
         return True
 
+class W_PyFuncGlobalAdapter(AbstractFunction):
+    _immutable_fields_ = ["interp", "w_py_callable"]
+
+    def __init__(self, interp, w_py_callable):
+        self.interp = interp
+        self.w_py_callable = w_py_callable
+
+    def get_wrapped_py_obj(self):
+        return self.py_callable
+
+    @jit.unroll_safe
+    def call_args(self, interp, args_w, w_this=None, thisclass=None,
+                  closureargs=None):
+
+        py_space = interp.py_space
+
+        w_py_args_elems = [x.to_py(interp) for x in args_w]
+
+        # Methods are really just functions with self bound
+        if w_this is not None:
+            wpy_args_elems = [w_this.to_py(interp)] + w_py_args_elems
+
+        w_py_rv = py_space.call_args(self.w_py_callable,
+                Arguments(py_space, w_py_args_elems))
+
+        return w_py_rv.to_php(interp)
+
+    def needs_ref(self, i):
+        return False
+
+    def needs_value(self, i):
+        return False
+
 class W_PyFuncAdapter(W_InstanceObject):
     """A 'lexically scoped' embedded Python function.
     Essentially these instances behave a bit like a PHP closure."""
