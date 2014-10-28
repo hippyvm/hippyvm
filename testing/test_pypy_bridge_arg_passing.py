@@ -369,3 +369,17 @@ class TestPyPyBridgeArgPassing(BaseTestInterpreter):
         ''')
         assert(php_space.str_w(output[0]) ==
                 "Arg 1 of PHP func 'g' is pass by reference")
+
+    def test_php2py_existing_ref_respected(self, php_space):
+        output = self.run('''
+        function takes_ref(&$x) {
+            $src = "def mutate_ref(y): y = 666";
+            $mutate_ary_ref = embed_py_func($src);
+            $mutate_ary_ref($x);
+        }
+
+        $a = 1;
+        takes_ref($a);
+        echo $a;
+        ''')
+        assert php_space.int_w(output[0]) == 666

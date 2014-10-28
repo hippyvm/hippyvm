@@ -36,6 +36,10 @@ class BaseTestInterpreter(object):
     interpreter = MockInterpreter
     DirectRunner = DirectRunner
 
+    @pytest.fixture
+    def php_space(self):
+        return self.space
+
     def warnings(self, expected_warnings=None):
         return self.engine.warnings(expected_warnings)
 
