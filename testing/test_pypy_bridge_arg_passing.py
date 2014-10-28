@@ -419,3 +419,34 @@ class TestPyPyBridgeArgPassing(BaseTestInterpreter):
         assert php_space.int_w(output[1]) == 2
         assert php_space.int_w(output[2]) == 3
         assert php_space.int_w(output[3]) == 123
+
+    def test_php2py_meth_args_by_ref2(self, php_space):
+        php_space = self.space
+        output = self.run('''
+            class C {};
+
+            $src = <<<EOD
+            def myMeth(self, ary):
+                ary[3] = 123
+                return ary
+            EOD;
+            embed_py_meth("C", $src);
+
+            function takes_ref(&$ary) {
+                $c = new C();
+                $c->myMeth($ary);
+                // should be equiv to:
+                //$ary[3] = 123;
+            }
+
+            $a = array(1, 2, 3);
+            takes_ref($a);
+
+            for ($i = 0; $i < count($a); $i++) {
+                echo $a[$i];
+            }
+        ''')
+        assert php_space.int_w(output[0]) == 1
+        assert php_space.int_w(output[1]) == 2
+        assert php_space.int_w(output[2]) == 3
+        assert php_space.int_w(output[3]) == 123
