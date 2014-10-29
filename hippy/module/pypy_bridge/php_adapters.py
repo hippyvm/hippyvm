@@ -50,12 +50,12 @@ class W_PHPGenericAdapter(W_Root):
         php_space = interp.space
         py_space = interp.py_space
 
-        w_php_ref = self.w_php_ref.deref_temp()
-        w_php_target = w_php_ref.getattr(interp, name, None, fail_with_none=True)
+        w_php_val = self.w_php_ref.deref_temp()
+        w_php_target = w_php_val.getattr(interp, name, None, fail_with_none=True)
 
         if w_php_target is None:
             try:
-                w_php_target = w_php_ref.getmeth(php_space, name, None)
+                w_php_target = w_php_val.getmeth(php_space, name, None)
             except VisibilityError:
                 w_php_target = None
 
@@ -70,8 +70,8 @@ class W_PHPGenericAdapter(W_Root):
         php_space = self.interp.space
         py_space = self.interp.py_space
 
-        w_php_ref = self.w_php_ref.deref_temp()
-        w_php_ref.setattr(interp, name, w_obj.to_php(interp), None)
+        w_php_val = self.w_php_ref.deref_temp()
+        w_php_val.setattr(interp, name, w_obj.to_php(interp), None)
 
         return py_space.w_None
 
@@ -95,10 +95,10 @@ class W_PHPGenericAdapter(W_Root):
     def _descr_generic_unop(self, space, name):
         interp = self.interp
         php_space = interp.space
-        w_php_ref = self.w_php_ref
+        w_php_val = self.w_php_ref.deref_temp()
         try:
             w_php_target = \
-                    w_php_ref.deref_temp().getmeth(php_space, name, None)
+                    w_php_val.getmeth(php_space, name, None)
         except VisibilityError:
             _raise_py_bridgeerror(interp.py_space,
                     "Wrapped PHP instance has no %s method" % name)
@@ -111,9 +111,9 @@ class W_PHPGenericAdapter(W_Root):
     def _descr_generic_binop(self, space, w_other, name):
         interp = self.interp
         php_space = interp.space
-        w_php_ref = self.w_php_ref
+        w_php_val = self.w_php_ref.deref_temp()
         try:
-            w_php_target = w_php_ref.getmeth(php_space, name, None)
+            w_php_target = w_php_val.getmeth(php_space, name, None)
         except VisibilityError:
             _raise_py_bridgeerror(interp.py_space,
                     "Wrapped PHP instance has no %s method" % name)
