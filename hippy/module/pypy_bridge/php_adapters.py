@@ -307,13 +307,9 @@ W_PHPFuncAdapter.typedef = TypeDef("PHPFunc",
 class W_PHPRefAdapter(W_Root):
     """Represents a PHP reference (for call by reference Py->PHP only) """
 
-    def __init__(self, space, w_py_val):
-        from hippy.objects.reference import W_Reference
-        w_php_val = w_py_val.to_php(space.get_php_interp())
-        if isinstance(w_php_val, W_Reference):
-            self.w_php_ref = w_php_val
-        else:
-            self.w_php_ref = W_Reference(w_php_val)
+    def __init__(self, space, w_php_ref):
+        assert isinstance(w_php_ref, W_Reference)
+        self.w_php_ref = w_php_ref
         self.py_space = space
 
     def deref(self):
@@ -321,9 +317,15 @@ class W_PHPRefAdapter(W_Root):
 
     @staticmethod
     def descr_new(space, w_type, w_py_val):
-        w_obj = space.allocate_instance(W_PHPRefAdapter, w_type)
-        w_obj.__init__(space, w_py_val)
-        return w_obj
+        w_php_val = w_py_val.to_php(space.get_php_interp())
+        if isinstance(w_php_val, W_Reference):
+            w_php_ref = w_php_val # already a reference
+        else:
+            w_php_ref = W_Reference(w_php_val)
+
+        w_py_obj = space.allocate_instance(W_PHPRefAdapter, w_type)
+        w_py_obj.__init__(space, w_php_ref)
+        return w_py_obj
 
 W_PHPRefAdapter.typedef = TypeDef("PHPRef",
     __new__ = interp2app(W_PHPRefAdapter.descr_new),
