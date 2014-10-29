@@ -22,24 +22,25 @@ class W_PHPGenericAdapter(W_Root):
     """Generic adapter for PHP objects in Python.
     Used when no more specific adapter is available."""
 
-    _immutable_fields_ = ["interp", "w_php_inst"]
+    _immutable_fields_ = ["interp", "w_php_ref"]
 
-    def __init__(self, interp, w_php_inst):
-        self.w_php_inst = w_php_inst
+    def __init__(self, interp, w_php_ref):
+        assert isinstance(w_php_ref, W_Reference)
+        self.w_php_ref = w_php_ref
         self.interp = interp
 
     def get_wrapped_php_obj(self):
-        return self.w_php_inst
+        return self.w_php_ref
 
     def get_php_interp(self):
         return self.interp
 
     def to_php(self, php_interp):
-        return self.w_php_inst
+        return self.w_php_ref
 
     def is_w(self, space, other):
         if isinstance(other, W_PHPGenericAdapter):
-            return self.w_php_inst is other.w_php_inst
+            return self.w_php_ref is other.w_php_ref
         return False
 
     @unwrap_spec(name=str)
@@ -49,12 +50,12 @@ class W_PHPGenericAdapter(W_Root):
         php_space = interp.space
         py_space = interp.py_space
 
-        w_php_inst = self.w_php_inst.deref_temp()
-        w_php_target = w_php_inst.getattr(interp, name, None, fail_with_none=True)
+        w_php_ref = self.w_php_ref.deref_temp()
+        w_php_target = w_php_ref.getattr(interp, name, None, fail_with_none=True)
 
         if w_php_target is None:
             try:
-                w_php_target = w_php_inst.getmeth(php_space, name, None)
+                w_php_target = w_php_ref.getmeth(php_space, name, None)
             except VisibilityError:
                 w_php_target = None
 
@@ -69,8 +70,8 @@ class W_PHPGenericAdapter(W_Root):
         php_space = self.interp.space
         py_space = self.interp.py_space
 
-        w_php_inst = self.w_php_inst.deref_temp()
-        w_php_inst.setattr(interp, name, w_obj.to_php(interp), None)
+        w_php_ref = self.w_php_ref.deref_temp()
+        w_php_ref.setattr(interp, name, w_obj.to_php(interp), None)
 
         return py_space.w_None
 
@@ -82,7 +83,7 @@ class W_PHPGenericAdapter(W_Root):
             _raise_py_bridgeerror(self.interp.py_space,
                     "Cannot use kwargs with callable PHP instances")
 
-        w_php_callable = self.w_php_inst.deref_temp().get_callable()
+        w_php_callable = self.w_php_ref.deref_temp().get_callable()
         if w_php_callable is None: # not callable
             _raise_py_bridgeerror(self.interp.py_space,
                     "Wrapped PHP instance is not callable")
@@ -94,10 +95,10 @@ class W_PHPGenericAdapter(W_Root):
     def _descr_generic_unop(self, space, name):
         interp = self.interp
         php_space = interp.space
-        w_php_inst = self.w_php_inst
+        w_php_ref = self.w_php_ref
         try:
             w_php_target = \
-                    w_php_inst.deref_temp().getmeth(php_space, name, None)
+                    w_php_ref.deref_temp().getmeth(php_space, name, None)
         except VisibilityError:
             _raise_py_bridgeerror(interp.py_space,
                     "Wrapped PHP instance has no %s method" % name)
@@ -110,9 +111,9 @@ class W_PHPGenericAdapter(W_Root):
     def _descr_generic_binop(self, space, w_other, name):
         interp = self.interp
         php_space = interp.space
-        w_php_inst = self.w_php_inst
+        w_php_ref = self.w_php_ref
         try:
-            w_php_target = w_php_inst.getmeth(php_space, name, None)
+            w_php_target = w_php_ref.getmeth(php_space, name, None)
         except VisibilityError:
             _raise_py_bridgeerror(interp.py_space,
                     "Wrapped PHP instance has no %s method" % name)
@@ -159,7 +160,7 @@ class W_PHPGenericAdapter(W_Root):
         if isinstance(w_other, W_PHPGenericAdapter):
             php_interp = self.interp
             php_space = php_interp.space
-            if php_space.eq_w(self.w_php_inst, w_other.w_php_inst):
+            if php_space.eq_w(self.w_php_ref, w_other.w_php_ref):
                 return space.w_True
         return space.w_False
 
@@ -191,6 +192,9 @@ class W_PHPClassAdapter(W_Root):
     _immutable_fields_ = ["interp", "w_php_cls"]
 
     def __init__(self, interp, w_php_cls):
+        """Note this does NOT wrap a reference.
+        The reason for this is that classes are not first class in PHP and
+        building a reference to a one upsets HippyVM"""
         self.w_php_cls = w_php_cls
         self.interp = interp
 
@@ -231,6 +235,9 @@ class W_PHPFuncAdapter(W_Root):
     _immutable_fields_ = ["space", "w_php_func"]
 
     def __init__(self, space, w_php_func):
+        """Note this does NOT wrap a reference.
+        The reason for this is that functions are not first class in PHP and
+        building a reference to a one upsets HippyVM"""
         self.space = space
         self.w_php_func = w_php_func
         self.w_phpexception = space.builtin.get("PHPException")
@@ -274,7 +281,7 @@ class W_PHPFuncAdapter(W_Root):
                             (arg_no + 1, self.w_php_func.name)
                     _raise_py_bridgeerror(py_space, err_str)
 
-                w_php_args_elems.append(w_py_arg.ref)
+                w_php_args_elems.append(w_py_arg.w_php_ref)
             else:
                 # if you pass a value argument by reference, fail.
                 if isinstance(w_py_arg, W_PHPRefAdapter):
@@ -304,13 +311,13 @@ class W_PHPRefAdapter(W_Root):
         from hippy.objects.reference import W_Reference
         w_php_val = w_py_val.to_php(space.get_php_interp())
         if isinstance(w_php_val, W_Reference):
-            self.ref = w_php_val
+            self.w_php_ref = w_php_val
         else:
-            self.ref = W_Reference(w_php_val)
+            self.w_php_ref = W_Reference(w_php_val)
         self.py_space = space
 
     def deref(self):
-        return self.ref.deref().to_py(self.py_space.get_php_interp())
+        return self.w_php_ref.deref().to_py(self.py_space.get_php_interp())
 
     @staticmethod
     def descr_new(space, w_type, w_py_val):
