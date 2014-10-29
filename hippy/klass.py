@@ -638,7 +638,8 @@ class ClassBase(AbstractFunction, AccessMixin):
             self._all_nonstatic_special_properties = result
         return result
 
-    def to_py(self, interp):
+    def to_py(self, interp, w_php_ref=None):
+        assert w_php_ref is None # Classes are not 1st class. Can't ref them.
         from hippy.module.pypy_bridge import php_adapters
         return php_adapters.W_PHPGenericAdapter(interp, self)
 

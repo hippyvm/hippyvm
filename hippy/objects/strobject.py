@@ -301,7 +301,7 @@ class StringMixin(object):
             builder.append(chr(c ^ 0xff))
         return W_ConstStringObject(builder.build())
 
-    def to_py(self, interp):
+    def to_py(self, interp, w_php_ref=None):
         return interp.py_space.wrap(interp.space.str_w(self))
 
 class W_ConstStringObject(StringMixin, W_StringObject):

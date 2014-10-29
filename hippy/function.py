@@ -74,7 +74,8 @@ class AbstractFunction(W_Root):
                   closureargs=None):
         raise NotImplementedError("abstract base class")
 
-    def to_py(self, interp):
+    def to_py(self, interp, w_php_ref=None):
+        assert w_php_ref is None # Funcs not 1st class. Can't ref them.
         from hippy.module.pypy_bridge import php_adapters
         return php_adapters.W_PHPFuncAdapter(interp.py_space, self)
 
@@ -171,7 +172,3 @@ class Function(AbstractFunction):
         w_res = interp.interpret(newframe)
         assert w_res is not None
         return w_res
-
-    def to_py(self, interp):
-        from hippy.module.pypy_bridge import php_adapters
-        return php_adapters.W_PHPFuncAdapter(interp.py_space, self)

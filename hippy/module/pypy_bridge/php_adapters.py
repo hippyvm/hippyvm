@@ -49,7 +49,7 @@ class W_PHPGenericAdapter(W_Root):
         php_space = interp.space
         py_space = interp.py_space
 
-        w_php_inst = self.w_php_inst
+        w_php_inst = self.w_php_inst.deref_temp()
         w_php_target = w_php_inst.getattr(interp, name, None, fail_with_none=True)
 
         if w_php_target is None:
@@ -69,8 +69,8 @@ class W_PHPGenericAdapter(W_Root):
         php_space = self.interp.space
         py_space = self.interp.py_space
 
-        w_php_inst = self.w_php_inst
-        self.w_php_inst.setattr(interp, name, w_obj.to_php(interp), None)
+        w_php_inst = self.w_php_inst.deref_temp()
+        w_php_inst.setattr(interp, name, w_obj.to_php(interp), None)
 
         return py_space.w_None
 
@@ -91,7 +91,7 @@ class W_PHPGenericAdapter(W_Root):
             return w_php_rv.to_py(self.interp)
         else:
             # calling an instance
-            w_php_callable = self.w_php_inst.get_callable()
+            w_php_callable = self.w_php_inst.deref_temp().get_callable()
             if w_php_callable is None: # not callable
                 _raise_py_bridgeerror(self.interp.py_space,
                         "Wrapped PHP instance is not callable")
@@ -105,7 +105,8 @@ class W_PHPGenericAdapter(W_Root):
         php_space = interp.space
         w_php_inst = self.w_php_inst
         try:
-            w_php_target = w_php_inst.getmeth(php_space, name, None)
+            w_php_target = \
+                    w_php_inst.deref_temp().getmeth(php_space, name, None)
         except VisibilityError:
             _raise_py_bridgeerror(interp.py_space,
                     "Wrapped PHP instance has no %s method" % name)
@@ -268,12 +269,15 @@ W_PHPFuncAdapter.typedef = TypeDef("PHPFunc",
 )
 
 class W_PHPRefAdapter(W_Root):
-    """Represents a PHP reference"""
+    """Represents a PHP reference (for call by reference Py->PHP only) """
 
     def __init__(self, space, w_py_val):
         from hippy.objects.reference import W_Reference
         w_php_val = w_py_val.to_php(space.get_php_interp())
-        self.ref = W_Reference(w_php_val)
+        if isinstance(w_php_val, W_Reference):
+            self.ref = w_php_val
+        else:
+            self.ref = W_Reference(w_php_val)
         self.py_space = space
 
     def deref(self):

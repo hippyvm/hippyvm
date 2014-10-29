@@ -167,7 +167,7 @@ class W_IntObject(W_Object):
     def eval_static(self, space):
         return self
 
-    def to_py(self, interp):
+    def to_py(self, interp, w_php_ref=None):
         return interp.py_space.newint(interp.space.int_w(self))
 
 for _name in BINOP_LIST:

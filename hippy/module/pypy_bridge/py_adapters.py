@@ -44,7 +44,7 @@ class W_PyGenericAdapter(W_InstanceObject):
         """PHP interpreter calls this when calls a wrapped Python var"""
         return W_EmbeddedPyCallable(self.w_py_inst)
 
-    def to_py(self, interp):
+    def to_py(self, interp, w_php_ref=None):
         return self.w_py_inst
 
 @wrap_method(['interp', ThisUnwrapper(W_PyGenericAdapter), str],
@@ -139,7 +139,7 @@ class W_PyFuncAdapter(W_InstanceObject):
     def get_callable(self):
         return W_EmbeddedPyCallable(self.w_py_func)
 
-    def to_py(self, interp):
+    def to_py(self, interp, w_php_ref=None):
         return self.w_py_func
 
 k_PyFuncAdapter = def_class('PyFunc', [])
@@ -177,7 +177,7 @@ class W_PyModAdapter(WPh_Object):
             give_notice=False, fail_with_none=False):
         return self._getattr(interp, interp.space, name)
 
-    def to_py(self, interp):
+    def to_py(self, interp, w_php_ref=None):
         return self.w_py_mod
 
 class W_PyListAdapterIterator(BaseIterator):
@@ -262,7 +262,7 @@ class W_PyListAdapter(W_ArrayObject):
     def create_iter(self, space, contextclass=None):
         return W_PyListAdapterIterator(self.py_space, self.w_py_list)
 
-    def to_py(self, interp):
+    def to_py(self, interp, w_php_ref=None):
         # array-like structures in PHP are always converted to a dict-like
         # python structure. Here, a list pretending to be a dict.
         from hippy.module.pypy_bridge.py_strategies import (
@@ -299,7 +299,7 @@ class W_PyDictAdapterIterator(BaseIterator):
         w_py_k, w_py_v = self.w_py_iter.next_item()
         return w_py_k.to_php(interp), w_py_v.to_php(interp)
 
-    def to_py(self, interp):
+    def to_py(self, interp, w_php_ref=None):
         return None
 
 class W_PyDictAdapter(W_ArrayObject):
@@ -349,7 +349,7 @@ class W_PyDictAdapter(W_ArrayObject):
     def create_iter(self, space, contextclass=None):
         return W_PyDictAdapterIterator(self.py_space, self.w_py_dict)
 
-    def to_py(self, interp):
+    def to_py(self, interp, w_php_ref=None):
         return self.w_py_dict
 
 class W_PyExceptionAdapter(W_ExceptionObject):
