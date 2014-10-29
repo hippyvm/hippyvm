@@ -641,7 +641,7 @@ class ClassBase(AbstractFunction, AccessMixin):
     def to_py(self, interp, w_php_ref=None):
         assert w_php_ref is None # Classes are not 1st class. Can't ref them.
         from hippy.module.pypy_bridge import php_adapters
-        return php_adapters.W_PHPGenericAdapter(interp, self)
+        return php_adapters.W_PHPClassAdapter(interp, self)
 
 def _get_instance_class(extends, instance_class):
     if extends is not None:

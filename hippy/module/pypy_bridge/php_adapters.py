@@ -82,23 +82,14 @@ class W_PHPGenericAdapter(W_Root):
             _raise_py_bridgeerror(self.interp.py_space,
                     "Cannot use kwargs with callable PHP instances")
 
-        from hippy.klass import ClassBase
-        if isinstance(self.w_php_inst, ClassBase):
-            # user is calling a PHP class in Python, i.e. instantiating it.
-            # XXX PHP classes should have a dedicated wrapper for performance.
-            w_php_args_elems = [ x.to_php(self.interp) for x in w_py_args ]
-            w_php_rv = self.w_php_inst.call_args(self.interp, w_php_args_elems)
-            return w_php_rv.to_py(self.interp)
-        else:
-            # calling an instance
-            w_php_callable = self.w_php_inst.deref_temp().get_callable()
-            if w_php_callable is None: # not callable
-                _raise_py_bridgeerror(self.interp.py_space,
-                        "Wrapped PHP instance is not callable")
+        w_php_callable = self.w_php_inst.deref_temp().get_callable()
+        if w_php_callable is None: # not callable
+            _raise_py_bridgeerror(self.interp.py_space,
+                    "Wrapped PHP instance is not callable")
 
-            w_php_args_elems = [ x.to_php(self.interp) for x in w_py_args ]
-            w_php_rv = w_php_callable.call_args(self.interp, w_php_args_elems)
-            return w_php_rv.to_py(self.interp)
+        w_php_args_elems = [ x.to_php(self.interp) for x in w_py_args ]
+        w_php_rv = w_php_callable.call_args(self.interp, w_php_args_elems)
+        return w_php_rv.to_py(self.interp)
 
     def _descr_generic_unop(self, space, name):
         interp = self.interp
@@ -194,6 +185,44 @@ W_PHPGenericAdapter.typedef = TypeDef("PHPGenericAdapter",
     __or__ = interp2app(W_PHPGenericAdapter.descr_or),
     __eq__ = interp2app(W_PHPGenericAdapter.descr_eq),
     __ne__ = interp2app(W_PHPGenericAdapter.descr_ne),
+)
+
+class W_PHPClassAdapter(W_Root):
+    _immutable_fields_ = ["interp", "w_php_cls"]
+
+    def __init__(self, interp, w_php_cls):
+        self.w_php_cls = w_php_cls
+        self.interp = interp
+
+    def get_wrapped_php_obj(self):
+        return self.w_php_cls
+
+    def get_php_interp(self):
+        return self.interp
+
+    def to_php(self, php_interp):
+        # Classes are not first class in PHP, so this would make no sense.
+        assert(False)
+
+    def is_w(self, space, other):
+        if isinstance(other, W_PHPClassAdapter):
+            return self.w_php_cls is other.w_php_cls
+        return False
+
+    @jit.unroll_safe
+    def descr_call(self, __args__):
+        w_py_args, w_py_kwargs = __args__.unpack()
+
+        if w_py_kwargs:
+            _raise_py_bridgeerror(self.interp.py_space,
+                    "Cannot use kwargs with callable PHP instances")
+
+        w_php_args_elems = [ x.to_php(self.interp) for x in w_py_args ]
+        w_php_rv = self.w_php_cls.call_args(self.interp, w_php_args_elems)
+        return w_php_rv.to_py(self.interp)
+
+W_PHPClassAdapter.typedef = TypeDef("PHPClassAdapter",
+    __call__ = interp2app(W_PHPClassAdapter.descr_call),
 )
 
 class W_PHPFuncAdapter(W_Root):
