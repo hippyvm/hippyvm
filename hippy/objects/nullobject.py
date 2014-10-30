@@ -44,7 +44,7 @@ class W_NullObject(W_Object):
         builder.append("N;")
         return True
 
-    def to_py(self, interp):
+    def to_py(self, interp, w_php_ref=None):
         return interp.py_space.w_None
 
 w_Null = W_NullObject()

@@ -450,3 +450,37 @@ class TestPyPyBridgeArgPassing(BaseTestInterpreter):
         assert php_space.int_w(output[1]) == 2
         assert php_space.int_w(output[2]) == 3
         assert php_space.int_w(output[3]) == 123
+
+    @pytest.mark.xfail
+    def test_php2py_existing_ref_respected(self, php_space):
+        output = self.run('''
+        function takes_ref(&$x) {
+            $src = "def mutate_ref(y): y = 666";
+            $mutate_ref = embed_py_func($src);
+            $mutate_ref($x);
+            echo $x;
+        }
+
+        $a = 1;
+        takes_ref($a);
+        echo $a;
+        ''')
+        assert php_space.int_w(output[0]) == 666
+        assert php_space.int_w(output[1]) == 666
+
+    @pytest.mark.xfail
+    def test_php2py_existing_ref_respected2(self, php_space):
+        output = self.run('''
+        function takes_ref(&$x) {
+            $src = "def mutate_ref(y): y = y + 1";
+            $mutate_ref = embed_py_func($src);
+            $mutate_ref($x);
+            echo $x;
+        }
+
+        $a = 1;
+        takes_ref($a);
+        echo $a;
+        ''')
+        assert php_space.int_w(output[0]) == 2
+        assert php_space.int_w(output[1]) == 2

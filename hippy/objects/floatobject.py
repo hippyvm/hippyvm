@@ -140,7 +140,7 @@ class W_FloatObject(W_Object):
         builder.append(";")
         return True
 
-    def to_py(self, interp):
+    def to_py(self, interp, w_php_ref=None):
         return interp.py_space.newfloat(interp.space.float_w(self))
 
 for _name in BINOP_LIST:

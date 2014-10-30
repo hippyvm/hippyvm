@@ -10,7 +10,9 @@ class W_Reference(W_Root):
     _unique = False
 
     def __init__(self, w_value):
+        #from hippy.klass import ClassBase
         assert isinstance(w_value, W_Object) or w_value is None
+        #        isinstance(w_value, ClassBase) # PyPy bridge wraps ref to class
         assert not isinstance(w_value, W_Reference)
         self._w_value = w_value
 
@@ -112,18 +114,13 @@ class W_Reference(W_Root):
     # compat hack: prevent direct reads/writes from 'w_value'
     w_value = property(None, None)
 
-    def to_py(self, interp):
-        w_php_inside = self.deref_temp()
+    def get_php_ref(self, w_php_ref):
+        w_ret = self if w_php_ref is None else w_php_ref
+        return w_ret
 
-        # Arrays are special, must wrap up a reference to allow mutation.
-        from hippy.objects.arrayobject import W_ArrayObject
-        if isinstance(w_php_inside, W_ArrayObject):
-            from hippy.module.pypy_bridge.py_strategies import (
-                    make_wrapped_mixed_key_php_array)
-            return make_wrapped_mixed_key_php_array(interp, self) # pass in ref
-        else:
-            w_php_inside = self.deref()
-            return w_php_inside.to_py(interp)
+    def to_py(self, interp, w_php_ref=None):
+        w_php_inside = self.deref_temp()
+        return w_php_inside.to_py(interp, self)
 
 class VirtualReference(W_Reference):
     """A handle to an object stored in some container.
