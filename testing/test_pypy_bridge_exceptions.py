@@ -153,7 +153,6 @@ class TestPyPyBridgeExceptions(BaseTestInterpreter):
         e_str = "Wrapped PHP instance has no attribute 'x'"
         assert php_space.str_w(output[0]) == e_str
 
-    @pytest.mark.xfail
     def test_bridgeerror_subclasses_exception(self):
         php_space = self.space
         output = self.run("""
