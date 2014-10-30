@@ -589,7 +589,9 @@ class TestPyPyBridge(BaseTestInterpreter):
 
             $src = <<<EOD
             def bMeth(self):
-                a.v = 777 // Picks up class A instead of global var $a.
+                # Picks up class A, not global dollar a.
+                # Hippy class/func names are canonicalised lower case.
+                a.v = 777
                 return a.v
             EOD;
             embed_py_meth("B", $src);
