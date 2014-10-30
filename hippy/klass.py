@@ -364,7 +364,7 @@ class ClassBase(AbstractFunction, AccessMixin):
         return result
 
     def embed_py_meth(self, name, w_php_func):
-        assert self.methods.get(name) == None # XXX
+        assert self.methods.get(name, None) is None # XXX
         assert not self.is_subclassed # XXX
 
         self.methods[name.lower()] = Method(w_php_func, 0, self, is_py_meth=True)
