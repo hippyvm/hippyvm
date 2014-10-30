@@ -367,7 +367,7 @@ class ClassBase(AbstractFunction, AccessMixin):
         assert self.methods.get(name) == None and \
                 self.py_methods.get(name) == None # XXX
 
-        self.py_methods[name] = Method(w_php_func, 0, self)
+        self.py_methods[name] = Method(w_php_func, 0, self, is_py_meth=True)
 
     def _lookup_py_method(self, name):
         # XXX traits
@@ -1171,10 +1171,11 @@ class MethodDeclaration(ClassMember):
 class Method(ClassMember):
     _immutable_fields_ = ['method_func', 'klass', 'access_flags']
 
-    def __init__(self, method_func, access_flags, klass):
+    def __init__(self, method_func, access_flags, klass, is_py_meth=False):
         ClassMember.__init__(self, access_flags)
         self.klass = klass
         self.method_func = method_func
+        self.is_py_meth = is_py_meth
 
     def __repr__(self):
         return "<Method %s of %r>" % (self.method_func.name,
@@ -1184,7 +1185,8 @@ class Method(ClassMember):
         if self.is_static():
             return W_BoundMethod(None, klass, self.method_func)
         else:
-            return W_BoundMethod(w_instance, klass, self.method_func)
+            return W_BoundMethod(
+                    w_instance, klass, self.method_func, self.is_py_meth)
 
     def getclass(self):
         return self.klass
@@ -1206,13 +1208,17 @@ class Method(ClassMember):
 
 
 class W_BoundMethod(AbstractFunction):
-    def __init__(self, w_instance, klass, method_func):
+    def __init__(self, w_instance, klass, method_func, is_py_meth=False):
         self.w_instance = w_instance
         self.klass = klass
         self.method_func = method_func
+        self.is_py_meth = is_py_meth
 
     def needs_ref(self, i):
         return self.method_func.needs_ref(i)
+
+    def is_py_call(self):
+        return self.is_py_meth
 
     def call_args(self, interp, args_w, w_this=None, thisclass=None,
                   closureargs=None):

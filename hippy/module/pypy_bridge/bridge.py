@@ -1,7 +1,6 @@
 from hippy.builtin import wrap, Optional, wrap_method, ThisUnwrapper
 from hippy.objects.base import W_Root as Wph_Root
 from hippy.objects.instanceobject import W_InstanceObject
-from hippy.klass import def_class, Method
 from hippy.module.pypy_bridge.scopes import PHP_Scope
 from hippy.module.pypy_bridge.util import _raise_php_bridgeexception
 from hippy.module.pypy_bridge.py_adapters import (

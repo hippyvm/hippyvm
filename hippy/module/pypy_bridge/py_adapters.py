@@ -147,6 +147,9 @@ class W_PyFuncGlobalAdapter(AbstractFunction):
     def needs_value(self, i):
         return False
 
+    def is_py_call(self):
+        return True
+
 class W_PyFuncAdapter(W_InstanceObject):
     """A 'lexically scoped' embedded Python function.
     Essentially these instances behave a bit like a PHP closure."""
