@@ -406,11 +406,11 @@ class TestPyPyBridgeArgPassing(BaseTestInterpreter):
             $src = <<<EOD
             def myMeth(self, ary):
                 ary[3] = 123
-                return ary
             EOD;
             embed_py_meth("C", $src);
             $c = new C();
-            $ary = $c->myMeth(array(1, 2, 3));
+            $ary = array(1, 2, 3);
+            $c->myMeth($ary);
             for ($i = 0; $i < count($ary); $i++) {
                 echo $ary[$i];
             }
@@ -428,13 +428,13 @@ class TestPyPyBridgeArgPassing(BaseTestInterpreter):
             $src = <<<EOD
             def myMeth(self, ary):
                 ary[3] = 123
-                return ary
             EOD;
             embed_py_meth("C", $src);
 
             function takes_ref(&$ary) {
                 $c = new C();
                 $c->myMeth($ary);
+                for ($i = 0; $i < count($ary); $i++) { echo $ary[$i]; }
                 // should be equiv to:
                 //$ary[3] = 123;
             }
@@ -442,14 +442,11 @@ class TestPyPyBridgeArgPassing(BaseTestInterpreter):
             $a = array(1, 2, 3);
             takes_ref($a);
 
-            for ($i = 0; $i < count($a); $i++) {
-                echo $a[$i];
-            }
+            for ($i = 0; $i < count($a); $i++) { echo $a[$i]; }
         ''')
-        assert php_space.int_w(output[0]) == 1
-        assert php_space.int_w(output[1]) == 2
-        assert php_space.int_w(output[2]) == 3
-        assert php_space.int_w(output[3]) == 123
+        expect = [1, 2, 3, 123] * 2
+        for i in range(len(expect)):
+            assert php_space.int_w(output[i]) == expect[i]
 
     @pytest.mark.xfail
     def test_php2py_existing_ref_respected(self, php_space):
