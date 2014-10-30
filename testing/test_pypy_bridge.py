@@ -557,31 +557,44 @@ class TestPyPyBridge(BaseTestInterpreter):
     def test_embed_py_meth_subclass(self, php_space):
         php_space = self.space
         output = self.run('''
+            {
             class C {};
-            class D extends C {};
 
             $src = <<<EOD
             def myMeth(self):
                 return 10
             EOD;
             embed_py_meth("C", $src);
+
+            class D extends C {};
+
             $d = new D();
             echo($d->myMeth());
+            }
         ''')
         assert php_space.int_w(output[0]) == 10
 
-    def test_embed_py_meth_subclass(self, php_space):
+    def test_embed_py_meth_attr_access(self, php_space):
         php_space = self.space
         output = self.run('''
-            class C {};
-            class D extends C {};
+            class A {
+                function __construct() {
+                    $this->v = 666;
+                }
+            };
+            $a = new A();
+
+            class B {
+            };
 
             $src = <<<EOD
-            def myMeth(self):
-                return 10
+            def bMeth(self):
+                a.v = 777 // Picks up class A instead of global var $a.
+                return a.v
             EOD;
-            embed_py_meth("C", $src);
-            $d = new D();
-            echo($d->myMeth());
+            embed_py_meth("B", $src);
+
+            $b = new B();
+            echo $b->bMeth();
         ''')
-        assert php_space.int_w(output[0]) == 10
+        assert php_space.int_w(output[0]) == 777
