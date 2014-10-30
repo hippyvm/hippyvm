@@ -150,6 +150,9 @@ class W_PyFuncGlobalAdapter(AbstractFunction):
     def is_py_call(self):
         return True
 
+    def get_identifier(self):
+        return self.w_py_callable.name.lower()
+
 class W_PyFuncAdapter(W_InstanceObject):
     """A 'lexically scoped' embedded Python function.
     Essentially these instances behave a bit like a PHP closure."""
@@ -177,6 +180,9 @@ class W_PyFuncAdapter(W_InstanceObject):
 
     def to_py(self, interp, w_php_ref=None):
         return self.w_py_func
+
+    def get_identifier(self):
+        return self.w_py_callable.name.lower()
 
 k_PyFuncAdapter = def_class('PyFunc', [])
 
