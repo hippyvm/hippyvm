@@ -600,3 +600,21 @@ class TestPyPyBridge(BaseTestInterpreter):
             echo $b->bMeth();
         ''')
         assert php_space.int_w(output[0]) == 777
+
+    def test_embed_py_meth_attr_overide(self, php_space):
+        php_space = self.space
+        output = self.run('''
+            class A {
+                function m() { return 666; }
+            };
+            $a = new A();
+
+            class B extends A {};
+
+            $src = "def m(self): return 667";
+            embed_py_meth("B", $src);
+
+            $b = new B();
+            echo $b->m();
+        ''')
+        assert php_space.int_w(output[0]) == 667

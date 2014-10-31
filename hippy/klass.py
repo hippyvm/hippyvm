@@ -364,7 +364,11 @@ class ClassBase(AbstractFunction, AccessMixin):
         return result
 
     def embed_py_meth(self, name, w_php_func):
-        assert self.methods.get(name, None) is None # XXX
+        # Allow overide from a superclass, but not a duplicate from this class.
+        existing_meth = self.methods.get(name, None)
+        if existing_meth is not None:
+            assert existing_meth.klass != self
+
         assert not self.is_subclassed # XXX
 
         self.methods[name.lower()] = Method(w_php_func, 0, self, is_py_meth=True)
