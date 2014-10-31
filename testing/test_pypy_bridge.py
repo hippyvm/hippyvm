@@ -633,3 +633,23 @@ class TestPyPyBridge(BaseTestInterpreter):
             echo $a->x;
         ''')
         assert php_space.int_w(output[0]) == 666
+
+    def test_embed_py_meth_attr_access_other_inst(self, php_space):
+        php_space = self.space
+        output = self.run('''
+        {
+            class A {
+                    public $x = 666;
+            };
+
+            class B { }
+
+            $src = "def f(self, other): return other.x";
+            embed_py_meth("B", $src);
+
+            $a = new A();
+            $b = new B();
+            echo $b->f($a);
+        }
+        ''')
+        assert php_space.int_w(output[0]) == 666
