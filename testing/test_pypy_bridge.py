@@ -618,3 +618,18 @@ class TestPyPyBridge(BaseTestInterpreter):
             echo $b->m();
         ''')
         assert php_space.int_w(output[0]) == 667
+
+    def test_embed_py_meth_ctor(self, php_space):
+        php_space = self.space
+        output = self.run('''
+            class A {
+            };
+            $a = new A();
+
+            $src = "def __construct(self): self.x = 666";
+            embed_py_meth("A", $src);
+
+            $a = new A();
+            echo $a->x;
+        ''')
+        assert php_space.int_w(output[0]) == 666

@@ -371,7 +371,12 @@ class ClassBase(AbstractFunction, AccessMixin):
 
         assert not self.is_subclassed # XXX
 
-        self.methods[name.lower()] = Method(w_php_func, 0, self, is_py_meth=True)
+        w_py_meth = Method(w_php_func, 0, self, is_py_meth=True)
+        self.methods[name.lower()] = w_py_meth
+
+        # ctor has a special attribute for fast lookup
+        if name == "__construct":
+            self.constructor_method = w_py_meth
 
     def locate_method(self, name, contextclass,
                       searchclass=None, check_visibility=True):
