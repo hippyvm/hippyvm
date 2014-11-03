@@ -127,8 +127,8 @@ class W_PHPGlobalScope(WPy_Root):
         if ph_v is not None:
             return ph_v.to_py(ph_interp)
 
-        print "can't find", n
-        assert False
+        from hippy.module.pypy_bridge.bridge import _raise_php_bridgeexception
+        _raise_php_bridgeexception(ph_interp, "Unknown PHP global variable '%s'" % n)
 
 W_PHPGlobalScope.typedef = TypeDef("PHPGlobalScope",
     __getattr__ = interp2app(W_PHPGlobalScope.descr_get),

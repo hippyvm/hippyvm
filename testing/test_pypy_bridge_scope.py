@@ -532,3 +532,35 @@ class TestPyPyBridgeScope(BaseTestInterpreter):
         ''')
         assert self.space.int_w(output[0]) == 2 \
                and self.space.str_w(output[1]) == "caught"
+
+    def test_php_global_scope_does_exist(self):
+        php_space = self.space
+        output = self.run('''
+            function f() { return "f"; }
+
+            $pysrc = <<<EOD
+            def g():
+                return php_global_ns().f()
+            EOD;
+            $f = embed_py_func($pysrc);
+            echo($f());
+        ''')
+        assert self.space.str_w(output[0]) == "f"
+
+    def test_php_global_scope_doesnt_exist(self):
+        php_space = self.space
+        output = self.run('''
+            function f() { return "f"; }
+
+            $pysrc = <<<EOD
+            def g():
+                return php_global_ns().e()
+            EOD;
+            $f = embed_py_func($pysrc);
+            try {
+                $f();
+            } catch (BridgeException $e) {
+                echo "caught";
+            }
+        ''')
+        assert self.space.str_w(output[0]) == "caught"
