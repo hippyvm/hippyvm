@@ -35,14 +35,6 @@ class W_Root(object):
                   closureargs=None):
         raise NotImplementedError("abstract")
 
-    def get_php_ref(self, w_php_ref):
-        from hippy.objects.reference import W_Reference
-        if w_php_ref is None:
-            return W_Reference(self)
-        else:
-            assert isinstance(w_php_ref, W_Reference)
-            return w_php_ref
-
 class W_Object(W_Root):
     _attrs_ = ()
     supports_arithmetics = False
@@ -249,5 +241,4 @@ class W_Object(W_Root):
 
     def to_py(self, interp, w_php_ref=None):
         from hippy.module.pypy_bridge import php_adapters
-        w_php_ref = self.get_php_ref(w_php_ref)
-        return php_adapters.W_PHPGenericAdapter(interp, w_php_ref)
+        return php_adapters.W_PHPGenericAdapter(interp, self)

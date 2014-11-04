@@ -114,10 +114,6 @@ class W_Reference(W_Root):
     # compat hack: prevent direct reads/writes from 'w_value'
     w_value = property(None, None)
 
-    def get_php_ref(self, w_php_ref):
-        w_ret = self if w_php_ref is None else w_php_ref
-        return w_ret
-
     def to_py(self, interp, w_php_ref=None):
         w_php_inside = self.deref_temp()
         return w_php_inside.to_py(interp, self)

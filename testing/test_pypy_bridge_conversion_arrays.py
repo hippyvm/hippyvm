@@ -427,6 +427,8 @@ class TestPyPyBridgeArrayConversions(BaseTestInterpreter):
         e_str = "can only apply as_list() to a wrapped PHP array in dict form"
         assert php_space.str_w(output[0]) == e_str
 
+    # XXX REFS
+    @pytest.mark.xfail
     def test_as_list_invalidates(self):
         php_space = self.space
         output = self.run('''
@@ -641,8 +643,6 @@ class TestPyPyBridgeArrayConversions(BaseTestInterpreter):
             $src = <<<EOD
             def f(ary):
                 ary["x"] = "y"
-                print(72 * "*")
-                print(ary)
                 return ary
             EOD;
 
@@ -660,7 +660,7 @@ class TestPyPyBridgeArrayConversions(BaseTestInterpreter):
             def f(ary):
                 ary_l = ary.as_list()
                 ary_l[3] = "a"
-                return ary
+                return ary_l
             EOD;
 
             $f = embed_py_func($src);

@@ -7,6 +7,7 @@ from pypy.objspace.std.intobject import W_IntObject
 from hippy.objects.arrayobject import W_ListArrayObject, W_RDictArrayObject
 from hippy.objects.arrayiter import ListArrayIteratorRef, RDictArrayIteratorRef
 from hippy.objects.base import W_Root as WPHP_Root
+from hippy.objects.reference import W_Reference
 from hippy.module.pypy_bridge.util import _raise_py_bridgeerror
 
 from rpython.rlib import rerased
@@ -53,8 +54,13 @@ class PHPArrayListStrategy(ListStrategy):
 
         w_php_arry_ref = self.unerase(w_list.lstorage)
         w_php_index = php_space.wrap(index)
-        w_php_elem = w_php_arry_ref.getitem_ref(
-                php_space, w_php_index, allow_undefined=False)
+
+        if isinstance(w_php_arry_ref, W_Reference):
+            w_php_elem = w_php_arry_ref.getitem_ref(
+                    php_space, w_php_index, allow_undefined=False)
+        else:
+            w_php_elem = w_php_arry_ref.getitem(
+                    php_space, w_php_index, allow_undefined=False)
 
         if w_php_elem is None:
             raise IndexError("list index out of range")
@@ -70,7 +76,14 @@ class PHPArrayListStrategy(ListStrategy):
         w_php_key = php_space.wrap(key) # key always an int
         w_php_value = w_value.to_php(interp)
 
-        w_php_arry_ref.setitem_ref(php_space, w_php_key, w_php_value)
+        if isinstance(w_php_arry_ref, W_Reference):
+            w_php_arry_ref.setitem_ref(php_space, w_php_key, w_php_value)
+        else:
+            w_php_arry_ref = W_Reference(w_php_arry_ref)
+            # will always copy, since a fresh ref is never unique
+            w_php_arry_ref.setitem_ref(php_space, w_php_key, w_php_value)
+            # ref is now unique, write this back to prevent subsequent copies
+            w_list.lstorage = self.erase(w_php_arry_ref)
 
     def append(self, w_list, w_item):
         interp = self.space.get_php_interp()
@@ -81,9 +94,20 @@ class PHPArrayListStrategy(ListStrategy):
         w_php_arry = w_php_arry_ref.deref_temp()
         w_php_next_idx = php_space.wrap(w_php_arry.arraylen())
 
-        w_php_arry_ref.setitem_ref(php_space, w_php_next_idx, w_php_item)
+        # use setitem_ref to ensure copying happens if necessary.
+        if isinstance(w_php_arry_ref, W_Reference):
+            w_php_arry_ref.setitem_ref(php_space, w_php_next_idx, w_php_item)
+        else:
+            w_php_arry_ref = W_Reference(w_php_arry_ref)
+            # will always copy, since a fresh ref is never unique
+            w_php_arry_ref.setitem_ref(php_space, w_php_next_idx, w_php_item)
+            # ref is now unique, write this back to prevent subsequent copies
+            w_list.lstorage = self.erase(w_php_arry_ref)
+
+        #w_php_arry_ref.setitem_ref(php_space, w_php_next_idx, w_php_item)
 
 def make_wrapped_int_key_php_array(interp, w_php_arry_ref):
+    assert w_php_arry_ref is not None
     w_php_arry_tmp = w_php_arry_ref.deref_temp()
     if not isinstance(w_php_arry_tmp, W_ListArrayObject):
         py_space = interp.py_space
@@ -117,7 +141,9 @@ class PHPArrayDictStrategy(DictStrategy):
 
         w_php_arry = self.unerase(w_dict.dstorage)
         w_php_key = w_key.to_php(interp)
-        return interp.space.getitem(w_php_arry, w_php_key).to_py(interp)
+
+        return interp.space.getitem(
+                w_php_arry, w_php_key, give_notice=True).to_py(interp)
 
     def setitem(self, w_dict, w_key, w_value):
         # XXX again with the implicit cast on the key if not str or int
@@ -128,7 +154,14 @@ class PHPArrayDictStrategy(DictStrategy):
         w_php_key = w_key.to_php(interp)
         w_php_value = w_value.to_php(interp)
 
-        w_php_arry_ref.setitem_ref(php_space, w_php_key, w_php_value)
+        if isinstance(w_php_arry_ref, W_Reference):
+            w_php_arry_ref.setitem_ref(php_space, w_php_key, w_php_value)
+        else:
+            w_php_arry_ref = W_Reference(w_php_arry_ref)
+            # will always copy, since a fresh ref is never unique
+            w_php_arry_ref.setitem_ref(php_space, w_php_key, w_php_value)
+            # ref is now unique, write this back to prevent subsequent copies
+            w_dict.dstorage = self.erase(w_php_arry_ref)
 
     def setdefault(self, w_dict, w_key, w_default):
         interp = self.space.get_php_interp()
@@ -137,14 +170,24 @@ class PHPArrayDictStrategy(DictStrategy):
         w_php_key = w_key.to_php(interp)
         w_php_ary_ref = self.unerase(w_dict.dstorage)
 
-        w_php_val = w_php_ary_ref.getitem_ref(
-                php_space, w_php_key, allow_undefined=False)
+        if isinstance(w_php_ary_ref, W_Reference):
+            w_php_val = w_php_ary_ref.getitem_ref(
+                    php_space, w_php_key, allow_undefined=False)
+        else:
+            w_php_val = w_php_ary_ref.getitem(
+                    php_space, w_php_key, allow_undefined=False)
+
         if w_php_val is None:
-            w_php_ary_ref.setitem_ref(
-                    php_space, w_php_key, w_default.to_php(interp))
+            w_py_default = w_default.to_php(interp)
+            if isinstance(w_php_ary_ref, W_Reference):
+                w_php_ary_ref.setitem_ref(php_space, w_php_key, w_py_default)
+            else:
+                w_php_new_ary = w_php_ary_ref.setitem2_maybe_inplace(
+                        php_space, w_php_key, w_py_default)
+                w_dict.dstorage = self.erase(w_php_new_ary)
             return w_default
         else:
-            return w_php_val.deref().to_py(interp)
+            return w_php_val.to_py(interp)
 
     def wrapkey(space, key):
         return key.to_py(space.get_php_interp())

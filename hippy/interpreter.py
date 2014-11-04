@@ -1384,11 +1384,9 @@ class Interpreter(object):
         w_argument = frame.pop().deref()
         func = frame.pop()
         assert isinstance(func, AbstractFunction)
-        # XXX We relax this in PyHyp, making it possible to pass
-        # non-variables by reference.
-        #if func.needs_ref(arg):
-        #    raise self.fatal("Cannot pass parameter %d by reference"
-        #                         % (arg+1,))
+        if func.needs_ref(arg):
+            raise self.fatal("Cannot pass parameter %d by reference"
+                                 % (arg+1,))
         frame.push(w_argument)
         frame.push(func)
         return pc
@@ -1398,14 +1396,7 @@ class Interpreter(object):
         func = frame.pop()
         assert isinstance(func, AbstractFunction)
 
-        # Special arg passing semantics for PHP->Py calls.
-        if func.is_py_call():
-            # We always pass a reference to Python and the conversion
-            # code decides whether to dereference it. This is needed because
-            # the only way to mutate a PHP array in hippy is through
-            # a reference.
-            w_argument = ptr_argument.get_ref(self)
-        elif func.needs_value(arg):
+        if func.needs_value(arg):
             w_argument = ptr_argument.deref(self, give_notice=True)
         else:
             if func.needs_ref(arg) and not ptr_argument.isref:

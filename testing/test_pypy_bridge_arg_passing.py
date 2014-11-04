@@ -69,7 +69,8 @@ class TestPyPyBridgeArgPassing(BaseTestInterpreter):
         ''')
         # no assert, just no crash
 
-    def test_php2py_mixed_key_array_by_ref(self):
+    # XXX REFS
+    def test_php2py_mixed_key_array_by_val(self):
         php_space = self.space
         output = self.run('''
             $src = <<<EOD
@@ -78,13 +79,31 @@ class TestPyPyBridgeArgPassing(BaseTestInterpreter):
             EOD;
 
             $f = embed_py_func($src);
-            $in = array("x", "y", "z");
+            $in = array("x" => "x");
             $f($in);
             echo $in["x"];
         ''')
-        assert php_space.str_w(output[0]) == "y"
+        assert php_space.str_w(output[0]) == "x"
 
-    def test_php2py_int_key_array_by_ref(self):
+    # XXX REFS
+    def test_php2py_int_key_array_by_val(self):
+        php_space = self.space
+        output = self.run('''
+            $src = <<<EOD
+            def f(ary):
+                ary_l = ary.as_list()
+                ary_l[0] = "a"
+            EOD;
+
+            $f = embed_py_func($src);
+            $in = array("x");
+            $f($in);
+            echo $in[0];
+        ''')
+        assert php_space.str_w(output[0]) == "x"
+
+    # XXX REFS
+    def test_php2py_int_key_array_by_val2(self):
         php_space = self.space
         output = self.run('''
             $src = <<<EOD
@@ -94,11 +113,13 @@ class TestPyPyBridgeArgPassing(BaseTestInterpreter):
             EOD;
 
             $f = embed_py_func($src);
-            $in = array("x", "y", "z");
+            $in = array("x");
             $f($in);
-            echo $in[3];
+            echo count($in);
+            echo $in[0];
         ''')
-        assert php_space.str_w(output[0]) == "a"
+        assert php_space.int_w(output[0]) == 1
+        assert php_space.str_w(output[1]) == "x"
 
     # ---
 
@@ -398,7 +419,8 @@ class TestPyPyBridgeArgPassing(BaseTestInterpreter):
         assert(php_space.str_w(output[0]) ==
                 "Arg 1 of PHP func 'g' is pass by reference")
 
-    def test_php2py_meth_args_by_ref(self, php_space):
+    # XXX REFS
+    def test_php2py_meth_args_by_val(self, php_space):
         php_space = self.space
         output = self.run('''
             class C {};
@@ -411,43 +433,17 @@ class TestPyPyBridgeArgPassing(BaseTestInterpreter):
             $c = new C();
             $ary = array(1, 2, 3);
             $c->myMeth($ary);
+            echo count($ary);
             for ($i = 0; $i < count($ary); $i++) {
                 echo $ary[$i];
             }
         ''')
-        assert php_space.int_w(output[0]) == 1
-        assert php_space.int_w(output[1]) == 2
-        assert php_space.int_w(output[2]) == 3
-        assert php_space.int_w(output[3]) == 123
+        assert php_space.int_w(output[0]) == 3
+        assert php_space.int_w(output[1]) == 1
+        assert php_space.int_w(output[2]) == 2
+        assert php_space.int_w(output[3]) == 3
 
-    def test_php2py_meth_args_by_ref2(self, php_space):
-        php_space = self.space
-        output = self.run('''
-            class C {};
-
-            $src = <<<EOD
-            def myMeth(self, ary):
-                ary[3] = 123
-            EOD;
-            embed_py_meth("C", $src);
-
-            function takes_ref(&$ary) {
-                $c = new C();
-                $c->myMeth($ary);
-                for ($i = 0; $i < count($ary); $i++) { echo $ary[$i]; }
-                // should be equiv to:
-                //$ary[3] = 123;
-            }
-
-            $a = array(1, 2, 3);
-            takes_ref($a);
-
-            for ($i = 0; $i < count($a); $i++) { echo $a[$i]; }
-        ''')
-        expect = [1, 2, 3, 123] * 2
-        for i in range(len(expect)):
-            assert php_space.int_w(output[i]) == expect[i]
-
+    # XXX REFS
     def test_php2py_existing_ref(self, php_space):
         output = self.run('''
         function takes_ref(&$x) {
@@ -464,6 +460,7 @@ class TestPyPyBridgeArgPassing(BaseTestInterpreter):
         assert php_space.int_w(output[0]) == 1
         assert php_space.int_w(output[1]) == 1
 
+    # XXX REFS
     def test_php2py_existing_ref2(self, php_space):
         output = self.run('''
         function takes_ref(&$x) {

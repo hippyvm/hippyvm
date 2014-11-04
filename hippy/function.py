@@ -79,9 +79,6 @@ class AbstractFunction(W_Root):
         from hippy.module.pypy_bridge import php_adapters
         return php_adapters.W_PHPFuncAdapter(interp.py_space, self)
 
-    def is_py_call(self):
-        return False
-
 class Function(AbstractFunction):
     _immutable_fields_ = ['tp[*]', 'names[*]',
                           'defaults_w[*]', 'typehints[*]', 'bytecode',

@@ -180,7 +180,7 @@ class W_ArrayObject(W_Object):
                 return None
         return r_item
 
-    def getitem(self, space, w_arg, give_notice=False):
+    def getitem(self, space, w_arg, give_notice=False, allow_undefined=True):
         try:
             as_int, as_str = convert_to_index(space, w_arg)
         except CannotConvertToIndex:
@@ -191,13 +191,21 @@ class W_ArrayObject(W_Object):
             if r_item is None:
                 if give_notice:
                     space.ec.notice("Undefined offset: %d" % as_int)
-                return space.w_Null
+
+                if not allow_undefined:
+                    return None
+                else:
+                    return space.w_Null
         else:
             r_item = self._getitem_str(as_str)
             if r_item is None:
                 if give_notice:
                     space.ec.notice("Undefined index: %s" % as_str)
-                return space.w_Null
+
+                if not allow_undefined:
+                    return None
+                else:
+                    return space.w_Null
         if isinstance(r_item, VirtualReference):
             return r_item.deref()
         else:
@@ -392,8 +400,8 @@ class W_ArrayObject(W_Object):
         # within Python code.
         from hippy.module.pypy_bridge.py_strategies import (
                 make_wrapped_mixed_key_php_array)
-        w_php_ref = self.get_php_ref(w_php_ref)
-        return make_wrapped_mixed_key_php_array(interp, w_php_ref)
+        #w_php_ref = self.get_php_ref(w_php_ref)
+        return make_wrapped_mixed_key_php_array(interp, self)
 
 class ListItemVRef(VirtualReference):
     def __init__(self, w_array, index):

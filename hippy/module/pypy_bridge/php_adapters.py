@@ -25,7 +25,6 @@ class W_PHPGenericAdapter(W_Root):
     _immutable_fields_ = ["interp", "w_php_ref"]
 
     def __init__(self, interp, w_php_ref):
-        assert isinstance(w_php_ref, W_Reference)
         self.w_php_ref = w_php_ref
         self.interp = interp
 
@@ -36,7 +35,7 @@ class W_PHPGenericAdapter(W_Root):
         return self.interp
 
     def to_php(self, php_interp):
-        return self.w_php_ref
+        return self.w_php_ref.deref()
 
     def is_w(self, space, other):
         if isinstance(other, W_PHPGenericAdapter):
