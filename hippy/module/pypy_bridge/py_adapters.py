@@ -152,10 +152,18 @@ class W_PyFuncGlobalAdapter(AbstractFunction):
         return w_py_rv.to_php(interp)
 
     def needs_ref(self, i):
-        return False
+        w_py_callable = self.w_py_callable
+        if isinstance(w_py_callable, PyFunction):
+            return i in w_py_callable.code.co_php_args_by_ref
+        else:
+            return False
 
     def needs_value(self, i):
-        return False
+        w_py_callable = self.w_py_callable
+        if isinstance(w_py_callable, PyFunction):
+            return not i in w_py_callable.code.co_php_args_by_ref
+        else:
+            return True
 
     def get_identifier(self):
         return self.w_py_callable.name.lower()

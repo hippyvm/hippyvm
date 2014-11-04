@@ -43,7 +43,7 @@ class TestPyPyBridgeArgPassing(BaseTestInterpreter):
         ''')
         assert php_space.str_w(output[0]) == "123" # i.e. unchanged
 
-    def test_php2py_mixed_key_array_by_val(self):
+    def test_php2py_mixed_key_array_by_val_func(self):
         php_space = self.space
         output = self.run('''
             $src = <<<EOD
@@ -57,6 +57,37 @@ class TestPyPyBridgeArgPassing(BaseTestInterpreter):
             echo $in["x"];
         ''')
         assert php_space.str_w(output[0]) == "x"
+
+    def test_php2py_mixed_key_array_by_val_func_global(self):
+        php_space = self.space
+        output = self.run('''
+            $src = <<<EOD
+            def f(ary):
+                ary["x"] = "y"
+            EOD;
+
+            embed_py_func_global($src);
+            $in = array("x" => "x");
+            f($in);
+            echo $in["x"];
+        ''')
+        assert php_space.str_w(output[0]) == "x"
+
+    def test_php2py_mixed_key_array_by_ref_func_global(self):
+        php_space = self.space
+        output = self.run('''
+            $src = <<<EOD
+            @php_refs("ary")
+            def f(ary):
+                ary["x"] = "y"
+            EOD;
+
+            embed_py_func_global($src);
+            $in = array("x" => "x");
+            f($in);
+            echo $in["x"];
+        ''')
+        assert php_space.str_w(output[0]) == "y"
 
     def test_php2py_mixed_key_array_by_ref(self):
         php_space = self.space
