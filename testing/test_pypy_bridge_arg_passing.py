@@ -3,7 +3,8 @@ import pytest
 
 class TestPyPyBridgeArgPassing(BaseTestInterpreter):
 
-    def test_php2py_obj_by_ref(self):
+    # XXX REF
+    def test_php2py_obj_by_val(self):
         php_space = self.space
         output = self.run('''
             $src = <<<EOD
@@ -25,12 +26,13 @@ class TestPyPyBridgeArgPassing(BaseTestInterpreter):
         ''')
         assert php_space.int_w(output[0]) == 1337
 
-    def test_php2py_str_by_ref(self):
+    # XXX REF
+    def test_php2py_str_by_val(self):
         php_space = self.space
         output = self.run('''
             $src = <<<EOD
             def f(s):
-                s.replace("1", "x") # strs immutible, returns new str!
+                s.replace("1", "x")
             EOD;
 
             $f = embed_py_func($src);
@@ -40,34 +42,6 @@ class TestPyPyBridgeArgPassing(BaseTestInterpreter):
             echo $in;
         ''')
         assert php_space.str_w(output[0]) == "123" # i.e. unchanged
-
-    def test_php2py_str_literal_by_ref(self):
-        php_space = self.space
-        output = self.run('''
-            $src = <<<EOD
-            def f(s): pass
-            EOD;
-
-            $f = embed_py_func($src);
-
-            // passing a string constant by reference should not crash
-            $f("123");
-        ''')
-        # no assert, just no crash
-
-    def test_php2py_str_literal_by_ref_global_embed(self):
-        php_space = self.space
-        output = self.run('''
-            $src = <<<EOD
-            def f(s): pass
-            EOD;
-
-            embed_py_func_global($src);
-
-            // passing a string constant by reference should not crash
-            f("123");
-        ''')
-        # no assert, just no crash
 
     # XXX REFS
     def test_php2py_mixed_key_array_by_val(self):
