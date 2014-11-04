@@ -108,14 +108,16 @@ class W_EmbeddedPyCallable(W_InvokeCall):
         return rv.to_php(interp)
 
     def needs_ref(self, i):
-        if isinstance(self.w_py_func, PyFunction):
-            return i in self.w_py_func.code.co_php_args_by_ref
+        w_py_func = self.w_py_func
+        if isinstance(w_py_func, PyFunction):
+            return i in w_py_func.code.co_php_args_by_ref
         else:
             return False
 
     def needs_val(self, i):
-        if isinstance(self.w_py_func, PyFunction):
-            return not i in self.w_py_func.code.co_php_args_by_ref
+        w_py_func = self.w_py_func
+        if isinstance(w_py_func, PyFunction):
+            return not i in w_py_func.code.co_php_args_by_ref
         else:
             return True
 

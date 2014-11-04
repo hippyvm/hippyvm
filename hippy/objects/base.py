@@ -67,7 +67,7 @@ class W_Object(W_Root):
     def _lookup_item_ref(self, space, w_arg):
         return None
 
-    def getitem(self, space, w_arg, give_notice=False):
+    def getitem(self, space, w_arg, give_notice=False, allow_undefined=True):
         if give_notice:
             space.ec.hippy_warn(self._msg_misuse_as_array(space, False))
         return space.w_Null

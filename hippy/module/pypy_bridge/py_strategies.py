@@ -182,9 +182,9 @@ class PHPArrayDictStrategy(DictStrategy):
             if isinstance(w_php_ary_ref, W_Reference):
                 w_php_ary_ref.setitem_ref(php_space, w_php_key, w_py_default)
             else:
-                w_php_new_ary = w_php_ary_ref.setitem2_maybe_inplace(
-                        php_space, w_php_key, w_py_default)
-                w_dict.dstorage = self.erase(w_php_new_ary)
+                w_php_ary_ref = W_Reference(w_php_ary_ref)
+                w_php_ary_ref.setitem_ref(php_space, w_php_key, w_py_default)
+                w_dict.dstorage = self.erase(w_php_ary_ref)
             return w_default
         else:
             return w_php_val.to_py(interp)

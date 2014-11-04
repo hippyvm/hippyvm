@@ -224,7 +224,7 @@ class StringMixin(object):
         else:
             return None
 
-    def getitem(self, space, w_arg, give_notice=False):
+    def getitem(self, space, w_arg, give_notice=False, allow_undefined=True):
         index = w_arg.as_stringoffset(space, give_notice)
         if 0 <= index < self.strlen():
             return single_char_string(self.character(index))
@@ -233,7 +233,10 @@ class StringMixin(object):
                 space.ec.notice("Uninitialized string offset: %d" % index)
                 return space.newstr("")
             else:
-                return space.w_Null    # xxx hack for test_isset_out_of_bound
+                if allow_undefined:
+                    return space.w_Null    # xxx hack for test_isset_out_of_bound
+                else:
+                    return None
 
     def setitem2_maybe_inplace(self, space, w_arg, w_value, unique_item=False):
         index = w_arg.as_stringoffset(space, give_notice=True)
