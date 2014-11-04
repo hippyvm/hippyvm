@@ -15,6 +15,8 @@ from hippy.builtin_klass import W_ExceptionObject, k_Exception
 
 from pypy.interpreter.argument import Arguments
 from pypy.interpreter.error import OperationError
+from pypy.interpreter.pycode import PyCode
+from pypy.interpreter.function import Function as PyFunction
 from pypy.objspace.std.listobject import W_ListObject as WPy_ListObject
 
 from rpython.rlib import jit
@@ -106,15 +108,24 @@ class W_EmbeddedPyCallable(W_InvokeCall):
         return rv.to_php(interp)
 
     def needs_ref(self, i):
-        return False
+        if isinstance(self.w_py_func, PyFunction):
+            return i in self.w_py_func.code.co_php_args_by_ref
+        else:
+            return False
 
     def needs_val(self, i):
-        return False
+        if isinstance(self.w_py_func, PyFunction):
+            return not i in self.w_py_func.code.co_php_args_by_ref
+        else:
+            return True
 
 class W_PyFuncGlobalAdapter(AbstractFunction):
     _immutable_fields_ = ["interp", "w_py_callable"]
 
     def __init__(self, interp, w_py_callable):
+        from hippy.module.pypy_bridge.php_adapters import W_PHPFuncAdapter
+        assert not isinstance(w_py_callable, W_PHPFuncAdapter)
+
         self.interp = interp
         self.w_py_callable = w_py_callable
 
@@ -154,6 +165,9 @@ class W_PyFuncAdapter(W_InstanceObject):
     _immutable_fields_ = [ "interp", "w_py_func" ]
 
     def __init__(self, interp, w_py_func, klass, storage_w):
+        from hippy.module.pypy_bridge.php_adapters import W_PHPFuncAdapter
+        assert not isinstance(w_py_func, W_PHPFuncAdapter)
+
         self.interp = interp
         self.w_py_func = w_py_func
         W_InstanceObject.__init__(self, klass, storage_w)
