@@ -89,6 +89,45 @@ class TestPyPyBridgeArgPassing(BaseTestInterpreter):
         ''')
         assert php_space.str_w(output[0]) == "y"
 
+    def test_php2py_mixed_key_array_by_val_method(self):
+        php_space = self.space
+        output = self.run('''
+            class A {};
+
+            $src = <<<EOD
+            def f(self, ary):
+                ary["x"] = "y"
+            EOD;
+            embed_py_meth("A", $src);
+
+            $a = new A();
+
+            $in = array("x" => "x");
+            $a->f($in);
+            echo $in["x"];
+        ''')
+        assert php_space.str_w(output[0]) == "x"
+
+    def test_php2py_mixed_key_array_by_ref_method(self):
+        php_space = self.space
+        output = self.run('''
+            class A {};
+
+            $src = <<<EOD
+            @php_refs("ary")
+            def f(self, ary):
+                ary["x"] = "y"
+            EOD;
+            embed_py_meth("A", $src);
+
+            $a = new A();
+
+            $in = array("x" => "x");
+            $a->f($in);
+            echo $in["x"];
+        ''')
+        assert php_space.str_w(output[0]) == "y"
+
     def test_php2py_mixed_key_array_by_ref(self):
         php_space = self.space
         output = self.run('''

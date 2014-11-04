@@ -151,9 +151,13 @@ class W_PyFuncGlobalAdapter(AbstractFunction):
 
         return w_py_rv.to_php(interp)
 
+    def _arg_index_adjust(self, i):
+        return i
+
     def needs_ref(self, i):
         w_py_callable = self.w_py_callable
         if isinstance(w_py_callable, PyFunction):
+            i = self._arg_index_adjust(i)
             return i in w_py_callable.code.co_php_args_by_ref
         else:
             return False
@@ -161,12 +165,20 @@ class W_PyFuncGlobalAdapter(AbstractFunction):
     def needs_value(self, i):
         w_py_callable = self.w_py_callable
         if isinstance(w_py_callable, PyFunction):
+            i = self._arg_index_adjust(i)
             return not i in w_py_callable.code.co_php_args_by_ref
         else:
             return True
 
     def get_identifier(self):
         return self.w_py_callable.name.lower()
+
+class W_PyMethodFuncAdapter(W_PyFuncGlobalAdapter):
+    """Only exists because method indicies for methods are skewed by one
+    between Python and PHP. In PHP $this is implicit"""
+
+    def _arg_index_adjust(self, i):
+        return i + 1
 
 class W_PyFuncAdapter(W_InstanceObject):
     """A 'lexically scoped' embedded Python function.

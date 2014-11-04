@@ -4,7 +4,8 @@ from hippy.objects.instanceobject import W_InstanceObject
 from hippy.module.pypy_bridge.scopes import PHP_Scope
 from hippy.module.pypy_bridge.util import _raise_php_bridgeexception
 from hippy.module.pypy_bridge.py_adapters import (
-        new_embedded_py_func, k_BridgeException, W_PyFuncGlobalAdapter)
+        new_embedded_py_func, k_BridgeException, W_PyFuncGlobalAdapter,
+        W_PyMethodFuncAdapter)
 from hippy.builtin_klass import k_Exception, W_ExceptionObject
 from hippy.error import PHPException
 
@@ -116,7 +117,7 @@ def embed_py_meth(interp, class_name, func_source):
     php_frame = interp.get_frame()
     w_py_func_name, w_py_func = \
             _compile_py_func_from_string(interp, func_source, php_frame)
-    w_php_func = W_PyFuncGlobalAdapter(interp, w_py_func)
+    w_php_func = W_PyMethodFuncAdapter(interp, w_py_func)
 
     w_php_class = interp.lookup_class_or_intf(class_name, autoload=True)
     if w_php_class is None:
