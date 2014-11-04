@@ -991,3 +991,19 @@ class TestPyPyBridgeArrayConversionsInterp(BaseTestInterpreter):
         w_php_got = w_py_list_outer.to_php(interp)
         assert php_space.is_true(php_space.eq(w_php_expect_outer, w_php_got))
 
+    def test_as_list_and_mutate(self):
+        php_space = self.space
+        output = self.run('''
+            $src = <<<EOD
+            def f(ary):
+                ary_l = ary.as_list()
+                ary_l[3] = "a"
+                return ary == ary_l
+            EOD;
+
+            $f = embed_py_func($src);
+            $in = array("x", "y", "z");
+            $rv = $f($in);
+            echo $rv;
+        ''')
+        assert not php_space.is_true(output[0])
