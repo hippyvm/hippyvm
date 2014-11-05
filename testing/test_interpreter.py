@@ -54,6 +54,10 @@ class BaseTestInterpreter(object):
         self.engine = None
         self.space = None
 
+    @pytest.fixture
+    def php_space(self):
+        return self.space
+
     def run(self, source, expected_warnings=[], extra_func=None,
             inp_stream=None, **kwds):
         __tracebackhide__ = True

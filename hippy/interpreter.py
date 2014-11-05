@@ -40,6 +40,7 @@ from rpython.rlib import rsignal
 from rpython.rlib.unroll import unrolling_iterable
 from rpython.rlib.rfile import create_popen_file
 from hippy.rpath import exists, dirname, join, abspath
+from hippy import frame_debug
 
 from hippy.module.session import Session
 
