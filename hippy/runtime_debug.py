@@ -7,6 +7,15 @@ from hippy.objects.reference import W_Reference
 from rpython.rlib.objectmodel import compute_unique_id
 from rpython.rlib import jit
 
+@wrap(['interp'])
+def bc_dump(interp):
+    bc = interp.topframeref().bytecode
+
+    print("\nBYTECODE DUMP IN FUNCTION: %s" % bc.name)
+    print(72 * "=")
+    print("")
+    bc.show()
+
 @jit.dont_look_inside
 def the_id(x): return compute_unique_id(x)
 
@@ -24,12 +33,4 @@ def frame_dump(interp):
     for name in bc.varnames:
         idx = bc.var_to_pos[name]
         content = frame.vars_w[idx]
-        if isinstance(content, W_Reference):
-            val = content.deref_temp()
-            #unique_str = " (unique)" if content._unique else ""
-            ident = the_id(val)
-            #print("%s: Ref%s -> %s @ %s" %
-            #        (name, unique_str, val, ident))
-        else:
-            ident = the_id(content)
-            #print("%s: %s @ %s" % (name, content, ident))
+        print("%s: %s" % (name, content))
