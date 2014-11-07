@@ -138,17 +138,6 @@ def target(driver, args):
     pypy_config.translation.jit = config.translation.jit
     pypy_config.translation.gc = config.translation.gc
 
-    from pypy.objspace.std import multimethod
-    if pypy_config.objspace.std.multimethods == 'mrd':
-        assert multimethod.InstallerVersion1.instance_counter == 0,\
-               'The wrong Installer version has already been instatiated'
-        multimethod.Installer = multimethod.InstallerVersion2
-    elif pypy_config.objspace.std.multimethods == 'doubledispatch':
-        # don't rely on the default, set again here
-        assert multimethod.InstallerVersion2.instance_counter == 0,\
-               'The wrong Installer version has already been instatiated'
-        multimethod.Installer = multimethod.InstallerVersion1
-
     merge_configs(config, pypy_config, "Hippy", "PyPy")
 
     # XXX Turn continuations on. Or we get:
