@@ -26,13 +26,12 @@ class TestPyPyBridgeArgPassing(BaseTestInterpreter):
         ''')
         assert php_space.int_w(output[0]) == 1337
 
-    # XXX REF
-    def test_php2py_str_by_val(self):
+    def test_php2py_str_by_val_func(self):
         php_space = self.space
         output = self.run('''
             $src = <<<EOD
             def f(s):
-                s.replace("1", "x")
+                s = s.replace("1", "x")
             EOD;
 
             $f = embed_py_func($src);
@@ -42,6 +41,23 @@ class TestPyPyBridgeArgPassing(BaseTestInterpreter):
             echo $in;
         ''')
         assert php_space.str_w(output[0]) == "123" # i.e. unchanged
+
+    def test_php2py_str_by_ref_func(self):
+        php_space = self.space
+        output = self.run('''
+            $src = <<<EOD
+            @php_refs("s")
+            def f(s):
+                s = s.replace("1", "x")
+            EOD;
+
+            $f = embed_py_func($src);
+
+            $in = "123";
+            $f($in);
+            echo $in;
+        ''')
+        assert php_space.str_w(output[0]) == "x23"
 
     def test_php2py_mixed_key_array_by_val_func(self):
         php_space = self.space
@@ -232,8 +248,6 @@ class TestPyPyBridgeArgPassing(BaseTestInterpreter):
         assert php_space.int_w(output[0]) == 1
         assert php_space.int_w(output[1]) == 1
 
-    # XXX REFS
-    @pytest.mark.xfail
     def test_php2py_existing_ref_by_ref_func(self, php_space):
         output = self.run('''
         function takes_ref(&$x) {
@@ -278,7 +292,6 @@ class TestPyPyBridgeArgPassing(BaseTestInterpreter):
         assert php_space.int_w(output[1]) == 1
 
     # XXX REFS
-    @pytest.mark.xfail
     def test_php2py_existing_ref_by_ref2(self, php_space):
         output = self.run('''
         function takes_ref(&$x) {

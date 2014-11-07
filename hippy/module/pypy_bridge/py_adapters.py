@@ -38,9 +38,9 @@ class W_PyGenericAdapter(W_InstanceObject):
     # Use this as a low level ctor instead of the above.
     @classmethod
     def from_w_py_inst(cls, interp, w_py_inst):
-        w_php_pxy = cls(interp, [])
-        w_php_pxy.set_instance(w_py_inst)
-        return w_php_pxy
+        w_py_adptr = W_PyGenericAdapter(k_PyGenericAdapter, [])
+        w_py_adptr.setup_instance(interp, w_py_inst)
+        return w_py_adptr
 
     def get_callable(self):
         """PHP interpreter calls this when calls a wrapped Python var"""
@@ -48,6 +48,10 @@ class W_PyGenericAdapter(W_InstanceObject):
 
     def to_py(self, interp, w_php_ref=None):
         return self.w_py_inst
+
+    def as_string(self, space, quiet=False):
+        """ Tells PHP how to str_w this should we wrap a string """
+        return self.w_py_inst.to_php(self.interp)
 
 @wrap_method(['interp', ThisUnwrapper(W_PyGenericAdapter), str],
         name='GenericPyProxy::__get')
