@@ -121,6 +121,9 @@ class W_EmbeddedPyCallable(W_InvokeCall):
         else:
             return True
 
+    def is_py_call(self):
+        return True
+
 class W_PyFuncGlobalAdapter(AbstractFunction):
     _immutable_fields_ = ["interp", "w_py_callable"]
 
@@ -169,6 +172,9 @@ class W_PyFuncGlobalAdapter(AbstractFunction):
             return not i in w_py_callable.code.co_php_args_by_ref
         else:
             return True
+
+    def is_py_call(self):
+        return True
 
     def get_identifier(self):
         return self.w_py_callable.name.lower()

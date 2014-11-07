@@ -250,6 +250,17 @@ class TestPyPyBridgeArgPassing(BaseTestInterpreter):
         assert php_space.int_w(output[0]) == 666
         assert php_space.int_w(output[1]) == 666
 
+    def test_php2py_int_by_ref_func(self, php_space):
+        output = self.run('''
+        $src = "@php_refs('y')\ndef mutate_ref(y): y = 666";
+        $mutate_ref = embed_py_func($src);
+
+        $a = 1;
+        $mutate_ref($a);
+        echo $a;
+        ''')
+        assert php_space.int_w(output[0]) == 666
+
     def test_php2py_existing_ref_by_val2(self, php_space):
         output = self.run('''
         function takes_ref(&$x) {

@@ -70,6 +70,9 @@ class AbstractFunction(W_Root):
     def needs_ref(self, i):
         raise NotImplementedError("abstract base class")
 
+    def is_py_call(self):
+        return False
+
     def call_args(self, interp, args_w, w_this=None, thisclass=None,
                   closureargs=None):
         raise NotImplementedError("abstract base class")

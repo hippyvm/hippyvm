@@ -81,11 +81,14 @@ import hippy.module.date.dateinterval_klass
 import hippy.module.date.datetimezone_klass
 import hippy.module.hash.funcs
 
+from hippy.objects.base import W_Root
+
 from hippy.module.date import default_timezone
 from hippy.buffering import Buffer
 
 # Also needed so that PyException is defined early enough to hit the class cache.
 from hippy.module.pypy_bridge import py_adapters
+from hippy.module.pypy_bridge import php_adapters
 
 if is_optional_extension_enabled("mysql"):
     import ext_module.mysql.funcs
@@ -96,6 +99,15 @@ if is_optional_extension_enabled("xml"):
 if is_optional_extension_enabled("mcrypt"):
     import ext_module.mcrypt.funcs
 
+class W_ReferenceToPy(W_Root):
+    """ A special reference type that produces a special PHPRef instance
+    on the Python side as it passes over the PHP->Py language threshold."""
+
+    def __init__(self, interp, w_php_ref):
+        self.w_php_ref = w_php_ref
+
+    def to_py(self, interp):
+        return php_adapters.W_PHPRefAdapter(interp.py_space, self.w_php_ref)
 
 def get_printable_location(pc, bytecode, contextclass=None):
     if 0 <= pc < len(bytecode.bc_mapping):
@@ -1401,7 +1413,12 @@ class Interpreter(object):
         else:
             if func.needs_ref(arg) and not ptr_argument.isref:
                 space.ec.strict("Only variables should be passed by reference")
+
             w_argument = ptr_argument.get_ref(self)
+            if func.is_py_call():
+                # cross language php -> python call with arg by reference.
+                w_argument = W_ReferenceToPy(self, w_argument)
+
         frame.push(w_argument)
         frame.push(func)
         return pc
