@@ -353,79 +353,10 @@ class W_PHPRefAdapter(W_Root):
         assert isinstance(self.w_php_ref.deref_temp(), W_ArrayObject) # XXX exception
         return self.w_php_ref.to_py(self.interp).descr_as_list(space)
 
-    def descr_add(self, space, w_other):
-        return self._descr_generic_binop(space, w_other, "__add__")
-
-    def descr_sub(self, space, w_other):
-        return self._descr_generic_binop(space, w_other, "__sub__")
-
-    def descr_mul(self, space, w_other):
-        return self._descr_generic_binop(space, w_other, "__mul__")
-
-    def descr_floordiv(self, space, w_other):
-        return self._descr_generic_binop(space, w_other, "__floordiv__")
-
-    def descr_mod(self, space, w_other):
-        return self._descr_generic_binop(space, w_other, "__mod__")
-
-    def descr_divmod(self, space, w_other):
-        return self._descr_generic_binop(space, w_other, "__divmod__")
-
-    def descr_pow(self, space, w_other):
-        return self._descr_generic_binop(space, w_other, "__pow__")
-
-    def descr_lshift(self, space, w_other):
-        return self._descr_generic_binop(space, w_other, "__lshift__")
-
-    def descr_rshift(self, space, w_other):
-        return self._descr_generic_binop(space, w_other, "__rshift__")
-
-    def descr_and(self, space, w_other):
-        return self._descr_generic_binop(space, w_other, "__and__")
-
-    def descr_xor(self, space, w_other):
-        return self._descr_generic_binop(space, w_other, "__xor__")
-
-    def descr_or(self, space, w_other):
-        return self._descr_generic_binop(space, w_other, "__or__")
-
-    def _descr_generic_binop(self, space, w_other, name):
-        import pdb; pdb.set_trace()
-        interp = self.interp
-        php_space = interp.space
-        w_py_val = self.w_php_ref.to_py(interp)
-        w_py_target = space.getattr(w_py_val, space.wrap(name))
-
-        return interp.py_space.call(w_py_target,
-                space.newlist([w_other]))
-
-    def _descr_generic_binop(self, space, w_other, name):
-        interp = self.interp
-        php_space = interp.space
-        w_py_val = self.w_php_ref.to_py(interp)
-        w_py_target = space.getattr(w_py_val, space.wrap(name))
-
-        return interp.py_space.call(w_py_target,
-                space.newlist([w_other]))
-
-    # XXX unary operations
-
 W_PHPRefAdapter.typedef = TypeDef("PHPRef",
     __new__ = interp2app(W_PHPRefAdapter.descr_new),
     __getattr__ = interp2app(W_PHPRefAdapter.descr_get),
     __setitem__ = interp2app(W_PHPRefAdapter.descr_setitem),
-    __add__ = interp2app(W_PHPRefAdapter.descr_add),
-    __sub__ = interp2app(W_PHPRefAdapter.descr_sub),
-    __mul__ = interp2app(W_PHPRefAdapter.descr_mul),
-    __floordiv__ = interp2app(W_PHPRefAdapter.descr_floordiv),
-    __mod__ = interp2app(W_PHPRefAdapter.descr_mod),
-    __divmod__ = interp2app(W_PHPRefAdapter.descr_divmod),
-    __pow__ = interp2app(W_PHPRefAdapter.descr_pow),
-    __lshift__ = interp2app(W_PHPRefAdapter.descr_lshift),
-    __rshift__ = interp2app(W_PHPRefAdapter.descr_rshift),
-    __and__ = interp2app(W_PHPRefAdapter.descr_and),
-    __xor__ = interp2app(W_PHPRefAdapter.descr_xor),
-    __or__ = interp2app(W_PHPRefAdapter.descr_or),
     as_list = interp2app(W_PHPRefAdapter.descr_as_list),
     deref = interp2app(W_PHPRefAdapter.deref),
 )

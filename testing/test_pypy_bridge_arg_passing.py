@@ -275,6 +275,29 @@ class TestPyPyBridgeArgPassing(BaseTestInterpreter):
         ''')
         assert php_space.int_w(output[0]) == 666
 
+
+    def test_php2py_int_by_ref_binary_op(self, php_space):
+        output = self.run('''
+        $src = "@php_refs('y')\ndef mutate_ref(y): y = y + 1";
+        $mutate_ref = embed_py_func($src);
+
+        $a = 1;
+        $mutate_ref($a);
+        echo $a;
+        ''')
+        assert php_space.int_w(output[0]) == 2
+
+    def test_php2py_int_by_ref_binary_op2(self, php_space):
+        output = self.run('''
+        $src = "@php_refs('y')\ndef mutate_ref(y): y = 1 + y";
+        $mutate_ref = embed_py_func($src);
+
+        $a = 1;
+        $mutate_ref($a);
+        echo $a;
+        ''')
+        assert php_space.int_w(output[0]) == 2
+
     def test_php2py_existing_ref_by_val2(self, php_space):
         output = self.run('''
         function takes_ref(&$x) {
@@ -291,7 +314,6 @@ class TestPyPyBridgeArgPassing(BaseTestInterpreter):
         assert php_space.int_w(output[0]) == 1
         assert php_space.int_w(output[1]) == 1
 
-    # XXX REFS
     def test_php2py_existing_ref_by_ref2(self, php_space):
         output = self.run('''
         function takes_ref(&$x) {
