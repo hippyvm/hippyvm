@@ -159,8 +159,7 @@ def hash_copy(space, w_res):
     return w_res.deepcopy()
 
 
-@wrap(['space', str, FilenameArg(None), Optional(bool)])
-def hash_file(space, algo, filename, raw_output=False):
+def _hash_file(space, algo, filename, raw_output=False):
     """ Generate a hash value using the contents of a given file"""
     h = _get_hash_algo(algo)
     if not _valid_fname(filename):
@@ -185,6 +184,23 @@ def hash_file(space, algo, filename, raw_output=False):
     if raw_output:
         return space.wrap(h.digest())
     return space.wrap(h.hexdigest())
+
+
+@wrap(['space', str, FilenameArg(None), Optional(bool)])
+def hash_file(space, algo, filename, raw_output=False):
+    return _hash_file(space, algo, filename, raw_output)
+
+
+@wrap(['space', FilenameArg(None), Optional(bool)])
+def md5_file(space, filename, raw_output=False):
+    """Calculates the md5 hash of a given file."""
+    return _hash_file(space, 'md5', filename, raw_output)
+
+
+@wrap(['space', FilenameArg(None), Optional(bool)])
+def sha1_file(space, filename, raw_output=False):
+    """Calculates the sha1 hash of a given file."""
+    return _hash_file(space, 'sha1', filename, raw_output)
 
 
 @wrap(['space', str, Optional(int), Optional(str)])
@@ -325,11 +341,27 @@ def hash_update(space, w_res, data):
     return space.w_True
 
 
-@wrap(['space', str, str, Optional(bool)])
-def hash(space, algo, data, raw_output=False):
-    """ Generate a hash value (message digest)"""
+def _hash(space, algo, data, raw_output=False):
     h = _get_hash_algo(algo)
     h.update(data)
     if raw_output:
         return space.wrap(h.digest())
     return space.wrap(h.hexdigest())
+
+
+@wrap(['space', str, str, Optional(bool)])
+def hash(space, algo, data, raw_output=False):
+    """ Generate a hash value (message digest)"""
+    return _hash(space, algo, data, raw_output)
+
+
+@wrap(['space', str, Optional(bool)])
+def md5(space, data, raw_output=False):
+    """Calculate the md5 hash of a string."""
+    return _hash(space, 'md5', data, raw_output)
+
+
+@wrap(['space', str, Optional(bool)])
+def sha1(space, data, raw_output=False):
+    """Calculate the sha1 hash of a string."""
+    return _hash(space, 'sha1', data, raw_output)

@@ -4,10 +4,8 @@ from collections import OrderedDict
 from rpython.rlib.rstring import StringBuilder
 from rpython.rlib import jit
 from rpython.rlib.unroll import unrolling_iterable
-from rpython.rlib import rmd5
 from rpython.rlib.objectmodel import newlist_hint
 from rpython.rlib.objectmodel import specialize
-from rpython.rlib.rsha import sha
 
 from hippy.objspace import ObjSpace, getspace, PHP_WHITESPACE
 from hippy.builtin import (
@@ -1025,22 +1023,6 @@ def levenshtein(space, num_args, str1='', str2='', w_cost_ins=None, cost_rep=1, 
 
     return space.newint(p1[-1])
 
-
-#@wrap(['space', 'args_w'])
-#def md5_file(space, args_w):
-#    """Calculates the md5 hash of a given file."""
-#    raise NotImplementedError()
-
-
-@wrap(['space', str, Optional(bool)])
-def md5(space, input, raw_output=False):
-    """Calculate the md5 hash of a string."""
-    d = rmd5.RMD5(input)
-    if raw_output:
-        return space.newstr(d.digest())
-    else:
-        return space.newstr(d.hexdigest())
-
 #
 #@wrap(['space', 'args_w'])
 #def metaphone(space, args_w):
@@ -1625,21 +1607,6 @@ def quotemeta(space, string):
     s = builder.build()
     return space.newstr(s)
 
-#
-#@wrap(['space', 'args_w'])
-#def sha1_file(space, args_w):
-#    """Calculate the sha1 hash of a file."""
-#    raise NotImplementedError()
-
-#
-
-@wrap(['space', str, Optional(bool)])
-def sha1(space, s, raw_output=False):
-    """Calculate the sha1 hash of a string."""
-    o = sha(s)
-    if raw_output:
-        return space.wrap(o.digest())
-    return space.wrap(o.hexdigest())
 
 #
 #@wrap(['space', 'args_w'])
