@@ -118,7 +118,6 @@ class W_PHPGenericAdapter(W_Root):
         return w_php_rv.to_py(self.interp)
 
     def _descr_generic_unop(self, name):
-        import pdb; pdb.set_trace()
         interp = self.interp
         php_space = interp.space
         w_php_val = self.w_php_ref.deref_temp()
