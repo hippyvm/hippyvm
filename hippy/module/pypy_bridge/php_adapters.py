@@ -409,6 +409,7 @@ def _mk_w_phprefadapter_generic_binop(name):
         w_py_target = py_space.getattr(w_py_val, py_space.wrap("__%s__" % name))
         return py_space.call_args(
                 w_py_target, Arguments(py_space, [w_py_other]))
+    f.func_name = "descr_%s" % name
     return f
 
 # generate all binary operations
