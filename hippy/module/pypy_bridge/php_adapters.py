@@ -18,6 +18,37 @@ from hippy.module.pypy_bridge.util import _raise_py_bridgeerror
 
 from rpython.rlib import jit, rerased, unroll
 
+# XXX some missing
+BINOPS = unroll.unrolling_iterable([
+    # normal binary ops
+    "add", "sub", "mul", "floordiv", "mod",
+    "divmod", "pow", "lshift", "rshift", "and", "xor",
+    "or",
+    # reversed binary ops
+    "radd",
+])
+
+UNOPS = unroll.unrolling_iterable([
+    # normal binary ops
+    "add", "sub", "mul", "floordiv", "mod",
+    "divmod", "pow", "lshift", "rshift", "and", "xor",
+    "or",
+    # reversed binary ops
+    "radd",
+])
+
+def _mk_binop(name):
+    def f(self, space, w_other):
+        return self._descr_generic_binop(name, w_other)
+    f.func_name = "descr_%s" % name
+    return f
+
+def _mk_unop(name):
+    def f(self, space, w_other):
+        return self._descr_generic_binop(name, w_other)
+    f.func_name = "descr_%s" % name
+    return f
+
 class W_PHPGenericAdapter(W_Root):
     """Generic adapter for PHP objects in Python.
     Used when no more specific adapter is available."""
@@ -91,7 +122,7 @@ class W_PHPGenericAdapter(W_Root):
         w_php_rv = w_php_callable.call_args(self.interp, w_php_args_elems)
         return w_php_rv.to_py(self.interp)
 
-    def _descr_generic_unop(self, space, name):
+    def _descr_generic_unop(self, name):
         interp = self.interp
         php_space = interp.space
         w_php_val = self.w_php_ref.deref_temp()
@@ -108,9 +139,7 @@ class W_PHPGenericAdapter(W_Root):
         return self._descr_generic_unop(space, "__toString")
 
     # binary operators
-    # XXX some missing
-    # XXX reverse ops
-    def _descr_generic_binop(self, space, w_other, name):
+    def _descr_generic_binop(self, name, w_other):
         interp = self.interp
         php_space = interp.space
         w_php_val = self.w_php_ref.deref_temp()
@@ -120,45 +149,8 @@ class W_PHPGenericAdapter(W_Root):
             _raise_py_bridgeerror(interp.py_space,
                     "Wrapped PHP instance has no %s method" % name)
         else:
-            return w_php_target.call_args(interp, [w_other.to_php(interp)]).to_py(interp)
-
-    def descr_add(self, space, w_other):
-        return self._descr_generic_binop(space, w_other, "__add__")
-
-    def descr_sub(self, space, w_other):
-        return self._descr_generic_binop(space, w_other, "__sub__")
-
-    def descr_mul(self, space, w_other):
-        return self._descr_generic_binop(space, w_other, "__mul__")
-
-    def descr_floordiv(self, space, w_other):
-        return self._descr_generic_binop(space, w_other, "__floordiv__")
-
-    def descr_mod(self, space, w_other):
-        return self._descr_generic_binop(space, w_other, "__mod__")
-
-    def descr_divmod(self, space, w_other):
-        return self._descr_generic_binop(space, w_other, "__divmod__")
-
-    def descr_pow(self, space, w_other):
-        return self._descr_generic_binop(space, w_other, "__pow__")
-
-    def descr_lshift(self, space, w_other):
-        return self._descr_generic_binop(space, w_other, "__lshift__")
-
-    def descr_rshift(self, space, w_other):
-        return self._descr_generic_binop(space, w_other, "__rshift__")
-
-    def descr_and(self, space, w_other):
-        return self._descr_generic_binop(space, w_other, "__and__")
-
-    def descr_xor(self, space, w_other):
-        return self._descr_generic_binop(space, w_other, "__xor__")
-
-    def descr_or(self, space, w_other):
-        return self._descr_generic_binop(space, w_other, "__or__")
-
-    # unary ops XXX
+            return w_php_target.call_args(
+                    interp, [w_other.to_php(interp)]).to_py(interp)
 
     # equality/disequality
     def descr_eq(self, space, w_other):
@@ -171,6 +163,16 @@ class W_PHPGenericAdapter(W_Root):
 
     def descr_ne(self, space, w_other):
         return space.not_(self.descr_eq(space, w_other))
+
+# generate all binary/unary operations
+w_phpgenericadapter_binops_iter = unroll.unrolling_iterable(BINOPS)
+w_phpgenericadapter_unops_iter = unroll.unrolling_iterable(UNOPS)
+
+for op in w_phpgenericadapter_binops_iter:
+    setattr(W_PHPGenericAdapter, "descr_%s" % op, _mk_binop(op))
+
+for op in w_phpgenericadapter_unops_iter:
+    setattr(W_PHPGenericAdapter, "descr_%s" % op, _mk_unop(op))
 
 W_PHPGenericAdapter.typedef = TypeDef("PHPGenericAdapter",
     __call__ = interp2app(W_PHPGenericAdapter.descr_call),
@@ -309,15 +311,6 @@ W_PHPFuncAdapter.typedef = TypeDef("PHPFunc",
     __call__ = interp2app(W_PHPFuncAdapter.descr_call),
 )
 
-unrolling_w_phprefadapter_binops = unroll.unrolling_iterable([
-    # normal binary ops
-    "add", "sub", "mul", "floordiv", "mod",
-    "divmod", "pow", "lshift", "rshift", "and", "xor",
-    "or",
-    # reversed binary ops
-    "radd",
-])
-
 class W_PHPRefAdapter(W_Root):
     """Represents a PHP reference (for call by reference Py->PHP only) """
 
@@ -381,6 +374,17 @@ class W_PHPRefAdapter(W_Root):
     # binary operators
     # XXX some missing
     # XXX and remaining reverse ops
+    def _descr_generic_binop(self, name, w_other):
+        interp = self.interp
+        php_space, py_space = interp.space, interp.py_space
+
+        w_py_other = w_other.deref() if \
+                isinstance(w_other, W_PHPRefAdapter) else w_other
+
+        w_py_val = self.w_php_ref.to_py(interp)
+        w_py_target = py_space.getattr(w_py_val, py_space.wrap("__%s__" % name))
+        return py_space.call_args(
+                w_py_target, Arguments(py_space, [w_py_other]))
 
     # unary ops
     # XXX some missing
@@ -399,23 +403,19 @@ class W_PHPRefAdapter(W_Root):
 
 def _mk_w_phprefadapter_generic_binop(name):
     def f(self, space, w_other):
-        interp = self.interp
-        php_space, py_space = interp.space, interp.py_space
-
-        w_py_other = w_other.deref() if \
-                isinstance(w_other, W_PHPRefAdapter) else w_other
-
-        w_py_val = self.w_php_ref.to_py(interp)
-        w_py_target = py_space.getattr(w_py_val, py_space.wrap("__%s__" % name))
-        return py_space.call_args(
-                w_py_target, Arguments(py_space, [w_py_other]))
+        return self._descr_generic_binop(name, w_other)
     f.func_name = "descr_%s" % name
     return f
 
-# generate all binary operations
-for op in unrolling_w_phprefadapter_binops:
-    setattr(W_PHPRefAdapter, "descr_%s" % op,
-            _mk_w_phprefadapter_generic_binop(op))
+# generate all binary/unary operations
+w_phprefadapter_binops_iter = unroll.unrolling_iterable(BINOPS)
+w_phprefadapter_unops_iter = unroll.unrolling_iterable(UNOPS)
+
+for op in w_phprefadapter_binops_iter:
+    setattr(W_PHPRefAdapter, "descr_%s" % op, _mk_binop(op))
+
+for op in w_phprefadapter_unops_iter:
+    setattr(W_PHPRefAdapter, "descr_%s" % op, _mk_unop(op))
 
 W_PHPRefAdapter.typedef = TypeDef("PHPRef",
     __new__ = interp2app(W_PHPRefAdapter.descr_new),
