@@ -341,6 +341,8 @@ class W_PHPRefAdapter(W_Root):
         py_space = self.py_space
 
         w_php_ref = self.w_php_ref
+        w_py_new_val = w_php_ref.to_py(interp)
+
         # We have to wrap in a generic fashion even for strings, so that
         # reference can observe any mutations (e.g. strings).
         from hippy.module.pypy_bridge.py_adapters import (
@@ -360,8 +362,12 @@ class W_PHPRefAdapter(W_Root):
 
     def descr_as_list(self, space):
         from hippy.objects.arrayobject import W_ArrayObject
-        assert isinstance(self.w_php_ref.deref_temp(), W_ArrayObject) # XXX exception
-        return self.w_php_ref.to_py(self.interp).descr_as_list(space)
+        w_php_ref = self.w_php_ref
+        assert isinstance(w_php_ref.deref_temp(), W_ArrayObject) # XXX exception
+        w_py_val = w_php_ref.to_py(self.interp)
+        w_py_as_list = space.getattr(w_py_val, space.wrap("as_list"))
+        from pypy.interpreter.argument import Arguments
+        return space.call_args(w_py_as_list, Arguments(space, []))
 
     # binary operators
     # XXX some missing
