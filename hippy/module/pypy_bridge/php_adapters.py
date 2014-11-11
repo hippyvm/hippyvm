@@ -107,6 +107,9 @@ class W_PHPGenericAdapter(W_Root):
     def descr_str(self, space):
         return self._descr_generic_unop(space, "__toString")
 
+    # binary operators
+    # XXX some missing
+    # XXX reverse ops
     def _descr_generic_binop(self, space, w_other, name):
         interp = self.interp
         php_space = interp.space
@@ -155,6 +158,9 @@ class W_PHPGenericAdapter(W_Root):
     def descr_or(self, space, w_other):
         return self._descr_generic_binop(space, w_other, "__or__")
 
+    # unary ops XXX
+
+    # equality/disequality
     def descr_eq(self, space, w_other):
         if isinstance(w_other, W_PHPGenericAdapter):
             php_interp = self.interp
@@ -337,9 +343,13 @@ class W_PHPRefAdapter(W_Root):
         w_php_ref = self.w_php_ref
         # We have to wrap in a generic fashion even for strings, so that
         # reference can observe any mutations (e.g. strings).
-        from hippy.module.pypy_bridge.py_adapters import W_PyGenericAdapter
+        from hippy.module.pypy_bridge.py_adapters import (
+                W_PyGenericAdapter, k_PyGenericAdapter)
         w_py_new_val = w_php_ref.to_py(interp)
-        w_php_val = W_PyGenericAdapter.from_w_py_inst(interp, w_py_new_val)
+
+        w_php_val = W_PyGenericAdapter(k_PyGenericAdapter, [])
+        w_php_val.setup_instance(interp, w_py_new_val)
+
         w_php_ref.store(w_php_val)
         return py_space.getattr(w_py_new_val, w_py_name)
 
@@ -353,11 +363,96 @@ class W_PHPRefAdapter(W_Root):
         assert isinstance(self.w_php_ref.deref_temp(), W_ArrayObject) # XXX exception
         return self.w_php_ref.to_py(self.interp).descr_as_list(space)
 
+    # binary operators
+    # XXX some missing
+    # XXX and remaining reverse ops
+    def _descr_generic_binop(self, w_other, name):
+        interp = self.interp
+        php_space, py_space = interp.space, interp.py_space
+
+        w_py_other = w_other.deref() if \
+                isinstance(w_other, W_PHPRefAdapter) else w_other
+
+        w_py_val = self.w_php_ref.to_py(interp)
+        w_py_target = py_space.getattr(w_py_val, py_space.wrap(name))
+        return py_space.call_args(
+                w_py_target, Arguments(py_space, [w_py_other]))
+
+    def descr_add(self, space, w_other):
+        return self._descr_generic_binop(w_other, "__add__")
+
+    def descr_radd(self, space, w_other):
+        return self._descr_generic_binop(w_other, "__add__")
+
+    def descr_sub(self, space, w_other):
+        return self._descr_generic_binop(w_other, "__sub__")
+
+    def descr_mul(self, space, w_other):
+        return self._descr_generic_binop(w_other, "__mul__")
+
+    def descr_floordiv(self, space, w_other):
+        return self._descr_generic_binop(w_other, "__floordiv__")
+
+    def descr_mod(self, space, w_other):
+        return self._descr_generic_binop(w_other, "__mod__")
+
+    def descr_divmod(self, space, w_other):
+        return self._descr_generic_binop(w_other, "__divmod__")
+
+    def descr_pow(self, space, w_other):
+        return self._descr_generic_binop(w_other, "__pow__")
+
+    def descr_lshift(self, space, w_other):
+        return self._descr_generic_binop(w_other, "__lshift__")
+
+    def descr_rshift(self, space, w_other):
+        return self._descr_generic_binop(w_other, "__rshift__")
+
+    def descr_and(self, space, w_other):
+        return self._descr_generic_binop(w_other, "__and__")
+
+    def descr_xor(self, space, w_other):
+        return self._descr_generic_binop(w_other, "__xor__")
+
+    def descr_or(self, space, w_other):
+        return self._descr_generic_binop(w_other, "__or__")
+
+    # unary ops
+    # XXX some missing
+    def _descr_generic_unop(self, name):
+        interp = self.interp
+        php_space, py_space = interp.space, interp.py_space
+
+        w_py_val = self.w_php_ref.to_py(interp)
+        w_py_target = py_space.getattr(w_py_val, py_space.wrap(name))
+        return py_space.call_args(w_py_target, Arguments(py_space, []))
+
+    def descr_neg(self, space):
+        return self._descr_generic_unop("__neg__")
+
+    # equality/disequality XXX
+
 W_PHPRefAdapter.typedef = TypeDef("PHPRef",
     __new__ = interp2app(W_PHPRefAdapter.descr_new),
     __getattr__ = interp2app(W_PHPRefAdapter.descr_get),
     __setitem__ = interp2app(W_PHPRefAdapter.descr_setitem),
     as_list = interp2app(W_PHPRefAdapter.descr_as_list),
     deref = interp2app(W_PHPRefAdapter.deref),
+    # binary ops
+    __add__ = interp2app(W_PHPRefAdapter.descr_add),
+    __radd__ = interp2app(W_PHPRefAdapter.descr_add),
+    __sub__ = interp2app(W_PHPRefAdapter.descr_sub),
+    __mul__ = interp2app(W_PHPRefAdapter.descr_mul),
+    __floordiv__ = interp2app(W_PHPRefAdapter.descr_floordiv),
+    __mod__ = interp2app(W_PHPRefAdapter.descr_mod),
+    __divmod__ = interp2app(W_PHPRefAdapter.descr_divmod),
+    __pow__ = interp2app(W_PHPRefAdapter.descr_pow),
+    __lshift__ = interp2app(W_PHPRefAdapter.descr_lshift),
+    __rshift__ = interp2app(W_PHPRefAdapter.descr_rshift),
+    __and__ = interp2app(W_PHPRefAdapter.descr_and),
+    __xor__ = interp2app(W_PHPRefAdapter.descr_xor),
+    __or__ = interp2app(W_PHPRefAdapter.descr_or),
+    # unary ops
+    __neg__ = interp2app(W_PHPRefAdapter.descr_neg),
 )
 
