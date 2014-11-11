@@ -19,23 +19,18 @@ from hippy.module.pypy_bridge.util import _raise_py_bridgeerror
 from rpython.rlib import jit, rerased, unroll
 
 # XXX some missing
-BINOPS = unroll.unrolling_iterable([
+BINOPS = [
     # normal binary ops
     "add", "sub", "mul", "floordiv", "mod",
     "divmod", "pow", "lshift", "rshift", "and", "xor",
     "or",
     # reversed binary ops
     "radd",
-])
+]
 
-UNOPS = unroll.unrolling_iterable([
-    # normal binary ops
-    "add", "sub", "mul", "floordiv", "mod",
-    "divmod", "pow", "lshift", "rshift", "and", "xor",
-    "or",
-    # reversed binary ops
-    "radd",
-])
+UNOPS = [
+        "neg",
+]
 
 def _mk_binop(name):
     def f(self, space, w_other):
@@ -44,8 +39,8 @@ def _mk_binop(name):
     return f
 
 def _mk_unop(name):
-    def f(self, space, w_other):
-        return self._descr_generic_binop(name, w_other)
+    def f(self, space):
+        return self._descr_generic_unop(name)
     f.func_name = "descr_%s" % name
     return f
 
@@ -123,6 +118,7 @@ class W_PHPGenericAdapter(W_Root):
         return w_php_rv.to_py(self.interp)
 
     def _descr_generic_unop(self, name):
+        import pdb; pdb.set_trace()
         interp = self.interp
         php_space = interp.space
         w_php_val = self.w_php_ref.deref_temp()
@@ -136,7 +132,7 @@ class W_PHPGenericAdapter(W_Root):
             return w_php_target.call_args(interp, []).to_py(interp)
 
     def descr_str(self, space):
-        return self._descr_generic_unop(space, "__toString")
+        return self._descr_generic_unop("__toString")
 
     # binary operators
     def _descr_generic_binop(self, name, w_other):
@@ -151,6 +147,19 @@ class W_PHPGenericAdapter(W_Root):
         else:
             return w_php_target.call_args(
                     interp, [w_other.to_php(interp)]).to_py(interp)
+
+    # unary operators
+    def _descr_generic_unop(self, name):
+        interp = self.interp
+        php_space = interp.space
+        w_php_val = self.w_php_ref.deref_temp()
+        try:
+            w_php_target = w_php_val.getmeth(php_space, name, None)
+        except VisibilityError:
+            _raise_py_bridgeerror(interp.py_space,
+                    "Wrapped PHP instance has no %s method" % name)
+        else:
+            return w_php_target.call_args(interp, []).to_py(interp)
 
     # equality/disequality
     def descr_eq(self, space, w_other):
@@ -174,26 +183,20 @@ for op in w_phpgenericadapter_binops_iter:
 for op in w_phpgenericadapter_unops_iter:
     setattr(W_PHPGenericAdapter, "descr_%s" % op, _mk_unop(op))
 
-W_PHPGenericAdapter.typedef = TypeDef("PHPGenericAdapter",
-    __call__ = interp2app(W_PHPGenericAdapter.descr_call),
-    __getattr__ = interp2app(W_PHPGenericAdapter.descr_get),
-    __setattr__ = interp2app(W_PHPGenericAdapter.descr_set),
-    __str__ = interp2app(W_PHPGenericAdapter.descr_str),
-    __add__ = interp2app(W_PHPGenericAdapter.descr_add),
-    __sub__ = interp2app(W_PHPGenericAdapter.descr_sub),
-    __mul__ = interp2app(W_PHPGenericAdapter.descr_mul),
-    __floordiv__ = interp2app(W_PHPGenericAdapter.descr_floordiv),
-    __mod__ = interp2app(W_PHPGenericAdapter.descr_mod),
-    __divmod__ = interp2app(W_PHPGenericAdapter.descr_divmod),
-    __pow__ = interp2app(W_PHPGenericAdapter.descr_pow),
-    __lshift__ = interp2app(W_PHPGenericAdapter.descr_lshift),
-    __rshift__ = interp2app(W_PHPGenericAdapter.descr_rshift),
-    __and__ = interp2app(W_PHPGenericAdapter.descr_and),
-    __xor__ = interp2app(W_PHPGenericAdapter.descr_xor),
-    __or__ = interp2app(W_PHPGenericAdapter.descr_or),
-    __eq__ = interp2app(W_PHPGenericAdapter.descr_eq),
-    __ne__ = interp2app(W_PHPGenericAdapter.descr_ne),
-)
+w_phpgenericadapter_typedef = {
+    "__call__": interp2app(W_PHPGenericAdapter.descr_call),
+    "__getattr__": interp2app(W_PHPGenericAdapter.descr_get),
+    "__setattr__": interp2app(W_PHPGenericAdapter.descr_set),
+    "__eq__": interp2app(W_PHPGenericAdapter.descr_eq),
+    "__ne__": interp2app(W_PHPGenericAdapter.descr_ne),
+    "__str__": interp2app(W_PHPGenericAdapter.descr_str),
+}
+for op in BINOPS + UNOPS:
+    w_phpgenericadapter_typedef["__%s__" % op] = \
+            interp2app(getattr(W_PHPGenericAdapter, "descr_%s" % op))
+
+W_PHPGenericAdapter.typedef = \
+        TypeDef("PHPGenericAdapter", **w_phpgenericadapter_typedef)
 
 class W_PHPClassAdapter(W_Root):
     _immutable_fields_ = ["interp", "w_php_cls"]
@@ -371,9 +374,7 @@ class W_PHPRefAdapter(W_Root):
         from pypy.interpreter.argument import Arguments
         return space.call_args(w_py_as_list, Arguments(space, []))
 
-    # binary operators
-    # XXX some missing
-    # XXX and remaining reverse ops
+    # binary ops
     def _descr_generic_binop(self, name, w_other):
         interp = self.interp
         php_space, py_space = interp.space, interp.py_space
@@ -382,18 +383,19 @@ class W_PHPRefAdapter(W_Root):
                 isinstance(w_other, W_PHPRefAdapter) else w_other
 
         w_py_val = self.w_php_ref.to_py(interp)
-        w_py_target = py_space.getattr(w_py_val, py_space.wrap("__%s__" % name))
+        w_py_target = py_space.getattr(
+                w_py_val, py_space.wrap("__%s__" % name))
         return py_space.call_args(
                 w_py_target, Arguments(py_space, [w_py_other]))
 
     # unary ops
-    # XXX some missing
     def _descr_generic_unop(self, name):
         interp = self.interp
         php_space, py_space = interp.space, interp.py_space
 
         w_py_val = self.w_php_ref.to_py(interp)
-        w_py_target = py_space.getattr(w_py_val, py_space.wrap(name))
+        w_py_target = py_space.getattr(
+                w_py_val, py_space.wrap("__%s__" % name))
         return py_space.call_args(w_py_target, Arguments(py_space, []))
 
     def descr_neg(self, space):
@@ -417,28 +419,15 @@ for op in w_phprefadapter_binops_iter:
 for op in w_phprefadapter_unops_iter:
     setattr(W_PHPRefAdapter, "descr_%s" % op, _mk_unop(op))
 
-W_PHPRefAdapter.typedef = TypeDef("PHPRef",
-    __new__ = interp2app(W_PHPRefAdapter.descr_new),
-    __getattr__ = interp2app(W_PHPRefAdapter.descr_get),
-    __setitem__ = interp2app(W_PHPRefAdapter.descr_setitem),
-    as_list = interp2app(W_PHPRefAdapter.descr_as_list),
-    deref = interp2app(W_PHPRefAdapter.deref),
-    # binary ops
-    __add__ = interp2app(W_PHPRefAdapter.descr_add),
-    __sub__ = interp2app(W_PHPRefAdapter.descr_sub),
-    __mul__ = interp2app(W_PHPRefAdapter.descr_mul),
-    __floordiv__ = interp2app(W_PHPRefAdapter.descr_floordiv),
-    __mod__ = interp2app(W_PHPRefAdapter.descr_mod),
-    __divmod__ = interp2app(W_PHPRefAdapter.descr_divmod),
-    __pow__ = interp2app(W_PHPRefAdapter.descr_pow),
-    __lshift__ = interp2app(W_PHPRefAdapter.descr_lshift),
-    __rshift__ = interp2app(W_PHPRefAdapter.descr_rshift),
-    __and__ = interp2app(W_PHPRefAdapter.descr_and),
-    __xor__ = interp2app(W_PHPRefAdapter.descr_xor),
-    __or__ = interp2app(W_PHPRefAdapter.descr_or),
-    # reversed binary ops
-    __radd__ = interp2app(W_PHPRefAdapter.descr_add),
-    # unary ops
-    __neg__ = interp2app(W_PHPRefAdapter.descr_neg),
-)
+w_phprefadapter_typedef = {
+    "__new__": interp2app(W_PHPRefAdapter.descr_new),
+    "__getattr__": interp2app(W_PHPRefAdapter.descr_get),
+    "__setitem__": interp2app(W_PHPRefAdapter.descr_setitem),
+    "as_list": interp2app(W_PHPRefAdapter.descr_as_list),
+    "deref": interp2app(W_PHPRefAdapter.deref),
+}
+for op in BINOPS + UNOPS:
+    w_phprefadapter_typedef["__%s__" % op] = \
+            interp2app(getattr(W_PHPRefAdapter, "descr_%s" % op))
 
+W_PHPRefAdapter.typedef = TypeDef("PHPRef", **w_phprefadapter_typedef)
