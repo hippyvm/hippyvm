@@ -18,18 +18,24 @@ from hippy.module.pypy_bridge.util import _raise_py_bridgeerror
 
 from rpython.rlib import jit, rerased, unroll
 
-# XXX some missing
+# Some wrappers must implement a huge number of uniform binary/unary ops.
+# We generate these automatically.
 BINOPS = [
     # normal binary ops
     "add", "sub", "mul", "floordiv", "mod",
     "divmod", "pow", "lshift", "rshift", "and", "xor",
-    "or",
+    "or", "div", "truediv",
     # reversed binary ops
-    "radd",
+    "radd", "rsub", "rmul", "rdiv", "rtruediv", "rfloordiv", "rmod",
+    "rdivmod", "rpow", "rlshift", "rrshift", "rand", "rxor", "ror",
+    # "in-place" binary ops
+    "iadd", "isub", "imul", "idiv", "itruediv", "ifloordiv", "imod",
+    "ipow", "ilshift", "irshift", "iand", "ixor", "ior",
 ]
 
 UNOPS = [
-        "neg",
+        "neg", "pos", "abs", "invert", "complex", "int", "long", "float",
+        "oct", "hex", "index", "coerce",
 ]
 
 def _mk_binop(name):
