@@ -133,33 +133,6 @@ class W_PHPGenericAdapter(W_Root):
     def descr_str(self, space):
         return self._descr_generic_unop("__toString")
 
-    # binary operators
-    def _descr_generic_binop(self, name, w_other):
-        interp = self.interp
-        php_space = interp.space
-        w_php_val = self.w_php_ref.deref_temp()
-        try:
-            w_php_target = w_php_val.getmeth(php_space, name, None)
-        except VisibilityError:
-            _raise_py_bridgeerror(interp.py_space,
-                    "Wrapped PHP instance has no %s method" % name)
-        else:
-            return w_php_target.call_args(
-                    interp, [w_other.to_php(interp)]).to_py(interp)
-
-    # unary operators
-    def _descr_generic_unop(self, name):
-        interp = self.interp
-        php_space = interp.space
-        w_php_val = self.w_php_ref.deref_temp()
-        try:
-            w_php_target = w_php_val.getmeth(php_space, name, None)
-        except VisibilityError:
-            _raise_py_bridgeerror(interp.py_space,
-                    "Wrapped PHP instance has no %s method" % name)
-        else:
-            return w_php_target.call_args(interp, []).to_py(interp)
-
     # equality/disequality
     def descr_eq(self, space, w_other):
         if isinstance(w_other, W_PHPGenericAdapter):
@@ -172,30 +145,14 @@ class W_PHPGenericAdapter(W_Root):
     def descr_ne(self, space, w_other):
         return space.not_(self.descr_eq(space, w_other))
 
-# generate all binary/unary operations
-w_phpgenericadapter_binops_iter = unroll.unrolling_iterable(BINOPS)
-w_phpgenericadapter_unops_iter = unroll.unrolling_iterable(UNOPS)
-
-for op in w_phpgenericadapter_binops_iter:
-    setattr(W_PHPGenericAdapter, "descr_%s" % op, _mk_binop(op))
-
-for op in w_phpgenericadapter_unops_iter:
-    setattr(W_PHPGenericAdapter, "descr_%s" % op, _mk_unop(op))
-
-w_phpgenericadapter_typedef = {
-    "__call__": interp2app(W_PHPGenericAdapter.descr_call),
-    "__getattr__": interp2app(W_PHPGenericAdapter.descr_get),
-    "__setattr__": interp2app(W_PHPGenericAdapter.descr_set),
-    "__eq__": interp2app(W_PHPGenericAdapter.descr_eq),
-    "__ne__": interp2app(W_PHPGenericAdapter.descr_ne),
-    "__str__": interp2app(W_PHPGenericAdapter.descr_str),
-}
-for op in BINOPS + UNOPS:
-    w_phpgenericadapter_typedef["__%s__" % op] = \
-            interp2app(getattr(W_PHPGenericAdapter, "descr_%s" % op))
-
-W_PHPGenericAdapter.typedef = \
-        TypeDef("PHPGenericAdapter", **w_phpgenericadapter_typedef)
+W_PHPGenericAdapter.typedef = TypeDef("PHPGenericAdapter",
+    __call__ = interp2app(W_PHPGenericAdapter.descr_call),
+    __getattr__ = interp2app(W_PHPGenericAdapter.descr_get),
+    __setattr__ = interp2app(W_PHPGenericAdapter.descr_set),
+    __eq__ = interp2app(W_PHPGenericAdapter.descr_eq),
+    __ne__ = interp2app(W_PHPGenericAdapter.descr_ne),
+    __str__ = interp2app(W_PHPGenericAdapter.descr_str),
+)
 
 class W_PHPClassAdapter(W_Root):
     _immutable_fields_ = ["interp", "w_php_cls"]
