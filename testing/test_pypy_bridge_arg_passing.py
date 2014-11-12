@@ -353,6 +353,28 @@ class TestPyPyBridgeArgPassing(BaseTestInterpreter):
         assert php_space.int_w(output[0]) == 2
         assert php_space.int_w(output[1]) == 2
 
+    @pytest.mark.xfail
+    def test_php2py_mutible_binop_on_ref(self, php_space):
+        output = self.run('''
+        $src = <<<EOD
+        @php_refs('x', 'y')
+        def mutate_ref(x, y):
+            x, y = x.as_list(), y.as_list()
+            x += y
+        EOD;
+        $mutate_ref = embed_py_func($src);
+
+        $a = array("1");
+        $b = array("2");
+        $mutate_ref($a, $b);
+
+        foreach ($a as $x) {
+                echo $x;
+        }
+        ''')
+        assert php_space.int_w(output[0]) == 1
+        assert php_space.int_w(output[1]) == 2
+
     # ---
 
     def test_py2php_list_by_val(self):
