@@ -107,7 +107,7 @@ class W_ReferenceToPy(W_Root):
         self.w_php_ref = w_php_ref
 
     def to_py(self, interp, w_php_ref=None):
-        return php_adapters.W_PHPRefAdapter(interp.py_space, self.w_php_ref)
+        return php_adapters.W_PHPRefAdapter(interp, self.w_php_ref)
 
 def get_printable_location(pc, bytecode, contextclass=None):
     if 0 <= pc < len(bytecode.bc_mapping):
