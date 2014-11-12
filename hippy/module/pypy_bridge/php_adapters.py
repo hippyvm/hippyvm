@@ -279,6 +279,8 @@ W_PHPFuncAdapter.typedef = TypeDef("PHPFunc",
 class W_PHPRefAdapter(W_Root):
     """Represents a PHP reference (for call by reference Py->PHP only) """
 
+    _immutable_fields_ = ["interp", "w_php_ref"]
+
     def __init__(self, interp, w_php_ref):
         assert isinstance(w_php_ref, W_Reference)
         self.interp = interp
