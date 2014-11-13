@@ -309,22 +309,9 @@ class W_PHPRefAdapter(W_Root):
 
     def descr_get(self, w_py_name):
         interp = self.interp
-        php_space, py_space = interp.space, interp.py_space
-
-        w_php_ref = self.w_php_ref
-        w_py_new_val = w_php_ref.to_py(interp)
-
-        # We have to wrap in a generic fashion even for strings, so that
-        # reference can observe any mutations (e.g. strings).
-        from hippy.module.pypy_bridge.py_adapters import (
-                W_PyGenericAdapter, k_PyGenericAdapter)
-        w_py_new_val = w_php_ref.to_py(interp)
-
-        w_php_val = W_PyGenericAdapter(k_PyGenericAdapter, [])
-        w_php_val.setup_instance(interp, w_py_new_val)
-
-        w_php_ref.store(w_php_val)
-        return py_space.getattr(w_py_new_val, w_py_name)
+        py_space = interp.py_space
+        w_py_val = self.w_php_ref.to_py(interp)
+        return py_space.getattr(w_py_val, w_py_name)
 
     def descr_setitem(self, w_py_key, w_py_val):
         interp = self.interp
