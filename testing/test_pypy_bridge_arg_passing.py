@@ -48,7 +48,7 @@ class TestPyPyBridgeArgPassing(BaseTestInterpreter):
             $src = <<<EOD
             @php_refs("s")
             def f(s):
-                s = s.replace("1", "x")
+                s.store_ref(s.replace("1", "x"))
             EOD;
 
             $f = embed_py_func($src);
@@ -251,7 +251,7 @@ class TestPyPyBridgeArgPassing(BaseTestInterpreter):
     def test_php2py_existing_ref_by_ref_func(self, php_space):
         output = self.run('''
         function takes_ref(&$x) {
-            $src = "@php_refs('y')\ndef mutate_ref(y): y = 666";
+            $src = "@php_refs('y')\ndef mutate_ref(y): y.store_ref(666)";
             $mutate_ref = embed_py_func($src);
             $mutate_ref($x);
             echo $x;
@@ -266,7 +266,7 @@ class TestPyPyBridgeArgPassing(BaseTestInterpreter):
 
     def test_php2py_int_by_ref_func(self, php_space):
         output = self.run('''
-        $src = "@php_refs('y')\ndef mutate_ref(y): y = 666";
+        $src = "@php_refs('y')\ndef mutate_ref(y): y.store_ref(666)";
         $mutate_ref = embed_py_func($src);
 
         $a = 1;
@@ -278,7 +278,7 @@ class TestPyPyBridgeArgPassing(BaseTestInterpreter):
 
     def test_php2py_int_by_ref_unary_op(self, php_space):
         output = self.run('''
-        $src = "@php_refs('y')\ndef mutate_ref(y): y = -y";
+        $src = "@php_refs('y')\ndef mutate_ref(y): y.store_ref(-y)";
         $mutate_ref = embed_py_func($src);
 
         $a = 1;
@@ -289,7 +289,7 @@ class TestPyPyBridgeArgPassing(BaseTestInterpreter):
 
     def test_php2py_int_by_ref_binary_op(self, php_space):
         output = self.run('''
-        $src = "@php_refs('y')\ndef mutate_ref(y): y = y + 1";
+        $src = "@php_refs('y')\ndef mutate_ref(y): y.store_ref(y + 1)";
         $mutate_ref = embed_py_func($src);
 
         $a = 1;
@@ -300,7 +300,7 @@ class TestPyPyBridgeArgPassing(BaseTestInterpreter):
 
     def test_php2py_int_by_ref_binary_op2(self, php_space):
         output = self.run('''
-        $src = "@php_refs('y')\ndef mutate_ref(y): y = 1 + y";
+        $src = "@php_refs('y')\ndef mutate_ref(y): y.store_ref(1 + y)";
         $mutate_ref = embed_py_func($src);
 
         $a = 1;
@@ -311,7 +311,7 @@ class TestPyPyBridgeArgPassing(BaseTestInterpreter):
 
     def test_php2py_int_by_ref_binary_op3(self, php_space):
         output = self.run('''
-        $src = "@php_refs('y', 'z')\ndef mutate_ref(y, z): y = y + z";
+        $src = "@php_refs('y', 'z')\ndef mutate_ref(y, z): y.store_ref(y + z)";
         $mutate_ref = embed_py_func($src);
 
         $a = 1;
@@ -340,7 +340,7 @@ class TestPyPyBridgeArgPassing(BaseTestInterpreter):
     def test_php2py_existing_ref_by_ref2(self, php_space):
         output = self.run('''
         function takes_ref(&$x) {
-            $src = "@php_refs('y')\ndef mutate_ref(y): y = y + 1";
+            $src = "@php_refs('y')\ndef mutate_ref(y): y.store_ref(y + 1)";
             $mutate_ref = embed_py_func($src);
             $mutate_ref($x);
             echo $x;
@@ -353,14 +353,16 @@ class TestPyPyBridgeArgPassing(BaseTestInterpreter):
         assert php_space.int_w(output[0]) == 2
         assert php_space.int_w(output[1]) == 2
 
+    # XXX need to implement += on array adapters
     @pytest.mark.xfail
     def test_php2py_mutible_binop_on_ref(self, php_space):
         output = self.run('''
         $src = <<<EOD
         @php_refs('x', 'y')
         def mutate_ref(x, y):
-            x, y = x.as_list(), y.as_list()
-            x += y
+            xl, yl = x.as_list(), y.as_list()
+            xl += yl
+            x.store_ref(xl)
         EOD;
         $mutate_ref = embed_py_func($src);
 

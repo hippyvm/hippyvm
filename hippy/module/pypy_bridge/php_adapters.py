@@ -289,6 +289,10 @@ class W_PHPRefAdapter(W_Root):
     def deref(self):
         return self.w_php_ref.deref().to_py(self.interp)
 
+    def store_ref(self, w_py_new_val):
+        w_php_val = w_py_new_val.to_php(self.interp)
+        self.w_php_ref.store(w_php_val)
+
     @staticmethod
     def descr_new(space, w_type, w_py_val):
         interp = space.get_php_interp()
@@ -386,6 +390,7 @@ w_phprefadapter_typedef = {
     "__getattr__": interp2app(W_PHPRefAdapter.descr_get),
     "__setitem__": interp2app(W_PHPRefAdapter.descr_setitem),
     "as_list": interp2app(W_PHPRefAdapter.descr_as_list),
+    "store_ref": interp2app(W_PHPRefAdapter.store_ref),
     "deref": interp2app(W_PHPRefAdapter.deref),
 }
 for op in BINOPS + UNOPS:
