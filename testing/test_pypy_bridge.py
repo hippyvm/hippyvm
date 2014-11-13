@@ -320,6 +320,7 @@ class TestPyPyBridge(BaseTestInterpreter):
         assert php_space.is_true(output[0])
         assert not php_space.is_true(output[1])
 
+    @pytest.mark.xfail
     def test_phbridgeproxy_id1(self):
         php_space = self.space
         output = self.run('''
@@ -352,6 +353,7 @@ class TestPyPyBridge(BaseTestInterpreter):
         ''')
         assert php_space.str_w(output[0]) == "False True"
 
+    @pytest.mark.xfail
     def test_phbridgeproxy_is1(self):
         php_space = self.space
         output = self.run('''
