@@ -353,6 +353,24 @@ class TestPyPyBridge(BaseTestInterpreter):
         ''')
         assert php_space.str_w(output[0]) == "False True"
 
+    def test_phbridgeproxy_id3(self):
+        php_space = self.space
+        output = self.run('''
+            $src = <<<EOD
+            @php_refs('x', 'y')
+            def is_chk(x, y):
+                return str(id(x) == id(y))
+            EOD;
+            $is_chk = embed_py_func($src);
+
+            class C {}
+            $x = new C;
+            $y = new c;
+            echo($is_chk($x, $y) . " " . $is_chk($x, $x));
+        ''')
+        assert php_space.str_w(output[0]) == "False True"
+
+
     def test_phbridgeproxy_is1(self):
         php_space = self.space
         output = self.run('''
@@ -383,6 +401,22 @@ class TestPyPyBridge(BaseTestInterpreter):
             $is_chk = embed_py_func($src);
 
             echo($is_chk());
+        ''')
+        assert php_space.str_w(output[0]) == "False True"
+
+    def test_phbridgeproxy_is3(self):
+        php_space = self.space
+        output = self.run('''
+            $src = <<<EOD
+            def is_chk(x, y):
+                return str(x is y)
+            EOD;
+            $is_chk = embed_py_func($src);
+
+            class C {}
+            $x = new C;
+            $y = new c;
+            echo($is_chk($x, $y) . " " . $is_chk($x, $x));
         ''')
         assert php_space.str_w(output[0]) == "False True"
 
