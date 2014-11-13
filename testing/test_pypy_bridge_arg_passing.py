@@ -3,28 +3,54 @@ import pytest
 
 class TestPyPyBridgeArgPassing(BaseTestInterpreter):
 
-    # XXX REF
-    def test_php2py_obj_by_val(self):
-        php_space = self.space
+    def test_php2py_by_ref_assign_does_not_change_ref(self, php_space):
         output = self.run('''
-            $src = <<<EOD
-            def f(x):
-                x.v = 1337
-            EOD;
+        $src = "@php_refs('y')\ndef no_mutate_ref(y): y = 111";
+        $mutate_ref = embed_py_func($src);
 
-            $f = embed_py_func($src);
+        $a = 1;
+        $mutate_ref($a);
+        echo $a;
+        ''')
+        assert php_space.int_w(output[0]) == 1
 
+    def test_php2py_obj_by_val(self, php_space):
+        output = self.run('''
             class A {
-                function __construct($v) {
-                    $this->v = $v;
-                }
+                function __construct($v) { $this->v = $v; }
             };
 
-            $in = new A(666);
-            $f($in);
-            echo $in->v;
+            $src = "def f(x): x = A(666)";
+            $f = embed_py_func($src);
+
+            $a = new A(1);
+            echo $a->v;
+            $f($a);
+            echo $a->v;
         ''')
-        assert php_space.int_w(output[0]) == 1337
+        assert php_space.int_w(output[0]) == 1
+        assert php_space.int_w(output[1]) == 1
+
+    def test_php2py_obj_by_ref(self, php_space):
+        output = self.run('''
+            class A {
+                function __construct($v) { $this->v = $v; }
+            };
+
+            $src = <<<EOD
+            @php_refs('x')
+            def f(x):
+                x.store_ref(A(666))
+            EOD;
+            $f = embed_py_func($src);
+
+            $a = new A(1);
+            echo $a->v;
+            $f($a);
+            echo $a->v;
+        ''')
+        assert php_space.int_w(output[0]) == 1
+        assert php_space.int_w(output[1]) == 666
 
     def test_php2py_str_by_val_func(self):
         php_space = self.space
