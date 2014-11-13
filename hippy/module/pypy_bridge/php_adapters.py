@@ -72,7 +72,7 @@ class W_PHPGenericAdapter(W_Root):
 
     def is_w(self, space, other):
         if isinstance(other, W_PHPGenericAdapter):
-            return self.w_php_ref is other.w_php_ref
+            return self.w_php_ref.deref_temp() is other.w_php_ref.deref_temp()
         return False
 
     @unwrap_spec(name=str)
@@ -359,6 +359,12 @@ class W_PHPRefAdapter(W_Root):
         return self._descr_generic_unop("__neg__")
 
     # equality/disequality XXX
+
+    def is_w(self, space, other):
+        interp = self.interp
+        self_py = self.to_py(interp)
+        other_py = other.to_py(interp)
+        return other_py.is_w(self_py)
 
 def _mk_w_phprefadapter_generic_binop(name):
     def f(self, space, w_other):
