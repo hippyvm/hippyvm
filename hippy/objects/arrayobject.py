@@ -400,8 +400,13 @@ class W_ArrayObject(W_Object):
         # within Python code.
         from hippy.module.pypy_bridge.py_strategies import (
                 make_wrapped_mixed_key_php_array)
-        w_php_wrap = w_php_ref if w_php_ref is not None else self
-        return make_wrapped_mixed_key_php_array(interp, w_php_wrap)
+
+        if w_php_ref is not None:
+            assert isinstance(w_php_ref, W_Reference)
+        else:
+            w_php_ref = W_Reference(self)
+
+        return make_wrapped_mixed_key_php_array(interp, w_php_ref)
 
 class ListItemVRef(VirtualReference):
     def __init__(self, w_array, index):

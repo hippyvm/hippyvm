@@ -427,8 +427,6 @@ class TestPyPyBridgeArrayConversions(BaseTestInterpreter):
         e_str = "can only apply as_list() to a wrapped PHP array in dict form"
         assert php_space.str_w(output[0]) == e_str
 
-    # XXX REFS
-    @pytest.mark.xfail
     def test_as_list_invalidates(self):
         php_space = self.space
         output = self.run('''
@@ -440,6 +438,7 @@ class TestPyPyBridgeArrayConversions(BaseTestInterpreter):
                     arry_l[0] # stale!
                 except BridgeError as e:
                     return e.message
+                return "fail"
             EOD;
 
             $f = embed_py_func($src);
