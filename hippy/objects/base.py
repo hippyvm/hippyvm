@@ -241,11 +241,4 @@ class W_Object(W_Root):
 
     def to_py(self, interp, w_php_ref=None):
         from hippy.module.pypy_bridge import php_adapters
-        from hippy.objects.reference import W_Reference
-
-        if w_php_ref is not None:
-            assert isinstance(w_php_ref, W_Reference)
-        else:
-            w_php_ref = W_Reference(self)
-
-        return php_adapters.W_PHPGenericAdapter(interp, w_php_ref)
+        return php_adapters.W_PHPGenericAdapter(interp, self)

@@ -54,25 +54,25 @@ class W_PHPGenericAdapter(W_Root):
     """Generic adapter for PHP objects in Python.
     Used when no more specific adapter is available."""
 
-    _immutable_fields_ = ["interp", "w_php_ref"]
+    _immutable_fields_ = ["interp", "w_php_obj"]
 
-    def __init__(self, interp, w_php_ref):
-        assert isinstance(w_php_ref, W_Reference)
-        self.w_php_ref = w_php_ref
+    def __init__(self, interp, w_php_obj):
+        assert not isinstance(w_php_obj, W_Reference)
+        self.w_php_obj = w_php_obj
         self.interp = interp
 
     def get_wrapped_php_obj(self):
-        return self.w_php_ref
+        return self.w_php_obj
 
     def get_php_interp(self):
         return self.interp
 
     def to_php(self, php_interp):
-        return self.w_php_ref
+        return self.w_php_obj
 
     def is_w(self, space, other):
         if isinstance(other, W_PHPGenericAdapter):
-            return self.w_php_ref.deref_temp() is other.w_php_ref.deref_temp()
+            return self.w_php_obj is other.w_php_obj
         return False
 
     @unwrap_spec(name=str)
@@ -82,7 +82,7 @@ class W_PHPGenericAdapter(W_Root):
         php_space = interp.space
         py_space = interp.py_space
 
-        w_php_val = self.w_php_ref.deref_temp()
+        w_php_val = self.w_php_obj
         w_php_target = w_php_val.getattr(interp, name, None, fail_with_none=True)
 
         if w_php_target is None:
@@ -102,7 +102,7 @@ class W_PHPGenericAdapter(W_Root):
         php_space = self.interp.space
         py_space = self.interp.py_space
 
-        w_php_val = self.w_php_ref.deref_temp()
+        w_php_val = self.w_php_obj
         w_php_val.setattr(interp, name, w_obj.to_php(interp), None)
 
         return py_space.w_None
@@ -115,7 +115,7 @@ class W_PHPGenericAdapter(W_Root):
             _raise_py_bridgeerror(self.interp.py_space,
                     "Cannot use kwargs with callable PHP instances")
 
-        w_php_callable = self.w_php_ref.deref_temp().get_callable()
+        w_php_callable = self.w_php_obj.get_callable()
         if w_php_callable is None: # not callable
             _raise_py_bridgeerror(self.interp.py_space,
                     "Wrapped PHP instance is not callable")
@@ -127,7 +127,7 @@ class W_PHPGenericAdapter(W_Root):
     def _descr_generic_unop(self, name):
         interp = self.interp
         php_space = interp.space
-        w_php_val = self.w_php_ref.deref_temp()
+        w_php_val = self.w_php_obj
         try:
             w_php_target = \
                     w_php_val.getmeth(php_space, name, None)
@@ -145,7 +145,7 @@ class W_PHPGenericAdapter(W_Root):
         if isinstance(w_other, W_PHPGenericAdapter):
             php_interp = self.interp
             php_space = php_interp.space
-            if php_space.eq_w(self.w_php_ref, w_other.w_php_ref):
+            if php_space.eq_w(self.w_php_obj, w_other.w_php_obj):
                 return space.w_True
         return space.w_False
 
