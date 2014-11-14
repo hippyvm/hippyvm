@@ -68,7 +68,7 @@ class W_PHPGenericAdapter(W_Root):
         return self.interp
 
     def to_php(self, php_interp):
-        return self.w_php_ref.deref()
+        return self.w_php_ref
 
     def is_w(self, space, other):
         if isinstance(other, W_PHPGenericAdapter):
@@ -295,7 +295,7 @@ class W_PHPRefAdapter(W_Root):
 
     def store_ref(self, w_py_new_val):
         w_php_val = w_py_new_val.to_php(self.interp)
-        self.w_php_ref.store(w_php_val)
+        self.w_php_ref.store(w_php_val.deref())
 
     @staticmethod
     def descr_new(space, w_type, w_py_val):
