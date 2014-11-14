@@ -360,12 +360,6 @@ class W_PHPRefAdapter(W_Root):
 
     # equality/disequality XXX
 
-    def is_w(self, space, other):
-        interp = self.interp
-        self_py = self.to_py(interp)
-        other_py = other.to_py(interp)
-        return other_py.is_w(self_py)
-
 def _mk_w_phprefadapter_generic_binop(name):
     def f(self, space, w_other):
         return self._descr_generic_binop(name, w_other)
