@@ -403,6 +403,60 @@ class TestPyPyBridgeArgPassing(BaseTestInterpreter):
         assert php_space.int_w(output[0]) == 1
         assert php_space.int_w(output[1]) == 2
 
+    def test_php2py_return_php_ref_back_to_php(self, php_space):
+        output = self.run('''
+        $src = <<<EOD
+        @php_refs('y')\n
+        def f(y):
+            y.store_ref(2)
+            return y
+        EOD;
+
+        $f = embed_py_func($src);
+
+        $x = 1;
+        $z = $f($x);
+        echo $z;
+
+        ''')
+        assert php_space.int_w(output[0]) == 2
+
+    def test_php2py_return_php_ref_back_to_php_eq(self, php_space):
+        output = self.run('''
+        $src = <<<EOD
+        @php_refs('y')\n
+        def f(y):
+            y.store_ref(2)
+            return y
+        EOD;
+
+        $f = embed_py_func($src);
+
+        $x = 1;
+        $z = $f($x);
+        echo $z == $x;
+
+        ''')
+        assert php_space.is_true(output[0])
+
+    def test_php2py_return_php_ref_back_to_php_eq2(self, php_space):
+        output = self.run('''
+        $src = <<<EOD
+        @php_refs('y')\n
+        def f(y):
+            y.store_ref(2)
+            return y
+        EOD;
+
+        $f = embed_py_func($src);
+
+        $x = 1;
+        $z = $f($x);
+        echo $z === $x;
+
+        ''')
+        assert php_space.is_true(output[0])
+
     # ---
 
     def test_py2php_list_by_val(self):
