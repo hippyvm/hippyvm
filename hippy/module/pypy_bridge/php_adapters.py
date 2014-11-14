@@ -325,7 +325,6 @@ class W_PHPRefAdapter(W_Root):
     def descr_as_list(self, space):
         from hippy.objects.arrayobject import W_ArrayObject
         w_php_ref = self.w_php_ref
-        assert isinstance(w_php_ref.deref_temp(), W_ArrayObject) # XXX exception
         w_py_val = w_php_ref.to_py(self.interp)
         w_py_as_list = space.getattr(w_py_val, space.wrap("as_list"))
         from pypy.interpreter.argument import Arguments
