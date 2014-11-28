@@ -483,7 +483,7 @@ class W_InstanceObject(W_Object):
         raise space.ec.fatal('Cannot use object of type %s as array' %
                              self.klass.name)
 
-    def getitem(self, space, w_arg, give_notice=False):
+    def getitem(self, space, w_arg, give_notice=False, allow_undefined=True):
         if self.klass.is_array_access:
             interp = space.ec.interpreter
             return interp.call_method(self, 'offsetGet', [w_arg])

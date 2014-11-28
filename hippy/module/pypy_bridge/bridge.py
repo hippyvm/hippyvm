@@ -1,11 +1,11 @@
 from hippy.builtin import wrap, Optional, wrap_method, ThisUnwrapper
 from hippy.objects.base import W_Root as Wph_Root
 from hippy.objects.instanceobject import W_InstanceObject
-from hippy.klass import def_class, Method
 from hippy.module.pypy_bridge.scopes import PHP_Scope
 from hippy.module.pypy_bridge.util import _raise_php_bridgeexception
 from hippy.module.pypy_bridge.py_adapters import (
-        new_embedded_py_func, k_BridgeException)
+        new_embedded_py_func, k_BridgeException, W_PyFuncGlobalAdapter,
+        W_PyMethodFuncAdapter)
 from hippy.builtin_klass import k_Exception, W_ExceptionObject
 from hippy.error import PHPException
 
@@ -43,7 +43,8 @@ def embed_py_mod(interp, mod_name, mod_source):
 
     return w_py_module.to_php(interp)
 
-def _compile_py_func_from_string(interp, func_source):
+def _compile_py_func_from_string(
+        interp, func_source, parent_php_scope=None):
     """ compiles a string returning a <name, func> pair """
 
     py_space = interp.py_space
@@ -70,20 +71,59 @@ def _compile_py_func_from_string(interp, func_source):
         _raise_php_bridgeexception(interp,
                 "embed_py_func: Python source must define exactly one function")
 
-    ph_frame = interp.get_frame()
-    w_py_func.php_scope = PHP_Scope(interp, ph_frame)
+    # inject parent scope (which may well be None)
+    w_py_func.php_scope = PHP_Scope(interp, parent_php_scope)
 
     return w_py_func_name, w_py_func
 
 @wrap(['interp', str], name='embed_py_func')
 def embed_py_func(interp, func_source):
+    """Embeds a python function returning a callable PHP instance.
+    Lexical scope *is* associated"""
     php_space, py_space = interp.space, interp.py_space
 
     # Compile
-    w_py_func_name, w_py_func = _compile_py_func_from_string(interp, func_source)
+    php_frame = interp.get_frame()
+    w_py_func_name, w_py_func = _compile_py_func_from_string(
+            interp, func_source, php_frame)
 
-    # Masquerade it as a PHP function.
+    # make a callable instance a bit like a closure
     return new_embedded_py_func(interp, w_py_func)
+
+@wrap(['interp', str], name='embed_py_func_global')
+def embed_py_func_global(interp, func_source):
+    """Puts a python function into the global function cache.
+    no lexical scope is associated, thus mimicking the behaviour of
+    a standard php function. to embed a python function with scope,
+    use instead embed_py_func()"""
+
+    php_space, py_space = interp.space, interp.py_space
+
+    # Compile (note *no* parent PHP frame passed)
+    w_py_func_name, w_py_func = \
+            _compile_py_func_from_string(interp, func_source)
+
+    # Masquerade it as a PHP function in the global function cache
+    w_php_func = W_PyFuncGlobalAdapter(interp, w_py_func)
+    php_space.global_function_cache.declare_new(py_space.str_w(w_py_func_name), w_php_func)
+
+@wrap(['interp', str, str], name='embed_py_meth')
+def embed_py_meth(interp, class_name, func_source):
+    """Inject a Python method into a PHP class.
+    Here a Python method is a function accepting self as the first arg.
+    """
+    php_space, py_space = interp.space, interp.py_space
+
+    php_frame = interp.get_frame()
+    w_py_func_name, w_py_func = \
+            _compile_py_func_from_string(interp, func_source, php_frame)
+    w_php_func = W_PyMethodFuncAdapter(interp, w_py_func)
+
+    w_php_class = interp.lookup_class_or_intf(class_name, autoload=True)
+    if w_php_class is None:
+        assert False # XXX
+
+    w_php_class.embed_py_meth(py_space.str_w(w_py_func_name), w_php_func)
 
 @wrap(['interp', str], name='import_py_mod')
 def import_py_mod(interp, modname):

@@ -324,6 +324,7 @@ class TestPyPyBridge(BaseTestInterpreter):
         php_space = self.space
         output = self.run('''
             $src = <<<EOD
+            @php_refs('x', 'y')
             def is_chk(x, y):
                 return str(id(x) == id(y))
             EOD;
@@ -352,10 +353,29 @@ class TestPyPyBridge(BaseTestInterpreter):
         ''')
         assert php_space.str_w(output[0]) == "False True"
 
+    def test_phbridgeproxy_id3(self):
+        php_space = self.space
+        output = self.run('''
+            $src = <<<EOD
+            @php_refs('x', 'y')
+            def is_chk(x, y):
+                return str(id(x) == id(y))
+            EOD;
+            $is_chk = embed_py_func($src);
+
+            class C {}
+            $x = new C;
+            $y = new c;
+            echo($is_chk($x, $y) . " " . $is_chk($x, $x));
+        ''')
+        assert php_space.str_w(output[0]) == "False True"
+
+
     def test_phbridgeproxy_is1(self):
         php_space = self.space
         output = self.run('''
             $src = <<<EOD
+            @php_refs('x', 'y')
             def is_chk(x, y):
                 return str(x is y)
             EOD;
@@ -381,6 +401,22 @@ class TestPyPyBridge(BaseTestInterpreter):
             $is_chk = embed_py_func($src);
 
             echo($is_chk());
+        ''')
+        assert php_space.str_w(output[0]) == "False True"
+
+    def test_phbridgeproxy_is3(self):
+        php_space = self.space
+        output = self.run('''
+            $src = <<<EOD
+            def is_chk(x, y):
+                return str(x is y)
+            EOD;
+            $is_chk = embed_py_func($src);
+
+            class C {}
+            $x = new C;
+            $y = new c;
+            echo($is_chk($x, $y) . " " . $is_chk($x, $x));
         ''')
         assert php_space.str_w(output[0]) == "False True"
 
@@ -515,3 +551,141 @@ class TestPyPyBridge(BaseTestInterpreter):
             echo $f(4, 7);
         ''')
         assert php_space.int_w(output[0]) == 11
+
+    def test_embed_py_func_global(self, php_space):
+        php_space = self.space
+        output = self.run('''
+            $src = <<<EOD
+            def test():
+                return "jibble"
+            EOD;
+            embed_py_func_global($src);
+            echo(test());
+        ''')
+        assert php_space.str_w(output[0]) == "jibble"
+
+    def test_embed_py_func_global_returns_nothing(self, php_space):
+        php_space = self.space
+        output = self.run('''
+            $src = <<<EOD
+            def test(): pass
+            EOD;
+            $r = embed_py_func_global($src);
+            echo($r);
+        ''')
+        assert php_space.w_Null == output[0]
+
+    def test_embed_py_meth(self, php_space):
+        php_space = self.space
+        output = self.run('''
+            class C {};
+
+            $src = <<<EOD
+            def myMeth(self):
+                return 10
+            EOD;
+            embed_py_meth("C", $src);
+            $c = new C();
+            echo($c->myMeth());
+        ''')
+        assert php_space.int_w(output[0]) == 10
+
+    def test_embed_py_meth_subclass(self, php_space):
+        php_space = self.space
+        output = self.run('''
+            {
+            class C {};
+
+            $src = <<<EOD
+            def myMeth(self):
+                return 10
+            EOD;
+            embed_py_meth("C", $src);
+
+            class D extends C {};
+
+            $d = new D();
+            echo($d->myMeth());
+            }
+        ''')
+        assert php_space.int_w(output[0]) == 10
+
+    def test_embed_py_meth_attr_access(self, php_space):
+        php_space = self.space
+        output = self.run('''
+            class A {
+                function __construct() {
+                    $this->v = 666;
+                }
+            };
+            $a = new A();
+
+            class B {
+            };
+
+            $src = <<<EOD
+            def bMeth(self):
+                # We should pick up global dollar a, not class A.
+                # Hippy class/func names are canonicalised lower case.
+                a.v = 777
+                return a.v
+            EOD;
+            embed_py_meth("B", $src);
+
+            $b = new B();
+            echo $b->bMeth();
+        ''')
+        assert php_space.int_w(output[0]) == 777
+
+    def test_embed_py_meth_attr_overide(self, php_space):
+        php_space = self.space
+        output = self.run('''
+            class A {
+                function m() { return 666; }
+            };
+            $a = new A();
+
+            class B extends A {};
+
+            $src = "def m(self): return 667";
+            embed_py_meth("B", $src);
+
+            $b = new B();
+            echo $b->m();
+        ''')
+        assert php_space.int_w(output[0]) == 667
+
+    def test_embed_py_meth_ctor(self, php_space):
+        php_space = self.space
+        output = self.run('''
+            class A {
+            };
+            $a = new A();
+
+            $src = "def __construct(self): self.x = 666";
+            embed_py_meth("A", $src);
+
+            $a = new A();
+            echo $a->x;
+        ''')
+        assert php_space.int_w(output[0]) == 666
+
+    def test_embed_py_meth_attr_access_other_inst(self, php_space):
+        php_space = self.space
+        output = self.run('''
+        {
+            class A {
+                    public $x = 666;
+            };
+
+            class B { }
+
+            $src = "def f(self, other): return other.x";
+            embed_py_meth("B", $src);
+
+            $a = new A();
+            $b = new B();
+            echo $b->f($a);
+        }
+        ''')
+        assert php_space.int_w(output[0]) == 666

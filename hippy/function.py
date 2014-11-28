@@ -70,6 +70,9 @@ class AbstractFunction(W_Root):
     def needs_ref(self, i):
         raise NotImplementedError("abstract base class")
 
+    def is_py_call(self):
+        return False
+
     def call_args(self, interp, args_w, w_this=None, thisclass=None,
                   closureargs=None):
         raise NotImplementedError("abstract base class")
@@ -78,9 +81,6 @@ class AbstractFunction(W_Root):
         assert w_php_ref is None # Funcs not 1st class. Can't ref them.
         from hippy.module.pypy_bridge import php_adapters
         return php_adapters.W_PHPFuncAdapter(interp.py_space, self)
-
-    def is_py_call(self):
-        return False
 
 class Function(AbstractFunction):
     _immutable_fields_ = ['tp[*]', 'names[*]',

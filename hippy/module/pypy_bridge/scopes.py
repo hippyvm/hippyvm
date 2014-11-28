@@ -73,10 +73,11 @@ class PHP_Scope(WPy_Root):
 
         assert t == PHP_UNKNOWN
 
-        ph_v = ph_frame.lookup_ref_by_name_no_create(n)
-        if ph_v is not None:
-            self._update_name_map(n, PHP_FRAME)
-            return ph_v.to_py(ph_interp)
+        if ph_frame is not None:
+            ph_v = ph_frame.lookup_ref_by_name_no_create(n)
+            if ph_v is not None:
+                self._update_name_map(n, PHP_FRAME)
+                return ph_v.to_py(ph_interp)
 
         ph_v = ph_interp.lookup_function(n)
         if ph_v is not None:

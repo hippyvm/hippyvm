@@ -15,6 +15,8 @@ from hippy.builtin_klass import W_ExceptionObject, k_Exception
 
 from pypy.interpreter.argument import Arguments
 from pypy.interpreter.error import OperationError
+from pypy.interpreter.pycode import PyCode
+from pypy.interpreter.function import Function as PyFunction
 from pypy.objspace.std.listobject import W_ListObject as WPy_ListObject
 
 from rpython.rlib import jit
@@ -36,9 +38,9 @@ class W_PyGenericAdapter(W_InstanceObject):
     # Use this as a low level ctor instead of the above.
     @classmethod
     def from_w_py_inst(cls, interp, w_py_inst):
-        w_php_pxy = cls(interp, [])
-        w_php_pxy.set_instance(w_py_inst)
-        return w_php_pxy
+        w_py_adptr = W_PyGenericAdapter(k_PyGenericAdapter, [])
+        w_py_adptr.setup_instance(interp, w_py_inst)
+        return w_py_adptr
 
     def get_callable(self):
         """PHP interpreter calls this when calls a wrapped Python var"""
@@ -46,6 +48,10 @@ class W_PyGenericAdapter(W_InstanceObject):
 
     def to_py(self, interp, w_php_ref=None):
         return self.w_py_inst
+
+    def as_string(self, space, quiet=False):
+        """ Tells PHP how to str_w this should we wrap a string """
+        return self.w_py_inst.to_php(self.interp)
 
 @wrap_method(['interp', ThisUnwrapper(W_PyGenericAdapter), str],
         name='GenericPyProxy::__get')
@@ -106,13 +112,83 @@ class W_EmbeddedPyCallable(W_InvokeCall):
         return rv.to_php(interp)
 
     def needs_ref(self, i):
-        return False
+        w_py_func = self.w_py_func
+        if isinstance(w_py_func, PyFunction):
+            return i in w_py_func.code.co_php_args_by_ref
+        else:
+            return False
 
     def needs_val(self, i):
-        return False
+        w_py_func = self.w_py_func
+        if isinstance(w_py_func, PyFunction):
+            return not i in w_py_func.code.co_php_args_by_ref
+        else:
+            return True
 
     def is_py_call(self):
         return True
+
+class W_PyFuncGlobalAdapter(AbstractFunction):
+    _immutable_fields_ = ["interp", "w_py_callable"]
+
+    def __init__(self, interp, w_py_callable):
+        from hippy.module.pypy_bridge.php_adapters import W_PHPFuncAdapter
+        assert not isinstance(w_py_callable, W_PHPFuncAdapter)
+
+        self.interp = interp
+        self.w_py_callable = w_py_callable
+
+    def get_wrapped_py_obj(self):
+        return self.py_callable
+
+    @jit.unroll_safe
+    def call_args(self, interp, args_w, w_this=None, thisclass=None,
+                  closureargs=None):
+
+        py_space = interp.py_space
+
+        w_py_args_elems = [x.to_py(interp) for x in args_w]
+
+        # Methods are really just functions with self bound
+        if w_this is not None:
+            w_py_args_elems = [w_this.to_py(interp)] + w_py_args_elems
+
+        w_py_rv = py_space.call_args(self.w_py_callable,
+                Arguments(py_space, w_py_args_elems))
+
+        return w_py_rv.to_php(interp)
+
+    def _arg_index_adjust(self, i):
+        return i
+
+    def needs_ref(self, i):
+        w_py_callable = self.w_py_callable
+        if isinstance(w_py_callable, PyFunction):
+            i = self._arg_index_adjust(i)
+            return i in w_py_callable.code.co_php_args_by_ref
+        else:
+            return False
+
+    def needs_value(self, i):
+        w_py_callable = self.w_py_callable
+        if isinstance(w_py_callable, PyFunction):
+            i = self._arg_index_adjust(i)
+            return not i in w_py_callable.code.co_php_args_by_ref
+        else:
+            return True
+
+    def is_py_call(self):
+        return True
+
+    def get_identifier(self):
+        return self.w_py_callable.name.lower()
+
+class W_PyMethodFuncAdapter(W_PyFuncGlobalAdapter):
+    """Only exists because method indicies for methods are skewed by one
+    between Python and PHP. In PHP $this is implicit"""
+
+    def _arg_index_adjust(self, i):
+        return i + 1
 
 class W_PyFuncAdapter(W_InstanceObject):
     """A 'lexically scoped' embedded Python function.
@@ -121,6 +197,9 @@ class W_PyFuncAdapter(W_InstanceObject):
     _immutable_fields_ = [ "interp", "w_py_func" ]
 
     def __init__(self, interp, w_py_func, klass, storage_w):
+        from hippy.module.pypy_bridge.php_adapters import W_PHPFuncAdapter
+        assert not isinstance(w_py_func, W_PHPFuncAdapter)
+
         self.interp = interp
         self.w_py_func = w_py_func
         W_InstanceObject.__init__(self, klass, storage_w)
@@ -141,6 +220,9 @@ class W_PyFuncAdapter(W_InstanceObject):
 
     def to_py(self, interp, w_php_ref=None):
         return self.w_py_func
+
+    def get_identifier(self):
+        return self.w_py_callable.name.lower()
 
 k_PyFuncAdapter = def_class('PyFunc', [])
 

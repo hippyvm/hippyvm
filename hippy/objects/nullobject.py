@@ -28,7 +28,7 @@ class W_NullObject(W_Object):
     def uplusplus(self, space):
         return space.newint(1)
 
-    def getitem(self, space, w_arg, give_notice=False):
+    def getitem(self, space, w_arg, give_notice=False, allow_undefined=True):
         return space.w_Null
 
     def is_empty_value(self):

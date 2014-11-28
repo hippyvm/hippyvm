@@ -16,31 +16,63 @@ from hippy.builtin import wrap_method
 from hippy.error import Throw, VisibilityError
 from hippy.module.pypy_bridge.util import _raise_py_bridgeerror
 
-from rpython.rlib import jit, rerased
+from rpython.rlib import jit, rerased, unroll
+
+# Some wrappers must implement a huge number of uniform binary/unary ops.
+# We generate these automatically.
+BINOPS = [
+    # normal binary ops
+    "add", "sub", "mul", "floordiv", "mod",
+    "divmod", "pow", "lshift", "rshift", "and", "xor",
+    "or", "div", "truediv",
+    # reversed binary ops
+    "radd", "rsub", "rmul", "rdiv", "rtruediv", "rfloordiv", "rmod",
+    "rdivmod", "rpow", "rlshift", "rrshift", "rand", "rxor", "ror",
+    # "in-place" binary ops
+    "iadd", "isub", "imul", "idiv", "itruediv", "ifloordiv", "imod",
+    "ipow", "ilshift", "irshift", "iand", "ixor", "ior",
+]
+
+UNOPS = [
+        "neg", "pos", "abs", "invert", "complex", "int", "long", "float",
+        "oct", "hex", "index", "coerce",
+]
+
+def _mk_binop(name):
+    def f(self, space, w_other):
+        return self._descr_generic_binop(name, w_other)
+    f.func_name = "descr_%s" % name
+    return f
+
+def _mk_unop(name):
+    def f(self, space):
+        return self._descr_generic_unop(name)
+    f.func_name = "descr_%s" % name
+    return f
 
 class W_PHPGenericAdapter(W_Root):
     """Generic adapter for PHP objects in Python.
     Used when no more specific adapter is available."""
 
-    _immutable_fields_ = ["interp", "w_php_ref"]
+    _immutable_fields_ = ["interp", "w_php_obj"]
 
-    def __init__(self, interp, w_php_ref):
-        assert isinstance(w_php_ref, W_Reference)
-        self.w_php_ref = w_php_ref
+    def __init__(self, interp, w_php_obj):
+        assert not isinstance(w_php_obj, W_Reference)
+        self.w_php_obj = w_php_obj
         self.interp = interp
 
     def get_wrapped_php_obj(self):
-        return self.w_php_ref
+        return self.w_php_obj
 
     def get_php_interp(self):
         return self.interp
 
     def to_php(self, php_interp):
-        return self.w_php_ref
+        return self.w_php_obj
 
     def is_w(self, space, other):
         if isinstance(other, W_PHPGenericAdapter):
-            return self.w_php_ref is other.w_php_ref
+            return self.w_php_obj is other.w_php_obj
         return False
 
     @unwrap_spec(name=str)
@@ -50,7 +82,7 @@ class W_PHPGenericAdapter(W_Root):
         php_space = interp.space
         py_space = interp.py_space
 
-        w_php_val = self.w_php_ref.deref_temp()
+        w_php_val = self.w_php_obj
         w_php_target = w_php_val.getattr(interp, name, None, fail_with_none=True)
 
         if w_php_target is None:
@@ -70,7 +102,7 @@ class W_PHPGenericAdapter(W_Root):
         php_space = self.interp.space
         py_space = self.interp.py_space
 
-        w_php_val = self.w_php_ref.deref_temp()
+        w_php_val = self.w_php_obj
         w_php_val.setattr(interp, name, w_obj.to_php(interp), None)
 
         return py_space.w_None
@@ -83,7 +115,7 @@ class W_PHPGenericAdapter(W_Root):
             _raise_py_bridgeerror(self.interp.py_space,
                     "Cannot use kwargs with callable PHP instances")
 
-        w_php_callable = self.w_php_ref.deref_temp().get_callable()
+        w_php_callable = self.w_php_obj.get_callable()
         if w_php_callable is None: # not callable
             _raise_py_bridgeerror(self.interp.py_space,
                     "Wrapped PHP instance is not callable")
@@ -92,10 +124,10 @@ class W_PHPGenericAdapter(W_Root):
         w_php_rv = w_php_callable.call_args(self.interp, w_php_args_elems)
         return w_php_rv.to_py(self.interp)
 
-    def _descr_generic_unop(self, space, name):
+    def _descr_generic_unop(self, name):
         interp = self.interp
         php_space = interp.space
-        w_php_val = self.w_php_ref.deref_temp()
+        w_php_val = self.w_php_obj
         try:
             w_php_target = \
                     w_php_val.getmeth(php_space, name, None)
@@ -106,61 +138,14 @@ class W_PHPGenericAdapter(W_Root):
             return w_php_target.call_args(interp, []).to_py(interp)
 
     def descr_str(self, space):
-        return self._descr_generic_unop(space, "__toString")
+        return self._descr_generic_unop("__toString")
 
-    def _descr_generic_binop(self, space, w_other, name):
-        interp = self.interp
-        php_space = interp.space
-        w_php_val = self.w_php_ref.deref_temp()
-        try:
-            w_php_target = w_php_val.getmeth(php_space, name, None)
-        except VisibilityError:
-            _raise_py_bridgeerror(interp.py_space,
-                    "Wrapped PHP instance has no %s method" % name)
-        else:
-            return w_php_target.call_args(interp, [w_other.to_php(interp)]).to_py(interp)
-
-    def descr_add(self, space, w_other):
-        return self._descr_generic_binop(space, w_other, "__add__")
-
-    def descr_sub(self, space, w_other):
-        return self._descr_generic_binop(space, w_other, "__sub__")
-
-    def descr_mul(self, space, w_other):
-        return self._descr_generic_binop(space, w_other, "__mul__")
-
-    def descr_floordiv(self, space, w_other):
-        return self._descr_generic_binop(space, w_other, "__floordiv__")
-
-    def descr_mod(self, space, w_other):
-        return self._descr_generic_binop(space, w_other, "__mod__")
-
-    def descr_divmod(self, space, w_other):
-        return self._descr_generic_binop(space, w_other, "__divmod__")
-
-    def descr_pow(self, space, w_other):
-        return self._descr_generic_binop(space, w_other, "__pow__")
-
-    def descr_lshift(self, space, w_other):
-        return self._descr_generic_binop(space, w_other, "__lshift__")
-
-    def descr_rshift(self, space, w_other):
-        return self._descr_generic_binop(space, w_other, "__rshift__")
-
-    def descr_and(self, space, w_other):
-        return self._descr_generic_binop(space, w_other, "__and__")
-
-    def descr_xor(self, space, w_other):
-        return self._descr_generic_binop(space, w_other, "__xor__")
-
-    def descr_or(self, space, w_other):
-        return self._descr_generic_binop(space, w_other, "__or__")
-
+    # equality/disequality
     def descr_eq(self, space, w_other):
         if isinstance(w_other, W_PHPGenericAdapter):
             php_interp = self.interp
             php_space = php_interp.space
-            if php_space.eq_w(self.w_php_ref, w_other.w_php_ref):
+            if php_space.eq_w(self.w_php_obj, w_other.w_php_obj):
                 return space.w_True
         return space.w_False
 
@@ -171,21 +156,9 @@ W_PHPGenericAdapter.typedef = TypeDef("PHPGenericAdapter",
     __call__ = interp2app(W_PHPGenericAdapter.descr_call),
     __getattr__ = interp2app(W_PHPGenericAdapter.descr_get),
     __setattr__ = interp2app(W_PHPGenericAdapter.descr_set),
-    __str__ = interp2app(W_PHPGenericAdapter.descr_str),
-    __add__ = interp2app(W_PHPGenericAdapter.descr_add),
-    __sub__ = interp2app(W_PHPGenericAdapter.descr_sub),
-    __mul__ = interp2app(W_PHPGenericAdapter.descr_mul),
-    __floordiv__ = interp2app(W_PHPGenericAdapter.descr_floordiv),
-    __mod__ = interp2app(W_PHPGenericAdapter.descr_mod),
-    __divmod__ = interp2app(W_PHPGenericAdapter.descr_divmod),
-    __pow__ = interp2app(W_PHPGenericAdapter.descr_pow),
-    __lshift__ = interp2app(W_PHPGenericAdapter.descr_lshift),
-    __rshift__ = interp2app(W_PHPGenericAdapter.descr_rshift),
-    __and__ = interp2app(W_PHPGenericAdapter.descr_and),
-    __xor__ = interp2app(W_PHPGenericAdapter.descr_xor),
-    __or__ = interp2app(W_PHPGenericAdapter.descr_or),
     __eq__ = interp2app(W_PHPGenericAdapter.descr_eq),
     __ne__ = interp2app(W_PHPGenericAdapter.descr_ne),
+    __str__ = interp2app(W_PHPGenericAdapter.descr_str),
 )
 
 class W_PHPClassAdapter(W_Root):
@@ -307,28 +280,114 @@ W_PHPFuncAdapter.typedef = TypeDef("PHPFunc",
 class W_PHPRefAdapter(W_Root):
     """Represents a PHP reference (for call by reference Py->PHP only) """
 
-    def __init__(self, space, w_php_ref):
+    _immutable_fields_ = ["interp", "w_php_ref"]
+
+    def __init__(self, interp, w_php_ref):
         assert isinstance(w_php_ref, W_Reference)
+        self.interp = interp
         self.w_php_ref = w_php_ref
-        self.py_space = space
+
+    def get_wrapped_php_obj(self):
+        return self.w_php_ref
 
     def deref(self):
-        return self.w_php_ref.deref().to_py(self.py_space.get_php_interp())
+        return self.w_php_ref.deref().to_py(self.interp)
+
+    def store_ref(self, w_py_new_val):
+        w_php_val = w_py_new_val.to_php(self.interp)
+        self.w_php_ref.store(w_php_val.deref())
 
     @staticmethod
     def descr_new(space, w_type, w_py_val):
-        w_php_val = w_py_val.to_php(space.get_php_interp())
+        interp = space.get_php_interp()
+
+        w_php_val = w_py_val.to_php(interp)
         if isinstance(w_php_val, W_Reference):
             w_php_ref = w_php_val # already a reference
         else:
             w_php_ref = W_Reference(w_php_val)
 
         w_py_obj = space.allocate_instance(W_PHPRefAdapter, w_type)
-        w_py_obj.__init__(space, w_php_ref)
+        w_py_obj.__init__(interp, w_php_ref)
         return w_py_obj
 
-W_PHPRefAdapter.typedef = TypeDef("PHPRef",
-    __new__ = interp2app(W_PHPRefAdapter.descr_new),
-    deref = interp2app(W_PHPRefAdapter.deref),
-)
+    def descr_get(self, w_py_name):
+        interp = self.interp
+        py_space = interp.py_space
+        w_py_val = self.w_php_ref.to_py(interp)
+        return py_space.getattr(w_py_val, w_py_name)
 
+    def descr_setitem(self, w_py_key, w_py_val):
+        interp = self.interp
+        self.w_php_ref.setitem_ref(interp.space,
+                w_py_key.to_php(interp), w_py_val.to_php(interp))
+
+    def descr_as_list(self, space):
+        from hippy.objects.arrayobject import W_ArrayObject
+        w_php_ref = self.w_php_ref
+        w_py_val = w_php_ref.to_py(self.interp)
+        w_py_as_list = space.getattr(w_py_val, space.wrap("as_list"))
+        from pypy.interpreter.argument import Arguments
+        return space.call_args(w_py_as_list, Arguments(space, []))
+
+    # binary ops
+    def _descr_generic_binop(self, name, w_other):
+        interp = self.interp
+        php_space, py_space = interp.space, interp.py_space
+
+        w_py_other = w_other.deref() if \
+                isinstance(w_other, W_PHPRefAdapter) else w_other
+
+        w_py_val = self.w_php_ref.to_py(interp)
+        w_py_target = py_space.getattr(
+                w_py_val, py_space.wrap("__%s__" % name))
+        return py_space.call_args(
+                w_py_target, Arguments(py_space, [w_py_other]))
+
+    # unary ops
+    def _descr_generic_unop(self, name):
+        interp = self.interp
+        php_space, py_space = interp.space, interp.py_space
+
+        w_py_val = self.w_php_ref.to_py(interp)
+        w_py_target = py_space.getattr(
+                w_py_val, py_space.wrap("__%s__" % name))
+        return py_space.call_args(w_py_target, Arguments(py_space, []))
+
+    def descr_neg(self, space):
+        return self._descr_generic_unop("__neg__")
+
+    # equality/disequality XXX
+
+    def to_php(self, interp):
+        return self.w_php_ref
+
+def _mk_w_phprefadapter_generic_binop(name):
+    def f(self, space, w_other):
+        return self._descr_generic_binop(name, w_other)
+    f.func_name = "descr_%s" % name
+    return f
+
+# generate all binary/unary operations
+w_phprefadapter_binops_iter = unroll.unrolling_iterable(BINOPS)
+w_phprefadapter_unops_iter = unroll.unrolling_iterable(UNOPS)
+
+for op in w_phprefadapter_binops_iter:
+    setattr(W_PHPRefAdapter, "descr_%s" % op, _mk_binop(op))
+
+for op in w_phprefadapter_unops_iter:
+    setattr(W_PHPRefAdapter, "descr_%s" % op, _mk_unop(op))
+
+w_phprefadapter_typedef = {
+    "__new__": interp2app(W_PHPRefAdapter.descr_new),
+    "__getattr__": interp2app(W_PHPRefAdapter.descr_get),
+    "__setitem__": interp2app(W_PHPRefAdapter.descr_setitem),
+    "as_list": interp2app(W_PHPRefAdapter.descr_as_list),
+    "store_ref": interp2app(W_PHPRefAdapter.store_ref),
+    "deref": interp2app(W_PHPRefAdapter.deref),
+}
+for op in BINOPS + UNOPS:
+    w_phprefadapter_typedef["__%s__" % op] = \
+            interp2app(getattr(W_PHPRefAdapter, "descr_%s" % op))
+
+W_PHPRefAdapter.typedef = TypeDef("PHPRef", **w_phprefadapter_typedef)

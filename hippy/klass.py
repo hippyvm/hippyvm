@@ -82,6 +82,7 @@ class ClassBase(AbstractFunction, AccessMixin):
         self.all_parents = {self.get_identifier(): None}  # classes and intfs
         self.base_map = Terminator()
         self.initial_storage_w = None
+        self.is_subclassed = False # for pypy bridge
 
     def __repr__(self):
         if self.is_interface():
@@ -361,6 +362,21 @@ class ClassBase(AbstractFunction, AccessMixin):
         if check_visibility:
             self._visibility_check(result, name, contextclass)
         return result
+
+    def embed_py_meth(self, name, w_php_func):
+        # Allow overide from a superclass, but not a duplicate from this class.
+        existing_meth = self.methods.get(name, None)
+        if existing_meth is not None:
+            assert existing_meth.klass != self
+
+        assert not self.is_subclassed # XXX
+
+        w_py_meth = Method(w_php_func, 0, self)
+        self.methods[name.lower()] = w_py_meth
+
+        # ctor has a special attribute for fast lookup
+        if name == "__construct":
+            self.constructor_method = w_py_meth
 
     def locate_method(self, name, contextclass,
                       searchclass=None, check_visibility=True):
@@ -926,6 +942,8 @@ class UserClass(ClassBase):
         self.access_flags = decl.access_flags
         self.constants_w = decl.constants_w
         parent = self.init_parent(interp, decl.extends_name)
+        if parent:
+            parent.is_subclassed = True
         #
         immediate_parents = []
         if parent is not None:
