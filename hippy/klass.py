@@ -1204,6 +1204,9 @@ class W_BoundMethod(AbstractFunction):
         self.klass = klass
         self.method_func = method_func
 
+    def is_py_call(self):
+        return self.method_func.is_py_call()
+
     def needs_ref(self, i):
         return self.method_func.needs_ref(i)
 
