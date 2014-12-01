@@ -564,3 +564,27 @@ class TestPyPyBridgeScope(BaseTestInterpreter):
             }
         ''')
         assert self.space.str_w(output[0]) == "caught"
+
+    def test_mutate_php_array_in_py_scope_as_dict(self, php_space):
+        output = self.run('''
+        $arry = array(1, 2, 3);
+        $f = embed_py_func("def f(): arry[3] = 4");
+
+        $f();
+        echo count($arry);
+        echo $arry[3];
+        ''')
+        assert php_space.int_w(output[0]) == 4
+        assert php_space.int_w(output[1]) == 4
+
+    def test_mutate_php_array_in_py_scope_as_list(self, php_space):
+        output = self.run('''
+        $arry = array(1, 2, 3);
+        $f = embed_py_func("def f(): arry.as_list()[3] = 4");
+
+        $f();
+        echo count($arry);
+        echo $arry[3];
+        ''')
+        assert php_space.int_w(output[0]) == 4
+        assert php_space.int_w(output[1]) == 4
