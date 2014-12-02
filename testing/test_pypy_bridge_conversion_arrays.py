@@ -881,6 +881,28 @@ class TestPyPyBridgeArrayConversions(BaseTestInterpreter):
         assert php_space.str_w(output[0]) == "y"
         assert php_space.str_w(output[1]) == "k"
 
+    @pytest.mark.xfail
+    def test_mutible_plus_eq_on_wrapped_php_array_in_python(self, php_space):
+        self.run('''
+        $src = <<<EOD
+        def ext(x, y):
+            xl, yl = x.as_list(), y.as_list()
+            xl += yl
+            return xl
+        EOD;
+        $ext = embed_py_func($src);
+
+        $a = array("1");
+        $b = array("2");
+        $new = $ext($a, $b);
+
+        foreach ($new as $x) {
+                echo $x;
+        }
+        ''')
+        assert php_space.int_w(output[0]) == 1
+        assert php_space.int_w(output[1]) == 2
+
 class TestPyPyBridgeArrayConversionsInstances(BaseTestInterpreter):
 
     def test_python_array_in_php_instance(self):
