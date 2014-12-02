@@ -188,5 +188,42 @@ class TestPyPyBridgeConversions(BaseTestInterpreter):
         $m = import_py_mod("os");
         echo($m); // crashes
         ''')
-        err_s = "XXX" # decide what it should say XXX
-        assert php_space.str_w(output[0]) == err_s
+        # XXX decide outcome
+
+    @pytest.mark.xfail
+    def test_php_generic_adapter_is_stringable(self):
+        php_space = self.space
+        output = self.run('''
+        class A {};
+
+        $src = "def s(o): return str(o)";
+        $s = embed_py_func($src);
+
+        $o = new A();
+        echo($s($o));
+        ''')
+        # XXX decide outcome
+
+    def test_php_array_adapter_is_stringable(self):
+        php_space = self.space
+        output = self.run('''
+        $src = "def s(o): return str(o)";
+        $s = embed_py_func($src);
+
+        $a = array(1, 2, 3);
+        echo($s($a));
+        ''')
+        expect = "{0: 1, 1: 2, 2: 3}"
+        assert php_space.str_w(output[0]) == expect
+
+    def test_php_array_adapter_is_stringable_as_list(self):
+        php_space = self.space
+        output = self.run('''
+        $src = "def s(o): return str(o.as_list())";
+        $s = embed_py_func($src);
+
+        $a = array(1, 2, 3);
+        echo($s($a));
+        ''')
+        expect = "[1, 2, 3]"
+        assert php_space.str_w(output[0]) == expect
