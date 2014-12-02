@@ -176,15 +176,44 @@ class TestPyPyBridgeConversions(BaseTestInterpreter):
         assert php_space.str_w(output[0]) == "abc123"
 
     @pytest.mark.xfail
-    def test_py_module_is_stringable(self, php_space):
+    def test_py_module_is_stringable_in_php(self, php_space):
         output = self.run('''
         $m = import_py_mod("os");
         echo($m); // crashes
         ''')
+        assert False
         # XXX decide outcome
 
     @pytest.mark.xfail
-    def test_php_generic_adapter_is_stringable(self, php_space):
+    def test_py_generic_adapter_is_stringable_in_php(self, php_space):
+        output = self.run('''
+        $src = "def get(): return (1, 2, 3)";
+        $get = embed_py_func($src);
+
+        echo($get());
+        ''')
+        # XXX decide outcome
+
+    def test_py_list_adapter_is_stringable_in_php(self, php_space):
+        output = self.run('''
+        $src = "def get(): return [1, 2, 3]";
+        $get = embed_py_func($src);
+
+        echo($get());
+        ''')
+        assert php_space.str_w(output[0]) == "Array"
+
+    def test_py_dict_adapter_is_stringable_in_php(self, php_space):
+        output = self.run('''
+                          $src = "def get(): return {1: 2}";
+        $get = embed_py_func($src);
+
+        echo($get());
+        ''')
+        assert php_space.str_w(output[0]) == "Array"
+
+    @pytest.mark.xfail
+    def test_php_generic_adapter_is_stringable_in_python(self, php_space):
         output = self.run('''
         class A {};
 
@@ -195,8 +224,9 @@ class TestPyPyBridgeConversions(BaseTestInterpreter):
         echo($s($o));
         ''')
         # XXX decide outcome
+        assert php_space.str_w(output[0]) == "XXX"
 
-    def test_php_array_adapter_is_stringable(self, php_space):
+    def test_php_array_adapter_is_stringable_in_python(self, php_space):
         output = self.run('''
         $src = "def s(o): return str(o)";
         $s = embed_py_func($src);
@@ -207,7 +237,7 @@ class TestPyPyBridgeConversions(BaseTestInterpreter):
         expect = "{0: 1, 1: 2, 2: 3}"
         assert php_space.str_w(output[0]) == expect
 
-    def test_php_array_adapter_is_stringable_as_list(self, php_space):
+    def test_php_array_adapter_is_stringable_as_list_in_python(self, php_space):
         output = self.run('''
         $src = "def s(o): return str(o.as_list())";
         $s = embed_py_func($src);
