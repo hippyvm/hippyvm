@@ -8,6 +8,49 @@ class TestPyPyBridgeArrayConversions(BaseTestInterpreter):
     def php_space(self):
         return self.space
 
+    def test_nested_py_list_in_php(self, php_space):
+        output = self.run('''
+        $src = <<<EOD
+        def make():
+            return [1, 2, ["a", "b", "c"]]
+        EOD;
+
+        $make = embed_py_func($src);
+        $arr = $make();
+
+        echo count($arr);
+        echo $arr[0];
+        echo $arr[1];
+
+        echo count($arr[2]);
+        echo $arr[2][0];
+        echo $arr[2][1];
+        echo $arr[2][2];
+        ''')
+        assert php_space.int_w(output[0]) == 3
+        assert php_space.int_w(output[1]) == 1
+        assert php_space.int_w(output[2]) == 2
+
+        assert php_space.int_w(output[3]) == 3
+        assert php_space.str_w(output[4]) == "a"
+        assert php_space.str_w(output[5]) == "b"
+        assert php_space.str_w(output[6]) == "c"
+
+    def test_nested_py_list_compare_in_php(self, php_space):
+        output = self.run('''
+        $src = <<<EOD
+        def make():
+            return [1, 2, ["a", "b", "c"]]
+        EOD;
+
+        $make = embed_py_func($src);
+        $arr1 = $make();
+        $arr2 = array(1, 2, array("a", "b", "c"));
+
+        echo $arr1 == $arr2;
+        ''')
+        assert php_space.is_true(output[0])
+
     def test_return_py_list_len_in_php(self):
         php_space = self.space
         output = self.run('''
@@ -985,32 +1028,6 @@ class TestPyPyBridgeArrayConversionsInterp(BaseTestInterpreter):
         w_php_actual = w_py_list.to_php(interp)
 
         assert php_space.is_true(php_space.eq(w_php_actual, w_php_expect))
-
-    @pytest.mark.xfail
-    def test_py_list_to_php_array_nested(self, interp):
-        php_space, py_space = interp.space, interp.py_space
-
-        # Test the following list converts OK:
-        # [1, 2, ["a", "b", "c"]]
-
-        input_inner = ["a", "b", "c"]
-        w_php_input_inner = [ php_space.wrap(x) for x in input_inner ]
-        w_php_expect_inner = php_space.new_array_from_list(w_php_input_inner)
-
-        input_outer = [1, 2] # and we append the inner list also
-        w_php_input_outer = [ php_space.wrap(x) for x in input_outer ] + \
-                [ w_php_expect_inner ]
-        w_php_expect_outer = php_space.new_array_from_list(w_php_input_outer)
-
-        w_py_input_inner = [ py_space.wrap(x) for x in input_inner ]
-        w_py_list_inner = py_space.newlist(w_py_input_inner)
-
-        w_py_list_outer = [ py_space.wrap(x) for x in input_outer ] + \
-                [ w_py_list_inner ]
-        w_py_list_outer = py_space.newlist(w_py_list_outer)
-
-        w_php_got = w_py_list_outer.to_php(interp)
-        assert php_space.is_true(php_space.eq(w_php_expect_outer, w_php_got))
 
     def test_as_list_and_mutate(self):
         php_space = self.space
