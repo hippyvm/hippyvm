@@ -7,8 +7,7 @@ class TestPyPyBridgeExceptions(BaseTestInterpreter):
     def php_space(self):
         return self.space
 
-    def test_py_exn_is_passed_up_to_phpc(self):
-        php_space = self.space
+    def test_py_exn_is_passed_up_to_phpc(self, php_space):
         output = self.run('''
             $src = "def raise_ex(): raise ValueError('my error')";
             $raise_ex = embed_py_func($src);
@@ -21,8 +20,7 @@ class TestPyPyBridgeExceptions(BaseTestInterpreter):
         ''')
         assert php_space.str_w(output[0]) == "yes"
 
-    def test_wrapped_py_exn_message(self):
-        php_space = self.space
+    def test_wrapped_py_exn_message(self, php_space):
         output = self.run('''
             $src = "def raise_ex(): raise ValueError('my error')";
             $raise_ex = embed_py_func($src);
@@ -35,8 +33,7 @@ class TestPyPyBridgeExceptions(BaseTestInterpreter):
         ''')
         assert php_space.str_w(output[0]) == "my error"
 
-    def test_php_exn_is_passed_up_to_py(self):
-        php_space = self.space
+    def test_php_exn_is_passed_up_to_py(self, php_space):
         output = self.run('''
             $src = <<<EOD
             def catch_php_exn():
@@ -59,8 +56,7 @@ class TestPyPyBridgeExceptions(BaseTestInterpreter):
         ''')
         assert php_space.str_w(output[0]) == "ok"
 
-    def test_php_exn_str_in_py(self):
-        php_space = self.space
+    def test_php_exn_str_in_py(self, php_space):
         output = self.run('''
             $src = <<<EOD
             def catch_php_exn():
@@ -83,8 +79,7 @@ class TestPyPyBridgeExceptions(BaseTestInterpreter):
         ''')
         assert php_space.str_w(output[0]) == "oh no!"
 
-    def test_php_exn_message_in_py(self):
-        php_space = self.space
+    def test_php_exn_message_in_py(self, php_space):
         output = self.run('''
             $src = <<<EOD
             def catch_php_exn():
@@ -110,8 +105,7 @@ class TestPyPyBridgeExceptions(BaseTestInterpreter):
 
         # XXX more tests that check line number, trace, filename etc.
 
-    def test_exns_can_pass_pass_thru_multiple_langs(self):
-        php_space = self.space
+    def test_exns_can_pass_pass_thru_multiple_langs(self, php_space):
         output = self.run('''
             $src = "def py_f1(): php_f()";
             $py_f1 = embed_py_func($src);
@@ -133,8 +127,7 @@ class TestPyPyBridgeExceptions(BaseTestInterpreter):
         ''')
         assert php_space.str_w(output[0]) == "explosion"
 
-    def test_python_lookup_missing_php_attr(self):
-        php_space = self.space
+    def test_python_lookup_missing_php_attr(self, php_space):
         output = self.run("""
             $src = <<<EOD
             def ref():
@@ -153,8 +146,7 @@ class TestPyPyBridgeExceptions(BaseTestInterpreter):
         e_str = "Wrapped PHP instance has no attribute 'x'"
         assert php_space.str_w(output[0]) == e_str
 
-    def test_bridgeerror_subclasses_exception(self):
-        php_space = self.space
+    def test_bridgeerror_subclasses_exception(self, php_space):
         output = self.run("""
             $src = <<<EOD
             def do():
@@ -172,8 +164,7 @@ class TestPyPyBridgeExceptions(BaseTestInterpreter):
         assert php_space.str_w(output[0]) == e_str
 
     @pytest.mark.xfail
-    def test_call_nonexist(self):
-        php_space = self.space
+    def test_call_nonexist(self, php_space):
 
         output = self.run('''
         $m = import_py_mod("os");
@@ -186,8 +177,7 @@ class TestPyPyBridgeExceptions(BaseTestInterpreter):
         err_s = "XXX"
         assert php_space.str_w(output[0]) == err_s
 
-    def test_using_kwargs_to_a_php_func_raises(self):
-        php_space = self.space
+    def test_using_kwargs_to_a_php_func_raises(self, php_space):
         output = self.run('''
         function php_func($a) {
         }
@@ -206,8 +196,7 @@ class TestPyPyBridgeExceptions(BaseTestInterpreter):
         err_s = "Cannot use kwargs when calling PHP functions"
         assert php_space.str_w(output[0]) == err_s
 
-    def test_calling_a_non_callable_php_instance_in_py_raises(self):
-        php_space = self.space
+    def test_calling_a_non_callable_php_instance_in_py_raises(self, php_space):
         output = self.run('''
         class A {
                 // has no __invoke
@@ -229,8 +218,7 @@ class TestPyPyBridgeExceptions(BaseTestInterpreter):
         err_s = "Wrapped PHP instance is not callable"
         assert php_space.str_w(output[0]) == err_s
 
-    def test_calling_a_callable_php_instance_with_kwargs_in_py_raises(self):
-        php_space = self.space
+    def test_calling_a_callable_php_instance_with_kwargs_in_py_raises(self, php_space):
         output = self.run('''
         class A {
                 function __invoke($x) { }
@@ -350,8 +338,7 @@ class TestPyPyBridgeExceptions(BaseTestInterpreter):
         err_s = "as_list does not apply"
         assert php_space.str_w(output[0]) == err_s
 
-    def test_kwargs_raise(self):
-        php_space = self.space
+    def test_kwargs_raise(self, php_space):
         output = self.run('''
             $src = <<<EOD
             def f():
@@ -368,8 +355,7 @@ class TestPyPyBridgeExceptions(BaseTestInterpreter):
         err_s = "Cannot use kwargs when calling PHP functions"
         assert php_space.str_w(output[0]) == err_s
 
-    def test_as_list_phpref_raises_if_not_array(self):
-        php_space = self.space
+    def test_as_list_phpref_raises_if_not_array(self, php_space):
         output = self.run('''
             $src = <<<EOD
             @php_refs('x')

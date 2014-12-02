@@ -39,8 +39,7 @@ class TestPyPyBridgeConversions(BaseTestInterpreter):
             w_py_bool = w_php_boolean.to_py(interp)
             assert interp.py_space.bool_w(w_py_bool) == polarity
 
-    def test_unwrap_php(self):
-        php_space = self.space
+    def test_unwrap_php(self, php_space):
         output = self.run('''
         $src = <<<EOD
         def dummy(x):
@@ -87,8 +86,7 @@ class TestPyPyBridgeConversions(BaseTestInterpreter):
     # XXX List slices
     # XXX Test mutating the list.
 
-    def test_unwrap_py(self):
-        php_space = self.space
+    def test_unwrap_py(self, php_space):
         output = self.run('''
         function dummy($x) {
             return $x;
@@ -107,8 +105,7 @@ class TestPyPyBridgeConversions(BaseTestInterpreter):
         ''')
         assert php_space.is_true(output[0])
 
-    def test_php_null(self):
-        php_space = self.space
+    def test_php_null(self, php_space):
         output = self.run('''
         $src = <<<EOD
         def n():
@@ -120,8 +117,7 @@ class TestPyPyBridgeConversions(BaseTestInterpreter):
         ''')
         assert php_space.is_true(output[0])
 
-    def test_wrapped_php_instance_attributeerror(self):
-        php_space = self.space
+    def test_wrapped_php_instance_attributeerror(self, php_space):
         output = self.run('''
         class A {};
 
@@ -141,8 +137,7 @@ class TestPyPyBridgeConversions(BaseTestInterpreter):
         err_s = "Wrapped PHP instance has no attribute 'no_exist'"
         assert php_space.str_w(output[0]) == err_s
 
-    def test_calling_callable_php_inst_in_py(self):
-        php_space = self.space
+    def test_calling_callable_php_inst_in_py(self, php_space):
         output = self.run('''
         class A {
                 function __invoke() {
@@ -161,8 +156,7 @@ class TestPyPyBridgeConversions(BaseTestInterpreter):
         ''')
         assert php_space.str_w(output[0]) == "invoked"
 
-    def test_calling_callable_php_inst_with_args_in_py(self):
-        php_space = self.space
+    def test_calling_callable_php_inst_with_args_in_py(self, php_space):
         output = self.run('''
         class A {
                 function __invoke($x, $y) {
@@ -182,8 +176,7 @@ class TestPyPyBridgeConversions(BaseTestInterpreter):
         assert php_space.str_w(output[0]) == "abc123"
 
     @pytest.mark.xfail
-    def test_py_module_is_stringable(self):
-        php_space = self.space
+    def test_py_module_is_stringable(self, php_space):
         output = self.run('''
         $m = import_py_mod("os");
         echo($m); // crashes
@@ -191,8 +184,7 @@ class TestPyPyBridgeConversions(BaseTestInterpreter):
         # XXX decide outcome
 
     @pytest.mark.xfail
-    def test_php_generic_adapter_is_stringable(self):
-        php_space = self.space
+    def test_php_generic_adapter_is_stringable(self, php_space):
         output = self.run('''
         class A {};
 
@@ -204,8 +196,7 @@ class TestPyPyBridgeConversions(BaseTestInterpreter):
         ''')
         # XXX decide outcome
 
-    def test_php_array_adapter_is_stringable(self):
-        php_space = self.space
+    def test_php_array_adapter_is_stringable(self, php_space):
         output = self.run('''
         $src = "def s(o): return str(o)";
         $s = embed_py_func($src);
@@ -216,8 +207,7 @@ class TestPyPyBridgeConversions(BaseTestInterpreter):
         expect = "{0: 1, 1: 2, 2: 3}"
         assert php_space.str_w(output[0]) == expect
 
-    def test_php_array_adapter_is_stringable_as_list(self):
-        php_space = self.space
+    def test_php_array_adapter_is_stringable_as_list(self, php_space):
         output = self.run('''
         $src = "def s(o): return str(o.as_list())";
         $s = embed_py_func($src);

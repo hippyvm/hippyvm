@@ -7,16 +7,14 @@ class TestPyPyBridge(BaseTestInterpreter):
     def php_space(self):
         return self.space
 
-    def test_import_py_mod_func(self):
-        php_space = self.space
+    def test_import_py_mod_func(self, php_space):
         output = self.run('''
             $math = import_py_mod("math");
             echo($math->pow(2, 3));
         ''')
         assert php_space.int_w(output[0]) == 8
 
-    def test_import_py_mod_fails(self):
-        php_space = self.space
+    def test_import_py_mod_fails(self, php_space):
         output = self.run('''
             try {
                 $m = import_py_mod("__ThIs_DoEs_NoT_ExIsT");
@@ -28,48 +26,43 @@ class TestPyPyBridge(BaseTestInterpreter):
         err_s = "No module named __ThIs_DoEs_NoT_ExIsT"
         assert php_space.str_w(output[0]) == err_s
 
-    def test_import_py_mod_attr(self):
+    def test_import_py_mod_attr(self, php_space):
         import math
-        php_space = self.space
         output = self.run('''
             $math = import_py_mod("math");
             echo($math->pi);
         ''')
         assert php_space.float_w(output[0]) == math.pi
 
-    def test_import_py_nested1_mod_func(self):
-        php_space = self.space
+    def test_import_py_nested1_mod_func(self, php_space):
         output = self.run('''
             $os_path = import_py_mod("os.path");
             echo($os_path->join("a", "b"));
         ''')
         assert php_space.str_w(output[0]) == "a/b"
 
-    def test_import_py_nested2_mod_func(self):
-        php_space = self.space
+    def test_import_py_nested2_mod_func(self, php_space):
         output = self.run('''
             $os = import_py_mod("os");
             echo($os->path->join("a", "b"));
         ''')
         assert php_space.str_w(output[0]) == "a/b"
 
-    def test_embed_py_mod(self):
+    def test_embed_py_mod(self, php_space):
         output = self.run('''
             $m = embed_py_mod("mymod", "def f(): print('hello')");
             echo($m->f());
         ''')
         assert output[0] == self.space.w_Null # XXX for now
 
-    def test_call_func_int_args(self):
-        php_space = self.space
+    def test_call_func_int_args(self, php_space):
         output = self.run('''
             $m = embed_py_mod("mymod", "def f(x): return x+1");
             echo($m->f(665));
         ''')
         assert php_space.int_w(output[0]) == 666
 
-    def test_multiple_modules(self):
-        php_space = self.space
+    def test_multiple_modules(self, php_space):
         output = self.run('''
             $m1 = embed_py_mod("mod1", "def f(x): return x+1");
             $m2 = embed_py_mod("mod2", "def g(x): return x-1");
@@ -79,8 +72,7 @@ class TestPyPyBridge(BaseTestInterpreter):
         assert php_space.int_w(output[0]) == 666
         assert php_space.int_w(output[1]) == 664
 
-    def test_modules_intercall(self):
-        php_space = self.space
+    def test_modules_intercall(self, php_space):
         output = self.run('''
             $m1 = embed_py_mod("mod1", "def f(x): return x+1");
             $m2 = embed_py_mod("mod2",
@@ -89,8 +81,7 @@ class TestPyPyBridge(BaseTestInterpreter):
         ''')
         assert php_space.int_w(output[0]) == 1337
 
-    def test_modules_intercall2(self):
-        php_space = self.space
+    def test_modules_intercall2(self, php_space):
         output = self.run('''
             $m1 = embed_py_mod("mod1", "def f(x): return x+1");
             $m2 = embed_py_mod("mod2",
@@ -101,8 +92,7 @@ class TestPyPyBridge(BaseTestInterpreter):
         ''')
         assert php_space.int_w(output[0]) == 42
 
-    def test_fib(self):
-        php_space = self.space
+    def test_fib(self, php_space):
         output = self.run('''
             $src = <<<EOD
             def fib(n):
@@ -119,8 +109,7 @@ class TestPyPyBridge(BaseTestInterpreter):
             }
         ''')
 
-    def test_multitype_args(self):
-        php_space = self.space
+    def test_multitype_args(self, php_space):
         output = self.run('''
             $src = <<<EOD
             def cat(s, b, i):
@@ -132,8 +121,7 @@ class TestPyPyBridge(BaseTestInterpreter):
         ''')
         assert php_space.str_w(output[0]) == "123-True-666"
 
-    def test_variadic_args(self):
-        php_space = self.space
+    def test_variadic_args(self, php_space):
         output = self.run('''
             $src = <<<EOD
             def cat(*args):
@@ -145,8 +133,7 @@ class TestPyPyBridge(BaseTestInterpreter):
         ''')
         assert php_space.str_w(output[0]) == "5-4-3-2-1-Thunderbirds-Are-Go"
 
-    def test_kwargs_exhaustive(self):
-        php_space = self.space
+    def test_kwargs_exhaustive(self, php_space):
         output = self.run('''
             $src = <<<EOD
             def cat(x="111", y="222", z="333"):
@@ -158,8 +145,7 @@ class TestPyPyBridge(BaseTestInterpreter):
         ''')
         assert php_space.str_w(output[0]) == "abc-def-ghi"
 
-    def test_kwargs_nonexhaustive(self):
-        php_space = self.space
+    def test_kwargs_nonexhaustive(self, php_space):
         output = self.run('''
             $src = <<<EOD
             def cat(x="111", y="222", z="333"):
@@ -171,8 +157,7 @@ class TestPyPyBridge(BaseTestInterpreter):
         ''')
         assert php_space.str_w(output[0]) == "abc-def-333"
 
-    def test_kwargs_on_py_proxy(self):
-        php_space = self.space
+    def test_kwargs_on_py_proxy(self, php_space):
         output = self.run('''
             $mod = import_py_mod("itertools");
             $src = <<<EOD
@@ -186,8 +171,7 @@ class TestPyPyBridge(BaseTestInterpreter):
         ''')
         assert php_space.int_w(output[0]) == 1332
 
-    def test_kwargs_on_py_proxy2(self):
-        php_space = self.space
+    def test_kwargs_on_py_proxy2(self, php_space):
         output = self.run('''
             $mod = import_py_mod("itertools");
             $src = <<<EOD
@@ -227,8 +211,7 @@ class TestPyPyBridge(BaseTestInterpreter):
         ''')
         assert php_space.int_w(output[0]) == 4
 
-    def test_phbridgeproxy_equality1(self):
-        php_space = self.space
+    def test_phbridgeproxy_equality1(self, php_space):
         output = self.run('''
             $src = <<<EOD
             def cmp(x, y):
@@ -242,8 +225,7 @@ class TestPyPyBridge(BaseTestInterpreter):
         ''')
         assert php_space.is_true(output[0])
 
-    def test_phbridgeproxy_equality2(self):
-        php_space = self.space
+    def test_phbridgeproxy_equality2(self, php_space):
         output = self.run('''
             $src = <<<EOD
             def cmp(x, y):
@@ -258,8 +240,7 @@ class TestPyPyBridge(BaseTestInterpreter):
         ''')
         assert php_space.is_true(output[0])
 
-    def test_phbridgeproxy_nequality1(self):
-        php_space = self.space
+    def test_phbridgeproxy_nequality1(self, php_space):
         output = self.run('''
             $src = <<<EOD
             def cmp(x, y):
@@ -279,8 +260,7 @@ class TestPyPyBridge(BaseTestInterpreter):
         ''')
         assert not php_space.is_true(output[0])
 
-    def test_phbridgeproxy_nequality2(self):
-        php_space = self.space
+    def test_phbridgeproxy_nequality2(self, php_space):
         output = self.run('''
             $src = <<<EOD
             def cmp(x, y):
@@ -300,8 +280,7 @@ class TestPyPyBridge(BaseTestInterpreter):
         ''')
         assert php_space.is_true(output[0])
 
-    def test_phbridgeproxy_instanceof(self):
-        php_space = self.space
+    def test_phbridgeproxy_instanceof(self, php_space):
         output = self.run('''
             $src = <<<EOD
             def iof(a):
@@ -320,8 +299,7 @@ class TestPyPyBridge(BaseTestInterpreter):
         assert php_space.is_true(output[0])
         assert not php_space.is_true(output[1])
 
-    def test_phbridgeproxy_id1(self):
-        php_space = self.space
+    def test_phbridgeproxy_id1(self, php_space):
         output = self.run('''
             $src = <<<EOD
             @php_refs('x', 'y')
@@ -337,8 +315,7 @@ class TestPyPyBridge(BaseTestInterpreter):
         ''')
         assert php_space.str_w(output[0]) == "False True"
 
-    def test_phbridgeproxy_id2(self):
-        php_space = self.space
+    def test_phbridgeproxy_id2(self, php_space):
         output = self.run('''
             function f() {}
             function g() {}
@@ -353,8 +330,7 @@ class TestPyPyBridge(BaseTestInterpreter):
         ''')
         assert php_space.str_w(output[0]) == "False True"
 
-    def test_phbridgeproxy_id3(self):
-        php_space = self.space
+    def test_phbridgeproxy_id3(self, php_space):
         output = self.run('''
             $src = <<<EOD
             @php_refs('x', 'y')
@@ -371,8 +347,7 @@ class TestPyPyBridge(BaseTestInterpreter):
         assert php_space.str_w(output[0]) == "False True"
 
 
-    def test_phbridgeproxy_is1(self):
-        php_space = self.space
+    def test_phbridgeproxy_is1(self, php_space):
         output = self.run('''
             $src = <<<EOD
             @php_refs('x', 'y')
@@ -388,8 +363,7 @@ class TestPyPyBridge(BaseTestInterpreter):
         ''')
         assert php_space.str_w(output[0]) == "False True"
 
-    def test_phbridgeproxy_is2(self):
-        php_space = self.space
+    def test_phbridgeproxy_is2(self, php_space):
         output = self.run('''
             function f() {}
             function g() {}
@@ -404,8 +378,7 @@ class TestPyPyBridge(BaseTestInterpreter):
         ''')
         assert php_space.str_w(output[0]) == "False True"
 
-    def test_phbridgeproxy_is3(self):
-        php_space = self.space
+    def test_phbridgeproxy_is3(self, php_space):
         output = self.run('''
             $src = <<<EOD
             def is_chk(x, y):
@@ -420,8 +393,7 @@ class TestPyPyBridge(BaseTestInterpreter):
         ''')
         assert php_space.str_w(output[0]) == "False True"
 
-    def test_callback_to_php(self):
-        php_space = self.space
+    def test_callback_to_php(self, php_space):
         output = self.run('''
             function hello() {
                 echo "foobar";
@@ -439,8 +411,7 @@ class TestPyPyBridge(BaseTestInterpreter):
 
     # XXX Test kwargs
 
-    def test_obj_proxy(self):
-        php_space = self.space
+    def test_obj_proxy(self, php_space):
         output = self.run('''
             $src = <<<EOD
             import sys
@@ -452,8 +423,7 @@ class TestPyPyBridge(BaseTestInterpreter):
         ''')
         assert php_space.str_w(output[0]) == "sys"
 
-    def test_embed_py_func(self):
-        php_space = self.space
+    def test_embed_py_func(self, php_space):
         output = self.run('''
             $src = <<<EOD
             def test():
@@ -464,8 +434,7 @@ class TestPyPyBridge(BaseTestInterpreter):
         ''')
         assert php_space.str_w(output[0]) == "jibble"
 
-    def test_embed_py_func_accepts_only_a_func(self):
-        php_space = self.space
+    def test_embed_py_func_accepts_only_a_func(self, php_space):
         output = self.run('''
             $src = <<<EOD
             import os # <--- nope
@@ -483,8 +452,7 @@ class TestPyPyBridge(BaseTestInterpreter):
         err_s = "embed_py_func: Python source must define exactly one function"
         assert php_space.str_w(output[0]) == err_s
 
-    def test_embed_py_func_accepts_only_a_func2(self):
-        php_space = self.space
+    def test_embed_py_func_accepts_only_a_func2(self, php_space):
         output = self.run('''
             $src = "import os"; // not a func
             try {
@@ -496,8 +464,7 @@ class TestPyPyBridge(BaseTestInterpreter):
         err_s = "embed_py_func: Python source must define exactly one function"
         assert php_space.str_w(output[0]) == err_s
 
-    def test_embed_py_func_args(self):
-        php_space = self.space
+    def test_embed_py_func_args(self, php_space):
         output = self.run('''
             $src = <<<EOD
             def cat(x, y, z):
@@ -508,8 +475,7 @@ class TestPyPyBridge(BaseTestInterpreter):
         ''')
         assert php_space.str_w(output[0]) == "t-minus-10"
 
-    def test_return_function_to_php(self):
-        php_space = self.space
+    def test_return_function_to_php(self, php_space):
         output = self.run('''
             $src = <<<EOD
             def cwd():
@@ -524,8 +490,7 @@ class TestPyPyBridge(BaseTestInterpreter):
         import os
         assert php_space.int_w(output[0]) == os.getpid()
 
-    def test_embed_php_func(self):
-        php_space = self.space
+    def test_embed_php_func(self, php_space):
         output = self.run('''
             $pysrc = <<<EOD
             def f():
@@ -539,8 +504,7 @@ class TestPyPyBridge(BaseTestInterpreter):
         ''')
         assert php_space.int_w(output[0]) == 9
 
-    def test_embed_py_func(self):
-        php_space = self.space
+    def test_embed_py_func(self, php_space):
         output = self.run('''
             $src = <<<EOD
             def f(a, b):
@@ -553,7 +517,6 @@ class TestPyPyBridge(BaseTestInterpreter):
         assert php_space.int_w(output[0]) == 11
 
     def test_embed_py_func_global(self, php_space):
-        php_space = self.space
         output = self.run('''
             $src = <<<EOD
             def test():
@@ -565,7 +528,6 @@ class TestPyPyBridge(BaseTestInterpreter):
         assert php_space.str_w(output[0]) == "jibble"
 
     def test_embed_py_func_global_returns_nothing(self, php_space):
-        php_space = self.space
         output = self.run('''
             $src = <<<EOD
             def test(): pass
@@ -576,7 +538,6 @@ class TestPyPyBridge(BaseTestInterpreter):
         assert php_space.w_Null == output[0]
 
     def test_embed_py_meth(self, php_space):
-        php_space = self.space
         output = self.run('''
             class C {};
 
@@ -591,7 +552,6 @@ class TestPyPyBridge(BaseTestInterpreter):
         assert php_space.int_w(output[0]) == 10
 
     def test_embed_py_meth_subclass(self, php_space):
-        php_space = self.space
         output = self.run('''
             {
             class C {};
@@ -611,7 +571,6 @@ class TestPyPyBridge(BaseTestInterpreter):
         assert php_space.int_w(output[0]) == 10
 
     def test_embed_py_meth_attr_access(self, php_space):
-        php_space = self.space
         output = self.run('''
             class A {
                 function __construct() {
@@ -638,7 +597,6 @@ class TestPyPyBridge(BaseTestInterpreter):
         assert php_space.int_w(output[0]) == 777
 
     def test_embed_py_meth_attr_overide(self, php_space):
-        php_space = self.space
         output = self.run('''
             class A {
                 function m() { return 666; }
@@ -656,7 +614,6 @@ class TestPyPyBridge(BaseTestInterpreter):
         assert php_space.int_w(output[0]) == 667
 
     def test_embed_py_meth_ctor(self, php_space):
-        php_space = self.space
         output = self.run('''
             class A {
             };
@@ -671,7 +628,6 @@ class TestPyPyBridge(BaseTestInterpreter):
         assert php_space.int_w(output[0]) == 666
 
     def test_embed_py_meth_attr_access_other_inst(self, php_space):
-        php_space = self.space
         output = self.run('''
         {
             class A {

@@ -2,8 +2,8 @@ from testing.test_interpreter import BaseTestInterpreter
 from hippy.error import FatalError
 import pytest
 
-class TestPyPyBridgeScope(BaseTestInterpreter):
-    def test_str(self):
+class TestPyPyBridgeSpecialMethods(BaseTestInterpreter):
+    def test_str(self, php_space):
         output = self.run('''
             class C {
                 function __toString() {
@@ -16,4 +16,4 @@ class TestPyPyBridgeScope(BaseTestInterpreter):
 
             echo($f());
         ''')
-        assert self.space.str_w(output[0]) == "C.__toString"
+        assert php_space.str_w(output[0]) == "C.__toString"

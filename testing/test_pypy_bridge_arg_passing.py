@@ -52,8 +52,7 @@ class TestPyPyBridgeArgPassing(BaseTestInterpreter):
         assert php_space.int_w(output[0]) == 1
         assert php_space.int_w(output[1]) == 666
 
-    def test_php2py_str_by_val_func(self):
-        php_space = self.space
+    def test_php2py_str_by_val_func(self, php_space):
         output = self.run('''
             $src = <<<EOD
             def f(s):
@@ -68,8 +67,7 @@ class TestPyPyBridgeArgPassing(BaseTestInterpreter):
         ''')
         assert php_space.str_w(output[0]) == "123" # i.e. unchanged
 
-    def test_php2py_str_by_ref_func(self):
-        php_space = self.space
+    def test_php2py_str_by_ref_func(self, php_space):
         output = self.run('''
             $src = <<<EOD
             @php_refs("s")
@@ -85,8 +83,7 @@ class TestPyPyBridgeArgPassing(BaseTestInterpreter):
         ''')
         assert php_space.str_w(output[0]) == "x23"
 
-    def test_php2py_mixed_key_array_by_val_func(self):
-        php_space = self.space
+    def test_php2py_mixed_key_array_by_val_func(self, php_space):
         output = self.run('''
             $src = <<<EOD
             def f(ary):
@@ -100,8 +97,7 @@ class TestPyPyBridgeArgPassing(BaseTestInterpreter):
         ''')
         assert php_space.str_w(output[0]) == "x"
 
-    def test_php2py_mixed_key_array_by_val_func_global(self):
-        php_space = self.space
+    def test_php2py_mixed_key_array_by_val_func_global(self, php_space):
         output = self.run('''
             $src = <<<EOD
             def f(ary):
@@ -115,8 +111,7 @@ class TestPyPyBridgeArgPassing(BaseTestInterpreter):
         ''')
         assert php_space.str_w(output[0]) == "x"
 
-    def test_php2py_mixed_key_array_by_ref_func_global(self):
-        php_space = self.space
+    def test_php2py_mixed_key_array_by_ref_func_global(self, php_space):
         output = self.run('''
             $src = <<<EOD
             @php_refs("ary")
@@ -131,8 +126,7 @@ class TestPyPyBridgeArgPassing(BaseTestInterpreter):
         ''')
         assert php_space.str_w(output[0]) == "y"
 
-    def test_php2py_mixed_key_array_by_val_method(self):
-        php_space = self.space
+    def test_php2py_mixed_key_array_by_val_method(self, php_space):
         output = self.run('''
             class A {};
 
@@ -150,8 +144,7 @@ class TestPyPyBridgeArgPassing(BaseTestInterpreter):
         ''')
         assert php_space.str_w(output[0]) == "x"
 
-    def test_php2py_mixed_key_array_by_ref_method(self):
-        php_space = self.space
+    def test_php2py_mixed_key_array_by_ref_method(self, php_space):
         output = self.run('''
             class A {};
 
@@ -170,8 +163,7 @@ class TestPyPyBridgeArgPassing(BaseTestInterpreter):
         ''')
         assert php_space.str_w(output[0]) == "y"
 
-    def test_php2py_mixed_key_array_by_ref(self):
-        php_space = self.space
+    def test_php2py_mixed_key_array_by_ref(self, php_space):
         output = self.run('''
             $src = <<<EOD
             @php_refs("ary")
@@ -186,8 +178,7 @@ class TestPyPyBridgeArgPassing(BaseTestInterpreter):
         ''')
         assert php_space.str_w(output[0]) == "y"
 
-    def test_php2py_int_key_array_by_val(self):
-        php_space = self.space
+    def test_php2py_int_key_array_by_val(self, php_space):
         output = self.run('''
             $src = <<<EOD
             def f(ary):
@@ -202,8 +193,7 @@ class TestPyPyBridgeArgPassing(BaseTestInterpreter):
         ''')
         assert php_space.str_w(output[0]) == "x"
 
-    def test_php2py_int_key_array_by_ref(self):
-        php_space = self.space
+    def test_php2py_int_key_array_by_ref(self, php_space):
         output = self.run('''
             $src = <<<EOD
             @php_refs("ary")
@@ -219,8 +209,7 @@ class TestPyPyBridgeArgPassing(BaseTestInterpreter):
         ''')
         assert php_space.str_w(output[0]) == "a"
 
-    def test_php2py_int_key_array_by_val2(self):
-        php_space = self.space
+    def test_php2py_int_key_array_by_val2(self, php_space):
         output = self.run('''
             $src = <<<EOD
             def f(ary):
@@ -237,8 +226,7 @@ class TestPyPyBridgeArgPassing(BaseTestInterpreter):
         assert php_space.int_w(output[0]) == 1
         assert php_space.str_w(output[1]) == "x"
 
-    def test_php2py_int_key_array_by_ref2(self):
-        php_space = self.space
+    def test_php2py_int_key_array_by_ref2(self, php_space):
         output = self.run('''
             $src = <<<EOD
             @php_refs("ary")
@@ -459,8 +447,7 @@ class TestPyPyBridgeArgPassing(BaseTestInterpreter):
 
     # ---
 
-    def test_py2php_list_by_val(self):
-        php_space = self.space
+    def test_py2php_list_by_val(self, php_space):
         output = self.run('''
             $src = <<<EOD
             def f():
@@ -477,8 +464,7 @@ class TestPyPyBridgeArgPassing(BaseTestInterpreter):
         ''')
         assert php_space.int_w(output[0]) == 1
 
-    def test_py2php_list_by_ref(self):
-        php_space = self.space
+    def test_py2php_list_by_ref(self, php_space):
         output = self.run('''
             $src = <<<EOD
             def f():
@@ -495,8 +481,7 @@ class TestPyPyBridgeArgPassing(BaseTestInterpreter):
         ''')
         assert php_space.int_w(output[0]) == 666
 
-    def test_py2php_dict_by_val(self):
-        php_space = self.space
+    def test_py2php_dict_by_val(self, php_space):
         output = self.run('''
             $src = <<<EOD
             def f():
@@ -513,8 +498,7 @@ class TestPyPyBridgeArgPassing(BaseTestInterpreter):
         ''')
         assert php_space.str_w(output[0]) == "b"
 
-    def test_py2php_dict_by_ref2(self):
-        php_space = self.space
+    def test_py2php_dict_by_ref2(self, php_space):
         output = self.run('''
             $src = <<<EOD
             def f():
@@ -533,8 +517,7 @@ class TestPyPyBridgeArgPassing(BaseTestInterpreter):
         assert php_space.str_w(output[0]) == "z"
 
 
-    def test_py2php_int_by_val(self):
-        php_space = self.space
+    def test_py2php_int_by_val(self, php_space):
         output = self.run('''
             $src = <<<EOD
             def f():
@@ -551,8 +534,7 @@ class TestPyPyBridgeArgPassing(BaseTestInterpreter):
         ''')
         assert php_space.int_w(output[0]) == 1
 
-    def test_py2php_int_by_ref(self):
-        php_space = self.space
+    def test_py2php_int_by_ref(self, php_space):
         output = self.run('''
             $src = <<<EOD
             def f():
@@ -569,10 +551,9 @@ class TestPyPyBridgeArgPassing(BaseTestInterpreter):
         ''')
         assert php_space.int_w(output[0]) == 666
 
-    def test_py2php_obj_by_val(self):
+    def test_py2php_obj_by_val(self, php_space):
         """note that it is the object id that is by value.
         the object is not copied like an array"""
-        php_space = self.space
         output = self.run('''
             $src = <<<EOD
             def f(a1, a2):
@@ -605,8 +586,7 @@ class TestPyPyBridgeArgPassing(BaseTestInterpreter):
         assert php_space.int_w(output[0]) == 1
         assert php_space.int_w(output[1]) == 2
 
-    def test_py2php_obj_by_ref(self):
-        php_space = self.space
+    def test_py2php_obj_by_ref(self, php_space):
         output = self.run('''
             $src = <<<EOD
             def f(a1, a2):
@@ -639,8 +619,7 @@ class TestPyPyBridgeArgPassing(BaseTestInterpreter):
         assert php_space.int_w(output[0]) == 2
         assert php_space.int_w(output[1]) == 1
 
-    def test_py2php_str_by_val(self):
-        php_space = self.space
+    def test_py2php_str_by_val(self, php_space):
         output = self.run('''
             $src = <<<EOD
             def f():
@@ -657,8 +636,7 @@ class TestPyPyBridgeArgPassing(BaseTestInterpreter):
         ''')
         assert php_space.str_w(output[0]) == "old"
 
-    def test_py2php_str_by_val2(self):
-        php_space = self.space
+    def test_py2php_str_by_val2(self, php_space):
         output = self.run('''
             $src = <<<EOD
             def f():
@@ -675,8 +653,7 @@ class TestPyPyBridgeArgPassing(BaseTestInterpreter):
         ''')
         assert php_space.str_w(output[0]) == "old"
 
-    def test_py2php_str_by_ref(self):
-        php_space = self.space
+    def test_py2php_str_by_ref(self, php_space):
         output = self.run('''
             $src = <<<EOD
             def f():
@@ -693,8 +670,7 @@ class TestPyPyBridgeArgPassing(BaseTestInterpreter):
         ''')
         assert php_space.str_w(output[0]) == "new"
 
-    def test_py2php_str_by_ref2(self):
-        php_space = self.space
+    def test_py2php_str_by_ref2(self, php_space):
         output = self.run('''
             $src = <<<EOD
             def f():
@@ -711,8 +687,7 @@ class TestPyPyBridgeArgPassing(BaseTestInterpreter):
         ''')
         assert php_space.str_w(output[0]) == "xld"
 
-    def test_py2php_pref_to_non_ref_is_error(self):
-        php_space = self.space
+    def test_py2php_pref_to_non_ref_is_error(self, php_space):
         output = self.run('''
             $src = <<<EOD
             def f():
@@ -733,8 +708,7 @@ class TestPyPyBridgeArgPassing(BaseTestInterpreter):
         assert(php_space.str_w(output[0]) ==
                 "Arg 1 of PHP func 'g' is pass by value")
 
-    def test_py2php_value_to_ref_is_error(self):
-        php_space = self.space
+    def test_py2php_value_to_ref_is_error(self, php_space):
         output = self.run('''
             $src = <<<EOD
             def f():

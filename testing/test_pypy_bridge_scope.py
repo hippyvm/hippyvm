@@ -4,8 +4,7 @@ import pytest
 
 class TestPyPyBridgeScope(BaseTestInterpreter):
 
-    def test_embed_py_func_inside_php_func(self):
-        php_space = self.space
+    def test_embed_py_func_inside_php_func(self, php_space):
         output = self.run('''
             function make() {
                 $src = "def f(a, b): return sum([a, b])";
@@ -18,8 +17,7 @@ class TestPyPyBridgeScope(BaseTestInterpreter):
         ''')
         assert php_space.int_w(output[0]) == 12
 
-    def test_embed_py_func_resolve_var_outer(self):
-        php_space = self.space
+    def test_embed_py_func_resolve_var_outer(self, php_space):
         output = self.run('''
             function make() {
                 $a = 2;
@@ -33,8 +31,7 @@ class TestPyPyBridgeScope(BaseTestInterpreter):
         ''')
         assert php_space.int_w(output[0]) == 5
 
-    def test_php_looks_into_lexical_scope(self):
-        php_space = self.space
+    def test_php_looks_into_lexical_scope(self, php_space):
         output = self.run('''
             $pysrc = <<<EOD
             def f():
@@ -50,8 +47,7 @@ class TestPyPyBridgeScope(BaseTestInterpreter):
         ''')
         assert php_space.int_w(output[0]) == 8
 
-    def test_lookup_php_constant(self):
-        php_space = self.space
+    def test_lookup_php_constant(self, php_space):
         output = self.run('''
             define("x", 3);
             $pysrc = <<<EOD
@@ -66,8 +62,7 @@ class TestPyPyBridgeScope(BaseTestInterpreter):
     # XXX test for looking up PHP function from python code
     # XXX test lookup up Python outer-outer scopes from PHP
 
-    def test_transitive_scope_lookup(self):
-        php_space = self.space
+    def test_transitive_scope_lookup(self, php_space):
         output = self.run('''
             $x = 668;
 
@@ -89,8 +84,7 @@ class TestPyPyBridgeScope(BaseTestInterpreter):
         ''')
         assert php_space.int_w(output[0]) == 668
 
-    def test_increment_outer_php_scope_from_python(self):
-        php_space = self.space
+    def test_increment_outer_php_scope_from_python(self, php_space):
         output = self.run('''
             $x = 44;
             $src = <<<EOD
@@ -107,8 +101,7 @@ class TestPyPyBridgeScope(BaseTestInterpreter):
         ''')
         assert php_space.int_w(output[0]) == 45
 
-    def test_php_sees_outer_py_functions(self):
-        php_space = self.space
+    def test_php_sees_outer_py_functions(self, php_space):
         output = self.run('''
             $pysrc = <<<EOD
             def f():
@@ -128,8 +121,7 @@ class TestPyPyBridgeScope(BaseTestInterpreter):
     # FatalError: Call to undefined function len()
     # FAO: ltratt
     @pytest.mark.xfail()
-    def test_php_can_call_python_builtin(self):
-        php_space = self.space
+    def test_php_can_call_python_builtin(self, php_space):
 
         output = self.run('''
             $src = <<<EOD
@@ -144,8 +136,7 @@ class TestPyPyBridgeScope(BaseTestInterpreter):
         ''')
         assert php_space.int_w(output[0]) == 4
 
-    def test_python_can_call_php_global_builtin(self):
-        php_space = self.space
+    def test_python_can_call_php_global_builtin(self, php_space):
 
         output = self.run('''
             $src = <<<EOD
@@ -158,8 +149,7 @@ class TestPyPyBridgeScope(BaseTestInterpreter):
         ''')
         assert php_space.int_w(output[0]) == 6
 
-    def test_php_cant_call_normal_python_objects(self):
-        php_space = self.space
+    def test_php_cant_call_normal_python_objects(self, php_space):
         with pytest.raises(FatalError):
             output = self.run('''
                 $pysrc = <<<EOD
@@ -175,8 +165,7 @@ class TestPyPyBridgeScope(BaseTestInterpreter):
                 echo($f());
             ''')
 
-    def test_python_calling_php_func(self):
-        php_space = self.space
+    def test_python_calling_php_func(self, php_space):
         output = self.run('''
             function f() {
                 return "f";
@@ -192,8 +181,7 @@ class TestPyPyBridgeScope(BaseTestInterpreter):
         ''')
         assert php_space.str_w(output[0]) == "f"
 
-    def test_python_calling_php_func_case_insensitive(self):
-        php_space = self.space
+    def test_python_calling_php_func_case_insensitive(self, php_space):
         output = self.run('''
             function F() {
                 return "F";
@@ -209,8 +197,7 @@ class TestPyPyBridgeScope(BaseTestInterpreter):
         ''')
         assert php_space.str_w(output[0]) == "F F"
 
-    def test_python_ref_php_class(self):
-        php_space = self.space
+    def test_python_ref_php_class(self, php_space):
         output = self.run('''
             $src = <<<EOD
             def ref():
@@ -228,8 +215,7 @@ class TestPyPyBridgeScope(BaseTestInterpreter):
         ''')
         assert php_space.str_w(output[0]) == "c.m"
 
-    def test_python_lookup_php_attr(self):
-        php_space = self.space
+    def test_python_lookup_php_attr(self, php_space):
         output = self.run("""
             $src = <<<EOD
             def ref():
@@ -247,8 +233,7 @@ class TestPyPyBridgeScope(BaseTestInterpreter):
         """)
         assert php_space.int_w(output[0]) == 2
 
-    def test_python_set_php_attr(self):
-        php_space = self.space
+    def test_python_set_php_attr(self, php_space):
         output = self.run("""
             $src = <<<EOD
             def ref(c):
@@ -268,8 +253,7 @@ class TestPyPyBridgeScope(BaseTestInterpreter):
         """)
         assert php_space.int_w(output[0]) == 3
 
-    def test_python_call_php_method(self):
-        php_space = self.space
+    def test_python_call_php_method(self, php_space):
         output = self.run("""
             $src = <<<EOD
             def ref():
@@ -284,8 +268,7 @@ class TestPyPyBridgeScope(BaseTestInterpreter):
         """)
         assert php_space.str_w(output[0]) == "c.m"
 
-    def test_python_call_php_method_case_insensitive(self):
-        php_space = self.space
+    def test_python_call_php_method_case_insensitive(self, php_space):
         output = self.run("""
             $src = <<<EOD
             def ref():
@@ -300,7 +283,7 @@ class TestPyPyBridgeScope(BaseTestInterpreter):
         """)
         assert php_space.str_w(output[0]) == "c.m"
 
-    def test_python_referencing_dollardollar_var(self):
+    def test_python_referencing_dollardollar_var(self, php_space):
         output = self.run("""
             $a = "b";
             $$a = "c";
@@ -314,33 +297,29 @@ class TestPyPyBridgeScope(BaseTestInterpreter):
         """)
         assert self.space.str_w(output[0]) == "c"
 
-    def test_import_py_mod_attr(self):
+    def test_import_py_mod_attr(self, php_space):
         import math
-        php_space = self.space
         output = self.run('''
             $math = import_py_mod("math");
             echo($math->pi);
         ''')
         assert php_space.float_w(output[0]) == math.pi
 
-    def test_import_py_nested1_mod_func(self):
-        php_space = self.space
+    def test_import_py_nested1_mod_func(self, php_space):
         output = self.run('''
             $os_path = import_py_mod("os.path");
             echo($os_path->join("a", "b"));
         ''')
         assert php_space.str_w(output[0]) == "a/b"
 
-    def test_import_py_nested2_mod_func(self):
-        php_space = self.space
+    def test_import_py_nested2_mod_func(self, php_space):
         output = self.run('''
             $os = import_py_mod("os");
             echo($os->path->join("a", "b"));
         ''')
         assert php_space.str_w(output[0]) == "a/b"
 
-    def test_php2py_cross_lang_closure_is_late_binding(self):
-        php_space = self.space
+    def test_php2py_cross_lang_closure_is_late_binding(self, php_space):
         output = self.run('''
             $x = 42;
             $src = <<<EOD
@@ -354,8 +333,7 @@ class TestPyPyBridgeScope(BaseTestInterpreter):
         ''')
         assert php_space.int_w(output[0]) == 43
 
-    def test_php2py_cross_lang_closure_is_late_binding2(self):
-        php_space = self.space
+    def test_php2py_cross_lang_closure_is_late_binding2(self, php_space):
         output = self.run('''
             $x = 64;
             $src = <<<EOD
@@ -372,8 +350,7 @@ class TestPyPyBridgeScope(BaseTestInterpreter):
         ''')
         assert php_space.int_w(output[0]) == 11
 
-    def test_py2php_cross_lang_closure_is_late_binding(self):
-        php_space = self.space
+    def test_py2php_cross_lang_closure_is_late_binding(self, php_space):
         output = self.run('''
             $src = <<<EOD
             def f():
@@ -389,8 +366,7 @@ class TestPyPyBridgeScope(BaseTestInterpreter):
         ''')
         assert php_space.int_w(output[0]) == 45
 
-    def test_py2php_cross_lang_closure_is_late_binding2(self):
-        php_space = self.space
+    def test_py2php_cross_lang_closure_is_late_binding2(self, php_space):
         output = self.run('''
             $x = 44;
             $src = <<<EOD
@@ -406,8 +382,7 @@ class TestPyPyBridgeScope(BaseTestInterpreter):
         ''')
         assert php_space.int_w(output[0]) == 45
 
-    def test_py2php_cross_lang_closure_is_late_binding3(self):
-        php_space = self.space
+    def test_py2php_cross_lang_closure_is_late_binding3(self, php_space):
         output = self.run('''
             $src = <<<EOD
             def f():
@@ -424,8 +399,7 @@ class TestPyPyBridgeScope(BaseTestInterpreter):
         ''')
         assert php_space.int_w(output[0]) == 45
 
-    def test_get_php_range(self):
-        php_space = self.space
+    def test_get_php_range(self, php_space):
         output = self.run('''
             $src = <<<EOD
             def f():
@@ -444,8 +418,7 @@ class TestPyPyBridgeScope(BaseTestInterpreter):
            and php_space.str_w(output[1]) == "1" \
            and php_space.str_w(output[2]) == "2"
 
-    def test_get_py_range(self):
-        php_space = self.space
+    def test_get_py_range(self, php_space):
         output = self.run('''
             $src = <<<EOD
             def f():
@@ -461,8 +434,7 @@ class TestPyPyBridgeScope(BaseTestInterpreter):
            and php_space.str_w(output[0]) == "0" \
            and php_space.str_w(output[1]) == "1"
 
-    def test_get_php_count(self):
-        php_space = self.space
+    def test_get_php_count(self, php_space):
         output = self.run('''
             $src = <<<EOD
             def f():
@@ -477,8 +449,7 @@ class TestPyPyBridgeScope(BaseTestInterpreter):
         ''')
         assert self.space.int_w(output[0]) == 2
 
-    def test_scopes_are_deterministic1(self):
-        php_space = self.space
+    def test_scopes_are_deterministic1(self, php_space):
         output = self.run('''
             function b() { return "b"; }
             $src = <<<EOD
@@ -495,8 +466,7 @@ class TestPyPyBridgeScope(BaseTestInterpreter):
         assert self.space.str_w(output[0]) == "b" \
           and self.space.str_w(output[1]) == "b"
 
-    def test_scopes_are_deterministic2(self):
-        php_space = self.space
+    def test_scopes_are_deterministic2(self, php_space):
         output = self.run('''
             class b { }
             function b() { return "b"; }
@@ -511,8 +481,7 @@ class TestPyPyBridgeScope(BaseTestInterpreter):
         assert self.space.str_w(output[0]) == "b" \
           and self.space.str_w(output[1]) == "b"
 
-    def test_scopes_are_deterministic3(self):
-        php_space = self.space
+    def test_scopes_are_deterministic3(self, php_space):
         output = self.run('''
             $b = 2;
             function b() { return "b"; }
@@ -533,8 +502,7 @@ class TestPyPyBridgeScope(BaseTestInterpreter):
         assert self.space.int_w(output[0]) == 2 \
                and self.space.str_w(output[1]) == "caught"
 
-    def test_php_global_scope_does_exist(self):
-        php_space = self.space
+    def test_php_global_scope_does_exist(self, php_space):
         output = self.run('''
             function f() { return "f"; }
 
@@ -547,8 +515,7 @@ class TestPyPyBridgeScope(BaseTestInterpreter):
         ''')
         assert self.space.str_w(output[0]) == "f"
 
-    def test_php_global_scope_doesnt_exist(self):
-        php_space = self.space
+    def test_php_global_scope_doesnt_exist(self, php_space):
         output = self.run('''
             function f() { return "f"; }
 
