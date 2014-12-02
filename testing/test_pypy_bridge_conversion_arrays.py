@@ -969,6 +969,24 @@ class TestPyPyBridgeArrayConversionsInstances(BaseTestInterpreter):
         ''')
         assert php_space.int_w(output[0]) == 666
 
+    def test_as_list_and_mutate(self):
+        php_space = self.space
+        output = self.run('''
+            $src = <<<EOD
+            def f(ary):
+                ary_l = ary.as_list()
+                ary_l[3] = "a"
+                return ary == ary_l
+            EOD;
+
+            $f = embed_py_func($src);
+            $in = array("x", "y", "z");
+            $rv = $f($in);
+            echo $rv;
+        ''')
+        assert not php_space.is_true(output[0])
+
+# XXX no need for most of these to be interp-level
 class TestPyPyBridgeArrayConversionsInterp(BaseTestInterpreter):
 
     @pytest.fixture
@@ -1015,8 +1033,6 @@ class TestPyPyBridgeArrayConversionsInterp(BaseTestInterpreter):
         assert py_space.int_w(py_space.getitem(w_py_innr, consts[0])) == 1
         assert py_space.str_w(py_space.getitem(w_py_innr, consts[1])) == "a"
 
-    # XXX Test mutating the list
-
     def test_ph_array_of_py_list(self, interp):
         php_space, py_space = interp.space, interp.py_space
 
@@ -1028,20 +1044,3 @@ class TestPyPyBridgeArrayConversionsInterp(BaseTestInterpreter):
         w_php_actual = w_py_list.to_php(interp)
 
         assert php_space.is_true(php_space.eq(w_php_actual, w_php_expect))
-
-    def test_as_list_and_mutate(self):
-        php_space = self.space
-        output = self.run('''
-            $src = <<<EOD
-            def f(ary):
-                ary_l = ary.as_list()
-                ary_l[3] = "a"
-                return ary == ary_l
-            EOD;
-
-            $f = embed_py_func($src);
-            $in = array("x", "y", "z");
-            $rv = $f($in);
-            echo $rv;
-        ''')
-        assert not php_space.is_true(output[0])
