@@ -193,6 +193,7 @@ class TestPyPyBridgeConversions(BaseTestInterpreter):
         echo($get());
         ''')
         # XXX decide outcome
+        assert php_space.str_w(output[0]) == "XXX"
 
     def test_py_list_adapter_is_stringable_in_php(self, php_space):
         output = self.run('''
