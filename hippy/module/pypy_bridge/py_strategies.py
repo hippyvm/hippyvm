@@ -273,19 +273,24 @@ class PyListDictStrategy(DictStrategy):
     def wrap(self, unwrapped):
         return unwrapped
 
+    def _check_key_is_int(self, w_py_key):
+        """ Although this is offering a dict-like interface, it still
+        uses a list as internal storage. If the user tries to use a non-int
+        key, then they get an exception"""
+        if not isinstance(w_py_key, W_IntObject):
+            _raise_py_bridgeerror(self.space,
+                "Non-integer key used on a Python dict "
+                "with internal list storage")
+
     def getitem(self, w_dict, w_key):
+        self._check_key_is_int(w_key)
+
         py_space = self.space
-
-        # XXX decide what should happen
-        assert isinstance(w_key, W_IntObject)
-
         w_py_list = self.unerase(w_dict.dstorage)
         return py_space.getitem(w_py_list, w_key)
 
     def setitem(self, w_dict, w_key, w_value):
-
-        # XXX decide what should happen
-        assert isinstance(w_key, W_IntObject)
+        self._check_key_is_int(w_key)
 
         py_space = self.space
         w_py_list = self.unerase(w_dict.dstorage)

@@ -292,7 +292,6 @@ class TestPyPyBridgeExceptions(BaseTestInterpreter):
         err_s = "list index out of range"
         assert php_space.str_w(output[0]) == err_s
 
-    @pytest.mark.xfail
     def test_dict_like_py_list_setitem_index_not_int(self, php_space):
         output = self.run('''
             function f_id($x) { return $x; }
@@ -300,15 +299,19 @@ class TestPyPyBridgeExceptions(BaseTestInterpreter):
             $src = <<<EOD
             def f():
                 r = f_id([1, 2, 3])
-                r["a"] = 0 # explodes
+                try:
+                    r["a"] = 0
+                    return "fail"
+                except BridgeError as e:
+                    return e.message
             EOD;
 
             $f = embed_py_func($src);
             echo($f());
         ''')
-        # XXX what should happen?
+        err_s = "Non-integer key used on a Python dict with internal list storage"
+        assert php_space.str_w(output[0]) == err_s
 
-    @pytest.mark.xfail
     def test_dict_like_py_list_getitem_index_not_int(self, php_space):
         output = self.run('''
             function f_id($x) { return $x; }
@@ -316,13 +319,18 @@ class TestPyPyBridgeExceptions(BaseTestInterpreter):
             $src = <<<EOD
             def f():
                 r = f_id([1, 2, 3])
-                x = r["a"] # boom
+                try:
+                    x = r["a"]
+                    return "fail"
+                except BridgeError as e:
+                    return e.message
             EOD;
 
             $f = embed_py_func($src);
             echo($f());
         ''')
-        # XXX what should happen?
+        err_s = "Non-integer key used on a Python dict with internal list storage"
+        assert php_space.str_w(output[0]) == err_s
 
     def test_py_dict_cant_as_list(self, php_space):
         output = self.run('''
