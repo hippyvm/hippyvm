@@ -2,6 +2,7 @@ from rpython.rlib.rstring import StringBuilder
 from rpython.rtyper.lltypesystem import lltype, rffi
 from rpython.rlib.rarithmetic import intmask
 from rpython.rlib.rrandom import Random
+from rpython.rlib.rtime import _clock_gettime_monotonic
 from hippy.builtin import wrap, Optional, BoolArg, StringArg
 from hippy.objects.base import W_Root
 from hippy.module.date import timelib
@@ -190,3 +191,8 @@ def usleep(interp, microseconds):
 
     import time
     time.sleep(microseconds / 1000000.0)
+
+@wrap(['interp'])
+def clock_gettime_monotonic(interp):
+    """Read the monotonic system clock and return a Python float"""
+    return interp.space.wrap(_clock_gettime_monotonic())
