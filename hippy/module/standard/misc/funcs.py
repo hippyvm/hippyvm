@@ -192,6 +192,8 @@ def usleep(interp, microseconds):
     import time
     time.sleep(microseconds / 1000000.0)
 
+# This is for soft-dev benchmarking and is not intended for general
+# incusion in hippyvm.
 @wrap(['interp'])
 def clock_gettime_monotonic(interp):
     """Read the monotonic system clock and return a Python float"""
