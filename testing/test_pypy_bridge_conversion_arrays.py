@@ -980,6 +980,19 @@ class TestPyPyBridgeArrayConversions(BaseTestInterpreter):
         assert php_space.str_w(output[1]) == "c"
         assert php_space.str_w(output[2]) == "d"
 
+    def test_end_on_empty_py_list(self, php_space):
+        output = self.run('''
+            $src = <<<EOD
+            def createlist():
+                return []
+            EOD;
+            $ca = embed_py_func($src);
+            $ary = $ca();
+
+            echo end($ary);
+        ''')
+        assert output[0] is php_space.w_False
+
     @pytest.mark.xfail
     def test_mutible_plus_eq_on_wrapped_php_array_in_python(self, php_space):
         self.run('''
