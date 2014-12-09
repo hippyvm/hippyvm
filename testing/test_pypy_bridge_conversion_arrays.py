@@ -880,6 +880,106 @@ class TestPyPyBridgeArrayConversions(BaseTestInterpreter):
         assert php_space.str_w(output[0]) == "y"
         assert php_space.str_w(output[1]) == "k"
 
+    def test_appenditem_on_wrapped_py_dict(self, php_space):
+        output = self.run('''
+            $src = <<<EOD
+            def createarray():
+                return {0: "a", 1: "b", 32: "c", 3: "d"}
+            EOD;
+            $ca = embed_py_func($src);
+
+            $ary = $ca();
+            $ary[] = "item";
+            echo $ary[33];
+            $ary[] = "item2";
+            echo $ary[34];
+            $ary[40] = "item3";
+            echo $ary[40];
+            $ary[] = "item4";
+            echo $ary[41];
+        ''')
+        assert php_space.str_w(output[0]) == "item"
+        assert php_space.str_w(output[1]) == "item2"
+        assert php_space.str_w(output[2]) == "item3"
+        assert php_space.str_w(output[3]) == "item4"
+
+    def test_arraypop_on_py_dict(self, php_space):
+        output = self.run('''
+            $src = <<<EOD
+            def createarray():
+                return {1: "a", 2: "b"}
+            EOD;
+            $ca = embed_py_func($src);
+
+            $ary = $ca();
+            try {
+                array_pop($ary);
+            }
+            catch (BridgeException $e) {
+                echo $e->getMessage();
+            }
+        ''')
+        assert php_space.str_w(output[0]) == "array_pop is invalid for wrapped Python dict"
+
+    def test_arraypop_on_py_list(self, php_space):
+        output = self.run('''
+            $src = <<<EOD
+            def createlist():
+                return [1,2,3]
+            EOD;
+            $ca = embed_py_func($src);
+
+            $ary = $ca();
+            $ary[] = "c";
+            $ary[] = "d";
+            $result = array_pop($ary);
+            echo $result;
+            $result = array_pop($ary);
+            echo $result;
+            $result = array_pop($ary);
+            echo $result;
+        ''')
+        assert php_space.str_w(output[0]) == "d"
+        assert php_space.str_w(output[1]) == "c"
+        assert php_space.str_w(output[2]) == "3"
+
+    def test_end_on_py_dict(self, php_space):
+        output = self.run('''
+            $src = <<<EOD
+            def createdict():
+                return {1: "a", 2: "b"}
+            EOD;
+            $ca = embed_py_func($src);
+            $ary = $ca();
+
+            try {
+                end($ary);
+            }
+            catch (BridgeException $e) {
+                echo $e->getMessage();
+            }
+        ''')
+        assert php_space.str_w(output[0]) == "PHP iteration is invalid for wrapped Python dict"
+
+    def test_end_on_py_list(self, php_space):
+        output = self.run('''
+            $src = <<<EOD
+            def createlist():
+                return [1,2,3]
+            EOD;
+            $ca = embed_py_func($src);
+            $ary = $ca();
+
+            echo end($ary);
+            $ary[] = "c";
+            echo end($ary);
+            $ary[] = "d";
+            echo end($ary);
+        ''')
+        assert php_space.str_w(output[0]) == "3"
+        assert php_space.str_w(output[1]) == "c"
+        assert php_space.str_w(output[2]) == "d"
+
     @pytest.mark.xfail
     def test_mutible_plus_eq_on_wrapped_php_array_in_python(self, php_space):
         self.run('''
