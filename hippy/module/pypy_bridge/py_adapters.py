@@ -356,7 +356,7 @@ class W_PyListAdapter(W_ArrayObject):
         if 0 <= index < self.arraylen():
             return self._getitem_int(index)
         else:
-            return w_False
+            return self.php_space.w_False
 
     def to_py(self, interp, w_php_ref=None):
         # array-like structures in PHP are always converted to a dict-like
@@ -407,6 +407,7 @@ class W_PyDictAdapter(W_ArrayObject):
         self.py_space = py_space
         self.w_py_dict = w_py_dict
         self.next_idx = None
+        self.current_idx = 0
 
     def copy(self):
         # used for copy on write semantics of PHP
