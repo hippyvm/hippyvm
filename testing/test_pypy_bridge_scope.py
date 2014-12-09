@@ -555,3 +555,16 @@ class TestPyPyBridgeScope(BaseTestInterpreter):
         ''')
         assert php_space.int_w(output[0]) == 4
         assert php_space.int_w(output[1]) == 4
+
+    @pytest.mark.xfail
+    def test_access_private_class_varibale_from_python(self, php_space):
+        output = self.run('''
+        class A {
+            private $a;
+        }
+        embed_py_meth("A", "def __construct(self): self.a = 1");
+
+        $a = new A();
+        echo $a->a;
+        ''')
+        assert php_space.int_w(output[0]) == 1
