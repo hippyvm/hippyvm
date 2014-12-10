@@ -356,7 +356,8 @@ class W_PyListAdapter(W_ArrayObject):
         if 0 <= index < self.arraylen():
             return self._getitem_int(index)
         else:
-            return self.php_space.w_False
+            from hippy.objects.boolobject import w_False
+            return w_False
 
     def to_py(self, interp, w_php_ref=None):
         # array-like structures in PHP are always converted to a dict-like
@@ -406,7 +407,7 @@ class W_PyDictAdapter(W_ArrayObject):
     def __init__(self, py_space, w_py_dict):
         self.py_space = py_space
         self.w_py_dict = w_py_dict
-        self.next_idx = None
+        self.next_idx = -1
         self.current_idx = 0
 
     def copy(self):
@@ -467,7 +468,7 @@ class W_PyDictAdapter(W_ArrayObject):
         self.next_idx = i + 1
 
     def _appenditem(self, w_obj, as_ref=False):
-        if not self.next_idx:
+        if self.next_idx == -1:
             self.compute_index()
         w_py_key = self.py_space.wrap(self.next_idx)
         self.py_space.setitem(self.w_py_dict, w_py_key, w_obj.to_py(self.py_space.get_php_interp()))
