@@ -993,6 +993,91 @@ class TestPyPyBridgeArrayConversions(BaseTestInterpreter):
         ''')
         assert output[0] is php_space.w_False
 
+    def test_compare_two_python_lists(self, php_space):
+        output = self.run('''
+            $src = <<<EOD
+            def createlist():
+                return []
+            EOD;
+            $ca = embed_py_func($src);
+            $a1 = $ca();
+            $a1[] = 100;
+            $a2 = $ca();
+            $a2[] = 2;
+
+            if($a1 == $a2){
+                echo "equal";
+            }
+            else{
+                echo "unequal";
+            }
+
+        ''')
+        assert php_space.str_w(output[0]) == "unequal"
+
+    def test_compare_two_python_lists_str(self, php_space):
+        output = self.run('''
+            $src = <<<EOD
+            def createlist():
+                return []
+            EOD;
+            $ca = embed_py_func($src);
+            $a1 = $ca();
+            $a1[] = 100;
+            $a2 = $ca();
+            $a2[] = 100;
+
+            if(isset($a["hello"])){
+                echo "foo";
+            }
+            else{
+                echo "bar";
+            }
+        ''')
+        assert php_space.str_w(output[0]) == "bar"
+
+    def test_compare_two_python_dicts(self, php_space):
+        output = self.run('''
+            $src = <<<EOD
+            def createlist():
+                return {}
+            EOD;
+            $ca = embed_py_func($src);
+            $a1 = $ca();
+            $a1["foo"] = 100;
+            $a2 = $ca();
+            $a2["bar"] = 100;
+
+            if($a1 == $a2){
+                echo "equal";
+            }
+            else{
+                echo "unequal";
+            }
+        ''')
+        assert php_space.str_w(output[0]) == "unequal"
+
+    def test_compare_two_python_dicts_ints(self, php_space):
+        output = self.run('''
+            $src = <<<EOD
+            def createlist():
+                return {}
+            EOD;
+            $ca = embed_py_func($src);
+            $a1 = $ca();
+            $a1[1] = 100;
+            $a2 = $ca();
+            $a2[2] = 100;
+
+            if($a1 == $a2){
+                echo "equal";
+            }
+            else{
+                echo "unequal";
+            }
+        ''')
+        assert php_space.str_w(output[0]) == "unequal"
+
     @pytest.mark.xfail
     def test_mutible_plus_eq_on_wrapped_php_array_in_python(self, php_space):
         self.run('''

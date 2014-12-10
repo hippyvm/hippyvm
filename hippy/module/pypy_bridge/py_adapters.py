@@ -359,6 +359,9 @@ class W_PyListAdapter(W_ArrayObject):
             from hippy.objects.boolobject import w_False
             return w_False
 
+    def _isset_int(self, index):
+        return 0 <= index < self.arraylen()
+
     def to_py(self, interp, w_php_ref=None):
         # array-like structures in PHP are always converted to a dict-like
         # python structure. Here, a list pretending to be a dict.
@@ -483,6 +486,13 @@ class W_PyDictAdapter(W_ArrayObject):
         from hippy.module.pypy_bridge.bridge import _raise_php_bridgeexception
         _raise_php_bridgeexception(self.py_space.get_php_interp(),
                "PHP iteration is invalid for wrapped Python dict")
+
+    def _isset_int(self, index):
+        return self._isset_str(str(index))
+
+    def _isset_str(self, key):
+        w_bool = self.w_py_dict.descr_has_key(self.py_space, self.py_space.wrap(key))
+        return self.py_space.bool_w(w_bool)
 
 class W_PyExceptionAdapter(W_ExceptionObject):
     """Wraps up a Python exception"""
