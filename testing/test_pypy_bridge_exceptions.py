@@ -354,23 +354,3 @@ class TestPyPyBridgeExceptions(BaseTestInterpreter):
         ''')
         err_s = "Cannot use kwargs when calling PHP functions"
         assert php_space.str_w(output[0]) == err_s
-
-    def test_as_list_phpref_raises_if_not_array(self, php_space):
-        output = self.run('''
-            $src = <<<EOD
-            @php_refs('x')
-            def f(x):
-                try:
-                    x.as_list()
-                    return "fail"
-                except AttributeError as e:
-                    return e.message
-            EOD;
-
-            $f = embed_py_func($src);
-            $a = 1;
-            echo($f($a));
-        ''')
-        err_s = "'int' object has no attribute 'as_list'"
-        assert php_space.str_w(output[0]) == err_s
-

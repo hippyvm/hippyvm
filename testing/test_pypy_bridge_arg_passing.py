@@ -40,7 +40,7 @@ class TestPyPyBridgeArgPassing(BaseTestInterpreter):
             $src = <<<EOD
             @php_refs('x')
             def f(x):
-                x.store_ref(A(666))
+                x.store(A(666))
             EOD;
             $f = embed_py_func($src);
 
@@ -72,7 +72,7 @@ class TestPyPyBridgeArgPassing(BaseTestInterpreter):
             $src = <<<EOD
             @php_refs("s")
             def f(s):
-                s.store_ref(s.replace("1", "x"))
+                s.store(s.deref().replace("1", "x"))
             EOD;
 
             $f = embed_py_func($src);
@@ -87,7 +87,7 @@ class TestPyPyBridgeArgPassing(BaseTestInterpreter):
         output = self.run('''
             $src = <<<EOD
             def f(ary):
-                ary["x"] = "y"
+                ary["x"] = "y" # *should* mutate!
             EOD;
 
             $f = embed_py_func($src);
@@ -95,13 +95,13 @@ class TestPyPyBridgeArgPassing(BaseTestInterpreter):
             $f($in);
             echo $in["x"];
         ''')
-        assert php_space.str_w(output[0]) == "x"
+        assert php_space.str_w(output[0]) == "y"
 
     def test_php2py_mixed_key_array_by_val_func_global(self, php_space):
         output = self.run('''
             $src = <<<EOD
             def f(ary):
-                ary["x"] = "y"
+                ary["x"] = "y" # *should* mutate
             EOD;
 
             embed_py_func_global($src);
@@ -109,20 +109,21 @@ class TestPyPyBridgeArgPassing(BaseTestInterpreter):
             f($in);
             echo $in["x"];
         ''')
-        assert php_space.str_w(output[0]) == "x"
+        assert php_space.str_w(output[0]) == "y"
 
     def test_php2py_mixed_key_array_by_ref_func_global(self, php_space):
         output = self.run('''
             $src = <<<EOD
-            @php_refs("ary")
-            def f(ary):
-                ary["x"] = "y"
+            @php_refs("ary1")
+            def f(ary1, ary2):
+                ary1.store(ary2)
             EOD;
 
             embed_py_func_global($src);
-            $in = array("x" => "x");
-            f($in);
-            echo $in["x"];
+            $in1 = array("x" => "x");
+            $in2 = array("x" => "y");
+            f($in1, $in2);
+            echo $in1["x"];
         ''')
         assert php_space.str_w(output[0]) == "y"
 
@@ -132,26 +133,7 @@ class TestPyPyBridgeArgPassing(BaseTestInterpreter):
 
             $src = <<<EOD
             def f(self, ary):
-                ary["x"] = "y"
-            EOD;
-            embed_py_meth("A", $src);
-
-            $a = new A();
-
-            $in = array("x" => "x");
-            $a->f($in);
-            echo $in["x"];
-        ''')
-        assert php_space.str_w(output[0]) == "x"
-
-    def test_php2py_mixed_key_array_by_ref_method(self, php_space):
-        output = self.run('''
-            class A {};
-
-            $src = <<<EOD
-            @php_refs("ary")
-            def f(self, ary):
-                ary["x"] = "y"
+                ary["x"] = "y" # *should* mutate
             EOD;
             embed_py_meth("A", $src);
 
@@ -163,18 +145,39 @@ class TestPyPyBridgeArgPassing(BaseTestInterpreter):
         ''')
         assert php_space.str_w(output[0]) == "y"
 
+    def test_php2py_mixed_key_array_by_ref_method(self, php_space):
+        output = self.run('''
+            class A {};
+
+            $src = <<<EOD
+            @php_refs("ary1")
+            def f(self, ary1, ary2):
+                ary1.store(ary2)
+            EOD;
+            embed_py_meth("A", $src);
+
+            $a = new A();
+
+            $in1 = array("x" => "x");
+            $in2 = array("x" => "y");
+            $a->f($in1, $in2);
+            echo $in1["x"];
+        ''')
+        assert php_space.str_w(output[0]) == "y"
+
     def test_php2py_mixed_key_array_by_ref(self, php_space):
         output = self.run('''
             $src = <<<EOD
-            @php_refs("ary")
-            def f(ary):
-                ary["x"] = "y"
+            @php_refs("ary1")
+            def f(ary1, ary2):
+                ary1.store(ary2)
             EOD;
 
             $f = embed_py_func($src);
-            $in = array("x" => "x");
-            $f($in);
-            echo $in["x"];
+            $in1 = array("x" => "x");
+            $in2 = array("x" => "y");
+            $f($in1, $in2);
+            echo $in1["x"];
         ''')
         assert php_space.str_w(output[0]) == "y"
 
@@ -183,7 +186,7 @@ class TestPyPyBridgeArgPassing(BaseTestInterpreter):
             $src = <<<EOD
             def f(ary):
                 ary_l = ary.as_list()
-                ary_l[0] = "a"
+                ary_l[0] = "a" # *should* mutate
             EOD;
 
             $f = embed_py_func($src);
@@ -191,21 +194,21 @@ class TestPyPyBridgeArgPassing(BaseTestInterpreter):
             $f($in);
             echo $in[0];
         ''')
-        assert php_space.str_w(output[0]) == "x"
+        assert php_space.str_w(output[0]) == "a"
 
     def test_php2py_int_key_array_by_ref(self, php_space):
         output = self.run('''
             $src = <<<EOD
-            @php_refs("ary")
-            def f(ary):
-                ary_l = ary.as_list()
-                ary_l[0] = "a"
+            @php_refs("ary1")
+            def f(ary1, ary2):
+                ary1.store(ary2)
             EOD;
 
             $f = embed_py_func($src);
-            $in = array("x");
-            $f($in);
-            echo $in[0];
+            $in1 = array("x");
+            $in2 = array("a");
+            $f($in1, $in2);
+            echo $in1[0];
         ''')
         assert php_space.str_w(output[0]) == "a"
 
@@ -221,30 +224,10 @@ class TestPyPyBridgeArgPassing(BaseTestInterpreter):
             $in = array("x");
             $f($in);
             echo count($in);
-            echo $in[0];
-        ''')
-        assert php_space.int_w(output[0]) == 1
-        assert php_space.str_w(output[1]) == "x"
-
-    def test_php2py_int_key_array_by_ref2(self, php_space):
-        output = self.run('''
-            $src = <<<EOD
-            @php_refs("ary")
-            def f(ary):
-                ary_l = ary.as_list()
-                ary_l.append("a")
-            EOD;
-
-            $f = embed_py_func($src);
-            $in = array("x");
-            $f($in);
-            echo count($in);
-            echo $in[0];
             echo $in[1];
         ''')
         assert php_space.int_w(output[0]) == 2
-        assert php_space.str_w(output[1]) == "x"
-        assert php_space.str_w(output[2]) == "a"
+        assert php_space.str_w(output[1]) == "a"
 
     def test_php2py_existing_ref_by_val_func(self, php_space):
         output = self.run('''
@@ -265,7 +248,7 @@ class TestPyPyBridgeArgPassing(BaseTestInterpreter):
     def test_php2py_existing_ref_by_ref_func(self, php_space):
         output = self.run('''
         function takes_ref(&$x) {
-            $src = "@php_refs('y')\ndef mutate_ref(y): y.store_ref(666)";
+            $src = "@php_refs('y')\ndef mutate_ref(y): y.store(666)";
             $mutate_ref = embed_py_func($src);
             $mutate_ref($x);
             echo $x;
@@ -280,7 +263,7 @@ class TestPyPyBridgeArgPassing(BaseTestInterpreter):
 
     def test_php2py_int_by_ref_func(self, php_space):
         output = self.run('''
-        $src = "@php_refs('y')\ndef mutate_ref(y): y.store_ref(666)";
+        $src = "@php_refs('y')\ndef mutate_ref(y): y.store(666)";
         $mutate_ref = embed_py_func($src);
 
         $a = 1;
@@ -288,52 +271,6 @@ class TestPyPyBridgeArgPassing(BaseTestInterpreter):
         echo $a;
         ''')
         assert php_space.int_w(output[0]) == 666
-
-
-    def test_php2py_int_by_ref_unary_op(self, php_space):
-        output = self.run('''
-        $src = "@php_refs('y')\ndef mutate_ref(y): y.store_ref(-y)";
-        $mutate_ref = embed_py_func($src);
-
-        $a = 1;
-        $mutate_ref($a);
-        echo $a;
-        ''')
-        assert php_space.int_w(output[0]) == -1
-
-    def test_php2py_int_by_ref_binary_op(self, php_space):
-        output = self.run('''
-        $src = "@php_refs('y')\ndef mutate_ref(y): y.store_ref(y + 1)";
-        $mutate_ref = embed_py_func($src);
-
-        $a = 1;
-        $mutate_ref($a);
-        echo $a;
-        ''')
-        assert php_space.int_w(output[0]) == 2
-
-    def test_php2py_int_by_ref_binary_op2(self, php_space):
-        output = self.run('''
-        $src = "@php_refs('y')\ndef mutate_ref(y): y.store_ref(1 + y)";
-        $mutate_ref = embed_py_func($src);
-
-        $a = 1;
-        $mutate_ref($a);
-        echo $a;
-        ''')
-        assert php_space.int_w(output[0]) == 2
-
-    def test_php2py_int_by_ref_binary_op3(self, php_space):
-        output = self.run('''
-        $src = "@php_refs('y', 'z')\ndef mutate_ref(y, z): y.store_ref(y + z)";
-        $mutate_ref = embed_py_func($src);
-
-        $a = 1;
-        $b = 2;
-        $mutate_ref($a, $b);
-        echo $a;
-        ''')
-        assert php_space.int_w(output[0]) == 3
 
     def test_php2py_existing_ref_by_val2(self, php_space):
         output = self.run('''
@@ -354,7 +291,7 @@ class TestPyPyBridgeArgPassing(BaseTestInterpreter):
     def test_php2py_existing_ref_by_ref2(self, php_space):
         output = self.run('''
         function takes_ref(&$x) {
-            $src = "@php_refs('y')\ndef mutate_ref(y): y.store_ref(y + 1)";
+            $src = "@php_refs('y')\ndef mutate_ref(y): y.store(y.deref() + 1)";
             $mutate_ref = embed_py_func($src);
             $mutate_ref($x);
             echo $x;
@@ -367,36 +304,12 @@ class TestPyPyBridgeArgPassing(BaseTestInterpreter):
         assert php_space.int_w(output[0]) == 2
         assert php_space.int_w(output[1]) == 2
 
-    # XXX need to implement += on array adapters
-    @pytest.mark.xfail
-    def test_php2py_mutible_binop_on_ref(self, php_space):
-        output = self.run('''
-        $src = <<<EOD
-        @php_refs('x', 'y')
-        def mutate_ref(x, y):
-            xl, yl = x.as_list(), y.as_list()
-            xl += yl
-            x.store_ref(xl)
-        EOD;
-        $mutate_ref = embed_py_func($src);
-
-        $a = array("1");
-        $b = array("2");
-        $mutate_ref($a, $b);
-
-        foreach ($a as $x) {
-                echo $x;
-        }
-        ''')
-        assert php_space.int_w(output[0]) == 1
-        assert php_space.int_w(output[1]) == 2
-
     def test_php2py_return_php_ref_back_to_php(self, php_space):
         output = self.run('''
         $src = <<<EOD
         @php_refs('y')\n
         def f(y):
-            y.store_ref(2)
+            y.store(2)
             return y
         EOD;
 
@@ -414,7 +327,7 @@ class TestPyPyBridgeArgPassing(BaseTestInterpreter):
         $src = <<<EOD
         @php_refs('y')\n
         def f(y):
-            y.store_ref(2)
+            y.store(2)
             return y
         EOD;
 
@@ -432,7 +345,7 @@ class TestPyPyBridgeArgPassing(BaseTestInterpreter):
         $src = <<<EOD
         @php_refs('y')\n
         def f(y):
-            y.store_ref(2)
+            y.store(2)
             return y
         EOD;
 

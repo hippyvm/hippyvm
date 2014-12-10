@@ -293,7 +293,7 @@ class W_PHPRefAdapter(W_Root):
     def deref(self):
         return self.w_php_ref.deref().to_py(self.interp)
 
-    def store_ref(self, w_py_new_val):
+    def store(self, w_py_new_val):
         w_php_val = w_py_new_val.to_php(self.interp)
         self.w_php_ref.store(w_php_val.deref())
 
@@ -311,83 +311,13 @@ class W_PHPRefAdapter(W_Root):
         w_py_obj.__init__(interp, w_php_ref)
         return w_py_obj
 
-    def descr_get(self, w_py_name):
-        interp = self.interp
-        py_space = interp.py_space
-        w_py_val = self.w_php_ref.to_py(interp)
-        return py_space.getattr(w_py_val, w_py_name)
-
-    def descr_setitem(self, w_py_key, w_py_val):
-        interp = self.interp
-        self.w_php_ref.setitem_ref(interp.space,
-                w_py_key.to_php(interp), w_py_val.to_php(interp))
-
-    def descr_as_list(self, space):
-        from hippy.objects.arrayobject import W_ArrayObject
-        w_php_ref = self.w_php_ref
-        w_py_val = w_php_ref.to_py(self.interp)
-        w_py_as_list = space.getattr(w_py_val, space.wrap("as_list"))
-        from pypy.interpreter.argument import Arguments
-        return space.call_args(w_py_as_list, Arguments(space, []))
-
-    # binary ops
-    def _descr_generic_binop(self, name, w_other):
-        interp = self.interp
-        php_space, py_space = interp.space, interp.py_space
-
-        w_py_other = w_other.deref() if \
-                isinstance(w_other, W_PHPRefAdapter) else w_other
-
-        w_py_val = self.w_php_ref.to_py(interp)
-        w_py_target = py_space.getattr(
-                w_py_val, py_space.wrap("__%s__" % name))
-        return py_space.call_args(
-                w_py_target, Arguments(py_space, [w_py_other]))
-
-    # unary ops
-    def _descr_generic_unop(self, name):
-        interp = self.interp
-        php_space, py_space = interp.space, interp.py_space
-
-        w_py_val = self.w_php_ref.to_py(interp)
-        w_py_target = py_space.getattr(
-                w_py_val, py_space.wrap("__%s__" % name))
-        return py_space.call_args(w_py_target, Arguments(py_space, []))
-
-    def descr_neg(self, space):
-        return self._descr_generic_unop("__neg__")
-
-    # equality/disequality XXX
-
     def to_php(self, interp):
         return self.w_php_ref
 
-def _mk_w_phprefadapter_generic_binop(name):
-    def f(self, space, w_other):
-        return self._descr_generic_binop(name, w_other)
-    f.func_name = "descr_%s" % name
-    return f
-
-# generate all binary/unary operations
-w_phprefadapter_binops_iter = unroll.unrolling_iterable(BINOPS)
-w_phprefadapter_unops_iter = unroll.unrolling_iterable(UNOPS)
-
-for op in w_phprefadapter_binops_iter:
-    setattr(W_PHPRefAdapter, "descr_%s" % op, _mk_binop(op))
-
-for op in w_phprefadapter_unops_iter:
-    setattr(W_PHPRefAdapter, "descr_%s" % op, _mk_unop(op))
-
 w_phprefadapter_typedef = {
     "__new__": interp2app(W_PHPRefAdapter.descr_new),
-    "__getattr__": interp2app(W_PHPRefAdapter.descr_get),
-    "__setitem__": interp2app(W_PHPRefAdapter.descr_setitem),
-    "as_list": interp2app(W_PHPRefAdapter.descr_as_list),
-    "store_ref": interp2app(W_PHPRefAdapter.store_ref),
+    "store": interp2app(W_PHPRefAdapter.store),
     "deref": interp2app(W_PHPRefAdapter.deref),
 }
-for op in BINOPS + UNOPS:
-    w_phprefadapter_typedef["__%s__" % op] = \
-            interp2app(getattr(W_PHPRefAdapter, "descr_%s" % op))
 
 W_PHPRefAdapter.typedef = TypeDef("PHPRef", **w_phprefadapter_typedef)

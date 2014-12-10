@@ -1406,16 +1406,25 @@ class Interpreter(object):
     def ARG_BY_PTR(self, bytecode, frame, space, arg, pc):
         ptr_argument = frame.pop_ptr()
         func = frame.pop()
+        py_call = func.is_py_call()
         assert isinstance(func, AbstractFunction)
 
         if func.needs_value(arg):
-            w_argument = ptr_argument.deref(self, give_notice=True)
+            w_points_to = ptr_argument.deref(self, give_notice=True)
+            if isinstance(w_points_to, W_ArrayObject) and py_call:
+                # arrays are special.
+                # We want these to be *always* mutible from Python, so
+                # it is essential to pass a reference. Without doing so,
+                # copy on write will allocate a new array at mutation time.
+                w_argument = ptr_argument.get_ref(self)
+            else:
+                w_argument = w_points_to
         else:
             if func.needs_ref(arg) and not ptr_argument.isref:
                 space.ec.strict("Only variables should be passed by reference")
 
             w_argument = ptr_argument.get_ref(self)
-            if func.is_py_call():
+            if py_call:
                 # cross language php -> python call with arg by reference.
                 w_argument = W_ReferenceToPy(self, w_argument)
 
