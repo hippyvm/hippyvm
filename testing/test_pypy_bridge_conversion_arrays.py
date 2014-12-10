@@ -940,6 +940,24 @@ class TestPyPyBridgeArrayConversionsInstances(BaseTestInterpreter):
         ''')
         assert not php_space.is_true(output[0])
 
+    def test_php_array_consts_are_not_mutated_by_python(self, php_space):
+        output = self.run('''
+            $src = <<<EOD
+            def f(ary):
+                ary[3] = 666;
+            EOD;
+
+            $f = embed_py_func($src);
+            $in = array(0, 1, 2);
+            $f($in);
+            echo $in[3];
+            $in = array(0, 1, 2); # should not contain new element
+            echo count($in);
+        ''')
+        assert php_space.int_w(output[0]) == 666
+        assert php_space.int_w(output[1]) == 3
+
+
 # XXX no need for most of these to be interp-level
 class TestPyPyBridgeArrayConversionsInterp(BaseTestInterpreter):
 
