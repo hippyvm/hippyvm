@@ -645,3 +645,92 @@ class TestPyPyBridge(BaseTestInterpreter):
         }
         ''')
         assert php_space.int_w(output[0]) == 666
+
+    def test_embed_py_meth_and_call_from_subclass(self, php_space):
+        output = self.run('''
+        {
+            class A {
+                    public $x = 666;
+            }
+
+            $src = "def __construct(self): self.y = 1";
+            embed_py_meth("A", $src);
+
+            class B extends A {
+                function __construct() {
+                    parent::__construct();
+                }
+            }
+
+            $a = new A();
+            $b = new B();
+            echo $b->y;
+        }
+        ''')
+        assert php_space.int_w(output[0]) == 1
+
+    def test_embed_py_meth_and_call_from_subclass_2(self, php_space):
+        output = self.run('''
+        {
+            class A {
+                    public $x = 666;
+            }
+
+            $src = "def __construct(self): self.y = 1";
+            embed_py_meth("A", $src);
+
+            class B extends A {
+            }
+            $src = "def __construct(self): A.__construct(self)";
+            embed_py_meth("B", $src);
+
+            $a = new A();
+            $b = new B();
+            echo $b->y;
+        }
+        ''')
+        assert php_space.int_w(output[0]) == 1
+
+    def test_embed_py_meth_and_get_static_member(self, php_space):
+        output = self.run('''
+        {
+            class A {
+                    public static $x = 666;
+            }
+
+            $src = "def __construct(self): self.y = 1";
+            embed_py_meth("A", $src);
+
+            $src = "def getx(): return A.x";
+            $getx = embed_py_func($src);
+            echo $getx();
+
+        }
+        ''')
+        assert php_space.int_w(output[0]) == 666
+
+    def test_embed_py_meth_and_lookup_nonexistent_member(self, php_space):
+        output = self.run('''
+        {
+        class A {
+                public static $x = 666;
+        }
+
+        $src = "def __construct(self): self.y = 1";
+        embed_py_meth("A", $src);
+
+        $src = <<<EOD
+        def getx():
+            try:
+                A.idontexist
+                return "fail"
+            except BridgeError as e:
+                return e.message
+        EOD;
+
+        $getx = embed_py_func($src);
+        echo $getx();
+
+        }
+        ''')
+        assert php_space.str_w(output[0]) == "Wrapped PHP class has not attribute 'idontexist'"

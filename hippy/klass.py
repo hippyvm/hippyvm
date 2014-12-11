@@ -1019,6 +1019,9 @@ class UserClass(ClassBase):
         return parent
 
     def _check_compatibility(self, interp, method, parent_method):
+        from hippy.module.pypy_bridge import W_PyMethodFuncAdapter
+        if isinstance(method.method_func, W_PyMethodFuncAdapter) or isinstance(parent_method.method_func, W_PyMethodFuncAdapter):
+            return
         if not method.get_signature().matches(parent_method.get_signature()):
             interp.strict(
                 "Declaration of %s should be compatible with %s" %
