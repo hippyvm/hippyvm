@@ -119,16 +119,6 @@ class W_EmbeddedPyCallable(W_InvokeCall):
         else:
             return False
 
-    # XXX opt
-    # XXX not needs_ref?
-    def needs_val(self, i):
-        w_py_func = self.w_py_func
-
-        if isinstance(w_py_func, PyFunction):
-            return not i in w_py_func.code.co_php_args_by_ref
-        else:
-            return True
-
     def is_py_call(self):
         return True
 
@@ -172,15 +162,6 @@ class W_PyFuncGlobalAdapter(AbstractFunction):
             return i in w_py_func.code.co_php_args_by_ref
         else:
             return False
-
-    def needs_value(self, i):
-        i = self._arg_index_adjust(i)
-        w_py_func = self.w_py_callable
-
-        if isinstance(w_py_func, PyFunction):
-            return not i in w_py_func.code.co_php_args_by_ref
-        else:
-            return True
 
     def is_py_call(self):
         return True
