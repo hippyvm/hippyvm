@@ -44,7 +44,7 @@ class W_PyGenericAdapter(W_InstanceObject):
 
     def get_callable(self):
         """PHP interpreter calls this when calls a wrapped Python var"""
-        return W_EmbeddedPyCallable(self.w_py_inst)
+        return W_EmbeddedPyCallable(self.interp, self.w_py_inst)
 
     def to_py(self, interp, w_php_ref=None):
         return self.w_py_inst
@@ -84,11 +84,12 @@ k_PyGenericAdapter = def_class('PyGenericAdapter',
 
 class W_EmbeddedPyCallable(W_InvokeCall):
 
-    _immutable_fields_ = [ "w_py_func" ]
+    _immutable_fields_ = [ "w_py_func", "interp" ]
 
-    def __init__(self, w_py_func):
+    def __init__(self, interp, w_py_func):
         W_InvokeCall.__init__(self, None, None, None)
         self.w_py_func = w_py_func
+        self.interp = interp
 
     @jit.unroll_safe
     def call_args(self, interp, args_w,
@@ -113,13 +114,17 @@ class W_EmbeddedPyCallable(W_InvokeCall):
 
     def needs_ref(self, i):
         w_py_func = self.w_py_func
+
         if isinstance(w_py_func, PyFunction):
             return i in w_py_func.code.co_php_args_by_ref
         else:
             return False
 
+    # XXX opt
+    # XXX not needs_ref?
     def needs_val(self, i):
         w_py_func = self.w_py_func
+
         if isinstance(w_py_func, PyFunction):
             return not i in w_py_func.code.co_php_args_by_ref
         else:
@@ -162,18 +167,20 @@ class W_PyFuncGlobalAdapter(AbstractFunction):
         return i
 
     def needs_ref(self, i):
-        w_py_callable = self.w_py_callable
-        if isinstance(w_py_callable, PyFunction):
-            i = self._arg_index_adjust(i)
-            return i in w_py_callable.code.co_php_args_by_ref
+        i = self._arg_index_adjust(i)
+        w_py_func = self.w_py_callable
+
+        if isinstance(w_py_func, PyFunction):
+            return i in w_py_func.code.co_php_args_by_ref
         else:
             return False
 
     def needs_value(self, i):
-        w_py_callable = self.w_py_callable
-        if isinstance(w_py_callable, PyFunction):
-            i = self._arg_index_adjust(i)
-            return not i in w_py_callable.code.co_php_args_by_ref
+        i = self._arg_index_adjust(i)
+        w_py_func = self.w_py_callable
+
+        if isinstance(w_py_func, PyFunction):
+            return not i in w_py_func.code.co_php_args_by_ref
         else:
             return True
 
@@ -216,7 +223,7 @@ class W_PyFuncAdapter(W_InstanceObject):
         raise NotImplementedError("Not implemented")
 
     def get_callable(self):
-        return W_EmbeddedPyCallable(self.w_py_func)
+        return W_EmbeddedPyCallable(self.interp, self.w_py_func)
 
     def to_py(self, interp, w_php_ref=None):
         return self.w_py_func
