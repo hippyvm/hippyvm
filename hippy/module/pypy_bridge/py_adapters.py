@@ -133,13 +133,12 @@ class W_EmbeddedPyCallable(W_InvokeCall):
         return True
 
 class W_PyFuncGlobalAdapter(AbstractFunction):
-    _immutable_fields_ = ["interp", "w_py_callable"]
+    _immutable_fields_ = ["w_py_callable"]
 
-    def __init__(self, interp, w_py_callable):
+    def __init__(self, w_py_callable):
         from hippy.module.pypy_bridge.php_adapters import W_PHPFuncAdapter
         assert not isinstance(w_py_callable, W_PHPFuncAdapter)
 
-        self.interp = interp
         self.w_py_callable = w_py_callable
 
     def get_wrapped_py_obj(self):
