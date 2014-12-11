@@ -44,7 +44,7 @@ class W_PyGenericAdapter(W_InstanceObject):
 
     def get_callable(self):
         """PHP interpreter calls this when calls a wrapped Python var"""
-        return W_EmbeddedPyCallable(self.interp, self.w_py_inst)
+        return W_EmbeddedPyCallable(self.w_py_inst)
 
     def to_py(self, interp, w_php_ref=None):
         return self.w_py_inst
@@ -84,12 +84,11 @@ k_PyGenericAdapter = def_class('PyGenericAdapter',
 
 class W_EmbeddedPyCallable(W_InvokeCall):
 
-    _immutable_fields_ = [ "w_py_func", "interp" ]
+    _immutable_fields_ = ["w_py_func"]
 
-    def __init__(self, interp, w_py_func):
+    def __init__(self, w_py_func):
         W_InvokeCall.__init__(self, None, None, None)
         self.w_py_func = w_py_func
-        self.interp = interp
 
     @jit.unroll_safe
     def call_args(self, interp, args_w,
@@ -223,7 +222,7 @@ class W_PyFuncAdapter(W_InstanceObject):
         raise NotImplementedError("Not implemented")
 
     def get_callable(self):
-        return W_EmbeddedPyCallable(self.interp, self.w_py_func)
+        return W_EmbeddedPyCallable(self.w_py_func)
 
     def to_py(self, interp, w_php_ref=None):
         return self.w_py_func
