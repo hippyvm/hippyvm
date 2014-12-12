@@ -363,7 +363,7 @@ class ClassBase(AbstractFunction, AccessMixin):
             self._visibility_check(result, name, contextclass)
         return result
 
-    def embed_py_meth(self, name, w_php_func, static=False):
+    def embed_py_meth(self, name, w_php_func):
         # Allow overide from a superclass, but not a duplicate from this class.
         existing_meth = self.methods.get(name, None)
         if existing_meth is not None:
@@ -371,10 +371,8 @@ class ClassBase(AbstractFunction, AccessMixin):
 
         assert not self.is_subclassed # XXX
 
-        flags = 0
-        if static:
-            flags |= consts.ACC_STATIC
-
+        pycode = w_php_func.w_py_callable.code
+        flags = pycode.co_php_static | pycode.co_php_access
         w_py_meth = Method(w_php_func, flags, self)
         self.methods[name.lower()] = w_py_meth
 

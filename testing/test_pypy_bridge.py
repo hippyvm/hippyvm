@@ -302,7 +302,7 @@ class TestPyPyBridge(BaseTestInterpreter):
     def test_phbridgeproxy_id1(self, php_space):
         output = self.run('''
             $src = <<<EOD
-            @php_refs(0, 1)
+            @php_decor(refs=[0, 1])
             def is_chk(x, y):
                 return str(id(x) == id(y))
             EOD;
@@ -333,7 +333,7 @@ class TestPyPyBridge(BaseTestInterpreter):
     def test_phbridgeproxy_id3(self, php_space):
         output = self.run('''
             $src = <<<EOD
-            @php_refs(0, 1)
+            @php_decor(refs=[0, 1])
             def is_chk(x, y):
                 return str(id(x) == id(y))
             EOD;
@@ -350,7 +350,7 @@ class TestPyPyBridge(BaseTestInterpreter):
     def test_phbridgeproxy_is1(self, php_space):
         output = self.run('''
             $src = <<<EOD
-            @php_refs(0, 1)
+            @php_decor(refs=[0, 1])
             def is_chk(x, y):
                 return str(x is y)
             EOD;
@@ -557,10 +557,11 @@ class TestPyPyBridge(BaseTestInterpreter):
             class C {};
 
             $src = <<<EOD
+            @php_decor(static=True)
             def myMeth():
                 return 10
             EOD;
-            embed_py_meth("C", $src, True);
+            embed_py_meth("C", $src);
             echo(C::myMeth());
             }
         ''')
@@ -572,10 +573,11 @@ class TestPyPyBridge(BaseTestInterpreter):
             class C {};
 
             $src = <<<EOD
+            @php_decor(static=True)
             def myMeth(a):
                 return a
             EOD;
-            embed_py_meth("C", $src, True);
+            embed_py_meth("C", $src);
             echo(C::myMeth(10));
             }
         ''')

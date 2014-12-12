@@ -108,8 +108,8 @@ def embed_py_func_global(interp, func_source):
     php_space.global_function_cache.declare_new(py_space.str_w(w_py_func_name), w_php_func)
 
 from hippy.builtin import Optional
-@wrap(['interp', str, str, Optional(bool)], name='embed_py_meth')
-def embed_py_meth(interp, class_name, func_source, static=False):
+@wrap(['interp', str, str], name='embed_py_meth')
+def embed_py_meth(interp, class_name, func_source):
     """Inject a Python method into a PHP class.
     Here a Python method is a function accepting self as the first arg.
     """
@@ -124,9 +124,7 @@ def embed_py_meth(interp, class_name, func_source, static=False):
     if w_php_class is None:
         assert False # XXX
 
-    w_php_class.embed_py_meth(
-        py_space.str_w(w_py_func_name),
-        w_php_func, static)
+    w_php_class.embed_py_meth(py_space.str_w(w_py_func_name), w_php_func)
 
 @wrap(['interp', str], name='import_py_mod')
 def import_py_mod(interp, modname):

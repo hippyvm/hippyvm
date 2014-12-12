@@ -5,7 +5,7 @@ class TestPyPyBridgeArgPassing(BaseTestInterpreter):
 
     def test_php2py_by_ref_assign_does_not_change_ref(self, php_space):
         output = self.run('''
-        $src = "@php_refs(0)\ndef no_mutate_ref(y): y = 111";
+        $src = "@php_decor(refs=[0])\ndef no_mutate_ref(y): y = 111";
         $mutate_ref = embed_py_func($src);
 
         $a = 1;
@@ -38,7 +38,7 @@ class TestPyPyBridgeArgPassing(BaseTestInterpreter):
             };
 
             $src = <<<EOD
-            @php_refs(0)
+            @php_decor(refs=[0])
             def f(x):
                 x.store(A(666))
             EOD;
@@ -70,7 +70,7 @@ class TestPyPyBridgeArgPassing(BaseTestInterpreter):
     def test_php2py_str_by_ref_func(self, php_space):
         output = self.run('''
             $src = <<<EOD
-            @php_refs(0)
+            @php_decor(refs=[0])
             def f(s):
                 s.store(s.deref().replace("1", "x"))
             EOD;
@@ -114,7 +114,7 @@ class TestPyPyBridgeArgPassing(BaseTestInterpreter):
     def test_php2py_mixed_key_array_by_ref_func_global(self, php_space):
         output = self.run('''
             $src = <<<EOD
-            @php_refs(0)
+            @php_decor(refs=[0])
             def f(ary1, ary2):
                 ary1.store(ary2)
             EOD;
@@ -150,7 +150,7 @@ class TestPyPyBridgeArgPassing(BaseTestInterpreter):
             class A {};
 
             $src = <<<EOD
-            @php_refs(1)
+            @php_decor(refs=[1])
             def f(self, ary1, ary2):
                 ary1.store(ary2)
             EOD;
@@ -168,7 +168,7 @@ class TestPyPyBridgeArgPassing(BaseTestInterpreter):
     def test_php2py_mixed_key_array_by_ref(self, php_space):
         output = self.run('''
             $src = <<<EOD
-            @php_refs(0)
+            @php_decor(refs=[0])
             def f(ary1, ary2):
                 ary1.store(ary2)
             EOD;
@@ -199,7 +199,7 @@ class TestPyPyBridgeArgPassing(BaseTestInterpreter):
     def test_php2py_int_key_array_by_ref(self, php_space):
         output = self.run('''
             $src = <<<EOD
-            @php_refs(0)
+            @php_decor(refs=[0])
             def f(ary1, ary2):
                 ary1.store(ary2)
             EOD;
@@ -248,7 +248,7 @@ class TestPyPyBridgeArgPassing(BaseTestInterpreter):
     def test_php2py_existing_ref_by_ref_func(self, php_space):
         output = self.run('''
         function takes_ref(&$x) {
-            $src = "@php_refs(0)\ndef mutate_ref(y): y.store(666)";
+            $src = "@php_decor(refs=[0])\ndef mutate_ref(y): y.store(666)";
             $mutate_ref = embed_py_func($src);
             $mutate_ref($x);
             echo $x;
@@ -263,7 +263,7 @@ class TestPyPyBridgeArgPassing(BaseTestInterpreter):
 
     def test_php2py_int_by_ref_func(self, php_space):
         output = self.run('''
-        $src = "@php_refs(0)\ndef mutate_ref(y): y.store(666)";
+        $src = "@php_decor(refs=[0])\ndef mutate_ref(y): y.store(666)";
         $mutate_ref = embed_py_func($src);
 
         $a = 1;
@@ -291,7 +291,7 @@ class TestPyPyBridgeArgPassing(BaseTestInterpreter):
     def test_php2py_existing_ref_by_ref2(self, php_space):
         output = self.run('''
         function takes_ref(&$x) {
-            $src = "@php_refs(0)\ndef mutate_ref(y): y.store(y.deref() + 1)";
+            $src = "@php_decor(refs=[0])\ndef mutate_ref(y): y.store(y.deref() + 1)";
             $mutate_ref = embed_py_func($src);
             $mutate_ref($x);
             echo $x;
@@ -307,7 +307,7 @@ class TestPyPyBridgeArgPassing(BaseTestInterpreter):
     def test_php2py_return_php_ref_back_to_php(self, php_space):
         output = self.run('''
         $src = <<<EOD
-        @php_refs(0)
+        @php_decor(refs=[0])
         def f(y):
             y.store(2)
             return y
@@ -325,7 +325,7 @@ class TestPyPyBridgeArgPassing(BaseTestInterpreter):
     def test_php2py_return_php_ref_back_to_php_eq(self, php_space):
         output = self.run('''
         $src = <<<EOD
-        @php_refs(0)
+        @php_decor(refs=[0])
         def f(y):
             y.store(2)
             return y
@@ -343,7 +343,7 @@ class TestPyPyBridgeArgPassing(BaseTestInterpreter):
     def test_php2py_return_php_ref_back_to_php_eq2(self, php_space):
         output = self.run('''
         $src = <<<EOD
-        @php_refs(0)
+        @php_decor(refs=[0])
         def f(y):
             y.store(2)
             return y
