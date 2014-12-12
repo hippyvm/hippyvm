@@ -734,3 +734,25 @@ class TestPyPyBridge(BaseTestInterpreter):
         }
         ''')
         assert php_space.str_w(output[0]) == "Wrapped PHP class has not attribute 'idontexist'"
+
+    @pytest.mark.xfail
+    def test_subclass_call_php_method_using_this_from_python(self, php_space):
+        output = self.run('''
+        {
+            class A {
+                function foo(){
+                    $this->a = 1;
+                }
+            }
+
+            class B extends A {
+            }
+            $src = "def foo(self): A.foo(self)";
+            embed_py_meth("B", $src);
+
+            $b = new B();
+            $b->foo();
+            echo $b->a;
+        }
+        ''')
+        assert php_space.str_w(output[0]) == "1"
