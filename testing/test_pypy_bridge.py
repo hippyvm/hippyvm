@@ -583,6 +583,324 @@ class TestPyPyBridge(BaseTestInterpreter):
         ''')
         assert php_space.int_w(output[0]) == 10
 
+    def test_embed_py_meth_private(self, php_space):
+        output = self.run('''
+            {
+            class A {};
+
+            $src = <<<EOD
+            @php_decor(access="private")
+            def get(self):
+                return 666
+            EOD;
+            embed_py_meth("A", $src);
+            $a = new A();
+            $a->get();
+            }
+            ''',["Fatal error: Call to private method A::get() from context ''"])
+
+    def test_embed_py_meth_private2(self, php_space):
+        output = self.run('''
+            {
+            class A {};
+            class B {
+                function get($a) {
+                    return $a->get();
+                }
+            };
+
+            $src = <<<EOD
+            @php_decor(access="private")
+            def get(self):
+                return 666
+            EOD;
+            embed_py_meth("A", $src);
+            $a = new A();
+            $b = new B();
+            $b->get($a);
+            }
+            ''',["Fatal error: Call to private method A::get() from context 'B'"])
+
+    def test_embed_py_meth_private_static(self, php_space):
+        output = self.run('''
+            {
+            class A {};
+
+            $src = <<<EOD
+            @php_decor(access="private", static=True)
+            def get():
+                return 666
+            EOD;
+            embed_py_meth("A", $src);
+            A::get();
+            }
+            ''',["Fatal error: Call to private method A::get() from context ''"])
+
+    def test_embed_py_meth_private_static2(self, php_space):
+        output = self.run('''
+            {
+            class A {};
+            class B {
+                function get() {
+                    return A::get();
+                }
+            };
+
+            $src = <<<EOD
+            @php_decor(access="private", static=True)
+            def get(self):
+                return 666
+            EOD;
+            embed_py_meth("A", $src);
+            $a = new A();
+            $b = new B();
+            $b->get();
+            }
+            ''',["Fatal error: Call to private method A::get() from context 'B'"])
+
+    def test_embed_py_meth_protected(self, php_space):
+        output = self.run('''
+            {
+            class A {};
+
+            $src = <<<EOD
+            @php_decor(access="protected")
+            def get(self):
+                return 666
+            EOD;
+            embed_py_meth("A", $src);
+            $a = new A();
+            $a->get();
+            }
+            ''',["Fatal error: Call to protected method A::get() from context ''"])
+
+    def test_embed_py_meth_protected2(self, php_space):
+        output = self.run('''
+            {
+            class A {};
+            class B {
+                function get($a) {
+                    return $a->get();
+                }
+            };
+
+            $src = <<<EOD
+            @php_decor(access="protected")
+            def get(self):
+                return 666
+            EOD;
+            embed_py_meth("A", $src);
+            $a = new A();
+            $b = new B();
+            $b->get($a);
+            }
+            ''',["Fatal error: Call to protected method A::get() from context 'B'"])
+
+    def test_embed_py_meth_protected_static(self, php_space):
+        output = self.run('''
+            {
+            class A {};
+
+            $src = <<<EOD
+            @php_decor(access="protected", static=True)
+            def get():
+                return 666
+            EOD;
+            embed_py_meth("A", $src);
+            A::get();
+            }
+            ''',["Fatal error: Call to protected method A::get() from context ''"])
+
+    def test_embed_py_meth_protected_static2(self, php_space):
+        output = self.run('''
+            {
+            class A {};
+            class B {
+                function get() {
+                    return A::get();
+                }
+            };
+
+            $src = <<<EOD
+            @php_decor(access="protected", static=True)
+            def get(self):
+                return 666
+            EOD;
+            embed_py_meth("A", $src);
+            $a = new A();
+            $b = new B();
+            $b->get();
+            }
+            ''',["Fatal error: Call to protected method A::get() from context 'B'"])
+
+    def test_embed_py_meth_public_static(self, php_space):
+        output = self.run('''
+            {
+            class A {};
+
+            $src = <<<EOD
+            @php_decor(access="public", static=True)
+            def get():
+                return 666
+            EOD;
+            embed_py_meth("A", $src);
+            echo(A::get());
+            }
+        ''')
+        assert php_space.int_w(output[0]) == 666
+
+    def test_embed_py_meth_public_static2(self, php_space):
+        output = self.run('''
+            {
+            class A {};
+            class B {
+                function get() {
+                    return A::get();
+                }
+            };
+
+            $src = <<<EOD
+            @php_decor(access="public", static=True)
+            def get():
+                return 666
+            EOD;
+            embed_py_meth("A", $src);
+            $b = new B();
+            echo($b->get());
+            }
+        ''')
+        assert php_space.int_w(output[0]) == 666
+
+    def test_embed_py_meth_public(self, php_space):
+        output = self.run('''
+            {
+            class A {};
+
+            $src = <<<EOD
+            @php_decor(access="public")
+            def get(self):
+                return 666
+            EOD;
+            embed_py_meth("A", $src);
+            $a = new A();
+            echo($a->get());
+            }
+        ''')
+        assert php_space.int_w(output[0]) == 666
+
+    def test_embed_py_meth_public2(self, php_space):
+        output = self.run('''
+            {
+            class A {};
+            class B {
+                function get($a) {
+                    return $a->get();
+                }
+            };
+
+            $src = <<<EOD
+            @php_decor(access="public")
+            def get(self):
+                return 666
+            EOD;
+            embed_py_meth("A", $src);
+            $a = new A();
+            $b = new B();
+            echo($b->get($a));
+            }
+        ''')
+        assert php_space.int_w(output[0]) == 666
+
+    def test_embed_py_meth_private_meth_subclass_call(self, php_space):
+        output = self.run('''
+            {
+            class A {};
+            $src = <<<EOD
+            @php_decor(access="private")
+            def get(self):
+                return 666
+            EOD;
+            embed_py_meth("A", $src);
+
+            class B extends A {
+                function get2() {
+                    return $this->get();
+                }
+            };
+
+            $b = new B();
+            $b->get2();
+            }
+        ''', ["Fatal error: Call to private method A::get() from context 'B'"])
+
+    def test_embed_py_meth_private_static_meth_subclass_call(self, php_space):
+        output = self.run('''
+            {
+            class A {};
+            $src = <<<EOD
+            @php_decor(access="private", static=True)
+            def get():
+                return 666
+            EOD;
+            embed_py_meth("A", $src);
+
+            class B extends A {
+                function get2() {
+                    return A::get();
+                }
+            };
+
+            $b = new B();
+            $b->get2();
+            }
+        ''', ["Fatal error: Call to private method A::get() from context 'B'"])
+
+    def test_embed_py_meth_protected_static_meth_subclass_call(self, php_space):
+        output = self.run('''
+            {
+            class A {};
+            $src = <<<EOD
+            @php_decor(access="protected", static=True)
+            def get():
+                return 666
+            EOD;
+            embed_py_meth("A", $src);
+
+            class B extends A {
+                function get2() {
+                    return A::get();
+                }
+            };
+
+            $b = new B();
+            echo($b->get2());
+            }
+        ''')
+        assert php_space.int_w(output[0]) == 666
+
+    def test_embed_py_meth_protected_meth_subclass_call(self, php_space):
+        output = self.run('''
+            {
+            class A {};
+            $src = <<<EOD
+            @php_decor(access="protected")
+            def get(self):
+                return 666
+            EOD;
+            embed_py_meth("A", $src);
+
+            class B extends A {
+                function get2() {
+                    return $this->get();
+                }
+            };
+
+            $b = new B();
+            echo($b->get2());
+            }
+        ''')
+        assert php_space.int_w(output[0]) == 666
+
     def test_embed_py_meth_subclass(self, php_space):
         output = self.run('''
             {
