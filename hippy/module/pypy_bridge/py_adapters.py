@@ -12,6 +12,7 @@ from hippy.objects.iterator import BaseIterator
 from hippy.objects.arrayobject import wrap_array_key, W_ArrayObject
 from hippy.objects.reference import W_Reference
 from hippy.builtin_klass import W_ExceptionObject, k_Exception
+from pypy.objspace.std.intobject import W_IntObject
 
 from pypy.interpreter.argument import Arguments
 from pypy.interpreter.error import OperationError
@@ -330,6 +331,23 @@ class W_PyListAdapter(W_ArrayObject):
     def create_iter(self, space, contextclass=None):
         return W_PyListAdapterIterator(self.py_space, self.w_py_list)
 
+    def _inplace_pop(self, space):
+        index = self.arraylen() - 1
+        w_item = self._getitem_int(index)
+        self.py_space.delitem(self.w_py_list, self.py_space.wrap(index))
+        return w_item
+
+    def _current(self):
+        index = self.current_idx
+        if 0 <= index < self.arraylen():
+            return self._getitem_int(index)
+        else:
+            from hippy.objects.boolobject import w_False
+            return w_False
+
+    def _isset_int(self, index):
+        return 0 <= index < self.arraylen()
+
     def to_py(self, interp, w_php_ref=None):
         # array-like structures in PHP are always converted to a dict-like
         # python structure. Here, a list pretending to be a dict.
@@ -378,6 +396,8 @@ class W_PyDictAdapter(W_ArrayObject):
     def __init__(self, py_space, w_py_dict):
         self.py_space = py_space
         self.w_py_dict = w_py_dict
+        self.next_idx = -1
+        self.current_idx = 0
 
     def copy(self):
         # used for copy on write semantics of PHP
@@ -405,6 +425,7 @@ class W_PyDictAdapter(W_ArrayObject):
         w_py_val = w_value.to_py(py_space.get_php_interp())
         w_py_index = py_space.wrap(index)
         py_space.setitem(self.w_py_dict, w_py_index, w_py_val)
+        self.next_idx = max(index, self.next_idx) + 1
         return self
 
     def _setitem_str(self, key, w_value, as_ref, unique_item=False):
@@ -419,6 +440,45 @@ class W_PyDictAdapter(W_ArrayObject):
 
     def to_py(self, interp, w_php_ref=None):
         return self.w_py_dict
+
+    def compute_index(self):
+        i = -1
+        w_iter = self.py_space.iter(self.w_py_dict)
+        while True:
+            try:
+                w_item = self.py_space.next(w_iter)
+                print(w_item)
+                if isinstance(w_item, W_IntObject):
+                    i = max(i, self.py_space.int_w(w_item))
+                    print(i)
+            except OperationError, e:
+                # XXX: check stopiteration
+                break
+        self.next_idx = i + 1
+
+    def _appenditem(self, w_obj, as_ref=False):
+        if self.next_idx == -1:
+            self.compute_index()
+        w_py_key = self.py_space.wrap(self.next_idx)
+        self.py_space.setitem(self.w_py_dict, w_py_key, w_obj.to_py(self.py_space.get_php_interp()))
+        self.next_idx += 1
+
+    def _inplace_pop(self, space):
+        from hippy.module.pypy_bridge.bridge import _raise_php_bridgeexception
+        _raise_php_bridgeexception(self.py_space.get_php_interp(),
+               "array_pop is invalid for wrapped Python dict")
+
+    def _current(self):
+        from hippy.module.pypy_bridge.bridge import _raise_php_bridgeexception
+        _raise_php_bridgeexception(self.py_space.get_php_interp(),
+               "PHP iteration is invalid for wrapped Python dict")
+
+    def _isset_int(self, index):
+        return self._isset_str(str(index))
+
+    def _isset_str(self, key):
+        w_bool = self.w_py_dict.descr_has_key(self.py_space, self.py_space.wrap(key))
+        return self.py_space.bool_w(w_bool)
 
 class W_PyExceptionAdapter(W_ExceptionObject):
     """Wraps up a Python exception"""

@@ -198,8 +198,23 @@ class W_PHPClassAdapter(W_Root):
         w_php_rv = self.w_php_cls.call_args(self.interp, w_php_args_elems)
         return w_php_rv.to_py(self.interp)
 
+    def descr_getattr(self, w_name):
+        py_space = self.interp.py_space
+        name = py_space.str_w(w_name)
+        w_staticmember = self.w_php_cls.lookup_staticmember(name, None, False)
+        if w_staticmember:
+            return w_staticmember.value.to_py(self.interp)
+        else:
+            try:
+                w_php_method = self.w_php_cls.locate_method(name, None)
+                return w_php_method.method_func.to_py(self.interp)
+            except VisibilityError:
+                _raise_py_bridgeerror(py_space,
+                    "Wrapped PHP class has not attribute '%s'" % name)
+
 W_PHPClassAdapter.typedef = TypeDef("PHPClassAdapter",
     __call__ = interp2app(W_PHPClassAdapter.descr_call),
+    __getattr__ = interp2app(W_PHPClassAdapter.descr_getattr),
 )
 
 class W_PHPFuncAdapter(W_Root):
