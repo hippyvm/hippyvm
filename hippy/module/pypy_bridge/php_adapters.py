@@ -85,7 +85,7 @@ class W_PHPGenericAdapter(W_Root):
         w_php_val = self.w_php_obj
         # PHP access modifiers are ignored when attributes are
         # accessed from Python.
-        w_contextclass = w_php_val.klass
+        w_contextclass = w_php_val.getclass()
         w_php_target = w_php_val.getattr(interp, name, w_contextclass,
                                          fail_with_none=True)
 
@@ -109,7 +109,7 @@ class W_PHPGenericAdapter(W_Root):
         w_php_val = self.w_php_obj
         # PHP access modifiers are ignored when attributes are
         # accessed from Python.
-        w_contextclass = w_php_val.klass
+        w_contextclass = w_php_val.getclass()
         w_php_val.setattr(interp, name, w_obj.to_php(interp), w_contextclass)
 
         return py_space.w_None
