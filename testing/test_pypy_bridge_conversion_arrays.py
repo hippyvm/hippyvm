@@ -384,8 +384,6 @@ class TestPyPyBridgeArrayConversions(BaseTestInterpreter):
         assert php_space.str_w(output[1]) == "bumble"
         assert php_space.str_w(output[2]) == "three"
 
-    # We need to decide a semantics for [] on a wrapped Python dict/list
-    @pytest.mark.xfail
     def test_py_dict_append_in_php(self, php_space):
 
         output = self.run('''
