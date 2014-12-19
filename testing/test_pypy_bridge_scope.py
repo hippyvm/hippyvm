@@ -556,15 +556,79 @@ class TestPyPyBridgeScope(BaseTestInterpreter):
         assert php_space.int_w(output[0]) == 4
         assert php_space.int_w(output[1]) == 4
 
-    @pytest.mark.xfail
-    def test_access_private_class_varibale_from_python(self, php_space):
+    def test_set_private_class_variable_from_python(self, php_space):
         output = self.run('''
         class A {
-            private $a;
+            private $a = 666;
+
+            function getA() { return $this->a; }
         }
         embed_py_meth("A", "def __construct(self): self.a = 1");
 
         $a = new A();
-        echo $a->a;
+        echo $a->getA();
         ''')
         assert php_space.int_w(output[0]) == 1
+
+    def test_set_protected_class_variable_from_python(self, php_space):
+        output = self.run('''
+        class A {
+            protected $a = 666;
+
+            function getA() { return $this->a; }
+        }
+        embed_py_meth("A", "def __construct(self): self.a = 1");
+
+        $a = new A();
+        echo $a->getA();
+        ''')
+        assert php_space.int_w(output[0]) == 1
+
+    def test_get_private_class_variable_from_python(self, php_space):
+        output = self.run('''
+        class A {
+            private $a = 666;
+        }
+        embed_py_meth("A", "def getA(self): return self.a");
+
+        $a = new A();
+        echo $a->getA();
+        ''')
+        assert php_space.int_w(output[0]) == 666
+
+    def test_get_protected_class_variable_from_python(self, php_space):
+        output = self.run('''
+        class A {
+            protected $a = 666;
+        }
+        embed_py_meth("A", "def getA(self): return self.a");
+
+        $a = new A();
+        echo $a->getA();
+        ''')
+        assert php_space.int_w(output[0]) == 666
+
+    def test_call_private_method_from_python(self, php_space):
+        output = self.run('''
+        class A {
+            private function g() { return 3; }
+        }
+        embed_py_meth("A", "def f(self): return self.g()");
+
+        $a = new A();
+        echo $a->f();
+        ''')
+        assert php_space.int_w(output[0]) == 3
+
+    def test_call_protected_method_from_python(self, php_space):
+        output = self.run('''
+        class A {
+            protected function g() { return 3; }
+        }
+        embed_py_meth("A", "def f(self): return self.g()");
+
+        $a = new A();
+        echo $a->f();
+        ''')
+        assert php_space.int_w(output[0]) == 3
+

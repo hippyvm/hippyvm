@@ -83,11 +83,15 @@ class W_PHPGenericAdapter(W_Root):
         py_space = interp.py_space
 
         w_php_val = self.w_php_obj
-        w_php_target = w_php_val.getattr(interp, name, None, fail_with_none=True)
+        # PHP access modifiers are ignored when attributes are
+        # accessed from Python.
+        w_contextclass = w_php_val.klass
+        w_php_target = w_php_val.getattr(interp, name, w_contextclass,
+                                         fail_with_none=True)
 
         if w_php_target is None:
             try:
-                w_php_target = w_php_val.getmeth(php_space, name, None)
+                w_php_target = w_php_val.getmeth(php_space, name, w_contextclass)
             except VisibilityError:
                 w_php_target = None
 
@@ -103,7 +107,10 @@ class W_PHPGenericAdapter(W_Root):
         py_space = self.interp.py_space
 
         w_php_val = self.w_php_obj
-        w_php_val.setattr(interp, name, w_obj.to_php(interp), None)
+        # PHP access modifiers are ignored when attributes are
+        # accessed from Python.
+        w_contextclass = w_php_val.klass
+        w_php_val.setattr(interp, name, w_obj.to_php(interp), w_contextclass)
 
         return py_space.w_None
 
