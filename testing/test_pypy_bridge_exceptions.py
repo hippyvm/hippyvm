@@ -354,3 +354,16 @@ class TestPyPyBridgeExceptions(BaseTestInterpreter):
         ''')
         err_s = "Cannot use kwargs when calling PHP functions"
         assert php_space.str_w(output[0]) == err_s
+
+    def test_py_compile_error(self, php_space):
+        output = self.run('''
+            $src = "    def bad_indent(): pass";
+            try {
+                $f = embed_py_func($src);
+                echo "fail";
+            } catch (BridgeException $e) {
+                echo $e->getMessage();
+            }
+        ''')
+        err_start = "Failed to compile Python code: IndentationError: unexpected indent"
+        assert php_space.str_w(output[0]).startswith(err_start)

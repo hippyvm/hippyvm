@@ -50,8 +50,18 @@ def _compile_py_func_from_string(
     py_space = interp.py_space
 
     # compile the user's code
-    w_py_code = py_compiling.compile(
-            py_space, py_space.wrap(func_source), "<string>", "exec")
+    w_py_code = None
+    try:
+        w_py_code = py_compiling.compile(
+                py_space, py_space.wrap(func_source), "<string>", "exec")
+    except OperationError as e:
+        e.normalize_exception(py_space)
+        _raise_php_bridgeexception(interp,
+                                   "Failed to compile Python code: %s" %
+                                   e.errorstr(py_space))
+    assert w_py_code is not None
+
+    w_py_code = py_compiling.compile(py_space, py_space.wrap(func_source), "<string>", "exec")
 
     # Eval it into a dict
     w_py_fake_locals = py_space.newdict()

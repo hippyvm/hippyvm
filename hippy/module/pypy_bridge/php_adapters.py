@@ -219,9 +219,20 @@ class W_PHPClassAdapter(W_Root):
                 _raise_py_bridgeerror(py_space,
                     "Wrapped PHP class has not attribute '%s'" % name)
 
+    def descr_setattr(self, w_name, w_value):
+        py_space = self.interp.py_space
+        name = py_space.str_w(w_name)
+        w_staticmember = self.w_php_cls.lookup_staticmember(name, None, False)
+        if w_staticmember:
+            w_staticmember.value = w_value.to_php(self.interp)
+        else:
+            _raise_py_bridgeerror(py_space,
+                "Wrapped PHP class has no assignable attribute '%s'" % name)
+
 W_PHPClassAdapter.typedef = TypeDef("PHPClassAdapter",
     __call__ = interp2app(W_PHPClassAdapter.descr_call),
     __getattr__ = interp2app(W_PHPClassAdapter.descr_getattr),
+    __setattr__ = interp2app(W_PHPClassAdapter.descr_setattr),
 )
 
 class W_PHPFuncAdapter(W_Root):

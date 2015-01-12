@@ -1106,3 +1106,36 @@ class TestPyPyBridge(BaseTestInterpreter):
         }
         ''')
         assert php_space.str_w(output[0]) == "1"
+
+    def test_get_static_property_from_python(self, php_space):
+        output = self.run('''
+        {
+            class A {
+                private static $MY_PROP = 666;
+            };
+
+            $src = "def test(self): return A.MY_PROP";
+            embed_py_meth("A", $src);
+
+            $a = new A();
+            echo $a->test();
+        }
+        ''')
+        assert php_space.int_w(output[0]) == 666
+
+    def test_set_static_property_from_python(self, php_space):
+        output = self.run('''
+        {
+            class A {
+                public static $MY_PROP = 111;
+            };
+
+            $src = "def test(self): A.MY_PROP = 666;";
+            embed_py_meth("A", $src);
+
+            $a = new A();
+            $a->test();
+            echo A::$MY_PROP;
+        }
+        ''')
+        assert php_space.int_w(output[0]) == 666
