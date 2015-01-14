@@ -367,3 +367,20 @@ class TestPyPyBridgeExceptions(BaseTestInterpreter):
         ''')
         err_start = "Failed to compile Python code: IndentationError: unexpected indent"
         assert php_space.str_w(output[0]).startswith(err_start)
+
+    def test_call_py_meth_wrong_num_args(self, php_space):
+        output = self.run('''
+            class A {};
+            $src = "def f(): pass";
+            embed_py_meth("A", $src);
+            $a = new A();
+
+            try {
+                $a->f(1, 2, 3);
+                echo "fail";
+            } catch (PyException $e) {
+                echo $e->getMessage();
+            }
+        ''')
+        err_s = "f() takes no arguments (4 given)"
+        assert php_space.str_w(output[0]) == err_s

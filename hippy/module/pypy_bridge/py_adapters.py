@@ -147,8 +147,15 @@ class W_PyFuncGlobalAdapter(AbstractFunction):
         if w_this is not None:
             w_py_args_elems = [w_this.to_py(interp)] + w_py_args_elems
 
-        w_py_rv = py_space.call_args(self.w_py_callable,
-                Arguments(py_space, w_py_args_elems))
+        try:
+            w_py_rv = py_space.call_args(self.w_py_callable,
+                    Arguments(py_space, w_py_args_elems))
+        except OperationError as e:
+            e.normalize_exception(py_space)
+            w_py_exn = e.get_w_value(py_space)
+            w_php_exn = w_py_exn.to_php(interp)
+            from hippy.error import Throw
+            raise Throw(w_php_exn)
 
         return w_py_rv.to_php(interp)
 
