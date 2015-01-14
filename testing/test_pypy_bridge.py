@@ -1139,3 +1139,18 @@ class TestPyPyBridge(BaseTestInterpreter):
         }
         ''')
         assert php_space.int_w(output[0]) == 666
+
+    def test_get_class_const(self, php_space):
+        output = self.run('''
+        {
+            class A {
+                const J = 10;
+            };
+
+            $src = "def f(): return A.J";
+            $f = embed_py_func($src);
+
+            echo $f();
+        }
+        ''')
+        assert php_space.int_w(output[0]) == 10

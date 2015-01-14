@@ -212,12 +212,19 @@ class W_PHPClassAdapter(W_Root):
         if w_staticmember:
             return w_staticmember.value.to_py(self.interp)
         else:
-            try:
-                w_php_method = self.w_php_cls.locate_method(name, None)
-                return w_php_method.method_func.to_py(self.interp)
-            except VisibilityError:
-                _raise_py_bridgeerror(py_space,
-                    "Wrapped PHP class has not attribute '%s'" % name)
+            w_php_const = self.w_php_cls.lookup_w_constant(self.interp.space,
+                                                           py_space.str_w(w_name))
+
+            if w_php_const is not None:
+                return w_php_const.to_py(self.interp)
+
+            else:
+                try:
+                    w_php_method = self.w_php_cls.locate_method(name, None)
+                    return w_php_method.method_func.to_py(self.interp)
+                except VisibilityError:
+                    _raise_py_bridgeerror(py_space,
+                        "Wrapped PHP class has not attribute '%s'" % name)
 
     def descr_setattr(self, w_name, w_value):
         py_space = self.interp.py_space
