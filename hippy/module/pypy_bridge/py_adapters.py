@@ -177,7 +177,7 @@ class W_PyFuncGlobalAdapter(AbstractFunction):
     def get_identifier(self):
         return self.w_py_callable.name.lower()
 
-    def to_py(self, interp):
+    def to_py(self, interp, w_php_ref=None):
         return self.w_py_callable
 
 class W_PyMethodFuncAdapter(W_PyFuncGlobalAdapter):
