@@ -177,6 +177,9 @@ class W_PyFuncGlobalAdapter(AbstractFunction):
     def get_identifier(self):
         return self.w_py_callable.name.lower()
 
+    def to_py(self, interp):
+        return self.w_py_callable
+
 class W_PyMethodFuncAdapter(W_PyFuncGlobalAdapter):
     """Only exists because method indicies for methods are skewed by one
     between Python and PHP. In PHP $this is implicit"""

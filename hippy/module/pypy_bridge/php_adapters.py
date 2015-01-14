@@ -244,6 +244,12 @@ class W_PHPFuncAdapter(W_Root):
         """Note this does NOT wrap a reference.
         The reason for this is that functions are not first class in PHP and
         building a reference to a one upsets HippyVM"""
+
+        # No double wrappings
+        from hippy.module.pypy_bridge.py_adapters import W_PyFuncAdapter, W_PyFuncGlobalAdapter
+        assert not isinstance(w_php_func, W_PyFuncAdapter) and \
+            not isinstance(w_php_func, W_PyFuncGlobalAdapter)
+
         self.space = space
         self.w_php_func = w_php_func
         self.w_phpexception = space.builtin.get("PHPException")
