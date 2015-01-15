@@ -1154,3 +1154,21 @@ class TestPyPyBridge(BaseTestInterpreter):
         }
         ''')
         assert php_space.int_w(output[0]) == 10
+
+    @pytest.mark.xfail
+    def test_java_sytle_ctor_name_embedding(self, php_space):
+        output = self.run('''
+        {
+            class A {
+                public $j = 0;
+            };
+
+            # method same name as class is a constructor
+            $src = "def A(self): self.j = 666";
+            embed_py_meth("A", $src);
+
+            $a = new A();
+            echo $a->j;
+        }
+        ''')
+        assert php_space.int_w(output[0]) == 666
