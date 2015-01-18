@@ -174,7 +174,7 @@ class W_PHPClassAdapter(W_Root):
     def __init__(self, interp, w_php_cls):
         """Note this does NOT wrap a reference.
         The reason for this is that classes are not first class in PHP and
-        building a reference to a one upsets HippyVM"""
+        building a reference to one upsets HippyVM"""
         self.w_php_cls = w_php_cls
         self.interp = interp
 
@@ -186,7 +186,7 @@ class W_PHPClassAdapter(W_Root):
 
     def to_php(self, php_interp):
         # Classes are not first class in PHP, so this would make no sense.
-        assert(False)
+        assert False
 
     def is_w(self, space, other):
         if isinstance(other, W_PHPClassAdapter):
