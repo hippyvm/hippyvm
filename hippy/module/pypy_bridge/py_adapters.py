@@ -150,8 +150,7 @@ class W_PyFuncGlobalAdapter(AbstractFunction):
             w_py_args_elems = [x.to_py(interp) for x in args_w]
 
         try:
-            w_py_rv = py_space.call_args(self.w_py_callable,
-                    Arguments(py_space, w_py_args_elems))
+            w_py_rv = py_space.call(self.w_py_callable, py_space.newlist(w_py_args_elems))
         except OperationError as e:
             e.normalize_exception(py_space)
             w_py_exn = e.get_w_value(py_space)
