@@ -194,15 +194,18 @@ class W_PHPClassAdapter(W_Root):
         return False
 
     @jit.unroll_safe
+    def fast_call(self, args):
+        w_php_args_elems = [x.to_php(self.interp) for x in args]
+        w_php_rv = self.w_php_cls.call_args(self.interp, w_php_args_elems)
+        return w_php_rv.to_py(self.interp)
+
     def descr_call(self, __args__):
         if __args__.keywords:
             # PHP has no equivalent to keyword arguments.
             _raise_py_bridgeerror(self.interp.py_space,
                     "Cannot use kwargs with callable PHP instances")
-        w_py_args = __args__.arguments_w
-        w_php_args_elems = [ x.to_php(self.interp) for x in w_py_args ]
-        w_php_rv = self.w_php_cls.call_args(self.interp, w_php_args_elems)
-        return w_php_rv.to_py(self.interp)
+        return self.fast_call(__args__.arguments_w)
+
 
     def descr_getattr(self, w_name):
         py_space = self.interp.py_space
@@ -276,13 +279,7 @@ class W_PHPFuncAdapter(W_Root):
         return self.w_php_func.name
 
     @jit.unroll_safe
-    def descr_call(self, __args__):
-        if __args__.keywords:
-            # PHP has no equivalent to keyword arguments.
-            _raise_py_bridgeerror(self.space,
-                    "Cannot use kwargs when calling PHP functions")
-        args = __args__.arguments_w
-
+    def fast_call(self, args):
         py_space = self.space
         php_interp = self.space.get_php_interp()
         php_space = php_interp.space
@@ -314,6 +311,13 @@ class W_PHPFuncAdapter(W_Root):
                     self.w_phpexception, w_php_exn.to_py(php_interp))
 
         return res.to_py(php_interp)
+
+    def descr_call(self, __args__):
+        if __args__.keywords:
+            # PHP has no equivalent to keyword arguments.
+            _raise_py_bridgeerror(self.space,
+                    "Cannot use kwargs when calling PHP functions")
+        return self.fast_call(__args__.arguments_w)
 
 W_PHPFuncAdapter.typedef = TypeDef("PHPFunc",
     __call__ = interp2app(W_PHPFuncAdapter.descr_call),
