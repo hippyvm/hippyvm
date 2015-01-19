@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 """ Hippy VM. Execute by typing
 
-hippy [--gcdump dumpfile] [--cgi] [--server port] [<file.php>] [php program options]
+hippy [--gcdump dumpfile] [--cgi] [--server port] [--jit jit_param] [<file.php>] [php program options]
 
 and enjoy
 """
@@ -45,6 +45,7 @@ def mk_entry_point(py_space=None):
     bench_no = 0
     debugger_pipes = (-1, -1)
     server_port = 9000
+    jit_param = None
     while i < len(argv):
         arg = argv[i]
         if arg.startswith('-'):
@@ -74,6 +75,12 @@ def mk_entry_point(py_space=None):
                 assert i + 2 < len(argv)
                 debugger_pipes = (int(argv[i + 1]), int(argv[i + 2]))
                 i += 2
+            elif arg == '--jit':
+                if i == len(argv) - 1:
+                    print "--jit requires an argument"
+                    return 1
+                i += 1
+                jit_param = argv[i]
             else:
                 print __doc__
                 print "Unknown parameter %s" % arg
@@ -82,6 +89,9 @@ def mk_entry_point(py_space=None):
             fname = arg
             break
         i += 1
+    if jit_param:
+        from rpython.rlib.jit import set_user_param
+        set_user_param(None, jit_param)
     if fastcgi:
         if bench_mode:
             print "can't specify --bench and --server"
