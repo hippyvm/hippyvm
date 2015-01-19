@@ -14,7 +14,6 @@ from hippy.objects.reference import W_Reference
 from hippy.builtin_klass import W_ExceptionObject, k_Exception
 from pypy.objspace.std.intobject import W_IntObject
 
-from pypy.interpreter.argument import Arguments
 from pypy.interpreter.error import OperationError
 from pypy.interpreter.pycode import PyCode
 from pypy.interpreter.function import Function as PyFunction
@@ -100,8 +99,7 @@ class W_EmbeddedPyCallable(W_InvokeCall):
         w_py_args_elems = [ x.to_py(interp) for x in args_w ]
 
         try:
-            rv = py_space.call_args(
-                    self.w_py_func, Arguments(py_space, w_py_args_elems))
+            rv = py_space.call(self.w_py_func, py_space.newlist(w_py_args_elems))
         except OperationError as e:
             # Convert the Python exception to a PHP one.
             e.normalize_exception(py_space)

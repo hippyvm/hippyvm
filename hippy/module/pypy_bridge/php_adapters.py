@@ -116,11 +116,11 @@ class W_PHPGenericAdapter(W_Root):
 
     @jit.unroll_safe
     def descr_call(self, __args__):
-        w_py_args, w_py_kwargs = __args__.unpack()
-
-        if w_py_kwargs:
+        if __args__.keywords:
+            # PHP has no equivalent to keyword arguments.
             _raise_py_bridgeerror(self.interp.py_space,
                     "Cannot use kwargs with callable PHP instances")
+        w_py_args = __args__.arguments_w
 
         w_php_callable = self.w_php_obj.get_callable()
         if w_php_callable is None: # not callable
@@ -195,12 +195,11 @@ class W_PHPClassAdapter(W_Root):
 
     @jit.unroll_safe
     def descr_call(self, __args__):
-        w_py_args, w_py_kwargs = __args__.unpack()
-
-        if w_py_kwargs:
+        if __args__.keywords:
+            # PHP has no equivalent to keyword arguments.
             _raise_py_bridgeerror(self.interp.py_space,
                     "Cannot use kwargs with callable PHP instances")
-
+        w_py_args = __args__.arguments_w
         w_php_args_elems = [ x.to_php(self.interp) for x in w_py_args ]
         w_php_rv = self.w_php_cls.call_args(self.interp, w_php_args_elems)
         return w_php_rv.to_py(self.interp)
