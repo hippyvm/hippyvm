@@ -278,12 +278,11 @@ class W_PHPFuncAdapter(W_Root):
 
     @jit.unroll_safe
     def descr_call(self, __args__):
-        (args, kwargs) = __args__.unpack()
-
-        # PHP has no equivalent to keyword arguments.
-        if kwargs:
+        if __args__.keywords:
+            # PHP has no equivalent to keyword arguments.
             _raise_py_bridgeerror(self.space,
                     "Cannot use kwargs when calling PHP functions")
+        args = __args__.arguments_w
 
         py_space = self.space
         php_interp = self.space.get_php_interp()
