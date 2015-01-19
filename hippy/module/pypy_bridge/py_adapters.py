@@ -138,14 +138,16 @@ class W_PyFuncGlobalAdapter(AbstractFunction):
     @jit.unroll_safe
     def call_args(self, interp, args_w, w_this=None, thisclass=None,
                   closureargs=None):
-
         py_space = interp.py_space
 
-        w_py_args_elems = [x.to_py(interp) for x in args_w]
-
-        # Methods are really just functions with self bound
         if w_this is not None:
-            w_py_args_elems = [w_this.to_py(interp)] + w_py_args_elems
+            # Methods are really just functions with self bound
+            w_py_args_elems = [None] * (len(args_w) + 1)
+            w_py_args_elems[0] = w_this.to_py(interp)
+            for i, x in enumerate(args_w):
+                w_py_args_elems[i + 1] = x.to_py(interp)
+        else:
+            w_py_args_elems = [x.to_py(interp) for x in args_w]
 
         try:
             w_py_rv = py_space.call_args(self.w_py_callable,
