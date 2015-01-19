@@ -289,26 +289,24 @@ class W_PHPFuncAdapter(W_Root):
         php_interp = self.space.get_php_interp()
         php_space = php_interp.space
 
-        w_php_args_elems = []
-        for arg_no in xrange(len(args)):
-            w_py_arg = args[arg_no]
-
-            if self.w_php_func.needs_ref(arg_no):
+        w_php_args_elems = [None] * len(args)
+        for i, w_py_arg in enumerate(args):
+            if self.w_php_func.needs_ref(i):
                 # if you try to pass a reference argument by value, fail.
                 if not isinstance(w_py_arg, W_PHPRefAdapter):
                     err_str = "Arg %d of PHP func '%s' is pass by reference" % \
-                            (arg_no + 1, self.w_php_func.name)
+                            (i + 1, self.w_php_func.name)
                     _raise_py_bridgeerror(py_space, err_str)
 
-                w_php_args_elems.append(w_py_arg.w_php_ref)
+                w_php_args_elems[i] = w_py_arg.w_php_ref
             else:
                 # if you pass a value argument by reference, fail.
                 if isinstance(w_py_arg, W_PHPRefAdapter):
                     err_str = "Arg %d of PHP func '%s' is pass by value" % \
-                            (arg_no + 1, self.w_php_func.name)
+                            (i + 1, self.w_php_func.name)
                     _raise_py_bridgeerror(py_space, err_str)
 
-                w_php_args_elems.append(w_py_arg.to_php(php_interp))
+                w_php_args_elems[i] = w_py_arg.to_php(php_interp)
 
         try:
             res = self.w_php_func.call_args(php_interp, w_php_args_elems)
