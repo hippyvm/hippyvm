@@ -113,7 +113,7 @@ def embed_py_func_global(interp, func_source):
             _compile_py_func_from_string(interp, func_source)
 
     # Masquerade it as a PHP function in the global function cache
-    w_php_func = W_PyFuncGlobalAdapter(w_py_func)
+    w_php_func = W_PyFuncGlobalAdapter(interp, w_py_func)
     php_space.global_function_cache.declare_new(py_space.str_w(w_py_func_name), w_php_func)
 
 from hippy.builtin import Optional
@@ -127,7 +127,7 @@ def embed_py_meth(interp, class_name, func_source):
     php_frame = interp.get_frame()
     w_py_func_name, w_py_func = \
             _compile_py_func_from_string(interp, func_source, php_frame)
-    w_php_func = W_PyMethodFuncAdapter(w_py_func)
+    w_php_func = W_PyMethodFuncAdapter(interp, w_py_func)
 
     w_php_class = interp.lookup_class_or_intf(class_name, autoload=True)
     if w_php_class is None:

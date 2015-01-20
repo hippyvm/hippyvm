@@ -29,29 +29,30 @@ PHP_ACCESS_MAP = {
     "private":      consts.ACC_PRIVATE,
 }
 
-def extract_php_metadata(w_py_func):
+def extract_php_metadata(py_space, w_py_func):
     """Extracts function/method modifiers from a python function."""
-
-    space = w_py_func.space
 
     # Argument indicies to be passed by reference
     try:
-        w_py_args_by_ref = space.getattr(w_py_func, space.wrap("php_args_by_ref"))
-        args_by_ref = [space.is_true(x) for x in space.listview(w_py_args_by_ref)]
+        w_py_args_by_ref = py_space.getattr(w_py_func,
+                                            py_space.wrap("php_args_by_ref"))
+        args_by_ref = [py_space.is_true(x) for x in
+                       py_space.listview(w_py_args_by_ref)]
     except OperationError: # getattr failed
         args_by_ref = None
 
     # Whether it is a static method
     try:
-        w_py_static = space.getattr(w_py_func, space.wrap("php_static"))
-        static = consts.ACC_STATIC if space.is_true(w_py_static) else 0
+        w_py_static = py_space.getattr(w_py_func,
+                                       py_space.wrap("php_static"))
+        static = consts.ACC_STATIC if py_space.is_true(w_py_static) else 0
     except OperationError:
         static = 0
 
     # Public/private/protected
     try:
-        w_py_access = space.getattr(w_py_func, space.wrap("php_access"))
-        access = PHP_ACCESS_MAP[space.str_w(w_py_access)]
+        w_py_access = py_space.getattr(w_py_func, py_space.wrap("php_access"))
+        access = PHP_ACCESS_MAP[py_space.str_w(w_py_access)]
     except OperationError:
         access = consts.ACC_PUBLIC
 
@@ -121,7 +122,7 @@ class W_EmbeddedPyCallable(W_InvokeCall):
 
     _immutable_fields_ = ["w_py_func"]
 
-    def __init__(self, w_py_func):
+    def __init__(self, interp, w_py_func):
         # never double wrap
         from hippy.module.pypy_bridge.php_adapters import W_PHPFuncAdapter
         assert not isinstance(w_py_func, W_PHPFuncAdapter)
@@ -129,7 +130,7 @@ class W_EmbeddedPyCallable(W_InvokeCall):
         W_InvokeCall.__init__(self, None, None, None)
         self.w_py_func = w_py_func
         self.php_args_by_ref, self.php_static, self.php_access = \
-            extract_php_metadata(w_py_func)
+            extract_php_metadata(interp.py_space, w_py_func)
 
     @jit.unroll_safe
     def call_args(self, interp, args_w,
@@ -162,13 +163,13 @@ class W_EmbeddedPyCallable(W_InvokeCall):
 class W_PyFuncGlobalAdapter(AbstractFunction):
     _immutable_fields_ = ["w_py_callable"]
 
-    def __init__(self, w_py_callable):
+    def __init__(self, interp, w_py_callable):
         from hippy.module.pypy_bridge.php_adapters import W_PHPFuncAdapter
         assert not isinstance(w_py_callable, W_PHPFuncAdapter)
 
         self.w_py_callable = w_py_callable
         self.php_args_by_ref, self.php_static, self.php_access = \
-            extract_php_metadata(w_py_callable)
+            extract_php_metadata(interp.py_space, w_py_callable)
 
     def get_wrapped_py_obj(self):
         return self.py_callable
@@ -254,7 +255,7 @@ class W_PyFuncAdapter(W_InstanceObject):
         raise NotImplementedError("Not implemented")
 
     def get_callable(self):
-        return W_EmbeddedPyCallable(self.w_py_func)
+        return W_EmbeddedPyCallable(self.interp, self.w_py_func)
 
     def to_py(self, interp, w_php_ref=None):
         return self.w_py_func
