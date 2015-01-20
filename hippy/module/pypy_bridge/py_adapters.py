@@ -12,8 +12,9 @@ from hippy.objects.iterator import BaseIterator
 from hippy.objects.arrayobject import wrap_array_key, W_ArrayObject
 from hippy.objects.reference import W_Reference
 from hippy.builtin_klass import W_ExceptionObject, k_Exception
-from pypy.objspace.std.intobject import W_IntObject
+from hippy import consts
 
+from pypy.objspace.std.intobject import W_IntObject
 from pypy.interpreter.error import OperationError
 from pypy.interpreter.pycode import PyCode
 from pypy.interpreter.function import Function as PyFunction
@@ -21,13 +22,40 @@ from pypy.objspace.std.listobject import W_ListObject as WPy_ListObject
 
 from rpython.rlib import jit
 
-def extract_php_args_by_ref(w_py_func):
+# maps access modifier names to hippy bitfield values.
+PHP_ACCESS_MAP = {
+    "public":       consts.ACC_PUBLIC,
+    "protected":    consts.ACC_PROTECTED,
+    "private":      consts.ACC_PRIVATE,
+}
+
+def extract_php_metadata(w_py_func):
+    """Extracts function/method modifiers from a python function."""
+
     space = w_py_func.space
+
+    # Argument indicies to be passed by reference
     try:
-        argmap = space.getattr(w_py_func, space.wrap("php_args_by_ref"))
-        return [space.is_true(x) for x in space.listview(argmap)]
+        w_py_args_by_ref = space.getattr(w_py_func, space.wrap("php_args_by_ref"))
+        args_by_ref = [space.is_true(x) for x in space.listview(w_py_args_by_ref)]
     except OperationError: # getattr failed
-        return None
+        args_by_ref = None
+
+    # Whether it is a static method
+    try:
+        w_py_static = space.getattr(w_py_func, space.wrap("php_static"))
+        static = consts.ACC_STATIC if space.is_true(w_py_static) else 0
+    except OperationError:
+        static = 0
+
+    # Public/private/protected
+    try:
+        w_py_access = space.getattr(w_py_func, space.wrap("php_access"))
+        access = PHP_ACCESS_MAP[space.str_w(w_py_access)]
+    except OperationError:
+        access = consts.ACC_PUBLIC
+
+    return args_by_ref, static, access
 
 class W_PyGenericAdapter(W_InstanceObject):
     """Generic adapter for Python objects in PHP.
@@ -100,7 +128,8 @@ class W_EmbeddedPyCallable(W_InvokeCall):
 
         W_InvokeCall.__init__(self, None, None, None)
         self.w_py_func = w_py_func
-        self.php_args_by_ref = extract_php_args_by_ref(w_py_func)
+        self.php_args_by_ref, self.php_static, self.php_access = \
+            extract_php_metadata(w_py_func)
 
     @jit.unroll_safe
     def call_args(self, interp, args_w,
@@ -138,7 +167,8 @@ class W_PyFuncGlobalAdapter(AbstractFunction):
         assert not isinstance(w_py_callable, W_PHPFuncAdapter)
 
         self.w_py_callable = w_py_callable
-        self.php_args_by_ref = extract_php_args_by_ref(w_py_callable)
+        self.php_args_by_ref, self.php_static, self.php_access = \
+            extract_php_metadata(w_py_callable)
 
     def get_wrapped_py_obj(self):
         return self.py_callable
@@ -191,7 +221,7 @@ class W_PyMethodFuncAdapter(W_PyFuncGlobalAdapter):
     between Python and PHP. In PHP $this is implicit"""
 
     def _arg_index_adjust(self, i):
-        if not self.w_py_callable.code.co_php_static:
+        if not self.php_static:
             # If this isn't a staic method, we must skew the index by one
             # to account for self.
             return i + 1
