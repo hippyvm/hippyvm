@@ -178,7 +178,12 @@ class W_PyMethodFuncAdapter(W_PyFuncGlobalAdapter):
     between Python and PHP. In PHP $this is implicit"""
 
     def _arg_index_adjust(self, i):
-        return i + 1
+        if not self.w_py_callable.code.co_php_static:
+            # If this isn't a staic method, we must skew the index by one
+            # to account for self.
+            return i + 1
+        else:
+            return i
 
 class W_PyFuncAdapter(W_InstanceObject):
     """A 'lexically scoped' embedded Python function.
