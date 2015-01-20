@@ -80,7 +80,7 @@ class W_PyGenericAdapter(W_InstanceObject):
 
     def get_callable(self):
         """PHP interpreter calls this when calls a wrapped Python var"""
-        return W_EmbeddedPyCallable(self.w_py_inst)
+        return W_EmbeddedPyCallable(self.interp, self.w_py_inst)
 
     def to_py(self, interp, w_php_ref=None):
         return self.w_py_inst
