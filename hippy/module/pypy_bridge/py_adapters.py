@@ -87,6 +87,10 @@ class W_EmbeddedPyCallable(W_InvokeCall):
     _immutable_fields_ = ["w_py_func"]
 
     def __init__(self, w_py_func):
+        # never double wrap
+        from hippy.module.pypy_bridge.php_adapters import W_PHPFuncAdapter
+        assert not isinstance(w_py_func, W_PHPFuncAdapter)
+
         W_InvokeCall.__init__(self, None, None, None)
         self.w_py_func = w_py_func
 

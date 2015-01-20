@@ -319,6 +319,12 @@ class W_PHPFuncAdapter(W_Root):
                     "Cannot use kwargs when calling PHP functions")
         return self.fast_call(__args__.arguments_w)
 
+    def to_php(self, interp):
+        # we can't just unwrap the function, since PHP funcs are
+        # not first class.The best we can do is a closure.
+        from hippy.objects.closureobject import new_closure
+        return new_closure(interp.space, self.w_php_func, None)
+
 W_PHPFuncAdapter.typedef = TypeDef("PHPFunc",
     __call__ = interp2app(W_PHPFuncAdapter.descr_call),
 )
