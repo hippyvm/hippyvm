@@ -21,6 +21,13 @@ from pypy.objspace.std.listobject import W_ListObject as WPy_ListObject
 
 from rpython.rlib import jit
 
+def extract_php_args_by_ref(w_py_func):
+    space = w_py_func.space
+    try:
+        argmap = space.getattr(w_py_func, space.wrap("php_args_by_ref"))
+        return [space.is_true(x) for x in space.listview(argmap)]
+    except OperationError: # getattr failed
+        return None
 
 class W_PyGenericAdapter(W_InstanceObject):
     """Generic adapter for Python objects in PHP.
@@ -93,6 +100,7 @@ class W_EmbeddedPyCallable(W_InvokeCall):
 
         W_InvokeCall.__init__(self, None, None, None)
         self.w_py_func = w_py_func
+        self.php_args_by_ref = extract_php_args_by_ref(w_py_func)
 
     @jit.unroll_safe
     def call_args(self, interp, args_w,
@@ -116,7 +124,7 @@ class W_EmbeddedPyCallable(W_InvokeCall):
 
     @jit.elidable_promote()
     def needs_ref(self, i):
-        argmap = self.w_py_func.code.co_php_args_by_ref
+        argmap = self.php_args_by_ref
         return argmap[i] if argmap is not None else False
 
     def is_py_call(self):
@@ -130,6 +138,7 @@ class W_PyFuncGlobalAdapter(AbstractFunction):
         assert not isinstance(w_py_callable, W_PHPFuncAdapter)
 
         self.w_py_callable = w_py_callable
+        self.php_args_by_ref = extract_php_args_by_ref(w_py_callable)
 
     def get_wrapped_py_obj(self):
         return self.py_callable
@@ -165,7 +174,7 @@ class W_PyFuncGlobalAdapter(AbstractFunction):
     @jit.elidable_promote()
     def needs_ref(self, i):
         i = self._arg_index_adjust(i)
-        argmap = self.w_py_callable.code.co_php_args_by_ref
+        argmap = self.php_args_by_ref
         return argmap[i] if argmap is not None else False
 
     def is_py_call(self):
