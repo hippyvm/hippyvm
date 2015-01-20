@@ -458,10 +458,8 @@ class W_PyDictAdapter(W_ArrayObject):
         while True:
             try:
                 w_item = self.py_space.next(w_iter)
-                print(w_item)
                 if isinstance(w_item, W_IntObject):
                     i = max(i, self.py_space.int_w(w_item))
-                    print(i)
             except OperationError, e:
                 # XXX: check stopiteration
                 break
