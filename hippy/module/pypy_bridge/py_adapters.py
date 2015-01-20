@@ -110,6 +110,7 @@ class W_EmbeddedPyCallable(W_InvokeCall):
 
         return rv.to_php(interp)
 
+    @jit.elidable_promote()
     def needs_ref(self, i):
         w_py_func = self.w_py_func
 
@@ -161,6 +162,7 @@ class W_PyFuncGlobalAdapter(AbstractFunction):
     def _arg_index_adjust(self, i):
         return i
 
+    @jit.elidable_promote()
     def needs_ref(self, i):
         i = self._arg_index_adjust(i)
         w_py_func = self.w_py_callable
