@@ -112,12 +112,8 @@ class W_EmbeddedPyCallable(W_InvokeCall):
 
     @jit.elidable_promote()
     def needs_ref(self, i):
-        w_py_func = self.w_py_func
-
-        if isinstance(w_py_func, PyFunction):
-            return i in w_py_func.code.co_php_args_by_ref
-        else:
-            return False
+        argmap = self.w_py_func.code.co_php_args_by_ref
+        return argmap[i] if argmap is not None else False
 
     def is_py_call(self):
         return True
@@ -165,12 +161,8 @@ class W_PyFuncGlobalAdapter(AbstractFunction):
     @jit.elidable_promote()
     def needs_ref(self, i):
         i = self._arg_index_adjust(i)
-        w_py_func = self.w_py_callable
-
-        if isinstance(w_py_func, PyFunction):
-            return i in w_py_func.code.co_php_args_by_ref
-        else:
-            return False
+        argmap = self.w_py_callable.code.co_php_args_by_ref
+        return argmap[i] if argmap is not None else False
 
     def is_py_call(self):
         return True

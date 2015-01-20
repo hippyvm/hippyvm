@@ -641,3 +641,45 @@ class TestPyPyBridgeArgPassing(BaseTestInterpreter):
         ''')
         assert(php_space.str_w(output[0]) ==
                 "Arg 1 of PHP func 'g' is pass by reference")
+
+    def test_php2py_many_sparse_refs(self, php_space):
+        output = self.run('''
+            $src = <<<EOD
+            @php_decor(refs=[0, 2, 4, 5])
+            def f(a0, a1, a2, a3, a4, a5):
+                # update the ref args
+                a0.store("m0")
+                a2.store("m2")
+                a4.store("m4")
+                a5.store("m5")
+
+                # locally change the non-ref args
+                a1 = "m1"
+                a3 = "m3"
+            EOD;
+
+            $f = embed_py_func($src);
+
+            // inputs
+            $a0 = "0";
+            $a1 = "1";
+            $a2 = "2";
+            $a3 = "3";
+            $a4 = "4";
+            $a5 = "5";
+
+            $f($a0, $a1, $a2, $a3, $a4, $a5);
+
+            echo $a0;
+            echo $a1;
+            echo $a2;
+            echo $a3;
+            echo $a4;
+            echo $a5;
+        ''')
+        assert php_space.str_w(output[0]) == "m0"
+        assert php_space.str_w(output[1]) == "1"
+        assert php_space.str_w(output[2]) == "m2"
+        assert php_space.str_w(output[3]) == "3"
+        assert php_space.str_w(output[4]) == "m4"
+        assert php_space.str_w(output[5]) == "m5"
