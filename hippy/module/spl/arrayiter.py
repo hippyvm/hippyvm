@@ -172,7 +172,7 @@ class W_RecursiveArrayIterator(W_ArrayIterator):
         if isinstance(w_current, W_ArrayObject):
             return True
         if isinstance(w_current, W_InstanceObject) and \
-           w_current.klass.is_iterator:
+           w_current.getclass().is_iterator:
             return True
         else:
             return False

@@ -241,7 +241,7 @@ def _print_r(space, w_x, indent, recursion, builder):
         builder.append('\n%s)\n' % indent)
         del recursion[w_x]
     elif isinstance(w_x, W_InstanceObject):
-        builder.append('%s Object\n' % w_x.klass.name)
+        builder.append('%s Object\n' % w_x.getclass().name)
         if w_x in recursion:
             builder.append(' *RECURSION*')
             return

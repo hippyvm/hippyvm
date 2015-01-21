@@ -439,7 +439,7 @@ class ClassBase(AbstractFunction, AccessMixin):
         if not method.is_static():
             if context_w_this is None:
                 self._static_call_warning(interp, method, "")
-            elif not self.is_parent_of(context_w_this.klass):
+            elif not self.is_parent_of(context_w_this.getclass()):
                 self._static_call_warning(interp, method,
                     ", assuming $this from incompatible context")
         return method

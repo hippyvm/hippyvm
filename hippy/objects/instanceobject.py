@@ -445,7 +445,7 @@ class W_InstanceObject(W_Object):
             interp = space.ec.interpreter
             w_iterator = interp.getmeth(self, 'getIterator').call_args(interp, [])
             if not (isinstance(w_iterator, W_InstanceObject) and
-                    w_iterator.klass.is_subclass_of_class_or_intf_name('Traversable')):
+                    w_iterator.getclass().is_subclass_of_class_or_intf_name('Traversable')):
                 from hippy.builtin_klass import k_Exception
                 raise PHPException(k_Exception.call_args(interp, [space.wrap(
                     "Objects returned by %s::getIterator() must be "

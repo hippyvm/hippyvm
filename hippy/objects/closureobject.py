@@ -38,7 +38,7 @@ class W_ClosureObject(W_InstanceObject):
 
     def get_callable(self):
         w_this = self.w_this if self.static is False else None
-        thisclass = w_this.klass if w_this is not None else None
+        thisclass = w_this.getclass() if w_this is not None else None
         return W_CallClosure(thisclass, self._func, w_this, self.closure_args)
 
     def put_closure(self, args_w):
