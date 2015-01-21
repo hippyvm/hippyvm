@@ -817,10 +817,8 @@ def _fopen(space, fname, mode, use_include_path=False, w_ctx=None):
         w_res.open()
         return w_res
     except IOError, e:
-        if not we_are_translated():
-            raise FopenError(
+        raise FopenError(
                 ["failed to open stream: %s" % e.strerror])
-        assert False  # RPython does not raise IOError
     except OSError:
         return space.w_False
 
