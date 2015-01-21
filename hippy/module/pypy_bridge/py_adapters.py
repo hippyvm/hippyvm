@@ -241,6 +241,8 @@ class W_PyFuncAdapter(W_InstanceObject):
 
         self.interp = interp
         self.w_py_func = w_py_func
+        self.w_php_callable = None # cached
+
         W_InstanceObject.__init__(self, klass, storage_w)
 
     def setattr(self, interp, attr, w_value, contextclass, unique_item=False):
@@ -255,7 +257,11 @@ class W_PyFuncAdapter(W_InstanceObject):
         raise NotImplementedError("Not implemented")
 
     def get_callable(self):
-        return W_EmbeddedPyCallable(self.interp, self.w_py_func)
+        if self.w_php_callable is None:
+            self.w_php_callable = W_EmbeddedPyCallable(self.interp,
+                                                       self.w_py_func)
+        return self.w_php_callable
+
 
     def to_py(self, interp, w_php_ref=None):
         return self.w_py_func
