@@ -8,7 +8,7 @@ from hippy.objects.instanceobject import (
 from hippy.objects.strobject import W_StringObject
 from hippy import consts
 from hippy.objects.nullobject import w_Null
-from hippy.mapdict import Terminator
+from hippy.mapdict import Terminator, Attribute
 from hippy.builtin import (
     BuiltinFunction, ThisUnwrapper, handle_as_warning, new_function)
 from rpython.rlib import jit
@@ -227,12 +227,15 @@ class ClassBase(AbstractFunction, AccessMixin):
 
     def _create_initial_storage(self, space):
         l = []
+        base_map = self.base_map
         for p in self.properties.itervalues():
             if not p.is_static() and not p.is_special and p.klass is self:
                 w_val = p.value.eval_static(space)
-                self.base_map = self.base_map.add_attribute(p.mangle_name())
-                assert self.base_map.index == len(l)
+                base_map = base_map.add_attribute(p.mangle_name())
+                assert isinstance(base_map, Attribute)
+                assert base_map.index == len(l)
                 l.append(w_val)
+        self.base_map = base_map
         if self.parentclass is not None:
             parent = self.parentclass
             if parent.initial_storage_w is None:
