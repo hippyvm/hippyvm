@@ -19,7 +19,7 @@ class W_IteratorIterator(W_InstanceObject):
 @wrap_method(['interp', ThisUnwrapper(W_IteratorIterator), 'object'],
              name='IteratorIterator::__construct')
 def ii_construct(interp, this, w_iterator):
-    if w_iterator.klass.is_iterable:
+    if w_iterator.getclass().is_iterable:
         w_iterator = interp.getmeth(w_iterator, 'getIterator').call_args(interp, [])
     this.inner = w_iterator
 
@@ -177,10 +177,10 @@ k_RecursiveIteratorIterator = def_class(
 @k_RecursiveIteratorIterator.def_method(['interp', 'this', 'object',
                                          Optional(int)])
 def __construct(interp, this, w_iter, mode=LEAVES_ONLY):
-    if w_iter.klass.is_iterable:
+    if w_iter.getclass().is_iterable:
         w_iter = interp.call_method(w_iter, 'getIterator', [])
     if (not isinstance(w_iter, W_InstanceObject) or
-            not w_iter.klass.is_subclass_of_class_or_intf_name('RecursiveIterator')):
+            not w_iter.getclass().is_subclass_of_class_or_intf_name('RecursiveIterator')):
         raise interp.throw("An instance of RecursiveIterator or "
                            "IteratorAggregate creating it is required",
                            klass=k_InvalidArgumentException)
@@ -264,7 +264,7 @@ def _rii_next(interp, this):
             elif node.state == CHILD:
                 w_child = interp.call_method(this, 'callGetChildren', [])
                 if (not isinstance(w_child, W_InstanceObject) or
-                        not w_child.klass.is_subclass_of_class_or_intf_name('RecursiveIterator')):
+                        not w_child.getclass().is_subclass_of_class_or_intf_name('RecursiveIterator')):
                     raise interp.throw(
                         "Objects returned by RecursiveIterator::getChildren() "
                         "must implement RecursiveIterator",

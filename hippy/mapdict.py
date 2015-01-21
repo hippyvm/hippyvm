@@ -2,7 +2,8 @@
 from rpython.rlib import jit
 
 class AbstractAttribute(object):
-    _attrs_ = ('transition_cache', )
+    _immutable_fields_ = ['klass']
+    _attrs_ = ['klass', 'transition_cache']
 
     def __init__(self):
         self.transition_cache = {}
@@ -63,6 +64,7 @@ class Attribute(AbstractAttribute):
         AbstractAttribute.__init__(self)
         self.name = name
         self.index = index
+        self.klass = next.klass
         self.next = next
 
     def __repr__(self):
@@ -90,10 +92,14 @@ class Terminator(AbstractAttribute):
     _attrs_ = ()
 
     index = 0
-    
+
+    def __init__(self, klass):
+        AbstractAttribute.__init__(self)
+        self.klass = klass
+
     def get_next_index(self):
         return 0
-    
+
     def getsize(self):
         return 0
 

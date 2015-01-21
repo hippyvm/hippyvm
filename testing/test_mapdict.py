@@ -1,9 +1,13 @@
 
 from hippy.mapdict import Terminator
 
+class FakeClass(object):
+    pass
+klass = FakeClass()
+
 class TestMapdictDirect(object):
     def test_simple(self):
-        t = Terminator()
+        t = Terminator(klass)
         assert t.lookup("name") is None
         new_attr = t.add_attribute("name")
         a1 = new_attr.lookup("name")
@@ -19,25 +23,27 @@ class TestMapdictDirect(object):
         assert t.index == 0
 
     def test_getallkeys(self):
-        t = Terminator()
+        t = Terminator(klass)
         a = t.add_attribute("a")
         a = a.add_attribute("b")
         a = a.add_attribute("c")
+        assert a.klass is klass
         assert a.get_all_keys() == ["a", "b", "c"]
 
     def test_delattr(self):
-        t = Terminator()
+        t = Terminator(klass)
         a = t.add_attribute("a")
         a1 = a.add_attribute("b")
         a2 = a1.add_attribute("c")
         assert a2.lookup("c").index == 2
         a3, _ = a2.del_attribute("b")
+        assert a3.klass is klass
         assert a3.lookup("b") is None
         assert a3.lookup("a").index == 0
         assert a3.lookup("c").index == 1
 
     def test_delattr_2(self):
-        t = Terminator()
+        t = Terminator(klass)
         a = t.add_attribute("a")
         a1 = a.add_attribute("b")
         a2 = a1.add_attribute("c")
@@ -46,3 +52,4 @@ class TestMapdictDirect(object):
         assert a3.lookup("a") is None
         assert a3.lookup("b").index == 0
         assert a3.lookup("c").index == 1
+        assert a3.klass is klass

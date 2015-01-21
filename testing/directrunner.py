@@ -11,7 +11,7 @@ from testing.runner import MockEngine
 class FakeClass(object):
     def __init__(self, name):
         self.name = name
-        self.base_map = Terminator()
+        self.base_map = Terminator(self)
 
 
 r = re.compile(r"\becho\s+(.+?);", re.DOTALL)

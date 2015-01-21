@@ -80,7 +80,7 @@ class ClassBase(AbstractFunction, AccessMixin):
         self.properties = OrderedDict()
         self.methods = OrderedDict()
         self.all_parents = {self.get_identifier(): None}  # classes and intfs
-        self.base_map = Terminator()
+        self.base_map = Terminator(self)
         self.initial_storage_w = None
 
     def __repr__(self):
