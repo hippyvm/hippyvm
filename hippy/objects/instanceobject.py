@@ -102,6 +102,7 @@ def dump_property(name, access):
 
 class W_InstanceObject(W_Object):
     _attrs_ = ('klass', 'map', 'storage_w', 'instance_number', 'w_rdict_array')
+    _immutable_fields_ = ["klass"]
     instance_number = 0
     w_rdict_array = None     # lazily built W_RDictArrayObject
 
