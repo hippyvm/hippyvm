@@ -735,7 +735,7 @@ class Interpreter(object):
         else:
             exc_msg = ""
         msg = "Uncaught exception '%s' %sin %s:%d" % (
-            w_exc.klass.name, exc_msg, filename, lineno)
+            w_exc.getclass().name, exc_msg, filename, lineno)
         self.log_error(constants.E_ERROR, msg)
         self.err_write('Stack trace:\n')
         for i, (filename, funcname, line, source) in enumerate(tb):
@@ -1305,7 +1305,7 @@ class Interpreter(object):
                         self.space, methname, contextclass)
                 except VisibilityError:
                     self.fatal("Call to undefined method %s::%s()" %
-                            (w_instance.klass.name, methname))
+                            (w_instance.getclass().name, methname))
         else:
             self.fatal("Function name must be a string")
 
@@ -1332,7 +1332,7 @@ class Interpreter(object):
     def GETCLASS(self, bytecode, frame, space, arg, pc):
         w_obj = frame.pop().deref()
         if isinstance(w_obj, W_InstanceObject):
-            frame.push(w_obj.klass)
+            frame.push(w_obj.getclass())
             return pc
         name = space.getclassintfname(w_obj)
         if arg:
@@ -1361,7 +1361,7 @@ class Interpreter(object):
 
     def getstaticmeth(self, w_classname, methname, contextclass, w_this):
         if isinstance(w_classname, W_InstanceObject):
-            thisclass = klass = w_classname.klass
+            thisclass = klass = w_classname.getclass()
         else:
             classname = self.space.str_w(w_classname)
             klass = self.locate_class_or_intf(classname)

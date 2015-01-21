@@ -101,19 +101,18 @@ def dump_property(name, access):
 
 
 class W_InstanceObject(W_Object):
-    _attrs_ = ('klass', 'map', 'storage_w', 'instance_number', 'w_rdict_array')
-    _immutable_fields_ = ["klass"]
+    _attrs_ = ('map', 'storage_w', 'instance_number', 'w_rdict_array')
+    _immutable_fields_ = []
     instance_number = 0
     w_rdict_array = None     # lazily built W_RDictArrayObject
 
     def __init__(self, klass, initial_storage):
-        self.klass = klass
         map = klass.base_map
         self.map = map
         self.storage_w = initial_storage
 
     def getclass(self):
-        return jit.hint(self.klass, promote=True)
+        return jit.promote(self.map).klass
 
     def setup(self, interp):
         pass
@@ -151,12 +150,12 @@ class W_InstanceObject(W_Object):
 
     def as_number(self, space):
         space.ec.notice("Object of class %s could not be converted to int" %
-                        self.klass.name)
+                        self.getclass().name)
         return space.newint(1)
 
     def float_w(self, space):
         space.ec.notice("Object of class %s could not be converted "
-                        "to double" % self.klass.name)
+                        "to double" % self.getclass().name)
         return 1.
 
     def enum_properties(self, interp, out_names, out_values_w):
@@ -234,9 +233,9 @@ class W_InstanceObject(W_Object):
         return "instance(%s: %s)" % (self.getclass().name, ', '.join(items))
 
     def add_attribute(self, name):
-        self.map = self.map.add_attribute(name)
+        map = self.map = self.map.add_attribute(name)
         self.storage_w = self.map.get_storage(self.storage_w)
-        return self.map
+        return map
 
     def _create_attr(self, name, w_value):
         """Create a *new* attribute with value w_value.
@@ -291,7 +290,7 @@ class W_InstanceObject(W_Object):
 
     def _setattr(self, interp, attr, w_newvalue, contextclass,
                  unique_item=False):
-        cls = self.klass
+        cls = self.getclass()
         try:
             name = cls.lookup_property_name(LOOKUP_SETATTR,
                                             interp, self, attr, contextclass,
@@ -450,7 +449,7 @@ class W_InstanceObject(W_Object):
             interp = space.ec.interpreter
             w_iterator = interp.getmeth(self, 'getIterator').call_args(interp, [])
             if not (isinstance(w_iterator, W_InstanceObject) and
-                    w_iterator.klass.is_subclass_of_class_or_intf_name('Traversable')):
+                    w_iterator.getclass().is_subclass_of_class_or_intf_name('Traversable')):
                 from hippy.builtin_klass import k_Exception
                 raise PHPException(k_Exception.call_args(interp, [space.wrap(
                     "Objects returned by %s::getIterator() must be "
@@ -482,17 +481,17 @@ class W_InstanceObject(W_Object):
 
     def _msg_misuse_as_array(self, space, compat=True):
         raise space.ec.fatal('Cannot use object of type %s as array' %
-                             self.klass.name)
+                             self.getclass().name)
 
     def getitem(self, space, w_arg, give_notice=False, allow_undefined=True):
-        if self.klass.is_array_access:
+        if self.getclass().is_array_access:
             interp = space.ec.interpreter
             return interp.call_method(self, 'offsetGet', [w_arg])
         else:
             self._msg_misuse_as_array(space)
 
     def _lookup_item_ref(self, space, w_arg):
-        if self.klass.is_array_access:
+        if self.getclass().is_array_access:
             interp = space.ec.interpreter
             w_res = interp.call_method(self, 'offsetGet', [w_arg])
             if isinstance(w_res, W_Reference):
@@ -500,11 +499,11 @@ class W_InstanceObject(W_Object):
             else:
                 if not isinstance(w_res, W_InstanceObject):
                     interp.notice("Indirect modification of overloaded element"
-                                  " of %s has no effect" % (self.klass.name,))
+                                  " of %s has no effect" % (self.getclass().name,))
                 return W_Reference(w_res)
 
     def hasitem(self, space, w_index):
-        if self.klass.is_array_access:
+        if self.getclass().is_array_access:
             interp = space.ec.interpreter
             w_res = interp.call_method(self, 'offsetExists', [w_index])
             return w_res.is_true(space)
@@ -512,7 +511,7 @@ class W_InstanceObject(W_Object):
             return False
 
     def setitem2_maybe_inplace(self, space, w_arg, w_value, unique_item=False):
-        if self.klass.is_array_access:
+        if self.getclass().is_array_access:
             interp = space.ec.interpreter
             interp.call_method(self, 'offsetSet', [w_arg, w_value])
             return self, w_value
@@ -521,7 +520,7 @@ class W_InstanceObject(W_Object):
             return self, space.w_Null
 
     def _setitem_ref(self, space, w_arg, w_ref):
-        if self.klass.is_array_access:
+        if self.getclass().is_array_access:
             interp = space.ec.interpreter
             interp.call_method(self, 'offsetSet', [w_arg, w_ref])
             return self
@@ -530,7 +529,7 @@ class W_InstanceObject(W_Object):
             raise OffsetError('cannot index non-array')
 
     def appenditem_inplace(self, space, w_item, as_ref=False):
-        if self.klass.is_array_access:
+        if self.getclass().is_array_access:
             self.setitem2_maybe_inplace(space, space.w_Null, w_item, as_ref)
             return w_item
         else:
@@ -538,7 +537,7 @@ class W_InstanceObject(W_Object):
             return space.w_Null
 
     def _unsetitem(self, space, w_arg):
-        if self.klass.is_array_access:
+        if self.getclass().is_array_access:
             interp = space.ec.interpreter
             interp.call_method(self, 'offsetUnset', [w_arg])
             return self
