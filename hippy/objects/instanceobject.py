@@ -541,6 +541,7 @@ class W_InstanceObject(W_Object):
             space.ec.hippy_warn(self._msg_misuse_as_array(space, False))
             return self
 
+    # XXX remove
     def compare(self, w_obj, space, strict):
         w_left = self
         w_right = w_obj

@@ -546,6 +546,8 @@ class ObjSpace(object):
         # This continues until the work lists are empty, at which point we
         # have proven the data structures to be equal.
 
+        space = getspace()
+
         # Worklists.
         work_lhs = [w_left]
         work_rhs = [w_right]
@@ -553,6 +555,7 @@ class ObjSpace(object):
         work_strict = [strict]
 
         while work_lhs:
+            import pdb; pdb.set_trace()
             # Consume next work
             w_left = work_lhs.pop().deref()
             w_right = work_rhs.pop().deref()
@@ -705,7 +708,45 @@ class ObjSpace(object):
                 return -1
 
             elif(left_tp == self.tp_object and right_tp == self.tp_object):
-                return w_left.compare(w_right, self, strict) # XXX XXX XXX
+                #return w_left.compare(w_right, self, strict) # XXX XXX XXX
+
+                if w_left is w_right:
+                    return 0
+                elif strict or w_left.getclass() is not w_right.getclass():
+                    # From the PHP docs:
+                    # "When using the identity operator (===), object variables"
+                    # are identical if and only if they refer to the same
+                    # instance of the same class."
+                    return 1
+
+                left = w_left.get_instance_attrs(space.ec.interpreter)
+                right = w_right.get_instance_attrs(space.ec.interpreter)
+                if len(left) - len(right) < 0:
+                    return -1
+                if len(left) - len(right) > 0:
+                    return 1
+
+                # need to compare left to right, so they go on the worklist
+                # in reverse order. We can't reverse a generator, so we have
+                # to flatten it to a list.
+                # XXX can improve? XXX
+                for key, w_left_value in reversed([x for x in left.iteritems()]):
+                    try:
+                        w_right_value = right[key]
+                    except KeyError:
+                        # dereffered disequalities.
+                        # See array case for explanation.
+                        work_lhs.append(None)
+                        work_rhs.append(None)
+                        work_strict.append(False)
+                        work_ignore_order.append(False)
+
+                    work_lhs.append(w_left_value)
+                    work_rhs.append(w_right_value)
+                    work_strict.append(False)
+                    work_ignore_order.append(False)
+
+                continue
 
             else:
                 if(left_tp == self.tp_null):
