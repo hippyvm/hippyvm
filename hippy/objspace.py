@@ -555,7 +555,6 @@ class ObjSpace(object):
         work_strict = [strict]
 
         while work_lhs:
-            import pdb; pdb.set_trace()
             # Consume next work
             w_left = work_lhs.pop().deref()
             w_right = work_rhs.pop().deref()
@@ -708,43 +707,23 @@ class ObjSpace(object):
                 return -1
 
             elif(left_tp == self.tp_object and right_tp == self.tp_object):
-                #return w_left.compare(w_right, self, strict) # XXX XXX XXX
+                # datetime extension has a custom compare, so we can't inline
+                # the implementation here.
+                new_work_lhs, new_work_rhs, ret_now = \
+                    w_left.compare(w_right, self, strict)
 
-                if w_left is w_right:
-                    return 0
-                elif strict or w_left.getclass() is not w_right.getclass():
-                    # From the PHP docs:
-                    # "When using the identity operator (===), object variables"
-                    # are identical if and only if they refer to the same
-                    # instance of the same class."
-                    return 1
+                if ret_now != 0: # we know we can return right away
+                    return ret_now # is either -1 or 1
 
-                left = w_left.get_instance_attrs(space.ec.interpreter)
-                right = w_right.get_instance_attrs(space.ec.interpreter)
-                if len(left) - len(right) < 0:
-                    return -1
-                if len(left) - len(right) > 0:
-                    return 1
+                # otherwise we were handed new work for the worklist.
+                assert len(new_work_lhs) == len(new_work_rhs)# XXX
+                new_work_len = len(new_work_lhs)
 
-                # need to compare left to right, so they go on the worklist
-                # in reverse order. We can't reverse a generator, so we have
-                # to flatten it to a list.
-                # XXX can improve? XXX
-                for key, w_left_value in reversed([x for x in left.iteritems()]):
-                    try:
-                        w_right_value = right[key]
-                    except KeyError:
-                        # dereffered disequalities.
-                        # See array case for explanation.
-                        work_lhs.append(None)
-                        work_rhs.append(None)
-                        work_strict.append(False)
-                        work_ignore_order.append(False)
-
-                    work_lhs.append(w_left_value)
-                    work_rhs.append(w_right_value)
-                    work_strict.append(False)
-                    work_ignore_order.append(False)
+                # The items go on reversed to ensure left to right comparison
+                work_lhs.extend(reversed(new_work_lhs))
+                work_rhs.extend(reversed(new_work_rhs))
+                work_strict.extend([strict] * new_work_len)
+                work_ignore_order.extend([False] * new_work_len)
 
                 continue
 
