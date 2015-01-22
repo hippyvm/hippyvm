@@ -1,4 +1,3 @@
-import tempfile
 import pytest
 from testing.test_interpreter import BaseTestInterpreter
 
@@ -58,7 +57,7 @@ class TestComparisons(BaseTestInterpreter):
         """)
         assert php_space.is_true(output[0])
 
-    def test_object_eq_object_strict(self, php_space):
+    def test_object_not_eq_object_strict(self, php_space):
         output = self.run("""
         class X {
             public $f1 = 2;
@@ -70,9 +69,9 @@ class TestComparisons(BaseTestInterpreter):
 
         echo $a === $b;
         """)
-        assert php_space.is_true(output[0])
+        assert not php_space.is_true(output[0])
 
-    def test_object_not_eq_object_strict(self, php_space):
+    def test_object_not_eq_object_strict2(self, php_space):
         output = self.run("""
         class X {
             public $f1 = 2;
@@ -178,6 +177,7 @@ class TestComparisons(BaseTestInterpreter):
         );
 
         echo $tree1 == $tree2;
+
         """)
         assert php_space.is_true(output[0])
 
@@ -201,16 +201,7 @@ class TestComparisons(BaseTestInterpreter):
             )
         );
 
-        $tree2 = new Node(
-            new Node(
-                new Node(1, 2),
-                new Node(3, 4)
-            ),
-            new Node(
-                new Node(5, new Node(6, 7)),
-                8
-            )
-        );
+        $tree2 = $tree1;
 
         echo $tree1 === $tree2;
         """)
@@ -224,8 +215,6 @@ class TestComparisons(BaseTestInterpreter):
                 $this->r = $r;
             }
         }
-
-        class Node1 extends Node {};
 
         $tree1 = new Node(
             new Node(
@@ -244,7 +233,7 @@ class TestComparisons(BaseTestInterpreter):
                 new Node(3, 4)
             ),
             new Node(
-                new Node1(5, new Node(6, 7)), // differs
+                new Node(5, new Node(6, 7)),
                 8
             )
         );
@@ -252,3 +241,13 @@ class TestComparisons(BaseTestInterpreter):
         echo $tree1 === $tree2;
         """)
         assert not php_space.is_true(output[0])
+
+    def test_xxx(self, php_space):
+        output = self.run("""
+            $a = array("0", "1", "2", "php");
+            $b = array("0"=>"1", "1"=>"1", "2"=>"2", 4=>"php");
+
+            echo $a < $b;
+        """)
+        assert php_space.is_true(output[0])
+

@@ -550,7 +550,7 @@ class ObjSpace(object):
         work_lhs = [w_left]
         work_rhs = [w_right]
         work_ignore_order = [False]
-        work_strict = [False]
+        work_strict = [strict]
 
         while work_lhs:
             # Consume next work
