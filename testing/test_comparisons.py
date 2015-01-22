@@ -242,7 +242,11 @@ class TestComparisons(BaseTestInterpreter):
         """)
         assert not php_space.is_true(output[0])
 
-    def test_xxx(self, php_space):
+    def test_deferred_comparison(self, php_space):
+        # tests an annoying comparison ordering quirk.
+        # In short, when we see array $b has no key 3, we know the arrays
+        # differ, but we still need to compare the common-keyed values
+        # since they may differ with a different ordering outcome.
         output = self.run("""
             $a = array("0", "1", "2", "php");
             $b = array("0"=>"1", "1"=>"1", "2"=>"2", 4=>"php");

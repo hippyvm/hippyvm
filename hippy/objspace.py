@@ -562,6 +562,9 @@ class ObjSpace(object):
             left_tp = w_left.tp
             right_tp = w_right.tp
 
+            if w_left is None:
+                return 1 # deferred disequality, see array case below.
+
             if strict:
                 if left_tp != right_tp:
                     return 1
@@ -602,17 +605,34 @@ class ObjSpace(object):
                     return 1
 
                 with self.iter(w_left) as itr:
+                    # the items need to go on in reverse order.
+                    # XXX add a reverse kwarg to iterator so as to remove the
+                    # following lists.
+                    new_lhs_items = []
+                    new_rhs_items = []
+
                     while not itr.done():
                         w_key, w_left_value = itr.next_item(self)
                         if w_right.isset_index(self, w_key):
                             w_right_value = self.getitem(w_right, w_key)
 
-                            work_lhs.append(w_left_value)
-                            work_rhs.append(w_right_value)
-                            work_strict.append(strict)
-                            work_ignore_order.append(False)
+                            new_lhs_items.append(w_left_value)
+                            new_rhs_items.append(w_right_value)
                         else:
-                            return 1
+                            # indicates disequality of 1 once popped. We do not
+                            # immediately indicate failure, since these need
+                            # to be the last things compared in the array, and
+                            # something earlier may be differ with a different
+                            # ordering outcome (i.e. -1).
+                            new_lhs_items.append(None)
+                            new_rhs_items.append(None)
+
+                work_lhs.extend(reversed(new_lhs_items))
+                work_rhs.extend(reversed(new_rhs_items))
+                n_new_items = len(new_lhs_items)
+                work_strict.extend([strict] * n_new_items)
+                work_ignore_order.extend([False] * n_new_items)
+
                 continue
 
             elif(left_tp == self.tp_null and right_tp == self.tp_null):
