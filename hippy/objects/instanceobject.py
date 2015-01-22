@@ -574,11 +574,11 @@ class W_InstanceObject(W_Object):
             if defer:
                 # dereffered disequalities.
                 # See array case in the space._compare() for explanation.
-                new_work_lhs.insert(0, None)
-                new_work_rhs.insert(0, None)
+                new_work_lhs.append(None)
+                new_work_rhs.append(None)
             else:
-                new_work_lhs.insert(0, w_left_value)
-                new_work_rhs.insert(0, w_right_value)
+                new_work_lhs.append(w_left_value)
+                new_work_rhs.append(w_right_value)
 
         return new_work_lhs, new_work_rhs, 0
 

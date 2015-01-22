@@ -618,26 +618,27 @@ class ObjSpace(object):
                         if w_right.isset_index(self, w_key):
                             w_right_value = self.getitem(w_right, w_key)
 
-                            new_lhs_items.insert(0, w_left_value)
-                            new_rhs_items.insert(0, w_right_value)
-                            work_strict.insert(0, strict)
-                            work_ignore_order.insert(0, False)
+                            new_lhs_items.append(w_left_value)
+                            new_rhs_items.append(w_right_value)
+                            new_strict.append(strict)
+                            new_ignore_order.append(False)
                         else:
                             # Nones indicates disequality of 1 once popped. We do not
                             # immediately indicate failure, since these need
                             # to be the last things compared in the array, and
                             # something earlier may be differ with a different
                             # ordering outcome (i.e. -1).
-                            new_lhs_items.insert(0, None)
-                            new_rhs_items.insert(0, None)
-                            new_strict.insert(0, strict)
-                            new_ignore_order.insert(0, False)
+                            new_lhs_items.append(None)
+                            new_rhs_items.append(None)
+                            new_strict.append(strict)
+                            new_ignore_order.append(False)
 
                 # add to work list in reverse order
-                work_lhs.extend(new_lhs_items)
-                work_rhs.extend(new_rhs_items)
-                work_strict.extend(new_strict)
-                work_ignore_order.extend(new_ignore_order)
+                for i in xrange(len(new_lhs_items) - 1, -1, -1):
+                    work_lhs.append(new_lhs_items[i])
+                    work_rhs.append(new_rhs_items[i])
+                    work_strict.append(new_strict[i])
+                    work_ignore_order.append(new_ignore_order[i])
 
                 continue
 
@@ -718,12 +719,12 @@ class ObjSpace(object):
                     return ret_now # is either -1 or 1
 
                 # otherwise we were handed new work for the worklist.
-                # these items should already be in reverse order!
-                new_work_len = len(new_work_lhs)
-                work_lhs.extend(new_work_lhs)
-                work_rhs.extend(new_work_rhs)
-                work_strict.extend([strict] * new_work_len)
-                work_ignore_order.extend([False] * new_work_len)
+                # Add in reverse order to achieve the desired effect.
+                for i in xrange(len(new_work_lhs) - 1, -1, -1):
+                    work_lhs.append(new_work_lhs[i])
+                    work_rhs.append(new_work_rhs[i])
+                    work_strict.append(strict)
+                    work_ignore_order.append(False)
 
                 continue
 
