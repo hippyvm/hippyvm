@@ -526,113 +526,206 @@ class ObjSpace(object):
         return self._compare(w_a, w_b, strict=True, ignore_order=True) == 0
 
     def _compare(self, w_left, w_right, strict=False, ignore_order=False):
+        """PHP "recursively compares data structures. But since this can
+        quickly exhaust the stack, we do it iteratively."""
 
-        w_left = w_left.deref()
-        w_right = w_right.deref()
+        # The (general) approach here works as follows.
+        #
+        # We hold two work lists which initially start as single item lists
+        # each containing one of the items to be compared. In each iteration,
+        # one item is popped off each list for comparison.
+        #
+        # If the items are simple scalars, they are immediately compared. If
+        # at this point they differ, we can return now, indicating disequality.
+        # If however, they are equal, we must look further.
+        #
+        # When "composite" structure is encountered, instead of recursing, we
+        # push back on to the worklists, each of the structure's constituent
+        # values, as these will need to be compared.
+        #
+        # This continues until the work lists are empty, at which point we
+        # have proven the data structures to be equal.
 
-        left_tp = w_left.tp
-        right_tp = w_right.tp
+        # Worklists.
+        work_lhs = [w_left]
+        work_rhs = [w_right]
+        work_ignore_order = [False]
+        work_strict = [False]
 
-        if strict:
-            if left_tp != right_tp:
-                return 1
+        while work_lhs:
+            # Consume next work
+            w_left = work_lhs.pop().deref()
+            w_right = work_rhs.pop().deref()
+            ignore_order = work_ignore_order.pop()
+            strict = work_strict.pop()
 
-        if(left_tp == self.tp_float and right_tp == self.tp_float):
-            return my_cmp(self.float_w(w_left), self.float_w(w_right),
-                          ignore_order)
+            left_tp = w_left.tp
+            right_tp = w_right.tp
 
-        if(left_tp == self.tp_int and right_tp == self.tp_float):
-            return my_cmp(self.float_w(w_left), self.float_w(w_right),
-                          ignore_order)
+            if strict:
+                if left_tp != right_tp:
+                    return 1
 
-        if(left_tp == self.tp_float and right_tp == self.tp_int):
-            return my_cmp(self.float_w(w_left), self.float_w(w_right),
-                          ignore_order)
+            if(left_tp == self.tp_float and right_tp == self.tp_float):
+                cmp_res = my_cmp(self.float_w(w_left), self.float_w(w_right),
+                              ignore_order)
+                if cmp_res == 0:
+                    continue
+                return cmp_res
 
-        elif(left_tp == self.tp_int and right_tp == self.tp_int):
-            return my_cmp(self.int_w(w_left), self.int_w(w_right),
-                          ignore_order)
+            if(left_tp == self.tp_int and right_tp == self.tp_float):
+                cmp_res = my_cmp(self.float_w(w_left), self.float_w(w_right),
+                              ignore_order)
+                if cmp_res == 0:
+                    continue
+                return cmp_res
 
-        elif(left_tp == self.tp_array and right_tp == self.tp_array):
-            return self._compare_array(w_left, w_right, strict)
+            if(left_tp == self.tp_float and right_tp == self.tp_int):
+                cmp_res = my_cmp(self.float_w(w_left), self.float_w(w_right),
+                              ignore_order)
+                if cmp_res == 0:
+                    continue
+                return cmp_res
 
-        elif(left_tp == self.tp_null and right_tp == self.tp_null):
-            return 0
+            elif(left_tp == self.tp_int and right_tp == self.tp_int):
+                cmp_res = my_cmp(self.int_w(w_left), self.int_w(w_right),
+                              ignore_order)
+                if cmp_res == 0:
+                    continue
+                return cmp_res
 
-        elif(left_tp == self.tp_null and right_tp == self.tp_bool):
-            if self.is_true(w_right):
-                return -1
-            return 0
+            elif(left_tp == self.tp_array and right_tp == self.tp_array):
 
-        elif(left_tp == self.tp_bool and right_tp == self.tp_null):
-            if self.is_true(w_left):
-                return 1
-            return 0
+                if w_left.arraylen() - w_right.arraylen() < 0:
+                    return -1
+                if w_left.arraylen() - w_right.arraylen() > 0:
+                    return 1
 
-        elif(left_tp == self.tp_bool and right_tp == self.tp_bool):
-            return my_cmp(self.is_true(w_left), self.is_true(w_right),
-                          ignore_order)
+                with self.iter(w_left) as itr:
+                    while not itr.done():
+                        w_key, w_left_value = itr.next_item(self)
+                        if w_right.isset_index(self, w_key):
+                            w_right_value = self.getitem(w_right, w_key)
 
-        elif(left_tp == self.tp_str and right_tp == self.tp_str):
-            left  = self.str_w(w_left)
-            right = self.str_w(w_right)
-            if not strict:
-                # a small optimimization first, if both are single-char
-                left_length  = len(left)
-                right_length = len(right)
-                if (jit.isconstant(left_length)  and left_length  == 1 and
-                    jit.isconstant(right_length) and right_length == 1):
-                    return my_cmp(ord(left[0]), ord(right[0]), ignore_order)
-                #
-                w_right_num, right_valid = convert_string_to_number(right)
-                if right_valid:
-                    w_left_num, left_valid = convert_string_to_number(left)
-                    if left_valid:
-                        return self._compare(w_left_num, w_right_num,
-                                             ignore_order=ignore_order)
-            return my_cmp(left, right, ignore_order)
+                            work_lhs.append(w_left_value)
+                            work_rhs.append(w_right_value)
+                            work_strict.append(strict)
+                            work_ignore_order.append(False)
+                        else:
+                            return 1
+                continue
 
-        elif(left_tp == self.tp_null and right_tp == self.tp_str):
-            return my_cmp("", self.str_w(w_right), ignore_order)
+            elif(left_tp == self.tp_null and right_tp == self.tp_null):
+                continue
 
-        elif(left_tp == self.tp_str and right_tp == self.tp_null):
-            return my_cmp(self.str_w(w_left), "", ignore_order)
-
-        elif(left_tp == self.tp_object and right_tp == self.tp_null):
-            return 1
-
-        elif(left_tp == self.tp_null and right_tp == self.tp_object):
-            return -1
-
-        elif(left_tp == self.tp_object and right_tp == self.tp_object):
-            return w_left.compare(w_right, self, strict)
-
-        else:
-            if(left_tp == self.tp_null):
+            elif(left_tp == self.tp_null and right_tp == self.tp_bool):
                 if self.is_true(w_right):
                     return -1
-                return 0
-            elif(right_tp == self.tp_null):
+                continue
+
+            elif(left_tp == self.tp_bool and right_tp == self.tp_null):
                 if self.is_true(w_left):
                     return 1
-                return 0
-            elif(left_tp == self.tp_bool or right_tp == self.tp_bool):
-                return my_cmp(self.is_true(w_left), self.is_true(w_right),
-                              ignore_order)
-            elif(left_tp == self.tp_array):
-                return 1
-            elif(right_tp == self.tp_array):
-                return -1
-            elif(left_tp == self.tp_object):
-                return 1
-            elif(right_tp == self.tp_object):
-                return -1
-            else:
-                return self._compare(self.as_number(w_left),
-                                     self.as_number(w_right),
-                                     ignore_order=ignore_order)
-        raise NotImplementedError()
+                continue
 
+            elif(left_tp == self.tp_bool and right_tp == self.tp_bool):
+                cmp_res = my_cmp(self.is_true(w_left), self.is_true(w_right),
+                              ignore_order)
+                if cmp_res == 0:
+                    continue
+                return cmp_res
+
+            elif(left_tp == self.tp_str and right_tp == self.tp_str):
+                left  = self.str_w(w_left)
+                right = self.str_w(w_right)
+                if not strict:
+                    # a small optimimization first, if both are single-char
+                    left_length  = len(left)
+                    right_length = len(right)
+                    if (jit.isconstant(left_length)  and left_length  == 1 and
+                        jit.isconstant(right_length) and right_length == 1):
+                        cmp_res = my_cmp(ord(left[0]), ord(right[0]), ignore_order)
+                        if cmp_res == 0:
+                            continue
+                        return cmp_res
+                    #
+                    w_right_num, right_valid = convert_string_to_number(right)
+                    if right_valid:
+                        w_left_num, left_valid = convert_string_to_number(left)
+                        if left_valid:
+                            #return self._compare(w_left_num, w_right_num,
+                            #                     ignore_order=ignore_order)
+                            work_lhs.append(w_left_num)
+                            work_rhs.append(w_right_num)
+                            work_strict.append(False)
+                            work_ignore_order.append(ignore_order)
+                            continue
+
+                cmp_res = my_cmp(left, right, ignore_order)
+                if cmp_res == 0:
+                    continue
+                return cmp_res
+
+            elif(left_tp == self.tp_null and right_tp == self.tp_str):
+                cmp_res = my_cmp("", self.str_w(w_right), ignore_order)
+                if cmp_res == 0:
+                    continue
+                return cmp_res
+
+            elif(left_tp == self.tp_str and right_tp == self.tp_null):
+                cmp_res = my_cmp(self.str_w(w_left), "", ignore_order)
+                if cmp_res == 0:
+                    continue
+                return cmp_res
+
+            elif(left_tp == self.tp_object and right_tp == self.tp_null):
+                return 1
+
+            elif(left_tp == self.tp_null and right_tp == self.tp_object):
+                return -1
+
+            elif(left_tp == self.tp_object and right_tp == self.tp_object):
+                return w_left.compare(w_right, self, strict) # XXX XXX XXX
+
+            else:
+                if(left_tp == self.tp_null):
+                    if self.is_true(w_right):
+                        return -1
+                    continue
+                elif(right_tp == self.tp_null):
+                    if self.is_true(w_left):
+                        return 1
+                    continue
+                elif(left_tp == self.tp_bool or right_tp == self.tp_bool):
+                    cmp_res = my_cmp(self.is_true(w_left), self.is_true(w_right),
+                                  ignore_order)
+                    if cmp_res == 0:
+                        continue
+                    return cmp_res
+                elif(left_tp == self.tp_array):
+                    return 1
+                elif(right_tp == self.tp_array):
+                    return -1
+                elif(left_tp == self.tp_object):
+                    return 1
+                elif(right_tp == self.tp_object):
+                    return -1
+                else:
+                    #return self._compare(self.as_number(w_left),
+                    #                     self.as_number(w_right),
+                    #                     ignore_order=ignore_order)
+                    work_lhs.append(self.as_number(w_left))
+                    work_rhs.append(self.as_number(w_right))
+                    work_ignore_order.append(ignore_order)
+                    work_strict.append(False)
+                    continue
+
+            raise NotImplementedError() # A type combo we have missed.
+
+        # Work lists empty -- left == right!
+        return 0
+
+    # XXX is dead???
     def _compare_object(self, w_left, w_right, strict):
         if w_left is w_right:
             return 0
