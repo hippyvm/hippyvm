@@ -607,9 +607,7 @@ class ObjSpace(object):
                     return 1
 
                 with self.iter(w_left) as itr:
-                    # the items need to go on in reverse order.
-                    # XXX add a reverse kwarg to iterator so as to remove the
-                    # following lists.
+                    # The items need to go on in reverse order.
                     new_lhs_items = []
                     new_rhs_items = []
 
@@ -670,13 +668,11 @@ class ObjSpace(object):
                         if cmp_res == 0:
                             continue
                         return cmp_res
-                    #
+
                     w_right_num, right_valid = convert_string_to_number(right)
                     if right_valid:
                         w_left_num, left_valid = convert_string_to_number(left)
                         if left_valid:
-                            #return self._compare(w_left_num, w_right_num,
-                            #                     ignore_order=ignore_order)
                             work_lhs.append(w_left_num)
                             work_rhs.append(w_right_num)
                             work_strict.append(False)
@@ -716,7 +712,6 @@ class ObjSpace(object):
                     return ret_now # is either -1 or 1
 
                 # otherwise we were handed new work for the worklist.
-                assert len(new_work_lhs) == len(new_work_rhs)# XXX
                 new_work_len = len(new_work_lhs)
 
                 # The items go on reversed to ensure left to right comparison
@@ -751,9 +746,6 @@ class ObjSpace(object):
                 elif(right_tp == self.tp_object):
                     return -1
                 else:
-                    #return self._compare(self.as_number(w_left),
-                    #                     self.as_number(w_right),
-                    #                     ignore_order=ignore_order)
                     work_lhs.append(self.as_number(w_left))
                     work_rhs.append(self.as_number(w_right))
                     work_ignore_order.append(ignore_order)
@@ -764,57 +756,6 @@ class ObjSpace(object):
 
         # Work lists empty -- left == right!
         return 0
-
-    # XXX is dead???
-    def _compare_object(self, w_left, w_right, strict):
-        if w_left is w_right:
-            return 0
-        elif strict or w_left.getclass() is not w_right.getclass():
-            return 1
-
-        left = w_left.get_instance_attrs(self.ec.interpreter)
-        right = w_right.get_instance_attrs(self.ec.interpreter)
-        if len(left) - len(right) < 0:
-            return -1
-        if len(left) - len(right) > 0:
-            return 1
-
-        for key, w_value in left.iteritems():
-            try:
-                w_right_value = right[key]
-            except KeyError:
-                return 1
-            cmp_res = self._compare(w_value, w_right_value)
-            if cmp_res == 0:
-                continue
-            else:
-                return cmp_res
-        return 0
-
-    def _compare_array(self, w_left, w_right, strict):
-        if w_left.arraylen() - w_right.arraylen() < 0:
-            return -1
-        if w_left.arraylen() - w_right.arraylen() > 0:
-            return 1
-        with self.iter(w_left) as itr:
-            while not itr.done():
-                w_key, w_value = itr.next_item(self)
-                if w_right.isset_index(self, w_key):
-                    w_right_value = self.getitem(w_right, w_key)
-                    if strict:
-                        cmp_res = self._compare(w_value,
-                                                w_right_value,
-                                                strict=True)
-                    else:
-                        cmp_res = self._compare(w_value, w_right_value)
-                    if cmp_res == 0:
-                        continue
-                    else:
-                        return cmp_res
-                else:
-                    return 1
-        return 0
-
 
     def getclass(self, w_obj):
         return w_obj.deref().getclass()
