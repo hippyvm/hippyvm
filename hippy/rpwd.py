@@ -2,6 +2,8 @@
 from rpython.rtyper.lltypesystem import lltype, rffi
 from rpython.rtyper.tool import rffi_platform as platform
 from rpython.translator.tool.cbuild import ExternalCompilationInfo
+from rpython.rtyper.lltypesystem import rffi
+
 # rffi-based pwd module
 
 eci = ExternalCompilationInfo(includes=['sys/types.h', 'pwd.h', 'grp.h'])
