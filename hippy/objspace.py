@@ -553,8 +553,8 @@ class ObjSpace(object):
             return my_cmp(self.int_w(w_left), self.int_w(w_right),
                           ignore_order)
 
-        elif(left_tp == self.tp_array and right_tp == self.tp_array):
-            return self._compare_array(w_left, w_right, strict)
+        #elif(left_tp == self.tp_array and right_tp == self.tp_array):
+        #    return self._compare_array(w_left, w_right, strict)
 
         elif(left_tp == self.tp_null and right_tp == self.tp_null):
             return 0
@@ -604,8 +604,10 @@ class ObjSpace(object):
         elif(left_tp == self.tp_null and right_tp == self.tp_object):
             return -1
 
-        elif(left_tp == self.tp_object and right_tp == self.tp_object):
-            return w_left.compare(w_right, self, strict)
+        elif(left_tp == self.tp_object and right_tp == self.tp_object) or \
+            (left_tp == self.tp_array and right_tp == self.tp_array):
+            #return w_left.compare(w_right, self, strict)
+            return self._compare_aggregates(w_left, w_right, strict, ignore_order)
 
         else:
             if(left_tp == self.tp_null):
@@ -633,54 +635,36 @@ class ObjSpace(object):
                                      ignore_order=ignore_order)
         raise NotImplementedError()
 
-    def _compare_object(self, w_left, w_right, strict):
-        if w_left is w_right:
-            return 0
-        elif strict or w_left.getclass() is not w_right.getclass():
-            return 1
+    def _compare_aggregates(self, w_left, w_right, strict, ignore_order):
 
-        left = w_left.get_instance_attrs(self.ec.interpreter)
-        right = w_right.get_instance_attrs(self.ec.interpreter)
-        if len(left) - len(right) < 0:
-            return -1
-        if len(left) - len(right) > 0:
-            return 1
+        left_tp = w_left.tp
+        right_tp = w_right.tp
 
-        for key, w_value in left.iteritems():
-            try:
-                w_right_value = right[key]
-            except KeyError:
+        if left_tp == self.tp_array and right_tp == self.tp_array:
+            if w_left.arraylen() - w_right.arraylen() < 0:
+                return -1
+            if w_left.arraylen() - w_right.arraylen() > 0:
                 return 1
-            cmp_res = self._compare(w_value, w_right_value)
-            if cmp_res == 0:
-                continue
-            else:
-                return cmp_res
-        return 0
-
-    def _compare_array(self, w_left, w_right, strict):
-        if w_left.arraylen() - w_right.arraylen() < 0:
-            return -1
-        if w_left.arraylen() - w_right.arraylen() > 0:
-            return 1
-        with self.iter(w_left) as itr:
-            while not itr.done():
-                w_key, w_value = itr.next_item(self)
-                if w_right.isset_index(self, w_key):
-                    w_right_value = self.getitem(w_right, w_key)
-                    if strict:
-                        cmp_res = self._compare(w_value,
-                                                w_right_value,
-                                                strict=True)
+            with self.iter(w_left) as itr:
+                while not itr.done():
+                    w_key, w_value = itr.next_item(self)
+                    if w_right.isset_index(self, w_key):
+                        w_right_value = self.getitem(w_right, w_key)
+                        if strict:
+                            cmp_res = self._compare(w_value,
+                                                    w_right_value,
+                                                    strict=True)
+                        else:
+                            cmp_res = self._compare(w_value, w_right_value)
+                        if cmp_res == 0:
+                            continue
+                        else:
+                            return cmp_res
                     else:
-                        cmp_res = self._compare(w_value, w_right_value)
-                    if cmp_res == 0:
-                        continue
-                    else:
-                        return cmp_res
-                else:
-                    return 1
-        return 0
+                        return 1
+            return 0
+        else: # object
+            return w_left.compare(w_right, self, strict)
 
 
     def getclass(self, w_obj):
