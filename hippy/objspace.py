@@ -553,8 +553,9 @@ class ObjSpace(object):
             return my_cmp(self.int_w(w_left), self.int_w(w_right),
                           ignore_order)
 
-        #elif(left_tp == self.tp_array and right_tp == self.tp_array):
-        #    return self._compare_array(w_left, w_right, strict)
+        elif(left_tp == self.tp_array and right_tp == self.tp_array):
+            return self._compare_aggregates(w_left,
+                                            w_right, strict, ignore_order)
 
         elif(left_tp == self.tp_null and right_tp == self.tp_null):
             return 0
@@ -604,9 +605,7 @@ class ObjSpace(object):
         elif(left_tp == self.tp_null and right_tp == self.tp_object):
             return -1
 
-        elif(left_tp == self.tp_object and right_tp == self.tp_object) or \
-            (left_tp == self.tp_array and right_tp == self.tp_array):
-            #return w_left.compare(w_right, self, strict)
+        elif(left_tp == self.tp_object and right_tp == self.tp_object):
             return self._compare_aggregates(w_left, w_right, strict, ignore_order)
 
         else:
