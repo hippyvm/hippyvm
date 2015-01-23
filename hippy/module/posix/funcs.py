@@ -221,7 +221,7 @@ def posix_initgroups(space, name, base_group_id):
     try:
         res = initgroups(buf, base_group_id)
         if res == -1:
-            space.set_errno(rposix.get_errno())
+            space.set_errno(rposix.get_saved_errno())
             return space.w_False
         return space.w_True
     finally:

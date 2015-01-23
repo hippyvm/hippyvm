@@ -2,6 +2,8 @@
 from rpython.rtyper.lltypesystem import lltype, rffi
 from rpython.rtyper.tool import rffi_platform as platform
 from rpython.translator.tool.cbuild import ExternalCompilationInfo
+from rpython.rtyper.lltypesystem import rffi
+
 # rffi-based pwd module
 
 eci = ExternalCompilationInfo(includes=['sys/types.h', 'pwd.h', 'grp.h'])
@@ -34,7 +36,8 @@ getpwnam = rffi.llexternal('getpwnam', [rffi.CCHARP], PASSWDPTR,
 getpwuid = rffi.llexternal('getpwuid', [lltype.Signed], PASSWDPTR,
                            compilation_info=eci)
 initgroups = rffi.llexternal('initgroups', [rffi.CCHARP, lltype.Signed],
-                             rffi.INT, compilation_info=eci)
+                             rffi.INT, compilation_info=eci,
+                             save_err=rffi.RFFI_SAVE_ERRNO)
 getgrgid = rffi.llexternal('getgrgid', [lltype.Signed], GROUPPTR,
                            compilation_info=eci)
 getgrnam = rffi.llexternal('getgrnam', [rffi.CCHARP], GROUPPTR,
