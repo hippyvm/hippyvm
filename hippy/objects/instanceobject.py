@@ -546,28 +546,35 @@ class W_InstanceObject(W_Object):
         w_right = w_obj
 
         if w_left is w_right:
-            return 0
+            return [], [], [], 0
         elif strict or w_left.getclass() is not w_right.getclass():
-            return 1
+            return [], [], [], 1
 
         left = w_left.get_instance_attrs(space.ec.interpreter)
         right = w_right.get_instance_attrs(space.ec.interpreter)
         if len(left) - len(right) < 0:
-            return -1
+            return [], [], [], -1
         if len(left) - len(right) > 0:
-            return 1
+            return [], [], [], 1
 
-        for key, w_value in left.iteritems():
+        new_work_left, new_work_right, new_work_strict = [], [], []
+        for key, w_left_value in left.iteritems():
+            defer = False
             try:
                 w_right_value = right[key]
             except KeyError:
-                return 1
-            cmp_res = space._compare(w_value, w_right_value)
-            if cmp_res == 0:
-                continue
+                defer = True
+
+            if defer:
+                new_work_left.append(None)
+                new_work_right.append(None)
+                new_work_strict.append(False) # value doesn't matter
             else:
-                return cmp_res
-        return 0
+                new_work_left.append(w_left_value)
+                new_work_right.append(w_right_value)
+                new_work_strict.append(False)
+
+        return new_work_left, new_work_right, new_work_strict, 0
 
     def unserialize(self, space, attrs):
         return None

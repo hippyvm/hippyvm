@@ -682,10 +682,15 @@ class ObjSpace(object):
 
                 continue
             elif(left_tp == self.tp_object and right_tp == self.tp_object):
-                cmp_res = w_left.compare(w_right, self, strict)
-                if cmp_res != 0:
+                new_work_left, new_work_right, new_work_strict, return_now = \
+                    cmp_res = w_left.compare(w_right, self, strict)
+                if return_now != 0:
                     return cmp_res # definitiely not equal
                 else:
+                    for i in xrange(len(new_work_left) - 1, -1, -1):
+                        work_left.append(new_work_left[i])
+                        work_right.append(new_work_right[i])
+                        work_strict.append(new_work_strict[i])
                     continue # look further
             else:
                 # Otherwise it's a simple (non-aggregate) like a int/float/...
