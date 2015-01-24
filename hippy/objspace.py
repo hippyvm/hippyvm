@@ -635,25 +635,20 @@ class ObjSpace(object):
         raise NotImplementedError()
 
     def _compare_aggregates(self, w_left, w_right, strict, ignore_order):
-
         work_left = [w_left]
         work_right = [w_right]
         work_strict = [strict]
-
         while work_left:
-
             w_left = work_left.pop().deref()
             w_right = work_right.pop().deref()
             strict = work_strict.pop()
-
-            if w_left is None:# w_right would also be None
+            if w_left is None:
+                assert w_right is None
                 return 1 # deferred disequality detected
 
             left_tp = w_left.tp
             right_tp = w_right.tp
-
             if left_tp == self.tp_array and right_tp == self.tp_array:
-
                 if w_left.arraylen() - w_right.arraylen() < 0:
                     return -1
                 if w_left.arraylen() - w_right.arraylen() > 0:
@@ -664,7 +659,6 @@ class ObjSpace(object):
                     new_work_right = []
                     while not itr.done():
                         w_key, w_left_value = itr.next_item(self)
-
                         if w_right.isset_index(self, w_key):
                             w_right_value = self.getitem(w_right, w_key)
                             new_work_left.append(w_left_value)
@@ -678,29 +672,24 @@ class ObjSpace(object):
                         work_left.append(new_work_left[i])
                         work_right.append(new_work_right[i])
                         work_strict.append(strict) # same for all new work
-
-                continue
             elif(left_tp == self.tp_object and right_tp == self.tp_object):
                 new_work_left, new_work_right, new_work_strict, return_now = \
                     w_left.compare(w_right, self, strict)
                 if return_now != 0:
-                    return return_now # definitiely not equal
+                    return return_now # definitely not equal
                 else:
                     for i in xrange(len(new_work_left) - 1, -1, -1):
                         work_left.append(new_work_left[i])
                         work_right.append(new_work_right[i])
                         work_strict.append(new_work_strict[i])
-                    continue # look further
             else:
                 # Otherwise it's a simple (non-aggregate) like a int/float/...
                 # In this case, recursion goes at maximum one level deeper.
                 cmp_res = self._compare(w_left, w_right, strict, ignore_order)
                 if cmp_res != 0:
-                    return cmp_res # definitiely not equal
-                else:
-                    continue # look further
+                    return cmp_res # definitely not equal
 
-        return 0 # proven equal
+        return 0
 
 
     def getclass(self, w_obj):
