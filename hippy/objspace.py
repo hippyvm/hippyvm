@@ -526,7 +526,6 @@ class ObjSpace(object):
         return self._compare(w_a, w_b, strict=True, ignore_order=True) == 0
 
     def _compare(self, w_left, w_right, strict=False, ignore_order=False):
-
         w_left = w_left.deref()
         w_right = w_right.deref()
 
@@ -554,6 +553,14 @@ class ObjSpace(object):
                           ignore_order)
 
         elif(left_tp == self.tp_array and right_tp == self.tp_array):
+            if w_left is w_right:
+                return 0
+            w_left_len = w_left.arraylen()
+            w_right_len = w_right.arraylen()
+            if w_left_len < w_right_len:
+                return -1
+            elif w_left_len > w_right_len:
+                return 1
             return self._compare_aggregates(w_left,
                                             w_right, strict, ignore_order)
 
@@ -606,6 +613,8 @@ class ObjSpace(object):
             return -1
 
         elif(left_tp == self.tp_object and right_tp == self.tp_object):
+            if w_left is w_right:
+                return 0
             return self._compare_aggregates(w_left, w_right, strict, ignore_order)
 
         else:
@@ -648,9 +657,13 @@ class ObjSpace(object):
             left_tp = w_left.tp
             right_tp = w_right.tp
             if left_tp == self.tp_array and right_tp == self.tp_array:
-                if w_left.arraylen() - w_right.arraylen() < 0:
+                if w_left is w_right:
+                    continue
+                w_left_len = w_left.arraylen()
+                w_right_len = w_right.arraylen()
+                if w_left_len < w_right_len:
                     return -1
-                if w_left.arraylen() - w_right.arraylen() > 0:
+                elif w_left_len > w_right_len:
                     return 1
 
                 with self.iter(w_left) as itr:
@@ -710,6 +723,8 @@ class ObjSpace(object):
                         obj_st.append(new_st.pop())
                         strict_st.append(strict) # same for all new work
             elif(left_tp == self.tp_object and right_tp == self.tp_object):
+                if w_left is w_right:
+                    continue
                 new_work_left, new_work_right, new_work_strict, return_now = \
                     w_left.compare(w_right, self, strict)
                 if return_now != 0:
