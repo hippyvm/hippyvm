@@ -643,7 +643,7 @@ class ObjSpace(object):
             strict = strict_st.pop()
             if w_left is None:
                 assert w_right is None
-                return 1 # deferred disequality detected
+                return 1 # deferred inequality detected
 
             left_tp = w_left.tp
             right_tp = w_right.tp
@@ -663,7 +663,10 @@ class ObjSpace(object):
                             new_st.append(w_right_value)
                             new_st.append(w_left_value)
                         else:
-                            # deferred disequalities
+                            # Although we know the arrays aren't equal, PHP's
+                            # ordering rules force us to continue checking the
+                            # in-common values to determine ordering. See
+                            # test_deferred_comparison for more details.
                             new_st.append(None)
                             new_st.append(None)
 
