@@ -654,8 +654,43 @@ class ObjSpace(object):
                     return 1
 
                 with self.iter(w_left) as itr:
-                    # We push onto new_st in order: w_right, w_left
+                    # We try and optimise a common-case where the array only
+                    # references simple datatypes (ints etc.) and not compound
+                    # datatypes (objects and arrays). We iterate over the array
+                    # and as long as we only encounter simple datatypes, we have
+                    # no need to assign things to the stack for later
+                    # consideration: we deal with them here and now. However, as
+                    # soon as we encounter a compound datatype, we have to fall
+                    # back to pushing things onto obj_st/strict_st.
+
+                    # If allocated, new_st is a list mirroring obj_st *but*
+                    # notice it stores in order w_right, w_left
                     new_st = []
+
+                    while not itr.done():
+                        w_key, w_left_val = itr.next_item(self)
+                        if w_right.isset_index(self, w_key):
+                            w_right_val = self.getitem(w_right, w_key)
+                            left_val_tp = w_left_val.tp
+                            right_val_tp = w_right_val.tp
+                            if left_val_tp == self.tp_array \
+                              or left_val_tp == self.tp_object \
+                              or right_val_tp == self.tp_array \
+                              or right_val_tp == self.tp_object:
+                                # We've encountered a compound datatype, so we
+                                # have to fall back to the slower code below.
+                                new_st.append(w_right_val)
+                                new_st.append(w_left_val)
+                                break
+                            cmp_res = self._compare(w_left_val, w_right_val, strict, ignore_order)
+                            if cmp_res != 0:
+                                return cmp_res
+                        else:
+                            return 1
+
+                    # If the iterator has anything left in it, it means we
+                    # encountered a coupound datatype earlier, which means
+                    # everything from now on has to goto obj_st/strict_st.
                     while not itr.done():
                         w_key, w_left_value = itr.next_item(self)
                         if w_right.isset_index(self, w_key):

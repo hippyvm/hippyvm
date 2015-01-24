@@ -255,3 +255,37 @@ class TestComparisons(BaseTestInterpreter):
         """)
         assert php_space.is_true(output[0])
 
+    def test_array_shortcuts1(self, php_space):
+        output = self.run("""
+            $a = array(0, 1, 2);
+
+            echo $a == $b;
+        """)
+        assert php_space.is_true(output[0])
+
+    def test_array_shortcuts1(self, php_space):
+        output = self.run("""
+            $a = array(0, 1, 2);
+            $b = array(0, 1, 3);
+
+            echo $a == $b;
+        """)
+        assert not php_space.is_true(output[0])
+
+    def test_array_shortcuts2(self, php_space):
+        output = self.run("""
+            $a = array(0, 1, array(2, 3));
+            $b = array(0, 1, array(2, 3));
+
+            echo $a == $b;
+        """)
+        assert php_space.is_true(output[0])
+
+    def test_array_shortcuts3(self, php_space):
+        output = self.run("""
+            $a = array(0, 1, array(2, 3));
+            $b = array(0, 1, array(2, 4));
+
+            echo $a == $b;
+        """)
+        assert not php_space.is_true(output[0])
