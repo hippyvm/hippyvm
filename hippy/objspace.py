@@ -755,7 +755,6 @@ class ObjSpace(object):
 
                     left_val_tp = w_left_value.tp
                     right_val_tp = w_right_value.tp
-
                     if left_val_tp == self.tp_array \
                       or left_val_tp == self.tp_object \
                       or right_val_tp == self.tp_array \
@@ -770,8 +769,6 @@ class ObjSpace(object):
                                                 ignore_order)
                         if cmp_res != 0:
                             return cmp_res
-                else:
-                    return 0 # never hit a break, so must be equal
 
                 if new_st is not None:
                     assert isinstance(new_st, list)
