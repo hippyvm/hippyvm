@@ -16,7 +16,7 @@ from hippy.objects.boolobject import W_BoolObject, w_True, w_False
 from hippy.objects.nullobject import W_NullObject, w_Null
 from hippy.objects.intobject import W_IntObject
 from hippy.objects.floatobject import W_FloatObject
-from hippy.objects.strobject import W_StringObject
+from hippy.objects.strobject import W_StringObject, W_ConstStringObject
 from hippy.objects.arrayobject import W_ArrayObject
 from hippy.objects.resources.resource import W_Resource
 from hippy.objects.instanceobject import W_InstanceObject
@@ -683,7 +683,7 @@ class ObjSpace(object):
                 elif w_left_len > w_right_len:
                     return 1
 
-                with self.iter(w_left) as itr:
+                with self.iter(w_left) as left_itr, self.iter(w_right) as right_itr:
                     # We try and optimise a common-case where the array only
                     # references simple datatypes (ints etc.) and not compound
                     # datatypes (objects and arrays). We iterate over the array
@@ -696,37 +696,58 @@ class ObjSpace(object):
                     # If allocated, new_st is a list mirroring obj_st *but*
                     # notice it stores in order w_right, w_left
                     new_st = None
-                    while not itr.done():
-                        w_key, w_left_val = itr.next_item(self)
-                        if w_right.isset_index(self, w_key):
-                            w_right_val = self.getitem(w_right, w_key)
-                            if (self.is_array(w_left_val) or self.is_object(w_left_val)) \
-                              and (self.is_array(w_right_val) or self.is_object(w_right_val)):
-                                # We've encountered a compound datatype, so we
-                                # have to fall back to the slower code below.
-                                new_st = [w_right_val, w_left_val]
-                                break
-                            cmp_res = self._compare(w_left_val, w_right_val, strict, ignore_order)
-                            if cmp_res != 0:
-                                return cmp_res
+                    while not left_itr.done():
+                        # Especially if the two arrays in question are lists,
+                        # their keys are likely to be a) of primitive type b) in
+                        # identical order. We therefore iterate over the left
+                        # and right arrays at the same time hoping that we'll
+                        # often see the same keys at the same points and avoid
+                        # doing expensive lookups.
+                        w_key, w_left_val = left_itr.next_item(self)
+                        w_rkey, w_right_val = right_itr.next_item(self)
+                        if isinstance(w_key, W_IntObject) and isinstance(w_rkey, W_IntObject) \
+                          and w_key.intval == w_rkey.intval:
+                            pass
+                        elif isinstance(w_key, W_ConstStringObject) and isinstance(w_rkey, W_ConstStringObject) \
+                          and w_key._strval == w_rkey._strval:
+                            pass
                         else:
-                            return 1
+                            if not w_right.isset_index(self, w_key):
+                                return 1
+                            w_right_val = self.getitem(w_right, w_key)
+                        if (self.is_array(w_left_val) or self.is_object(w_left_val)) \
+                          and (self.is_array(w_right_val) or self.is_object(w_right_val)):
+                            # We've encountered a compound datatype, so we
+                            # have to fall back to the slower code below.
+                            new_st = [w_right_val, w_left_val]
+                            break
+                        cmp_res = self._compare(w_left_val, w_right_val, strict, ignore_order)
+                        if cmp_res != 0:
+                            return cmp_res
 
                     if new_st is not None:
                         assert isinstance(new_st, list)
-                        while not itr.done():
-                            w_key, w_left_val = itr.next_item(self)
-                            if w_right.isset_index(self, w_key):
-                                w_right_val = self.getitem(w_right, w_key)
-                                new_st.append(w_right_val)
-                                new_st.append(w_left_val)
+                        while not left_itr.done():
+                            w_key, w_left_val = left_itr.next_item(self)
+                            w_rkey, w_right_val = right_itr.next_item(self)
+                            if isinstance(w_key, W_IntObject) and isinstance(w_rkey, W_IntObject) \
+                              and w_key.intval == w_rkey.intval:
+                                pass
+                            elif isinstance(w_key, W_ConstStringObject) and isinstance(w_rkey, W_ConstStringObject) \
+                              and w_key._strval == w_rkey._strval:
+                                pass
                             else:
-                                # Although we know the arrays aren't equal, PHP's
-                                # ordering rules force us to continue checking the
-                                # in-common values to determine ordering. See
-                                # test_deferred_comparison for more details.
-                                new_st.append(None)
-                                new_st.append(None)
+                                if not w_right.isset_index(self, w_key):
+                                    # Although we know the arrays aren't equal, PHP's
+                                    # ordering rules force us to continue checking the
+                                    # in-common values to determine ordering. See
+                                    # test_deferred_comparison for more details.
+                                    new_st.append(None)
+                                    new_st.append(None)
+                                    continue
+                                w_right_val = self.getitem(w_right, w_key)
+                            new_st.append(w_right_val)
+                            new_st.append(w_left_val)
 
                         while len(new_st) > 0:
                             obj_st.append(new_st.pop())
