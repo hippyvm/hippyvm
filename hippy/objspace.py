@@ -654,6 +654,12 @@ class ObjSpace(object):
         # not only says "is/isn't" equal but also "greater than/less than", we
         # have to march over these things in their natural order which sometimes
         # means creating temporary intermediate lists.
+        #
+        # There is also one common idiom in the below: we know that calling
+        # _compare can only become recursive if both left and right hand side
+        # are aggregate types. If one side is not an aggregate, either _compares
+        # type checks will fail or it will convert both sides into numbers.
+        # Either way we know recursion won't happen.
 
         obj_st = [w_left, w_right] # object stack: come in pairs (w_left, w_right)
         strict_st = [strict]       # strict stack
@@ -694,12 +700,8 @@ class ObjSpace(object):
                         w_key, w_left_val = itr.next_item(self)
                         if w_right.isset_index(self, w_key):
                             w_right_val = self.getitem(w_right, w_key)
-                            left_val_tp = w_left_val.tp
-                            right_val_tp = w_right_val.tp
-                            if left_val_tp == self.tp_array \
-                              or left_val_tp == self.tp_object \
-                              or right_val_tp == self.tp_array \
-                              or right_val_tp == self.tp_object:
+                            if (self.is_array(w_left_val) or self.is_object(w_left_val)) \
+                              and (self.is_array(w_right_val) or self.is_object(w_right_val)):
                                 # We've encountered a compound datatype, so we
                                 # have to fall back to the slower code below.
                                 new_st = [w_right_val, w_left_val]
@@ -713,11 +715,11 @@ class ObjSpace(object):
                     if new_st is not None:
                         assert isinstance(new_st, list)
                         while not itr.done():
-                            w_key, w_left_value = itr.next_item(self)
+                            w_key, w_left_val = itr.next_item(self)
                             if w_right.isset_index(self, w_key):
-                                w_right_value = self.getitem(w_right, w_key)
-                                new_st.append(w_right_value)
-                                new_st.append(w_left_value)
+                                w_right_val = self.getitem(w_right, w_key)
+                                new_st.append(w_right_val)
+                                new_st.append(w_left_val)
                             else:
                                 # Although we know the arrays aren't equal, PHP's
                                 # ordering rules force us to continue checking the
@@ -764,24 +766,20 @@ class ObjSpace(object):
 
                 new_st = None
                 left_attr_itr = left.iteritems()
-                for key, w_left_value in left_attr_itr:
+                for key, w_left_val in left_attr_itr:
                     try:
-                        w_right_value = right[key]
+                        w_right_val = right[key]
                     except KeyError:
                         return 1 # bail out immediately
 
-                    left_val_tp = w_left_value.tp
-                    right_val_tp = w_right_value.tp
-                    if left_val_tp == self.tp_array \
-                      or left_val_tp == self.tp_object \
-                      or right_val_tp == self.tp_array \
-                      or right_val_tp == self.tp_object:
+                    if (self.is_array(w_left_val) or self.is_object(w_left_val)) \
+                      and (self.is_array(w_right_val) or self.is_object(w_right_val)):
                         # slow case, we found an aggregate nesting.
-                        new_st = [w_right_value, w_left_value]
+                        new_st = [w_right_val, w_left_val]
                         break
                     else:
-                        cmp_res = self._compare(w_left_value,
-                                                w_right_value,
+                        cmp_res = self._compare(w_left_val,
+                                                w_right_val,
                                                 strict,
                                                 ignore_order)
                         if cmp_res != 0:
@@ -791,24 +789,22 @@ class ObjSpace(object):
                     assert isinstance(new_st, list)
                     # This is the slow path. A composite nesting caused
                     # us to break in the above loop.
-                    for key, w_left_value in left.iteritems():
+                    for key, w_left_val in left.iteritems():
                         try:
-                            w_right_value = right[key]
+                            w_right_val = right[key]
                         except KeyError:
                             new_st.append(None)
                             new_st.append(None)
                         else:
-                            new_st.append(w_right_value)
-                            new_st.append(w_left_value)
+                            new_st.append(w_right_val)
+                            new_st.append(w_left_val)
 
                     while len(new_st) > 0:
                         obj_st.append(new_st.pop())
                         obj_st.append(new_st.pop())
                         strict_st.append(False) # same for all new work
             else:
-                # Otherwise we know that at least one of the members is a
-                # non-aggregate (e.g. int/float), which means a call to _compare
-                # will go at most one level deep.
+                # We know that at least one of the members is a non-aggregate.
                 cmp_res = self._compare(w_left, w_right, strict, ignore_order)
                 if cmp_res != 0:
                     return cmp_res # definitely not equal
