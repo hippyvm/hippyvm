@@ -725,7 +725,6 @@ class ObjSpace(object):
                         strict_st.append(strict) # same for all new work
 
             elif(left_tp == self.tp_object and right_tp == self.tp_object):
-
                 if w_left is w_right:
                     # matching identity must indicate equality
                     continue
@@ -746,8 +745,7 @@ class ObjSpace(object):
                     if cmp_res != 0:
                         return cmp_res # definitely not equal
                     continue
-                else: # fast_path
-
+                else:
                     if w_left is w_right:
                         continue
                     elif (w_left is not w_right and strict) or \
@@ -766,12 +764,9 @@ class ObjSpace(object):
                     # in either object. See the array case for details; this is
                     # a very similar optimisation.
 
-                    new_st = [] # hopefully not allocated.
-
+                    new_st = []
                     left_attr_itr = left.iteritems()
-
                     for key, w_left_value in left_attr_itr:
-
                         try:
                             w_right_value = right[key]
                         except KeyError:
@@ -788,9 +783,7 @@ class ObjSpace(object):
                             new_st.append(w_right_value)
                             new_st.append(w_left_value)
                             break
-
                         else:
-
                             cmp_res = self._compare(w_left_value,
                                                     w_right_value,
                                                     strict,
