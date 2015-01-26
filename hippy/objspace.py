@@ -35,9 +35,6 @@ from hippy.builtin import BUILTIN_FUNCTIONS
 PHP_WHITESPACE = ' \t\n\r\x0b\0'
 MASK_31_63 = 31 if sys.maxint == 2**31 - 1 else 63
 
-class UseFastComparison(Exception):
-    pass
-
 @specialize.memo()
 def getspace():
     return ObjSpace()
@@ -724,87 +721,66 @@ class ObjSpace(object):
                 if w_left is w_right:
                     # matching identity must indicate equality
                     continue
+                elif strict or w_left.getclass() is not w_right.getclass():
+                    return 1
 
-                fast_path = False
-                try:
-                    cmp_res = w_left.compare(w_right, self, strict)
-                except UseFastComparison:
-                    # UseFastComparison indicates we should use the built-in
-                    # objspace fast path for comparing these objects. This
-                    # avoids having to return freshly allocated lists of
-                    # new work. (I.e. W_InstanceObject.compare() would need
-                    # to return a list of new objects to compare, and a list
-                    # of new stricts also).
-                    fast_path = True
+                left = w_left.get_instance_attrs(self.ec.interpreter)
+                right = w_right.get_instance_attrs(self.ec.interpreter)
+                if len(left) - len(right) < 0:
+                    return -1
+                if len(left) - len(right) > 0:
+                    return 1
 
-                if not fast_path:
-                    if cmp_res != 0:
-                        return cmp_res # definitely not equal
-                    continue
+                # Check for the case where there are no nested aggregates
+                # in either object. See the array case for details; this is
+                # a very similar optimisation.
+
+                new_st = None
+                left_attr_itr = left.iteritems()
+                for key, w_left_value in left_attr_itr:
+                    try:
+                        w_right_value = right[key]
+                    except KeyError:
+                        return 1 # bail out immediately
+
+                    left_val_tp = w_left_value.tp
+                    right_val_tp = w_right_value.tp
+
+                    if left_val_tp == self.tp_array \
+                      or left_val_tp == self.tp_object \
+                      or right_val_tp == self.tp_array \
+                      or right_val_tp == self.tp_object:
+                        # slow case, we found an aggregate nesting.
+                        new_st = [w_right_value, w_left_value]
+                        break
+                    else:
+                        cmp_res = self._compare(w_left_value,
+                                                w_right_value,
+                                                strict,
+                                                ignore_order)
+                        if cmp_res != 0:
+                            return cmp_res
                 else:
-                    if w_left is w_right:
-                        continue
-                    elif (w_left is not w_right and strict) or \
-                        w_left.getclass() is not w_right.getclass():
-                        return 1
+                    return 0 # never hit a break, so must be equal
 
-                    left = w_left.get_instance_attrs(self.ec.interpreter)
-                    right = w_right.get_instance_attrs(self.ec.interpreter)
-                    if len(left) - len(right) < 0:
-                        return -1
-                    if len(left) - len(right) > 0:
-                        return 1
-
-                    # Check for the case where there are no nested aggregates
-                    # in either object. See the array case for details; this is
-                    # a very similar optimisation.
-
-                    new_st = None
-                    left_attr_itr = left.iteritems()
-                    for key, w_left_value in left_attr_itr:
+                if new_st is not None:
+                    assert isinstance(new_st, list)
+                    # This is the slow path. A composite nesting caused
+                    # us to break in the above loop.
+                    for key, w_left_value in left.iteritems():
                         try:
                             w_right_value = right[key]
                         except KeyError:
-                            return 1 # bail out immediately
-
-                        left_val_tp = w_left_value.tp
-                        right_val_tp = w_right_value.tp
-
-                        if left_val_tp == self.tp_array \
-                          or left_val_tp == self.tp_object \
-                          or right_val_tp == self.tp_array \
-                          or right_val_tp == self.tp_object:
-                            # slow case, we found an aggregate nesting.
-                            new_st = [w_right_value, w_left_value]
-                            break
+                            new_st.append(None)
+                            new_st.append(None)
                         else:
-                            cmp_res = self._compare(w_left_value,
-                                                    w_right_value,
-                                                    strict,
-                                                    ignore_order)
-                            if cmp_res != 0:
-                                return cmp_res
-                    else:
-                        return 0 # never hit a break, so must be equal
+                            new_st.append(w_right_value)
+                            new_st.append(w_left_value)
 
-                    if new_st is not None:
-                        assert isinstance(new_st, list)
-                        # This is the slow path. A composite nesting caused
-                        # us to break in the above loop.
-                        for key, w_left_value in left.iteritems():
-                            try:
-                                w_right_value = right[key]
-                            except KeyError:
-                                new_st.append(None)
-                                new_st.append(None)
-                            else:
-                                new_st.append(w_right_value)
-                                new_st.append(w_left_value)
-
-                        while len(new_st) > 0:
-                            obj_st.append(new_st.pop())
-                            obj_st.append(new_st.pop())
-                            strict_st.append(False) # same for all new work
+                    while len(new_st) > 0:
+                        obj_st.append(new_st.pop())
+                        obj_st.append(new_st.pop())
+                        strict_st.append(False) # same for all new work
             else:
                 # Otherwise it's a simple (non-aggregate) like a int/float/...
                 # In this case, recursion goes at maximum one level deeper.

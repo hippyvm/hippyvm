@@ -541,13 +541,6 @@ class W_InstanceObject(W_Object):
             space.ec.hippy_warn(self._msg_misuse_as_array(space, False))
             return self
 
-    def compare(self, w_obj, space, strict):
-        # This exception indicates to the object space to use the built-in
-        # fast path for object comparison. The code is inlined so as to avoid
-        # returning freshly allocated lists.
-        from hippy.objspace import UseFastComparison
-        raise UseFastComparison()
-
     def unserialize(self, space, attrs):
         return None
 
