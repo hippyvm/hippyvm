@@ -756,12 +756,53 @@ class ObjSpace(object):
 
                     left = w_left.get_instance_attrs(self.ec.interpreter)
                     right = w_right.get_instance_attrs(self.ec.interpreter)
+
                     if len(left) - len(right) < 0:
                         return -1
                     if len(left) - len(right) > 0:
                         return 1
 
-                    #new_work_left, new_work_right, new_work_strict = [], [], []
+                    # Check for the case where there are no nested aggregates
+                    # in either object. See the array case for details; this is
+                    # a very similar optimisation.
+
+                    new_st = [] # hopefully not allocated.
+
+                    left_attr_itr = left.iteritems()
+
+                    for key, w_left_value in left_attr_itr:
+
+                        try:
+                            w_right_value = right[key]
+                        except KeyError:
+                            return 1 # bail out immediately
+
+                        left_val_tp = w_left_value.tp
+                        right_val_tp = w_right_value.tp
+
+                        if left_val_tp == self.tp_array \
+                          or left_val_tp == self.tp_object \
+                          or right_val_tp == self.tp_array \
+                          or right_val_tp == self.tp_object:
+                            # slow case, we found an aggregate nesting.
+                            new_st.append(w_right_value)
+                            new_st.append(w_left_value)
+                            break
+
+                        else:
+
+                            cmp_res = self._compare(w_left_value,
+                                                    w_right_value,
+                                                    strict,
+                                                    ignore_order)
+                            if cmp_res != 0:
+                                return cmp_res
+                            # otherwise carry on
+                    else: # for/else
+                        return 0 # never hit a break, so must be equal
+
+                    # This is the slow path. A composite nesting caused
+                    # us to break in the above loop.
                     for key, w_left_value in left.iteritems():
                         defer = False
                         try:
@@ -770,12 +811,16 @@ class ObjSpace(object):
                             defer = True
 
                         if defer:
-                            obj_st.extend([None, None])
-                            strict_st.append(False)
+                            new_st.append(None)
+                            new_st.append(None)
                         else:
-                            obj_st.append(w_right_value)
-                            obj_st.append(w_left_value)
-                            strict_st.append(False)
+                            new_st.append(w_right_value)
+                            new_st.append(w_left_value)
+
+                    while len(new_st) > 0:
+                        obj_st.append(new_st.pop())
+                        obj_st.append(new_st.pop())
+                        strict_st.append(False) # same for all new work
             else:
                 # Otherwise it's a simple (non-aggregate) like a int/float/...
                 # In this case, recursion goes at maximum one level deeper.
