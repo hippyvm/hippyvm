@@ -642,6 +642,16 @@ class ObjSpace(object):
         raise NotImplementedError()
 
     def _compare_aggregates(self, w_left, w_right, strict, ignore_order):
+        # Aggregate things (user objects, arrays) are most naturally compared
+        # recursively. However that is slow and tends to blow up the stack. This
+        # function iteratively compares such things. It tries very hard not to
+        # allocate more lists than it has to, as this is a performance criticial
+        # piece of code. We do that by continually pushing things we come across
+        # onto a stack (obj_st and its mirror strict_st). Because this function
+        # not only says "is/isn't" equal but also "greater than/less than", we
+        # have to march over these things in their natural order which sometimes
+        # means creating temporary intermediate lists.
+
         obj_st = [w_left, w_right] # object stack: come in pairs (w_left, w_right)
         strict_st = [strict]       # strict stack
         while len(obj_st) > 0:
@@ -782,8 +792,9 @@ class ObjSpace(object):
                         obj_st.append(new_st.pop())
                         strict_st.append(False) # same for all new work
             else:
-                # Otherwise it's a simple (non-aggregate) like a int/float/...
-                # In this case, recursion goes at maximum one level deeper.
+                # Otherwise we know that at least one of the members is a
+                # non-aggregate (e.g. int/float), which means a call to _compare
+                # will go at most one level deep.
                 cmp_res = self._compare(w_left, w_right, strict, ignore_order)
                 if cmp_res != 0:
                     return cmp_res # definitely not equal
