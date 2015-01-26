@@ -766,11 +766,22 @@ class ObjSpace(object):
 
                 new_st = None
                 left_attr_itr = left.iteritems()
+                right_attr_itr = right.iteritems()
                 for key, w_left_val in left_attr_itr:
-                    try:
-                        w_right_val = right[key]
-                    except KeyError:
-                        return 1 # bail out immediately
+                    r_key, w_right_val = right_attr_itr.next()
+                    if key != r_key:
+                        # Most of the time, if left and right are objects of the
+                        # same classes, their attributes will be defined in the
+                        # same order, so we can simply try iterating over both
+                        # in sequence. Sometimes, even if both sets of
+                        # attributes are identical, they'll get out of sequence,
+                        # so we then switch to this slow path. Of course, this
+                        # path also serves to catch cases when the sets of
+                        # attributes aren't identical too.
+                        try:
+                            w_right_val = right[key]
+                        except KeyError:
+                            return 1
 
                     if (self.is_array(w_left_val) or self.is_object(w_left_val)) \
                       and (self.is_array(w_right_val) or self.is_object(w_right_val)):
@@ -786,18 +797,22 @@ class ObjSpace(object):
                             return cmp_res
 
                 if new_st is not None:
-                    assert isinstance(new_st, list)
                     # This is the slow path. A composite nesting caused
                     # us to break in the above loop.
+                    assert isinstance(new_st, list)
                     for key, w_left_val in left_attr_itr:
-                        try:
-                            w_right_val = right[key]
-                        except KeyError:
-                            new_st.append(None)
-                            new_st.append(None)
-                        else:
-                            new_st.append(w_right_val)
-                            new_st.append(w_left_val)
+                        # See the comment above for why we iterate over left and
+                        # right iterators in sync.
+                        r_key, w_right_val = right_attr_itr.next()
+                        if key != r_key:
+                            try:
+                                w_right_val = right[key]
+                            except KeyError:
+                                new_st.append(None)
+                                new_st.append(None)
+                                continue
+                        new_st.append(w_right_val)
+                        new_st.append(w_left_val)
 
                     while len(new_st) > 0:
                         obj_st.append(new_st.pop())
