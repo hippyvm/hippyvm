@@ -679,8 +679,7 @@ class ObjSpace(object):
 
                     # If allocated, new_st is a list mirroring obj_st *but*
                     # notice it stores in order w_right, w_left
-                    new_st = []
-
+                    new_st = None
                     while not itr.done():
                         w_key, w_left_val = itr.next_item(self)
                         if w_right.isset_index(self, w_key):
@@ -693,8 +692,7 @@ class ObjSpace(object):
                               or right_val_tp == self.tp_object:
                                 # We've encountered a compound datatype, so we
                                 # have to fall back to the slower code below.
-                                new_st.append(w_right_val)
-                                new_st.append(w_left_val)
+                                new_st = [w_right_val, w_left_val]
                                 break
                             cmp_res = self._compare(w_left_val, w_right_val, strict, ignore_order)
                             if cmp_res != 0:
@@ -702,29 +700,27 @@ class ObjSpace(object):
                         else:
                             return 1
 
-                    # If the iterator has anything left in it, it means we
-                    # encountered a coupound datatype earlier, which means
-                    # everything from now on has to goto obj_st/strict_st.
-                    while not itr.done():
-                        w_key, w_left_value = itr.next_item(self)
-                        if w_right.isset_index(self, w_key):
-                            w_right_value = self.getitem(w_right, w_key)
-                            new_st.append(w_right_value)
-                            new_st.append(w_left_value)
-                        else:
-                            # Although we know the arrays aren't equal, PHP's
-                            # ordering rules force us to continue checking the
-                            # in-common values to determine ordering. See
-                            # test_deferred_comparison for more details.
-                            new_st.append(None)
-                            new_st.append(None)
+                    if new_st is not None:
+                        assert isinstance(new_st, list)
+                        while not itr.done():
+                            w_key, w_left_value = itr.next_item(self)
+                            if w_right.isset_index(self, w_key):
+                                w_right_value = self.getitem(w_right, w_key)
+                                new_st.append(w_right_value)
+                                new_st.append(w_left_value)
+                            else:
+                                # Although we know the arrays aren't equal, PHP's
+                                # ordering rules force us to continue checking the
+                                # in-common values to determine ordering. See
+                                # test_deferred_comparison for more details.
+                                new_st.append(None)
+                                new_st.append(None)
 
-                    while len(new_st) > 0:
-                        obj_st.append(new_st.pop())
-                        obj_st.append(new_st.pop())
-                        strict_st.append(strict) # same for all new work
-
-            elif(left_tp == self.tp_object and right_tp == self.tp_object):
+                        while len(new_st) > 0:
+                            obj_st.append(new_st.pop())
+                            obj_st.append(new_st.pop())
+                            strict_st.append(strict) # same for all new work
+            elif left_tp == self.tp_object and right_tp == self.tp_object:
                 if w_left is w_right:
                     # matching identity must indicate equality
                     continue
@@ -749,12 +745,11 @@ class ObjSpace(object):
                     if w_left is w_right:
                         continue
                     elif (w_left is not w_right and strict) or \
-                        (w_left.getclass() is not w_right.getclass()):
+                        w_left.getclass() is not w_right.getclass():
                         return 1
 
                     left = w_left.get_instance_attrs(self.ec.interpreter)
                     right = w_right.get_instance_attrs(self.ec.interpreter)
-
                     if len(left) - len(right) < 0:
                         return -1
                     if len(left) - len(right) > 0:
@@ -764,7 +759,7 @@ class ObjSpace(object):
                     # in either object. See the array case for details; this is
                     # a very similar optimisation.
 
-                    new_st = []
+                    new_st = None
                     left_attr_itr = left.iteritems()
                     for key, w_left_value in left_attr_itr:
                         try:
@@ -780,8 +775,7 @@ class ObjSpace(object):
                           or right_val_tp == self.tp_array \
                           or right_val_tp == self.tp_object:
                             # slow case, we found an aggregate nesting.
-                            new_st.append(w_right_value)
-                            new_st.append(w_left_value)
+                            new_st = [w_right_value, w_left_value]
                             break
                         else:
                             cmp_res = self._compare(w_left_value,
@@ -790,30 +784,27 @@ class ObjSpace(object):
                                                     ignore_order)
                             if cmp_res != 0:
                                 return cmp_res
-                            # otherwise carry on
-                    else: # for/else
+                    else:
                         return 0 # never hit a break, so must be equal
 
-                    # This is the slow path. A composite nesting caused
-                    # us to break in the above loop.
-                    for key, w_left_value in left.iteritems():
-                        defer = False
-                        try:
-                            w_right_value = right[key]
-                        except KeyError:
-                            defer = True
+                    if new_st is not None:
+                        assert isinstance(new_st, list)
+                        # This is the slow path. A composite nesting caused
+                        # us to break in the above loop.
+                        for key, w_left_value in left.iteritems():
+                            try:
+                                w_right_value = right[key]
+                            except KeyError:
+                                new_st.append(None)
+                                new_st.append(None)
+                            else:
+                                new_st.append(w_right_value)
+                                new_st.append(w_left_value)
 
-                        if defer:
-                            new_st.append(None)
-                            new_st.append(None)
-                        else:
-                            new_st.append(w_right_value)
-                            new_st.append(w_left_value)
-
-                    while len(new_st) > 0:
-                        obj_st.append(new_st.pop())
-                        obj_st.append(new_st.pop())
-                        strict_st.append(False) # same for all new work
+                        while len(new_st) > 0:
+                            obj_st.append(new_st.pop())
+                            obj_st.append(new_st.pop())
+                            strict_st.append(False) # same for all new work
             else:
                 # Otherwise it's a simple (non-aggregate) like a int/float/...
                 # In this case, recursion goes at maximum one level deeper.
