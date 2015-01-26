@@ -45,8 +45,8 @@ class W_DateTime(W_InstanceObject):
         )
 
         if self.timelib_time.c_sse == w_obj.timelib_time.c_sse and offset_1 == offset_2:
-            return [], [], [], 0
-        return [], [], [], 1
+            return 0
+        return 1
 
     def clone(self, interp, contextclass):
         from hippy.module.date.common import TimeZoneWrapper

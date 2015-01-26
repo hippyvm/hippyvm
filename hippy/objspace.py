@@ -722,18 +722,59 @@ class ObjSpace(object):
                         obj_st.append(new_st.pop())
                         obj_st.append(new_st.pop())
                         strict_st.append(strict) # same for all new work
+
             elif(left_tp == self.tp_object and right_tp == self.tp_object):
+
                 if w_left is w_right:
+                    # matching identity must indicate equality
                     continue
-                new_work_left, new_work_right, new_work_strict, return_now = \
-                    w_left.compare(w_right, self, strict)
-                if return_now != 0:
-                    return return_now # definitely not equal
-                else:
-                    for i in xrange(len(new_work_left) - 1, -1, -1):
-                        obj_st.append(new_work_left[i])
-                        obj_st.append(new_work_right[i])
-                        strict_st.append(new_work_strict[i])
+
+                fast_path = False
+                try:
+                    cmp_res = w_left.compare(w_right, self, strict)
+                except NotImplementedError:
+                    # NotImplementedError indicates we should use the built-in
+                    # objspace fast path for comparing these objects. This
+                    # avoids having to return freshly allocated lists of
+                    # new work. (I.e. W_InstanceObject.compare() would need
+                    # to return a list of new objects to compare, and a list
+                    # of new stricts also).
+                    fast_path = True
+
+                if not fast_path:
+                    if cmp_res != 0:
+                        return cmp_res # definitely not equal
+                    continue
+                else: # fast_path
+
+                    if w_left is w_right:
+                        continue
+                    elif (w_left is not w_right and strict) or \
+                        (w_left.getclass() is not w_right.getclass()):
+                        return 1
+
+                    left = w_left.get_instance_attrs(self.ec.interpreter)
+                    right = w_right.get_instance_attrs(self.ec.interpreter)
+                    if len(left) - len(right) < 0:
+                        return -1
+                    if len(left) - len(right) > 0:
+                        return 1
+
+                    #new_work_left, new_work_right, new_work_strict = [], [], []
+                    for key, w_left_value in left.iteritems():
+                        defer = False
+                        try:
+                            w_right_value = right[key]
+                        except KeyError:
+                            defer = True
+
+                        if defer:
+                            obj_st.extend([None, None])
+                            strict_st.append(False)
+                        else:
+                            obj_st.append(w_right_value)
+                            obj_st.append(w_left_value)
+                            strict_st.append(False)
             else:
                 # Otherwise it's a simple (non-aggregate) like a int/float/...
                 # In this case, recursion goes at maximum one level deeper.

@@ -542,8 +542,10 @@ class W_InstanceObject(W_Object):
             return self
 
     def compare(self, w_obj, space, strict):
-        w_left = self
-        w_right = w_obj
+        # This exception indicates to the object space to use the built-in
+        # fast path for object comparison. The code is inlined so as to avoid
+        # returning freshly allocated lists.
+        raise NotImplementedError
 
         if w_left is w_right:
             return [], [], [], 0
