@@ -35,6 +35,9 @@ from hippy.builtin import BUILTIN_FUNCTIONS
 PHP_WHITESPACE = ' \t\n\r\x0b\0'
 MASK_31_63 = 31 if sys.maxint == 2**31 - 1 else 63
 
+class InlineObjectComparison(Exception):
+    pass
+
 @specialize.memo()
 def getspace():
     return ObjSpace()
@@ -731,7 +734,7 @@ class ObjSpace(object):
                 # left and right are both InstanceObjects, but we don't know if
                 # they define a custom comparison method or not. We first try
                 # calling their compare method. If it raises
-                # NotImplementedError, we then fall back to "generic" object
+                # InlineObjectComparison, we then fall back to "generic" object
                 # comparison, which is inlined here rather than in its more
                 # natural home of instanceobject.py
                 try:
@@ -739,7 +742,7 @@ class ObjSpace(object):
                     if res != 0:
                         return res
                     continue
-                except NotImplementedError:
+                except InlineObjectComparison:
                     pass
 
                 if w_left is w_right:

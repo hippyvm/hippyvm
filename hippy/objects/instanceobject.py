@@ -544,7 +544,8 @@ class W_InstanceObject(W_Object):
     def compare(self, w_obj, space, strict):
         # The code that would -- under normal circumstances -- be here is
         # inlined into objspace.py:_compare for speed purposes.
-        raise NotImplementedError()
+        from hippy.objspace import InlineObjectComparison
+        raise InlineObjectComparison()
 
     def unserialize(self, space, attrs):
         return None
