@@ -766,6 +766,8 @@ class ObjSpace(object):
                     # in either object. See the array case for details; this is
                     # a very similar optimisation.
 
+                    new_st = [] # hopefully not allocated.
+
                     left_attr_itr = left.iteritems()
 
                     for key, w_left_value in left_attr_itr:
@@ -783,8 +785,12 @@ class ObjSpace(object):
                           or right_val_tp == self.tp_array \
                           or right_val_tp == self.tp_object:
                             # slow case, we found an aggregate nesting.
+                            new_st.append(w_right_value)
+                            new_st.append(w_left_value)
                             break
+
                         else:
+
                             cmp_res = self._compare(w_left_value,
                                                     w_right_value,
                                                     strict,
@@ -797,13 +803,6 @@ class ObjSpace(object):
 
                     # This is the slow path. A composite nesting caused
                     # us to break in the above loop.
-
-                    # Put the work that caused the break on the stack
-                    obj_st.append(w_left)
-                    obj_st.append(w_right)
-                    strict_st.append(False)
-
-                    # Continue with the slow path
                     for key, w_left_value in left.iteritems():
                         defer = False
                         try:
@@ -812,14 +811,16 @@ class ObjSpace(object):
                             defer = True
 
                         if defer:
-                            obj_st.append(None)
-                            obj_st.append(None)
-                            strict_st.append(False)
+                            new_st.append(None)
+                            new_st.append(None)
                         else:
-                            obj_st.append(w_left_value)
-                            obj_st.append(w_right_value)
-                            strict_st.append(False) # same for all new work
+                            new_st.append(w_right_value)
+                            new_st.append(w_left_value)
 
+                    while len(new_st) > 0:
+                        obj_st.append(new_st.pop())
+                        obj_st.append(new_st.pop())
+                        strict_st.append(False) # same for all new work
             else:
                 # Otherwise it's a simple (non-aggregate) like a int/float/...
                 # In this case, recursion goes at maximum one level deeper.
