@@ -545,7 +545,8 @@ class W_InstanceObject(W_Object):
         # This exception indicates to the object space to use the built-in
         # fast path for object comparison. The code is inlined so as to avoid
         # returning freshly allocated lists.
-        raise NotImplementedError
+        from hippy.objspace import UseFastComparison
+        raise UseFastComparison()
 
         if w_left is w_right:
             return [], [], [], 0

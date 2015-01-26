@@ -35,7 +35,8 @@ from hippy.builtin import BUILTIN_FUNCTIONS
 PHP_WHITESPACE = ' \t\n\r\x0b\0'
 MASK_31_63 = 31 if sys.maxint == 2**31 - 1 else 63
 
-
+class UseFastComparison(Exception):
+    pass
 
 @specialize.memo()
 def getspace():
@@ -732,8 +733,8 @@ class ObjSpace(object):
                 fast_path = False
                 try:
                     cmp_res = w_left.compare(w_right, self, strict)
-                except NotImplementedError:
-                    # NotImplementedError indicates we should use the built-in
+                except UseFastComparison:
+                    # UseFastComparison indicates we should use the built-in
                     # objspace fast path for comparing these objects. This
                     # avoids having to return freshly allocated lists of
                     # new work. (I.e. W_InstanceObject.compare() would need
