@@ -541,6 +541,11 @@ class W_InstanceObject(W_Object):
             space.ec.hippy_warn(self._msg_misuse_as_array(space, False))
             return self
 
+    def compare(self, w_obj, space, strict):
+        # The code that would -- under normal circumstances -- be here is
+        # inlined into objspace.py:_compare for speed purposes.
+        raise NotImplementedError()
+
     def unserialize(self, space, attrs):
         return None
 

@@ -728,6 +728,20 @@ class ObjSpace(object):
                             obj_st.append(new_st.pop())
                             strict_st.append(strict) # same for all new work
             elif left_tp == self.tp_object and right_tp == self.tp_object:
+                # left and right are both InstanceObjects, but we don't know if
+                # they define a custom comparison method or not. We first try
+                # calling their compare method. If it raises
+                # NotImplementedError, we then fall back to "generic" object
+                # comparison, which is inlined here rather than in its more
+                # natural home of instanceobject.py
+                try:
+                    res = w_left.compare(w_right, self, strict)
+                    if res != 0:
+                        return res
+                    continue
+                except NotImplementedError:
+                    pass
+
                 if w_left is w_right:
                     # matching identity must indicate equality
                     continue
