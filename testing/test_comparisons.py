@@ -144,7 +144,6 @@ class TestComparisons(BaseTestInterpreter):
         """)
         assert not php_space.is_true(output[0])
 
-
     def test_nested_object_eq_object(self, php_space):
         output = self.run("""
         class Node {
@@ -289,3 +288,12 @@ class TestComparisons(BaseTestInterpreter):
             echo $a == $b;
         """)
         assert not php_space.is_true(output[0])
+
+    def test_order_comp(self, php_space):
+        output = self.run("""
+            $a = array(array(1, 2, 3), 1, 2);
+            $b = array(array(1, 2, 3), 2, 1);
+
+            echo $a < $b;
+        """)
+        assert php_space.is_true(output[0])
