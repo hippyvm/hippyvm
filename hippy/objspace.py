@@ -789,7 +789,7 @@ class ObjSpace(object):
                     assert isinstance(new_st, list)
                     # This is the slow path. A composite nesting caused
                     # us to break in the above loop.
-                    for key, w_left_val in left.iteritems():
+                    for key, w_left_val in left_attr_itr:
                         try:
                             w_right_val = right[key]
                         except KeyError:
