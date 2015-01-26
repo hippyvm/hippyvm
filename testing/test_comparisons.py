@@ -289,11 +289,24 @@ class TestComparisons(BaseTestInterpreter):
         """)
         assert not php_space.is_true(output[0])
 
-    def test_order_comp(self, php_space):
+    def test_lr_order_comp_array(self, php_space):
         output = self.run("""
             $a = array(array(1, 2, 3), 1, 2);
             $b = array(array(1, 2, 3), 2, 1);
 
             echo $a < $b;
+        """)
+        assert php_space.is_true(output[0])
+
+    def test_order_comp_obj(self, php_space):
+        output = self.run("""
+            class N {
+                function __construct($l, $r) { $this->l = $l; $this->r = $r; }
+            }
+
+            $a = new N(New N(1, 1), New N(2, 2));
+            $b = new N(New N(0, 0), New N(4, 4));
+
+            echo $a > $b;
         """)
         assert php_space.is_true(output[0])
