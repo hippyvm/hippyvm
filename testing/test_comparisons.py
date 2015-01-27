@@ -270,9 +270,13 @@ class TestComparisons(BaseTestInterpreter):
             $a = array(0, 1, array(2, 3));
             $b = array(0, 1, array(2, 3));
 
+            echo $a < $b;
+            echo $a > $b;
             echo $a == $b;
         """)
-        assert php_space.is_true(output[0])
+        assert not php_space.is_true(output[0])
+        assert not php_space.is_true(output[1])
+        assert php_space.is_true(output[2])
 
     def test_array_shortcuts3(self, php_space):
         output = self.run("""
@@ -282,6 +286,31 @@ class TestComparisons(BaseTestInterpreter):
             echo $a == $b;
         """)
         assert not php_space.is_true(output[0])
+
+    def test_array_shortcuts4(self, php_space):
+        output = self.run("""
+            $a = array(0, 1, array(2, 3), 4);
+            $b = array(0, 1, array(2, 3), 5);
+
+            echo $a < $b;
+            echo $a == $b;
+        """)
+        assert php_space.is_true(output[0])
+        assert not php_space.is_true(output[1])
+
+    def test_array_shortcuts5(self, php_space):
+        output = self.run("""
+            $cmn = array(2, 3);
+            $a = array(0, 1, $cmn, 4);
+            $b = array(0, 1, $cmn, 4);
+
+            echo $a < $b;
+            echo $a > $b;
+            echo $a == $b;
+        """)
+        assert not php_space.is_true(output[0])
+        assert not php_space.is_true(output[1])
+        assert php_space.is_true(output[2])
 
     def test_lr_order_comp_array(self, php_space):
         output = self.run("""
