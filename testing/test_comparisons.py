@@ -251,8 +251,10 @@ class TestComparisons(BaseTestInterpreter):
             $b = array("0"=>"1", "1"=>"1", "2"=>"2", 4=>"php");
 
             echo $a < $b;
+            echo $b > $a;
         """)
         assert php_space.is_true(output[0])
+        assert php_space.is_true(output[1])
 
     def test_array_shortcuts1(self, php_space):
         output = self.run("""
