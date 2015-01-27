@@ -705,10 +705,12 @@ class ObjSpace(object):
                         # doing expensive lookups.
                         w_key, w_left_val = left_itr.next_item(self)
                         w_rkey, w_right_val = right_itr.next_item(self)
-                        if isinstance(w_key, W_IntObject) and isinstance(w_rkey, W_IntObject) \
+                        if isinstance(w_key, W_IntObject) \
+                          and isinstance(w_rkey, W_IntObject) \
                           and w_key.intval == w_rkey.intval:
                             pass
-                        elif isinstance(w_key, W_ConstStringObject) and isinstance(w_rkey, W_ConstStringObject) \
+                        elif isinstance(w_key, W_ConstStringObject) \
+                          and isinstance(w_rkey, W_ConstStringObject) \
                           and w_key._strval == w_rkey._strval:
                             pass
                         else:
@@ -721,7 +723,8 @@ class ObjSpace(object):
                             # have to fall back to the slower code below.
                             new_st = [w_right_val, w_left_val]
                             break
-                        cmp_res = self._compare(w_left_val, w_right_val, strict, ignore_order)
+                        cmp_res = self._compare(w_left_val, \
+                                                w_right_val, strict, ignore_order)
                         if cmp_res != 0:
                             return cmp_res
 
@@ -730,18 +733,21 @@ class ObjSpace(object):
                         while not left_itr.done():
                             w_key, w_left_val = left_itr.next_item(self)
                             w_rkey, w_right_val = right_itr.next_item(self)
-                            if isinstance(w_key, W_IntObject) and isinstance(w_rkey, W_IntObject) \
+                            if isinstance(w_key, W_IntObject) \
+                              and isinstance(w_rkey, W_IntObject) \
                               and w_key.intval == w_rkey.intval:
                                 pass
-                            elif isinstance(w_key, W_ConstStringObject) and isinstance(w_rkey, W_ConstStringObject) \
+                            elif isinstance(w_key, W_ConstStringObject) \
+                              and isinstance(w_rkey, W_ConstStringObject) \
                               and w_key._strval == w_rkey._strval:
                                 pass
                             else:
                                 if not w_right.isset_index(self, w_key):
-                                    # Although we know the arrays aren't equal, PHP's
-                                    # ordering rules force us to continue checking the
-                                    # in-common values to determine ordering. See
-                                    # test_deferred_comparison for more details.
+                                    # Although we know the arrays aren't equal,
+                                    # PHP's ordering rules force us to continue
+                                    # checking the in-common values to determine
+                                    # ordering. See test_deferred_comparison for
+                                    # more details.
                                     new_st.append(None)
                                     new_st.append(None)
                                     continue
@@ -810,10 +816,8 @@ class ObjSpace(object):
                         new_st = [w_right_val, w_left_val]
                         break
                     else:
-                        cmp_res = self._compare(w_left_val,
-                                                w_right_val,
-                                                strict,
-                                                ignore_order)
+                        cmp_res = self._compare(w_left_val, w_right_val, \
+                                                strict, ignore_order)
                         if cmp_res != 0:
                             return cmp_res
 
