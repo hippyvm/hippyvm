@@ -241,6 +241,201 @@ class TestComparisons(BaseTestInterpreter):
         """)
         assert not php_space.is_true(output[0])
 
+    def test_nested_objects_deep(self, php_space):
+        output = self.run("""
+        class N {
+            function __construct($l) {
+                $this->l = $l;
+            }
+        }
+
+        $chain1 = NULL;
+        $chain2 = NULL;
+        for ($i = 0; $i < 1000; $i++) {
+            $chain1 = new N($chain1);
+            $chain2 = new N($chain2);
+        }
+
+        echo $chain1 == $chain2;
+        echo $chain1 != $chain2;
+
+        echo $chain1 < $chain2;
+        echo $chain1 > $chain2;
+
+        echo $chain1 <= $chain2;
+        echo $chain1 >= $chain2;
+
+        echo $chain1 === $chain2;
+        echo $chain1 <> $chain2;
+
+        // reverse args
+
+        echo $chain1 == $chain2;
+        echo $chain1 != $chain2;
+
+        echo $chain1 < $chain2;
+        echo $chain1 > $chain2;
+
+        echo $chain1 <= $chain2;
+        echo $chain1 >= $chain2;
+
+        echo $chain1 === $chain2;
+        echo $chain1 <> $chain2;
+        """)
+        assert php_space.is_true(output[0])
+        assert not php_space.is_true(output[1])
+
+        assert not php_space.is_true(output[2])
+        assert not php_space.is_true(output[3])
+
+        assert php_space.is_true(output[4])
+        assert php_space.is_true(output[5])
+
+        assert not php_space.is_true(output[6])
+        assert not php_space.is_true(output[7])
+
+        assert php_space.is_true(output[8])
+        assert not php_space.is_true(output[9])
+
+        assert not php_space.is_true(output[10])
+        assert not php_space.is_true(output[11])
+
+        assert php_space.is_true(output[12])
+        assert php_space.is_true(output[13])
+
+        assert not php_space.is_true(output[14])
+        assert not php_space.is_true(output[15])
+
+    def test_nested_objects_deep2(self, php_space):
+        output = self.run("""
+        class N {
+            function __construct($l) {
+                $this->l = $l;
+            }
+        }
+
+        $chain1 = NULL;
+        $chain2 = "not null";
+        for ($i = 0; $i < 100; $i++) {
+            $chain1 = new N($chain1);
+            $chain2 = new N($chain2);
+        }
+
+        echo $chain1 == $chain2;
+        echo $chain1 != $chain2;
+
+        echo $chain1 < $chain2;
+        echo $chain1 > $chain2;
+
+        echo $chain1 <= $chain2;
+        echo $chain1 >= $chain2;
+
+        echo $chain1 === $chain2;
+        echo $chain1 <> $chain2;
+
+        // reverse args
+
+        echo $chain2 == $chain1;
+        echo $chain2 != $chain1;
+
+        echo $chain2 < $chain1;
+        echo $chain2 > $chain1;
+
+        echo $chain2 <= $chain1;
+        echo $chain2 >= $chain1;
+
+        echo $chain2 === $chain1;
+        echo $chain2 <> $chain1;
+        """)
+        assert not php_space.is_true(output[0]) # ==
+        assert php_space.is_true(output[1]) # !=
+
+        assert php_space.is_true(output[2]) # <
+        assert not php_space.is_true(output[3]) # >
+
+        assert php_space.is_true(output[4]) # <=
+        assert not php_space.is_true(output[5]) # >=
+
+        assert not php_space.is_true(output[6]) # ===
+        assert php_space.is_true(output[7]) # <>
+
+        assert not php_space.is_true(output[8]) # ==
+        assert php_space.is_true(output[9]) # !=
+
+        assert not php_space.is_true(output[10]) # <
+        assert php_space.is_true(output[11]) # >
+
+        assert not php_space.is_true(output[12]) # <=
+        assert php_space.is_true(output[13]) # >=
+
+        assert not php_space.is_true(output[14]) # ===
+        assert php_space.is_true(output[15]) # <>
+
+    def test_nested_object_and_arrays(self, php_space):
+        output = self.run("""
+        class Node {
+            function __construct($l, $r) {
+                $this->l = $l;
+                $this->r = $r;
+            }
+        }
+
+        $tree1 = new Node(
+            new Node(
+                new Node(array(8, "a"), 2),
+                new Node(3, array(8, "a"))
+            ),
+            new Node(
+                new Node(5, new Node(6, 7)),
+                8
+            )
+        );
+
+        $tree2 = new Node(
+            new Node(
+                new Node(1, 2),
+                new Node(3, 4)
+            ),
+            new Node(
+                new Node(5, new Node(6, 7)),
+                8
+            )
+        );
+
+        echo $tree1 != $tree2;
+        echo $tree1 == $tree2;
+        echo $tree1 < $tree2;
+        echo $tree1 > $tree2;
+        echo $tree1 <= $tree2;
+        echo $tree1 >= $tree2;
+        echo $tree1 === $tree2;
+
+        // same in reverse
+        echo $tree2 != $tree1;
+        echo $tree2 == $tree1;
+        echo $tree2 < $tree1;
+        echo $tree2 > $tree1;
+        echo $tree2 <= $tree1;
+        echo $tree2 >= $tree1;
+        echo $tree2 === $tree1;
+
+        """)
+        assert php_space.is_true(output[0])
+        assert not php_space.is_true(output[1])
+        assert not php_space.is_true(output[2])
+        assert php_space.is_true(output[3])
+        assert not php_space.is_true(output[4])
+        assert php_space.is_true(output[5])
+        assert not php_space.is_true(output[6])
+
+        assert php_space.is_true(output[7])
+        assert not php_space.is_true(output[8])
+        assert php_space.is_true(output[9])
+        assert not php_space.is_true(output[10])
+        assert php_space.is_true(output[11])
+        assert not php_space.is_true(output[12])
+        assert not php_space.is_true(output[13])
+
     def test_deferred_comparison(self, php_space):
         # tests an annoying comparison ordering quirk.
         # In short, when we see array $b has no key 3, we know the arrays
@@ -312,6 +507,24 @@ class TestComparisons(BaseTestInterpreter):
         assert not php_space.is_true(output[1])
         assert php_space.is_true(output[2])
 
+    def test_array_shortcuts6(self, php_space):
+        output = self.run("""
+            class Triple {
+                function __construct($a, $b, $c) {
+                    $this->a = $a;
+                    $this->b = $b;
+                    $this->c = $c;
+                }
+            }
+            $t1 = new Triple(new Triple(new Triple(1, 2, 3), 2, 3), NULL, 0);
+            $t2 = new Triple(new Triple(new Triple(1, 2, 3), 2, 3), NULL, 1);
+
+            echo $t1 == $t2;
+            echo $t1 != $t2;
+        """)
+        assert not php_space.is_true(output[0])
+        assert php_space.is_true(output[1])
+
     def test_lr_order_comp_array(self, php_space):
         output = self.run("""
             $a = array(array(1, 2, 3), 1, 2);
@@ -333,3 +546,56 @@ class TestComparisons(BaseTestInterpreter):
             echo $a > $b;
         """)
         assert php_space.is_true(output[0])
+
+    # http://phpsadness.com/sad/47
+    def test_odd_string_comparison(self, php_space):
+        output = self.run('''echo "1e3" == "1000";''')
+        assert php_space.is_true(output[0])
+
+
+    # http://phpsadness.com/sad/52
+    def test_nontransitive_comparisons(self, php_space):
+        output = self.run('''
+                          echo TRUE == "a";
+                          echo "a" == 0;
+                          echo TRUE == 0;
+                          ''')
+        assert php_space.is_true(output[0])
+        assert php_space.is_true(output[1])
+        assert not php_space.is_true(output[2])
+
+    # http://phpsadness.com/sad/52
+    def test_nontransitive_comparisons2(self, php_space):
+        output = self.run('''
+                          echo -INF < 0;
+                          echo 0 < TRUE;
+                          echo -INF < TRUE;
+                          ''')
+        assert php_space.is_true(output[0])
+        assert php_space.is_true(output[1])
+        assert not php_space.is_true(output[2])
+
+    def test_cycles_id(self, php_space):
+        output = self.run('''
+                          class A { function __construct($x=NULL) { $this->x = $x; }}
+
+                          $a = new A();
+                          $b = new A($a);
+                          $a->x = $b; // completes the loop
+
+                          echo $a == $a;
+                          ''')
+        assert php_space.is_true(output[0]) # flukey pass due to id check.
+
+    def test_cycles(self, php_space):
+        pytest.skip("does not terminate")
+        output = self.run('''
+                          class A { function __construct($x=NULL) { $this->x = $x; }}
+
+                          $a = new A();
+                          $b = new A($a);
+                          $a->x = $b; // completes the loop
+
+                          echo $a == $b;
+                          ''')
+        # should terminate
