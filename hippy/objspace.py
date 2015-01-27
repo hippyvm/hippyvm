@@ -714,6 +714,8 @@ class ObjSpace(object):
                             pass
                         else:
                             if not w_right.isset_index(self, w_key):
+                                if ignore_order:
+                                    return -1
                                 if new_st is None:
                                     new_st = [None, None]
                                 else:
@@ -733,7 +735,11 @@ class ObjSpace(object):
                           or w_right_val.tp == self.tp_object):
                             # We've encountered a compound datatype, so we
                             # have to fall back to the slower code below.
-                            if new_st is None:
+                            if ignore_order:
+                                obj_st.append(w_left_val)
+                                obj_st.append(w_right_val)
+                                strict_st.append(strict)
+                            elif new_st is None:
                                 new_st = [w_right_val, w_left_val]
                             else:
                                 new_st.append(w_right_val)
@@ -742,7 +748,7 @@ class ObjSpace(object):
                             cmp_res = self._compare(w_left_val, w_right_val, \
                                                     strict, ignore_order)
                             if cmp_res != 0:
-                                if new_st is None:
+                                if ignore_order or new_st is None:
                                     return cmp_res
                                 new_st.append(w_right_val)
                                 new_st.append(w_left_val)
@@ -801,8 +807,8 @@ class ObjSpace(object):
                         try:
                             w_right_val = right[key]
                         except KeyError:
-                            if new_st is None:
-                                return 1
+                            if ignore_order or new_st is None:
+                                return -1
                             new_st.append(w_right_val)
                             new_st.append(w_left_val)
 
@@ -817,7 +823,11 @@ class ObjSpace(object):
                       (w_right_val.tp == self.tp_array \
                       or w_right_val.tp == self.tp_object):
                         # slow case, we found an aggregate nesting.
-                        if new_st is None:
+                        if ignore_order:
+                            obj_st.append(w_left_val)
+                            obj_st.append(w_right_val)
+                            strict_st.append(False)
+                        elif new_st is None:
                             new_st = [w_right_val, w_left_val]
                         else:
                             new_st.append(w_right_val)
@@ -826,11 +836,11 @@ class ObjSpace(object):
                         cmp_res = self._compare(w_left_val, w_right_val, \
                                                 strict, ignore_order)
                         if cmp_res != 0:
-                            if new_st is None:
+                            if ignore_order or new_st is None:
                                 return cmp_res
                             new_st.append(w_right_val)
                             new_st.append(w_left_val)
-                            break 
+                            break
 
                 if new_st is not None:
                     while len(new_st) > 0:
