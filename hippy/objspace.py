@@ -661,11 +661,13 @@ class ObjSpace(object):
         # type checks will fail or it will convert both sides into numbers.
         # Either way we know recursion won't happen.
 
-        obj_st = [w_left, w_right] # object stack: come in pairs (w_left, w_right)
+        # The object stack comes in pairs (w_left, w_right). Everything pushed
+        # on here must already have been deref'd.
+        obj_st = [w_left.deref(), w_right.deref()]
         strict_st = [strict]       # strict stack
         while len(obj_st) > 0:
-            w_right = obj_st.pop().deref()
-            w_left = obj_st.pop().deref()
+            w_right = obj_st.pop()
+            w_left = obj_st.pop()
             strict = strict_st.pop()
             if w_left is None:
                 assert w_right is None
@@ -717,8 +719,13 @@ class ObjSpace(object):
                             if not w_right.isset_index(self, w_key):
                                 return 1
                             w_right_val = self.getitem(w_right, w_key)
-                        if (self.is_array(w_left_val) or self.is_object(w_left_val)) \
-                          and (self.is_array(w_right_val) or self.is_object(w_right_val)):
+                        w_left_val = w_left_val.deref()
+                        w_right_val = w_right_val.deref()
+                        if (w_left_val.tp == self.tp_array \
+                          or w_left_val.tp == self.tp_object) \
+                          and \
+                          (w_right_val.tp == self.tp_array \
+                          or w_right_val.tp == self.tp_object):
                             # We've encountered a compound datatype, so we
                             # have to fall back to the slower code below.
                             new_st = [w_right_val, w_left_val]
@@ -810,8 +817,13 @@ class ObjSpace(object):
                         except KeyError:
                             return 1
 
-                    if (self.is_array(w_left_val) or self.is_object(w_left_val)) \
-                      and (self.is_array(w_right_val) or self.is_object(w_right_val)):
+                    w_left_val = w_left_val.deref()
+                    w_right_val = w_right_val.deref()
+                    if (w_left_val.tp == self.tp_array \
+                      or w_left_val.tp == self.tp_object) \
+                      and \
+                      (w_right_val.tp == self.tp_array \
+                      or w_right_val.tp == self.tp_object):
                         # slow case, we found an aggregate nesting.
                         new_st = [w_right_val, w_left_val]
                         break
