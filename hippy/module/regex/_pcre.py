@@ -11,7 +11,7 @@ void hippy_pcre_free2(pcre *p, pcre_extra *x);
 source = """
 #include <string.h>
 
-void hippy_pcre_free2(pcre *p, pcre_extra *x) {
+RPY_EXPORTED void hippy_pcre_free2(pcre *p, pcre_extra *x) {
 #ifdef PCRE_CONFIG_JIT
     pcre_free_study(x);
 #else
@@ -20,7 +20,7 @@ void hippy_pcre_free2(pcre *p, pcre_extra *x) {
     pcre_free(p);
 }
 
-pcre_extra* hippy_pcre_extra_malloc()
+RPY_EXPORTED pcre_extra* hippy_pcre_extra_malloc()
 {
     pcre_extra* res;
     res = (pcre_extra*)pcre_malloc(sizeof(pcre_extra));
