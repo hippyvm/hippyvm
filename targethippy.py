@@ -162,5 +162,6 @@ def handle_config(config, translateconfig):
     TRANSLATECONFIG[0] = translateconfig # XXX better way to get at this?
 
 def jitpolicy(driver):
-    from pypy.module.pypyjit.policy import PyPyJitPolicy, pypy_hooks
+    from pypy.module.pypyjit.policy import PyPyJitPolicy
+    from pypy.module.pypyjit.hooks import pypy_hooks
     return PyPyJitPolicy(pypy_hooks)
