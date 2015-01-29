@@ -66,7 +66,7 @@ class ByteCode(object):
     def lookup_pos(self, v):
         return self.names_to_pos[v]
 
-    @jit.elidable
+    @jit.elidable_promote()
     def lookup_var_pos(self, v):
         try:
             return self.var_to_pos[v]

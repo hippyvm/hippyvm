@@ -57,7 +57,7 @@ class Frame(object):
                        'next_instr']
     _immutable_fields_ = ['unique_items',   # the list itself, not its content
                           '_contextclass',
-                          'is_global_level']
+                          'is_global_level', 'bytecode']
 
     is_global_level = False
     extra_variables = None
