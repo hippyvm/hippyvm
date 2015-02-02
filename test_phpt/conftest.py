@@ -1839,7 +1839,7 @@ markers[Zend_test_dir] = {
     'bug63305.phpt': "Parse error unfinished heredoc",
     'bug63336.phpt': "Function.signature_repr()",
     'bug63762.phpt': "missing ReflectionProperty",
-    'bug63882.phpt': "infinite recursion",
+    'bug63882.phpt': "SKIP: Hippy does not deal with comparison cycles yet",
     'bug63982.phpt': "cannot access protected property",
     'bug64239_1.phpt': "unexpected T_USE",
     'bug64239_2.phpt': "unexpected T_USE",
