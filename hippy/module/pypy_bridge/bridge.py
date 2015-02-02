@@ -43,7 +43,7 @@ def embed_py_mod(interp, mod_name, mod_source):
     return w_py_module.to_php(interp)
 
 def _compile_py_func_from_string(
-        interp, func_source, parent_php_scope=None):
+        interp, func_source, parent_php_scope):
     """ compiles a string returning a <name, func> pair """
 
     py_space = interp.py_space
@@ -110,7 +110,8 @@ def embed_py_func_global(interp, func_source):
 
     # Compile (note *no* parent PHP frame passed)
     w_py_func_name, w_py_func = \
-            _compile_py_func_from_string(interp, func_source)
+            _compile_py_func_from_string(interp,
+                                         func_source, interp.global_frame)
 
     # Masquerade it as a PHP function in the global function cache
     w_php_func = W_PyFuncGlobalAdapter(interp, w_py_func)

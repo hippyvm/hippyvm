@@ -647,3 +647,34 @@ class TestPyPyBridgeScope(BaseTestInterpreter):
         ''')
         assert php_space.int_w(output[0]) == 3
 
+    def test_access_global_scope_name_clash_from_global_py_func(self, php_space):
+        output = self.run('''
+
+        $p = 123; // global var
+        class P {}; // clashing var name
+
+        $src = <<<EOD
+        def f():
+            return p
+        EOD;
+        embed_py_func_global($src);
+
+        echo f();
+        ''')
+        assert php_space.int_w(output[0]) == 123
+
+    def test_access_global_nonexistent_global_var_from_global_py_func(self, php_space):
+        output = self.run('''
+        $src = <<<EOD
+        def f():
+            return p
+        EOD;
+        embed_py_func_global($src);
+
+        try {
+            f();
+        } catch(PyException $e) {
+            echo $e->getMessage();
+        }
+        ''')
+        assert php_space.str_w(output[0]) == "global name 'p' is not defined"
