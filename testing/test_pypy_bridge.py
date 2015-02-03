@@ -121,7 +121,7 @@ class TestPyPyBridge(BaseTestInterpreter):
         ''')
         assert php_space.str_w(output[0]) == "123-True-666"
 
-    def test_variadic_args(self, php_space):
+    def test_variadic_args_mod(self, php_space):
         output = self.run('''
             $src = <<<EOD
             def cat(*args):
@@ -132,6 +132,19 @@ class TestPyPyBridge(BaseTestInterpreter):
             echo($m->cat(5, 4, 3, 2, 1, "Thunderbirds", "Are", "Go"));
         ''')
         assert php_space.str_w(output[0]) == "5-4-3-2-1-Thunderbirds-Are-Go"
+
+    def test_variadic_args_func_global(self, php_space):
+        output = self.run('''
+            $src = "def f(*args): return len(args)";
+            embed_py_func_global($src);
+
+            echo f(1, 2, 3);
+            echo f(4, 1);
+            echo f(1, 1, 1, 2, 3);
+        ''')
+        assert php_space.int_w(output[0]) == 3
+        assert php_space.int_w(output[1]) == 2
+        assert php_space.int_w(output[2]) == 5
 
     def test_kwargs_exhaustive(self, php_space):
         output = self.run('''
