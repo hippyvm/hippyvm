@@ -16,7 +16,7 @@ from hippy.objects.boolobject import W_BoolObject, w_True, w_False
 from hippy.objects.nullobject import W_NullObject, w_Null
 from hippy.objects.intobject import W_IntObject
 from hippy.objects.floatobject import W_FloatObject
-from hippy.objects.strobject import W_StringObject
+from hippy.objects.strobject import W_StringObject, W_ConstStringObject
 from hippy.objects.arrayobject import W_ArrayObject
 from hippy.objects.resources.resource import W_Resource
 from hippy.objects.instanceobject import W_InstanceObject
@@ -35,7 +35,8 @@ from hippy.builtin import BUILTIN_FUNCTIONS
 PHP_WHITESPACE = ' \t\n\r\x0b\0'
 MASK_31_63 = 31 if sys.maxint == 2**31 - 1 else 63
 
-
+class InlineObjectComparison(Exception):
+    pass
 
 @specialize.memo()
 def getspace():
@@ -526,7 +527,6 @@ class ObjSpace(object):
         return self._compare(w_a, w_b, strict=True, ignore_order=True) == 0
 
     def _compare(self, w_left, w_right, strict=False, ignore_order=False):
-
         w_left = w_left.deref()
         w_right = w_right.deref()
 
@@ -554,7 +554,16 @@ class ObjSpace(object):
                           ignore_order)
 
         elif(left_tp == self.tp_array and right_tp == self.tp_array):
-            return self._compare_array(w_left, w_right, strict)
+            if w_left is w_right:
+                return 0
+            w_left_len = w_left.arraylen()
+            w_right_len = w_right.arraylen()
+            if w_left_len < w_right_len:
+                return -1
+            elif w_left_len > w_right_len:
+                return 1
+            return self._compare_aggregates(w_left,
+                                            w_right, strict, ignore_order)
 
         elif(left_tp == self.tp_null and right_tp == self.tp_null):
             return 0
@@ -605,7 +614,9 @@ class ObjSpace(object):
             return -1
 
         elif(left_tp == self.tp_object and right_tp == self.tp_object):
-            return w_left.compare(w_right, self, strict)
+            if w_left is w_right:
+                return 0
+            return self._compare_aggregates(w_left, w_right, strict, ignore_order)
 
         else:
             if(left_tp == self.tp_null):
@@ -633,53 +644,215 @@ class ObjSpace(object):
                                      ignore_order=ignore_order)
         raise NotImplementedError()
 
-    def _compare_object(self, w_left, w_right, strict):
-        if w_left is w_right:
-            return 0
-        elif strict or w_left.getclass() is not w_right.getclass():
-            return 1
+    def _compare_aggregates(self, w_left, w_right, strict, ignore_order):
+        # Aggregate things (user objects, arrays) are most naturally compared
+        # recursively. However that is slow and tends to blow up the stack. This
+        # function iteratively compares such things. It tries very hard not to
+        # allocate more lists than it has to, as this is a performance criticial
+        # piece of code. We do that by continually pushing things we come across
+        # onto a stack (obj_st and its mirror strict_st). Because this function
+        # not only says "is/isn't" equal but also "greater than/less than", we
+        # have to march over these things in their natural order which sometimes
+        # means creating temporary intermediate lists.
+        #
+        # There is also one common idiom in the below: we know that calling
+        # _compare can only become recursive if both left and right hand side
+        # are aggregate types. If one side is not an aggregate, either _compares
+        # type checks will fail or it will convert both sides into numbers.
+        # Either way we know recursion won't happen.
 
-        left = w_left.get_instance_attrs(self.ec.interpreter)
-        right = w_right.get_instance_attrs(self.ec.interpreter)
-        if len(left) - len(right) < 0:
-            return -1
-        if len(left) - len(right) > 0:
-            return 1
+        # The object stack comes in pairs (w_left, w_right). Everything pushed
+        # on here must already have been deref'd.
+        obj_st = [w_left.deref(), w_right.deref()]
+        strict_st = [strict]       # strict stack
+        while len(obj_st) > 0:
+            w_right = obj_st.pop()
+            w_left = obj_st.pop()
+            strict = strict_st.pop()
+            if w_left is None:
+                assert w_right is None
+                return 1 # deferred inequality detected
 
-        for key, w_value in left.iteritems():
-            try:
-                w_right_value = right[key]
-            except KeyError:
-                return 1
-            cmp_res = self._compare(w_value, w_right_value)
-            if cmp_res == 0:
-                continue
-            else:
-                return cmp_res
-        return 0
-
-    def _compare_array(self, w_left, w_right, strict):
-        if w_left.arraylen() - w_right.arraylen() < 0:
-            return -1
-        if w_left.arraylen() - w_right.arraylen() > 0:
-            return 1
-        with self.iter(w_left) as itr:
-            while not itr.done():
-                w_key, w_value = itr.next_item(self)
-                if w_right.isset_index(self, w_key):
-                    w_right_value = self.getitem(w_right, w_key)
-                    if strict:
-                        cmp_res = self._compare(w_value,
-                                                w_right_value,
-                                                strict=True)
-                    else:
-                        cmp_res = self._compare(w_value, w_right_value)
-                    if cmp_res == 0:
-                        continue
-                    else:
-                        return cmp_res
-                else:
+            left_tp = w_left.tp
+            right_tp = w_right.tp
+            if left_tp == self.tp_array and right_tp == self.tp_array:
+                if w_left is w_right:
+                    continue
+                w_left_len = w_left.arraylen()
+                w_right_len = w_right.arraylen()
+                if w_left_len < w_right_len:
+                    return -1
+                elif w_left_len > w_right_len:
                     return 1
+
+                with self.iter(w_left) as left_itr, self.iter(w_right) as right_itr:
+                    # We iterate over the array and deal with all simple
+                    # datatypes immediately. If we find two that are obviously
+                    # not equal, we can stop the search at that point. Complex
+                    # datatypes, however, must be pushed on the stack and dealt
+                    # with in order later.
+
+                    # If allocated, new_st is a list mirroring obj_st *but*
+                    # notice it stores in order w_right, w_left
+                    new_st = None
+                    while not left_itr.done():
+                        # Especially if the two arrays in question are lists,
+                        # their keys are likely to be a) of primitive type b) in
+                        # identical order. We therefore iterate over the left
+                        # and right arrays at the same time hoping that we'll
+                        # often see the same keys at the same points and avoid
+                        # doing expensive lookups.
+                        w_key, w_left_val = left_itr.next_item(self)
+                        w_rkey, w_right_val = right_itr.next_item(self)
+                        if isinstance(w_key, W_IntObject) \
+                          and isinstance(w_rkey, W_IntObject) \
+                          and w_key.intval == w_rkey.intval:
+                            pass
+                        elif isinstance(w_key, W_ConstStringObject) \
+                          and isinstance(w_rkey, W_ConstStringObject) \
+                          and w_key._strval == w_rkey._strval:
+                            pass
+                        else:
+                            if not w_right.isset_index(self, w_key):
+                                if ignore_order:
+                                    return -1
+                                if new_st is None:
+                                    new_st = [None, None]
+                                else:
+                                    new_st.append(None)
+                                    new_st.append(None)
+                                break
+                            w_right_val = self.getitem(w_right, w_key)
+                        w_left_val = w_left_val.deref()
+                        w_right_val = w_right_val.deref()
+                        if w_left_val is w_right_val:
+                            continue
+
+                        if (w_left_val.tp == self.tp_array \
+                          or w_left_val.tp == self.tp_object) \
+                          and \
+                          (w_right_val.tp == self.tp_array \
+                          or w_right_val.tp == self.tp_object):
+                            # We've encountered a compound datatype, so we
+                            # have to fall back to the slower code below.
+                            if ignore_order:
+                                obj_st.append(w_left_val)
+                                obj_st.append(w_right_val)
+                                strict_st.append(strict)
+                            elif new_st is None:
+                                new_st = [w_right_val, w_left_val]
+                            else:
+                                new_st.append(w_right_val)
+                                new_st.append(w_left_val)
+                        else:
+                            cmp_res = self._compare(w_left_val, w_right_val, \
+                                                    strict, ignore_order)
+                            if cmp_res != 0:
+                                if ignore_order or new_st is None:
+                                    return cmp_res
+                                new_st.append(w_right_val)
+                                new_st.append(w_left_val)
+                                break
+
+                    if new_st is not None:
+                        while len(new_st) > 0:
+                            obj_st.append(new_st.pop())
+                            obj_st.append(new_st.pop())
+                            strict_st.append(strict) # same for all new work
+            elif left_tp == self.tp_object and right_tp == self.tp_object:
+                # left and right are both InstanceObjects, but we don't know if
+                # they define a custom comparison method or not. We first try
+                # calling their compare method. If it raises
+                # InlineObjectComparison, we then fall back to "generic" object
+                # comparison, which is inlined here rather than in its more
+                # natural home of instanceobject.py
+                try:
+                    res = w_left.compare(w_right, self, strict)
+                    if res != 0:
+                        return res
+                    continue
+                except InlineObjectComparison:
+                    pass
+
+                if w_left is w_right:
+                    continue
+                elif strict or w_left.getclass() is not w_right.getclass():
+                    return 1
+
+                left = w_left.get_instance_attrs(self.ec.interpreter)
+                right = w_right.get_instance_attrs(self.ec.interpreter)
+                if len(left) - len(right) < 0:
+                    return -1
+                if len(left) - len(right) > 0:
+                    return 1
+
+                # Check for the case where there are no nested aggregates
+                # in either object. See the array case for details; this is
+                # a very similar optimisation.
+
+                new_st = None
+                left_attr_itr = left.iteritems()
+                right_attr_itr = right.iteritems()
+                for key, w_left_val in left_attr_itr:
+                    r_key, w_right_val = right_attr_itr.next()
+                    if key != r_key:
+                        # Most of the time, if left and right are objects of the
+                        # same classes, their attributes will be defined in the
+                        # same order, so we can simply try iterating over both
+                        # in sequence. Sometimes, even if both sets of
+                        # attributes are identical, they'll get out of sequence,
+                        # so we then switch to this slow path. Of course, this
+                        # path also serves to catch cases when the sets of
+                        # attributes aren't identical too.
+                        try:
+                            w_right_val = right[key]
+                        except KeyError:
+                            if ignore_order or new_st is None:
+                                return -1
+                            new_st.append(w_right_val)
+                            new_st.append(w_left_val)
+
+                    w_left_val = w_left_val.deref()
+                    w_right_val = w_right_val.deref()
+                    if w_left_val is w_right_val:
+                        continue
+
+                    if (w_left_val.tp == self.tp_array \
+                      or w_left_val.tp == self.tp_object) \
+                      and \
+                      (w_right_val.tp == self.tp_array \
+                      or w_right_val.tp == self.tp_object):
+                        # slow case, we found an aggregate nesting.
+                        if ignore_order:
+                            obj_st.append(w_left_val)
+                            obj_st.append(w_right_val)
+                            strict_st.append(False)
+                        elif new_st is None:
+                            new_st = [w_right_val, w_left_val]
+                        else:
+                            new_st.append(w_right_val)
+                            new_st.append(w_left_val)
+                    else:
+                        cmp_res = self._compare(w_left_val, w_right_val, \
+                                                strict, ignore_order)
+                        if cmp_res != 0:
+                            if ignore_order or new_st is None:
+                                return cmp_res
+                            new_st.append(w_right_val)
+                            new_st.append(w_left_val)
+                            break
+
+                if new_st is not None:
+                    while len(new_st) > 0:
+                        obj_st.append(new_st.pop())
+                        obj_st.append(new_st.pop())
+                        strict_st.append(False) # same for all new work
+            else:
+                # We know that at least one of the members is a non-aggregate.
+                cmp_res = self._compare(w_left, w_right, strict, ignore_order)
+                if cmp_res != 0:
+                    return cmp_res # definitely not equal
+
         return 0
 
 
