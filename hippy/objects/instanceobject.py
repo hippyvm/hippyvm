@@ -546,32 +546,10 @@ class W_InstanceObject(W_Object):
             return self
 
     def compare(self, w_obj, space, strict):
-        w_left = self
-        w_right = w_obj
-
-        if w_left is w_right:
-            return 0
-        elif strict or w_left.getclass() is not w_right.getclass():
-            return 1
-
-        left = w_left.get_instance_attrs(space.ec.interpreter)
-        right = w_right.get_instance_attrs(space.ec.interpreter)
-        if len(left) - len(right) < 0:
-            return -1
-        if len(left) - len(right) > 0:
-            return 1
-
-        for key, w_value in left.iteritems():
-            try:
-                w_right_value = right[key]
-            except KeyError:
-                return 1
-            cmp_res = space._compare(w_value, w_right_value)
-            if cmp_res == 0:
-                continue
-            else:
-                return cmp_res
-        return 0
+        # The code that would -- under normal circumstances -- be here is
+        # inlined into objspace.py:_compare for speed purposes.
+        from hippy.objspace import InlineObjectComparison
+        raise InlineObjectComparison()
 
     def unserialize(self, space, attrs):
         return None
