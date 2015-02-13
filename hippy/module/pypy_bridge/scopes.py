@@ -141,7 +141,9 @@ W_PHPGlobalScope.typedef = TypeDef("PHPGlobalScope",
 
 
 class Py_Scope(WPHP_Root):
-    _immutable_fields_ = ["py_interp", "py_frame"]
+    _immutable_fields_ = ["py_interp"]
+    # py_frame is not included in the immutable fields for the same reason as on
+    # PHP_Scope.
 
     def __init__(self, py_interp, py_frame):
         self.py_interp = py_interp
@@ -169,12 +171,8 @@ class Py_Scope(WPHP_Root):
         if py_frame.w_locals is None:
             # If no-one has called fast2locals, we can bypass the slow
             # dictionary lookup by accessing locals_stack_w directly.
-            co = py_frame.pycode
-            try:
-                off = co.getvarnames().index(n)
-            except ValueError:
-                pass
-            else:
+            off = py_frame.pycode.get_var_off(n)
+            if off >= 0:
                 return py_frame.locals_stack_w[off]
         else:
             py_frame.fast2locals()
