@@ -18,7 +18,10 @@ PHP_PARENT  = 5
 class NameMapVersion(object): pass
 
 class PHP_Scope(WPy_Root):
-    _immutable_fields_ = ["ph_interp", "ph_frame", "name_map"]
+    _immutable_fields_ = ["ph_interp", "name_map"]
+    # ph_frame is in a sense immutable, but the elidable_promote on
+    # _lookup_name_map then gets an indirect constant access to a virtualisable
+    # which leads to bad things happening.
 
     def __init__(self, ph_interp, ph_frame):
         self.ph_interp = ph_interp
