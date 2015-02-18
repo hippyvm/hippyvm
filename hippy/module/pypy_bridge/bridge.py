@@ -46,21 +46,27 @@ def embed_py_mod(interp, mod_name, mod_source):
 PYCODE_CACHE = {}
 
 @jit.elidable
+def _lookup_from_pycode_cache(func_source):
+    return PYCODE_CACHE.get(func_source, None)
+
 def _compile_py_func_from_string_cached(interp, func_source):
     py_space = interp.py_space
 
-    w_py_code = PYCODE_CACHE.get(func_source, None)
+    w_py_code = _lookup_from_pycode_cache(func_source)
     if w_py_code is None:
         e = None
         try:
             w_py_code = py_compiling.compile(
                     py_space, py_space.wrap(func_source), "<string>", "exec")
         except OperationError as e:
-            return None, e
+            e.normalize_exception(py_space)
+            _raise_php_bridgeexception(interp,
+                                       "Failed to compile Python code: %s" %
+                                       e.errorstr(py_space))
 
         PYCODE_CACHE[func_source] = w_py_code
 
-    return w_py_code, None
+    return w_py_code
 
 def _compile_py_func_from_string(
         interp, func_source, parent_php_scope):
@@ -68,15 +74,7 @@ def _compile_py_func_from_string(
 
     py_space = interp.py_space
 
-    w_py_code, exn = _compile_py_func_from_string_cached(interp, func_source)
-
-    if exn is not None:
-        exn.normalize_exception(py_space)
-        _raise_php_bridgeexception(interp,
-                                   "Failed to compile Python code: %s" %
-                                   exn.errorstr(py_space))
-
-    assert w_py_code is not None
+    w_py_code = _compile_py_func_from_string_cached(interp, func_source)
 
     # Eval it into a dict
     w_py_fake_locals = py_space.newdict()
