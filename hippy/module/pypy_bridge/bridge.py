@@ -42,34 +42,41 @@ def embed_py_mod(interp, mod_name, mod_source):
 
     return w_py_module.to_php(interp)
 
-# maps: func_source * parent_php_scope -> w_func_name * w_compiled_func
-PY_COMPILE_CACHE = {}
+# maps: func_source -> pycode
+PYCODE_CACHE = {}
 
 @jit.elidable
+def _compile_py_func_from_string_cached(interp, func_source):
+    py_space = interp.py_space
+
+    w_py_code = PYCODE_CACHE.get(func_source, None)
+    if w_py_code is None:
+        e = None
+        try:
+            w_py_code = py_compiling.compile(
+                    py_space, py_space.wrap(func_source), "<string>", "exec")
+        except OperationError as e:
+            return None, e
+
+        PYCODE_CACHE[func_source] = w_py_code
+
+    return w_py_code, None
+
 def _compile_py_func_from_string(
         interp, func_source, parent_php_scope):
     """ compiles a string returning a <name, func> pair """
 
-    # If we have compiled this source before, the result will be equivalent.
-    cached = PY_COMPILE_CACHE.get((func_source, parent_php_scope), None)
-    if cached is not None:
-        return cached
-
     py_space = interp.py_space
 
-    # compile the user's code
-    w_py_code = None
-    try:
-        w_py_code = py_compiling.compile(
-                py_space, py_space.wrap(func_source), "<string>", "exec")
-    except OperationError as e:
-        e.normalize_exception(py_space)
+    w_py_code, exn = _compile_py_func_from_string_cached(interp, func_source)
+
+    if exn is not None:
+        exn.normalize_exception(py_space)
         _raise_php_bridgeexception(interp,
                                    "Failed to compile Python code: %s" %
-                                   e.errorstr(py_space))
-    assert w_py_code is not None
+                                   exn.errorstr(py_space))
 
-    w_py_code = py_compiling.compile(py_space, py_space.wrap(func_source), "<string>", "exec")
+    assert w_py_code is not None
 
     # Eval it into a dict
     w_py_fake_locals = py_space.newdict()
@@ -91,8 +98,6 @@ def _compile_py_func_from_string(
 
     # inject parent scope (which may well be None)
     w_py_func.php_scope = PHP_Scope(interp, parent_php_scope)
-
-    PY_COMPILE_CACHE[func_source, parent_php_scope] = w_py_func_name, w_py_func
 
     return w_py_func_name, w_py_func
 

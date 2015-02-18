@@ -678,3 +678,31 @@ class TestPyPyBridgeScope(BaseTestInterpreter):
         }
         ''')
         assert php_space.str_w(output[0]) == "global name 'p' is not defined"
+
+    def test_py_code_cache_is_per_scope(self, php_space):
+        output = self.run('''
+            define("PYSRC", "def f(): return x");
+
+            function scope1() {
+                $x = 1;
+                $f = embed_py_func(PYSRC);
+                return $f();
+            }
+
+            function scope2() {
+                $x = 2;
+                $f = embed_py_func(PYSRC);
+                return $f();
+            }
+
+            // should not see 1, 1, 1, 1, as this would inidcate that
+            // the parent scope was also cached.
+            echo scope1();
+            echo scope2();
+            echo scope2();
+            echo scope1();
+        ''')
+        assert php_space.int_w(output[0]) == 1
+        assert php_space.int_w(output[1]) == 2
+        assert php_space.int_w(output[2]) == 2
+        assert php_space.int_w(output[3]) == 1
