@@ -51,8 +51,8 @@ def _compile_py_func_from_string(
     """ compiles a string returning a <name, func> pair """
 
     # If we have compiled this source before, the result will be equivalent.
-    cached = PY_COMPILE_CACHE.get((func_source, parent_php_scope))
-    if cached:
+    cached = PY_COMPILE_CACHE.get((func_source, parent_php_scope), None)
+    if cached is not None:
         return cached
 
     py_space = interp.py_space
