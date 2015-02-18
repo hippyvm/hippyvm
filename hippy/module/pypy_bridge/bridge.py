@@ -42,9 +42,18 @@ def embed_py_mod(interp, mod_name, mod_source):
 
     return w_py_module.to_php(interp)
 
+# maps: func_source * parent_php_scope -> w_func_name * w_compiled_func
+PY_COMPILE_CACHE = {}
+
+@jit.elidable
 def _compile_py_func_from_string(
         interp, func_source, parent_php_scope):
     """ compiles a string returning a <name, func> pair """
+
+    # If we have compiled this source before, the result will be equivalent.
+    cached = PY_COMPILE_CACHE.get((func_source, parent_php_scope))
+    if cached:
+        return cached
 
     py_space = interp.py_space
 
@@ -82,6 +91,8 @@ def _compile_py_func_from_string(
 
     # inject parent scope (which may well be None)
     w_py_func.php_scope = PHP_Scope(interp, parent_php_scope)
+
+    PY_COMPILE_CACHE[func_source, parent_php_scope] = w_py_func_name, w_py_func
 
     return w_py_func_name, w_py_func
 
