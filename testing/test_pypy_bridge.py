@@ -1185,3 +1185,15 @@ class TestPyPyBridge(BaseTestInterpreter):
         }
         ''')
         assert php_space.int_w(output[0]) == 666
+
+    def test_pycode_cache(self, php_space):
+        output = self.run('''
+            // compile same function twice
+            $src = "def f(): pass";
+            $f = embed_py_func($src);
+            $ff = embed_py_func($src);
+
+            embed_py_func_global("def check(f1, f2): return f1.__code__ is f2.__code__");
+            echo check($f, $ff);
+        ''')
+        assert php_space.is_true(output[0])

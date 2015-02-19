@@ -46,6 +46,8 @@ class PyCodeCacheVersion(object): pass
 
 class PyCodeCache(object):
 
+    _immutable_fields_ = ["cache"]
+
     def __init__(self):
         # maps: func_source -> pycode
         self.cache = {}
