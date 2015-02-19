@@ -152,7 +152,7 @@ class W_EmbeddedPyCallable(W_InvokeCall):
 
         return rv.to_php(interp)
 
-    @jit.elidable_promote()
+    # Do not promote. Bad JIT interaction with ARG_BY_PTR
     def needs_ref(self, i):
         argmap = self.php_args_by_ref
         return argmap[i] if argmap is not None else False
@@ -202,7 +202,7 @@ class W_PyFuncGlobalAdapter(AbstractFunction):
     def _arg_index_adjust(self, i):
         return i
 
-    @jit.elidable_promote()
+    # Do not promote. Bad JIT interaction with ARG_BY_PTR
     def needs_ref(self, i):
         i = self._arg_index_adjust(i)
         argmap = self.php_args_by_ref
