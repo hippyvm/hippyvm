@@ -42,19 +42,33 @@ def embed_py_mod(interp, mod_name, mod_source):
 
     return w_py_module.to_php(interp)
 
-# maps: func_source -> pycode
-PYCODE_CACHE = {}
+class PyCodeCacheVersion(object): pass
 
-@jit.elidable
-def _lookup_from_pycode_cache(func_source):
-    return PYCODE_CACHE.get(func_source, None)
+class PyCodeCache(object):
+
+    def __init__(self):
+        # maps: func_source -> pycode
+        self.cache = {}
+        self.version = PyCodeCacheVersion()
+
+    @jit.elidable_promote()
+    def _read(self, func_source, version):
+        return self.cache.get(func_source, None)
+
+    def read(self, func_source):
+        return self._read(func_source, self.version)
+
+    def update(self, func_source, pycode):
+        self.cache[func_source] = pycode
+        self.version = PyCodeCacheVersion()
+
+PYCODE_CACHE = PyCodeCache()
 
 def _compile_py_func_from_string_cached(interp, func_source):
     py_space = interp.py_space
 
-    w_py_code = _lookup_from_pycode_cache(func_source)
+    w_py_code = PYCODE_CACHE.read(func_source)
     if w_py_code is None:
-        e = None
         try:
             w_py_code = py_compiling.compile(
                     py_space, py_space.wrap(func_source), "<string>", "exec")
@@ -64,7 +78,7 @@ def _compile_py_func_from_string_cached(interp, func_source):
                                        "Failed to compile Python code: %s" %
                                        e.errorstr(py_space))
 
-        PYCODE_CACHE[func_source] = w_py_code
+        PYCODE_CACHE.update(func_source, w_py_code)
 
     return w_py_code
 
