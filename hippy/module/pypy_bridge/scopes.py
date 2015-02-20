@@ -29,6 +29,7 @@ class PHP_Scope(WPy_Root):
         self.name_map = {}
         self.name_map_version = NameMapVersion()
 
+    @jit.elidable
     def _lookup_name_map(self, n, version):
         try:
             return self.name_map[n]
