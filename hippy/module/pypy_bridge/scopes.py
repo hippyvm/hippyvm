@@ -15,6 +15,8 @@ PHP_CLASS   = 3
 PHP_CONST   = 4
 PHP_PARENT  = 5
 
+class NameMapVersion(object): pass
+
 class PHP_Scope(WPy_Root):
     _immutable_fields_ = ["ph_interp", "name_map"]
     # ph_frame is in a sense immutable, but the elidable_promote on
@@ -25,10 +27,9 @@ class PHP_Scope(WPy_Root):
         self.ph_interp = ph_interp
         self.ph_frame = ph_frame
         self.name_map = {}
+        self.name_map_version = NameMapVersion()
 
-    # Do not try to use the elidable_promote trick on the name_map.
-    # Bad JIT interation with LOAD_GLOBAL.
-    def _lookup_name_map(self, n):
+    def _lookup_name_map(self, n, version):
         try:
             return self.name_map[n]
         except KeyError:
@@ -37,6 +38,7 @@ class PHP_Scope(WPy_Root):
     def _update_name_map(self, n, t):
         assert n not in self.name_map
         self.name_map[n] = t
+        self.name_map_version = NameMapVersion()
 
 
     def py_lookup(self, n):
@@ -49,7 +51,7 @@ class PHP_Scope(WPy_Root):
         # If we've looked up n in the past, we use the same lookup scheme as
         # before.
 
-        t = self._lookup_name_map(n)
+        t = self._lookup_name_map(n, self.name_map_version)
         if t == PHP_FRAME:
             ph_v = self.ph_frame.lookup_ref_by_name_no_create(n)
             if ph_v is None:
