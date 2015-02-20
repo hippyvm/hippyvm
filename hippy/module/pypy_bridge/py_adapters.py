@@ -152,8 +152,13 @@ class W_EmbeddedPyCallable(W_InvokeCall):
 
         return rv.to_php(interp)
 
-    # Do not promote. Bad JIT interaction with ARG_BY_PTR
+    # two tier needs_ref required by rpython - gives error otherwise
     def needs_ref(self, i):
+        return self._needs_ref(i)
+
+    # Do not promote. Bad JIT interaction with ARG_BY_PTR
+    @jit.elidable
+    def _needs_ref(self, i):
         argmap = self.php_args_by_ref
         return argmap[i] if argmap is not None else False
 
@@ -202,8 +207,13 @@ class W_PyFuncGlobalAdapter(AbstractFunction):
     def _arg_index_adjust(self, i):
         return i
 
-    # Do not promote. Bad JIT interaction with ARG_BY_PTR
+    # two tier needs_ref required by rpython - gives error otherwise
     def needs_ref(self, i):
+        return self._needs_ref(i)
+
+    # Do not promote. Bad JIT interaction with ARG_BY_PTR
+    @jit.elidable
+    def _needs_ref(self, i):
         i = self._arg_index_adjust(i)
         argmap = self.php_args_by_ref
         return argmap[i] if argmap is not None else False
