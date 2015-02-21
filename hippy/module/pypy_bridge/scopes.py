@@ -15,10 +15,31 @@ PHP_CLASS   = 3
 PHP_CONST   = 4
 PHP_PARENT  = 5
 
-class NameMapVersion(object): pass
+class _Name_Map(object):
+    _immutable_fields_ = ["name_map", "other_maps"]
+
+    def __init__(self):
+        self.name_map = {}
+        self.other_maps = {}
+
+    @jit.elidable_promote()
+    def find(self, n):
+        return self.name_map.get(n, -1)
+
+    @jit.elidable
+    def extend(self, n):
+        if n not in self.other_maps:
+            nm = _Name_Map()
+            nm.name_map.update(self.name_map)
+            nm.name_map[n] = len(self.name_map)
+            self.other_maps[n] = nm
+        return self.other_maps[n]
+
+
+_EMPTY_MAP = _Name_Map()
 
 class PHP_Scope(WPy_Root):
-    _immutable_fields_ = ["ph_interp", "name_map"]
+    _immutable_fields_ = ["ph_interp", "name_map?"]
     # ph_frame is in a sense immutable, but the elidable_promote on
     # _lookup_name_map then gets an indirect constant access to a virtualisable
     # which leads to bad things happening.
@@ -26,21 +47,18 @@ class PHP_Scope(WPy_Root):
     def __init__(self, ph_interp, ph_frame):
         self.ph_interp = ph_interp
         self.ph_frame = ph_frame
-        self.name_map = {}
-        self.name_map_version = NameMapVersion()
+        self.name_map = _EMPTY_MAP
+        self.name_types = []
 
-    @jit.elidable
-    def _lookup_name_map(self, n, version):
-        try:
-            return self.name_map[n]
-        except KeyError:
-            return PHP_UNKNOWN
+    def lookup_name_type(self, n):
+        off = self.name_map.find(n)
+        if off != -1:
+            return self.name_types[off]
+        return PHP_UNKNOWN
 
-    def _update_name_map(self, n, t):
-        assert n not in self.name_map
-        self.name_map[n] = t
-        self.name_map_version = NameMapVersion()
-
+    def set_name_type(self, n, t):
+        self.name_map = self.name_map.extend(n)
+        self.name_types.append(t)
 
     def py_lookup(self, n):
         """Lookup 'n' in this scope and return it as a PyPy object or None
@@ -52,7 +70,7 @@ class PHP_Scope(WPy_Root):
         # If we've looked up n in the past, we use the same lookup scheme as
         # before.
 
-        t = self._lookup_name_map(n, self.name_map_version)
+        t = self.lookup_name_type(n)
         if t == PHP_FRAME:
             ph_v = self.ph_frame.lookup_ref_by_name_no_create(n)
             if ph_v is None:
@@ -78,27 +96,27 @@ class PHP_Scope(WPy_Root):
         if ph_frame is not None:
             ph_v = ph_frame.lookup_ref_by_name_no_create(n)
             if ph_v is not None:
-                self._update_name_map(n, PHP_FRAME)
+                self.set_name_type(n, PHP_FRAME)
                 return ph_v.to_py(ph_interp)
 
         ph_v = ph_interp.lookup_function(n)
         if ph_v is not None:
-            self._update_name_map(n, PHP_FUNC)
+            self.set_name_type(n, PHP_FUNC)
             return ph_v.to_py(ph_interp)
 
         ph_v = ph_interp.lookup_class_or_intf(n)
         if ph_v is not None:
-            self._update_name_map(n, PHP_CLASS)
+            self.set_name_type(n, PHP_CLASS)
             return ph_v.to_py(ph_interp)
 
         ph_v = ph_interp.lookup_constant(n)
         if ph_v is not None:
-            self._update_name_map(n, PHP_CONST)
+            self.set_name_type(n, PHP_CONST)
             return ph_v.to_py(ph_interp)
 
         py_scope = ph_frame.bytecode.py_scope
         if py_scope is not None:
-            self._update_name_map(n, PHP_PARENT)
+            self.set_name_type(n, PHP_PARENT)
             return py_scope.py_lookup(n)
 
 
