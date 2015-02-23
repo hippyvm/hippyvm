@@ -22,24 +22,25 @@ class _Name_Map(object):
         self.name_map = {}
         self.other_maps = {}
 
-    @jit.elidable_promote()
+    @jit.elidable
     def find(self, n):
-        return self.name_map.get(n, -1)
+        return self.name_map.get(n, PHP_UNKNOWN)
 
     @jit.elidable
-    def extend(self, n):
-        if n not in self.other_maps:
+    def extend(self, n, t):
+        key = (n, t)
+        if key not in self.other_maps:
             nm = _Name_Map()
             nm.name_map.update(self.name_map)
-            nm.name_map[n] = len(self.name_map)
-            self.other_maps[n] = nm
-        return self.other_maps[n]
+            nm.name_map[n] = t
+            self.other_maps[key] = nm
+        return self.other_maps[key]
 
 
 _EMPTY_MAP = _Name_Map()
 
 class PHP_Scope(WPy_Root):
-    _immutable_fields_ = ["ph_interp", "name_map?"]
+    _immutable_fields_ = ["ph_interp"]
     # ph_frame is in a sense immutable, but the elidable_promote on
     # _lookup_name_map then gets an indirect constant access to a virtualisable
     # which leads to bad things happening.
@@ -48,17 +49,12 @@ class PHP_Scope(WPy_Root):
         self.ph_interp = ph_interp
         self.ph_frame = ph_frame
         self.name_map = _EMPTY_MAP
-        self.name_types = []
 
     def lookup_name_type(self, n):
-        off = self.name_map.find(n)
-        if off != -1:
-            return self.name_types[off]
-        return PHP_UNKNOWN
+        return jit.promote(self.name_map).find(n)
 
     def set_name_type(self, n, t):
-        self.name_map = self.name_map.extend(n)
-        self.name_types.append(t)
+        self.name_map = jit.promote(self.name_map).extend(n, t)
 
     def py_lookup(self, n):
         """Lookup 'n' in this scope and return it as a PyPy object or None
