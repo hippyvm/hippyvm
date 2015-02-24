@@ -787,6 +787,15 @@ class _TestInterpreter(BaseTestInterpreter):
         ''')
         assert [self.space.int_w(i) for i in output] == [12, 13]
 
+    def test_reference_alloc_opt(self):
+        r = W_Reference(W_IntObject(666))
+        obj1 = r._w_value
+        r.store(W_IntObject(31415))
+        obj2 = r._w_value
+
+        # should not have allocated a new object inside ref
+        assert obj1 is obj2
+
     def test_array_copy_reference(self):
         output = self.run('''
         $x = 5;

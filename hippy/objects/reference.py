@@ -1,5 +1,19 @@
 from hippy.objects.base import W_Root, W_Object
+from hippy.objects.intobject import W_IntObject
 
+class W_MutIntObject(W_Root):
+    def __init__(self, intval):
+        self.intval = intval
+
+def to_stored_value(w_value):
+    if isinstance(w_value, W_IntObject):
+        w_value = W_MutIntObject(w_value.intval)
+    return w_value
+
+def from_stored_value(w_value):
+    if isinstance(w_value, W_MutIntObject):
+        w_value = W_IntObject(w_value.intval)
+    return w_value
 
 class W_Reference(W_Root):
     """This is a reference got by &$stuff.  It is also used for local
@@ -14,26 +28,26 @@ class W_Reference(W_Root):
         assert isinstance(w_value, W_Object) or w_value is None
         #        isinstance(w_value, ClassBase) # PyPy bridge wraps ref to class
         assert not isinstance(w_value, W_Reference)
-        self._w_value = w_value
+        self._w_value = to_stored_value(w_value)
 
     def deref(self):
         """The standard way to read the w_value stored in the reference.
         You must not call the inplace_*() operations on the result,
         because it may be shared by unrelated pieces of code."""
         self._unique = False
-        return self._w_value
+        return from_stored_value(self._w_value)
 
     def deref_temp(self):
         """Read the w_value, but promizes that we won't do any operation
         that changes the result or keep it around for a long time."""
-        return self._w_value
+        return from_stored_value(self._w_value)
 
     def deref_unique(self):
         """Read the w_value, if necessary making a copy in order to
         return a unique reference."""
         from hippy.objects.arrayobject import W_ArrayObject
         from hippy.objects.strobject import W_StringObject
-        w_value = self._w_value
+        w_value = from_stored_value(self._w_value)
         if (isinstance(w_value, W_ArrayObject) or
             isinstance(w_value, W_StringObject)):
             if not self._unique:
@@ -50,8 +64,15 @@ class W_Reference(W_Root):
         not going to use after the call to store().
         """
         assert not isinstance(w_value, W_Reference)
-        self._w_value = w_value
         self._unique = unique
+        if isinstance(w_value, W_IntObject):
+            w_current = self._w_value
+            if isinstance(w_current, W_MutIntObject):
+                w_current.intval = w_value.intval
+            else:
+                self._w_value = W_MutIntObject(w_value.intval)
+            return
+        self._w_value = w_value
 
     def __repr__(self):
         if not hasattr(self, '_counter'):
