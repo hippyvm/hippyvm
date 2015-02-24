@@ -502,6 +502,31 @@ class TestPyPyBridgeScope(BaseTestInterpreter):
         assert self.space.int_w(output[0]) == 2 \
                and self.space.str_w(output[1]) == "caught"
 
+    def test_scopes_are_deterministic4(self, php_space):
+        output = self.run('''
+            class b { function __toString() { return "class b"; }}
+            $b = "var b";
+            $src = <<<EOD
+            def f1():
+                return b
+            EOD;
+            $f1 = embed_py_func($src);
+            echo $f1();
+            echo $f1();
+            unset($b);
+            $src = <<<EOD
+            def f2():
+                return b()
+            EOD;
+            $f2 = embed_py_func($src);
+            echo $f2();
+            echo $f2();
+        ''')
+        assert self.space.str_w(output[0]) == "var b"
+        assert self.space.str_w(output[1]) == "var b"
+        assert self.space.str_w(output[2]) == "class b"
+        assert self.space.str_w(output[3]) == "class b"
+
     def test_php_global_scope_does_exist(self, php_space):
         output = self.run('''
             function f() { return "f"; }
