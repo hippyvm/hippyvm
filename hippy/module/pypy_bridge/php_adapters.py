@@ -155,7 +155,9 @@ class W_PHPClassAdapter(W_Root):
 
     def to_php(self, php_interp):
         # Classes are not first class in PHP, so this would make no sense.
-        assert False
+        from hippy.module.pypy_bridge.bridge import _raise_php_bridgeexception
+        _raise_php_bridgeexception(self.interp,
+               "Cannot convert wrapped PHP class to PHP. Classes are not first class")
 
     def is_w(self, space, other):
         if isinstance(other, W_PHPClassAdapter):

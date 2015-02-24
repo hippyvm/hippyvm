@@ -384,3 +384,25 @@ class TestPyPyBridgeExceptions(BaseTestInterpreter):
         ''')
         err_s = "f() takes no arguments (4 given)"
         assert php_space.str_w(output[0]) == err_s
+
+    def test_class_cannot_be_passed_to_php(self, php_space):
+        output = self.run('''
+        class A {};
+
+        $src = <<<EOD
+        def f():
+            return A
+        EOD;
+
+        embed_py_func_global($src);
+        try {
+            f();
+            $s = "failed";
+        } catch (BridgeException $e) {
+            $s = $e->getMessage();
+        }
+        echo $s;
+        ''')
+        estr = "Cannot convert wrapped PHP class to PHP. Classes are not first class"
+        assert php_space.str_w(output[0]) == estr
+
