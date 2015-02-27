@@ -11,7 +11,7 @@ from hippy.function import AbstractFunction
 from hippy.objects.iterator import BaseIterator
 from hippy.objects.arrayobject import wrap_array_key, W_ArrayObject
 from hippy.objects.reference import W_Reference
-from hippy.builtin_klass import W_ExceptionObject, k_Exception
+from hippy.builtin_klass import W_ExceptionObject, k_Exception, GetterSetterWrapper
 from hippy import consts
 
 from pypy.objspace.std.intobject import W_IntObject
@@ -582,8 +582,19 @@ class W_PyExceptionAdapter(W_ExceptionObject):
 def w_py_exc_getMessage(interp, this):
     return this.getattr(interp, "message")
 
+def _pyexceptionadapter_get_message(interp, this):
+    import pdb; pdb.set_trace()
+    this.getattr(interp, "message", this.getclass(), this.getclass())
+
+def _pyexceptionadapter_set_message(interp, this, w_php_val):
+    this.setattr(interp, "message", w_php_val, this.getclass())
+
+w_pyexceptionadapter_props = [
+    GetterSetterWrapper(_pyexceptionadapter_get_message, _pyexceptionadapter_set_message, "message", consts.ACC_PROTECTED)
+]
+
 k_PyExceptionAdapter = def_class('PyException',
-    [w_py_exc_getMessage], [], instance_class=W_PyExceptionAdapter)
+    [w_py_exc_getMessage], w_pyexceptionadapter_props, instance_class=W_PyExceptionAdapter)
 
 from hippy.builtin_klass import k_Exception
 # Indicates an error in PHP->Py glue code
