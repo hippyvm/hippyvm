@@ -401,7 +401,6 @@ class W_ArrayObject(W_Object):
         from hippy.module.pypy_bridge.py_strategies import (
                 make_wrapped_mixed_key_php_array)
 
-        # In order to retain copy on write, we always wrap a reference.
         if w_php_ref is not None:
             assert isinstance(w_php_ref, W_Reference)
         else:
