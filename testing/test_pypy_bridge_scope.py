@@ -117,10 +117,6 @@ class TestPyPyBridgeScope(BaseTestInterpreter):
         ''')
         assert php_space.int_w(output[0]) == 42
 
-    # Broken, will need to be addressed when we overhaul scoping.
-    # FatalError: Call to undefined function len()
-    # FAO: ltratt
-    @pytest.mark.xfail()
     def test_php_can_call_python_builtin(self, php_space):
 
         output = self.run('''
