@@ -734,6 +734,13 @@ class TestPyPyBridgeScope(BaseTestInterpreter):
 
     def test_call_builtin_py_func(self, php_space):
         output = self.run('''
-        echo str("123"); # str is a python builtin
+        embed_py_func_global("
+def f():
+    php = \\"function g() { return str('123'); }\\"
+    g = embed_php_func(php)
+    return g()
+        ");
+
+        echo f();
         ''')
         assert php_space.str_w(output[0]) == "123"
