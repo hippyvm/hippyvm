@@ -731,3 +731,9 @@ class TestPyPyBridgeScope(BaseTestInterpreter):
         assert php_space.int_w(output[1]) == 2
         assert php_space.int_w(output[2]) == 2
         assert php_space.int_w(output[3]) == 1
+
+    def test_call_builtin_py_func(self, php_space):
+        output = self.run('''
+        echo str("123"); # str is a python builtin
+        ''')
+        assert php_space.str_w(output[0]) == "123"
