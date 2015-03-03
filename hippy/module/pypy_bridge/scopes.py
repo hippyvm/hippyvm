@@ -193,13 +193,22 @@ class Py_Scope(WPHP_Root):
             if py_v is not None:
                 return py_v
 
-        # Look in Python globals
+        php_scope = py_frame.php_scope
+        if php_scope is not None:
+            php_py_scope = php_scope.ph_frame.bytecode.py_scope
+            if php_py_scope is not None:
+                return php_scope.py_lookup(n)
+
         py_v = py_interp.finditem_str(py_frame.w_globals, n)
+        if py_v is not None:
+            return py_v
+
+        builtins = py_frame.get_builtin()
+        py_v = py_interp.finditem_str(builtins.w_dict, n)
 
         if py_v is not None:
             return py_v
 
-        php_scope = py_frame.php_scope
         if php_scope is not None:
             return php_scope.py_lookup(n)
         return None
