@@ -744,3 +744,17 @@ def f():
         echo f();
         ''')
         assert php_space.str_w(output[0]) == "123"
+
+    def test_inter_language_lexical_before_global(self, php_space):
+        output = self.run('''
+        $len = 3;
+        embed_py_func_global("
+def f():
+    php = \\"function g() { return $len; }\\"
+    g = embed_php_func(php)
+    return g()
+        ");
+
+        echo f();
+        ''')
+        assert php_space.str_w(output[0]) == "3"
