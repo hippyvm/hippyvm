@@ -1312,8 +1312,6 @@ class Interpreter(object):
 
     def GETFUNC(self, bytecode, frame, space, arg, pc):
         w_name = frame.pop().deref()
-        if space.str_w(w_name) == "a":
-            import pdb; pdb.set_trace()
         func = self.getfunc(w_name, frame.w_this, frame.get_contextclass())
         assert func is not None
         frame.push(func)
