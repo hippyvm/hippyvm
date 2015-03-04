@@ -454,6 +454,10 @@ class Interpreter(object):
         if py_scope is not None:
             w_php_v = py_scope.ph_lookup(name)
             if w_php_v is not None:
+                if isinstance(w_php_v, W_InstanceObject):
+                    # It could be a callable Python class/instance for example.
+                    # In this case we ask the adapter for it's callable.
+                    w_php_v = w_php_v.get_callable()
                 if not isinstance(w_php_v, py_adapters.W_EmbeddedPyCallable):
                     self.fatal("Can only call Python functions from PHP")
                 return w_php_v
