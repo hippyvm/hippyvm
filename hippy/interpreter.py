@@ -1272,8 +1272,9 @@ class Interpreter(object):
 
     def getfunc(self, w_name, w_this, contextclass):
         if isinstance(w_name, py_adapters.W_EmbeddedPyCallable):
-            # We allow Python to return references to functions, rather than
-            # merely referencing names.
+            # Calling a (stored and adapted) Python callable.
+            # The bridge bridge will have directly put a callable where Hippy
+            # would usually put the name of the function to retrieve.
             return w_name
         space = self.space
         if space.is_str(w_name):
