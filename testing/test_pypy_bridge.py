@@ -1197,3 +1197,153 @@ class TestPyPyBridge(BaseTestInterpreter):
             echo check($f, $ff);
         ''')
         assert php_space.is_true(output[0])
+
+    def test_kwarg_from_php(self, php_space):
+        output = self.run('''
+            $src = <<<EOD
+            def f(a="a", b="b", c="c"):
+                  return a + b + c
+            EOD;
+
+            $f = embed_py_func_global($src);
+
+            echo call_py_func("f", [], ["a" => "z"]);
+            echo call_py_func("f", ["z"], ["c" => "o"]);
+            echo call_py_func("f", [], ["a" => "x", "b" => "y", "c" => "z"]);
+            echo call_py_func("f", [], ["b" => "y", "c" => "z", "a" => "x"]);
+            echo call_py_func("f", ["o", "p"], ["c" => "z"]);
+            echo call_py_func("f", [], []);
+            echo call_py_func("f", ["j", "k", "l"], []);
+        ''')
+        assert php_space.str_w(output[0]) == "zbc"
+        assert php_space.str_w(output[1]) == "zbo"
+        assert php_space.str_w(output[2]) == "xyz"
+        assert php_space.str_w(output[3]) == "xyz"
+        assert php_space.str_w(output[4]) == "opz"
+        assert php_space.str_w(output[5]) == "abc"
+        assert php_space.str_w(output[6]) == "jkl"
+
+    def test_kwarg_from_php2(self, php_space):
+        output = self.run('''
+            $src = <<<EOD
+            def f(a="a", b="b", c="c"):
+                  return a + b + c
+            EOD;
+
+            $f = embed_py_func($src);
+
+            echo call_py_func($f, [], ["a" => "z"]);
+            echo call_py_func($f, ["z"], ["c" => "o"]);
+            echo call_py_func($f, [], ["a" => "x", "b" => "y", "c" => "z"]);
+            echo call_py_func($f, [], ["b" => "y", "c" => "z", "a" => "x"]);
+            echo call_py_func($f, ["o", "p"], ["c" => "z"]);
+            echo call_py_func($f, [], []);
+            echo call_py_func($f, ["j", "k", "l"], []);
+        ''')
+        assert php_space.str_w(output[0]) == "zbc"
+        assert php_space.str_w(output[1]) == "zbo"
+        assert php_space.str_w(output[2]) == "xyz"
+        assert php_space.str_w(output[3]) == "xyz"
+        assert php_space.str_w(output[4]) == "opz"
+        assert php_space.str_w(output[5]) == "abc"
+        assert php_space.str_w(output[6]) == "jkl"
+
+    def test_kwarg_from_php3(self, php_space):
+        output = self.run('''
+            class A {};
+            $src = <<<EOD
+            @php_decor(static=True)
+            def f(a="a", b="b", c="c"):
+                  return a + b + c
+            EOD;
+
+            embed_py_meth("A", $src);
+
+            echo call_py_func("A::f", [], ["a" => "z"]);
+            echo call_py_func("A::f", ["z"], ["c" => "o"]);
+            echo call_py_func("A::f", [], ["a" => "x", "b" => "y", "c" => "z"]);
+            echo call_py_func("A::f", [], ["b" => "y", "c" => "z", "a" => "x"]);
+            echo call_py_func("A::f", ["o", "p"], ["c" => "z"]);
+            echo call_py_func("A::f", [], []);
+            echo call_py_func("A::f", ["j", "k", "l"], []);
+        ''')
+        assert php_space.str_w(output[0]) == "zbc"
+        assert php_space.str_w(output[1]) == "zbo"
+        assert php_space.str_w(output[2]) == "xyz"
+        assert php_space.str_w(output[3]) == "xyz"
+        assert php_space.str_w(output[4]) == "opz"
+        assert php_space.str_w(output[5]) == "abc"
+        assert php_space.str_w(output[6]) == "jkl"
+
+    def test_kwarg_from_php4(self, php_space):
+        output = self.run('''
+            $src = <<<EOD
+            def f():
+                class A(object):
+                    @staticmethod
+                    def f(a="a", b="b", c="c"):
+                        return a + b + c
+
+                pysrc = "function g() { return call_py_func('A::f', [], ['a' => 'z']); }";
+                g = embed_php_func(pysrc)
+                return g()
+            EOD;
+
+            embed_py_func_global($src);
+
+            echo f();
+        ''')
+        assert php_space.str_w(output[0]) == "zbc"
+
+    def test_kwarg_from_php5(self, php_space):
+        output = self.run('''
+            class A {};
+            $src = <<<EOD
+            def f(self, a="a", b="b", c="c"):
+                  return a + b + c
+            EOD;
+            embed_py_meth("A", $src);
+
+            $a = new A();
+
+            echo call_py_func([$a, "f"], [], ["a" => "z"]);
+            echo call_py_func([$a, "f"], ["z"], ["c" => "o"]);
+            echo call_py_func([$a, "f"], [], ["a" => "x", "b" => "y", "c" => "z"]);
+            echo call_py_func([$a, "f"], [], ["b" => "y", "c" => "z", "a" => "x"]);
+            echo call_py_func([$a, "f"], ["o", "p"], ["c" => "z"]);
+            echo call_py_func([$a, "f"], [], []);
+            echo call_py_func([$a, "f"], ["j", "k", "l"], []);
+        ''')
+        assert php_space.str_w(output[0]) == "zbc"
+        assert php_space.str_w(output[1]) == "zbo"
+        assert php_space.str_w(output[2]) == "xyz"
+        assert php_space.str_w(output[3]) == "xyz"
+        assert php_space.str_w(output[4]) == "opz"
+        assert php_space.str_w(output[5]) == "abc"
+        assert php_space.str_w(output[6]) == "jkl"
+
+    def test_kwarg_from_php6(self, php_space):
+        output = self.run('''
+            class A {};
+            $src = <<<EOD
+            @php_decor(static=True)
+            def f(a="a", b="b", c="c"):
+                  return a + b + c
+            EOD;
+            embed_py_meth("A", $src);
+
+            echo call_py_func(["A", "f"], [], ["a" => "z"]);
+            echo call_py_func(["A", "f"], ["z"], ["c" => "o"]);
+            echo call_py_func(["A", "f"], [], ["a" => "x", "b" => "y", "c" => "z"]);
+            echo call_py_func(["A", "f"], [], ["b" => "y", "c" => "z", "a" => "x"]);
+            echo call_py_func(["A", "f"], ["o", "p"], ["c" => "z"]);
+            echo call_py_func(["A", "f"], [], []);
+            echo call_py_func(["A", "f"], ["j", "k", "l"], []);
+        ''')
+        assert php_space.str_w(output[0]) == "zbc"
+        assert php_space.str_w(output[1]) == "zbo"
+        assert php_space.str_w(output[2]) == "xyz"
+        assert php_space.str_w(output[3]) == "xyz"
+        assert php_space.str_w(output[4]) == "opz"
+        assert php_space.str_w(output[5]) == "abc"
+        assert php_space.str_w(output[6]) == "jkl"

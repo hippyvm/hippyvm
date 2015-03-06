@@ -406,3 +406,135 @@ class TestPyPyBridgeExceptions(BaseTestInterpreter):
         estr = "Cannot convert wrapped PHP class to PHP. Classes are not first class"
         assert php_space.str_w(output[0]) == estr
 
+    def test_except_kwarg_from_php(self, php_space):
+        output = self.run('''
+            function f() {}
+            try {
+                call_py_func("f", [], ["a" => "z"]);
+                echo "fail";
+            } catch (BridgeException $e) {
+                echo $e->getMessage();
+            }
+        ''')
+        assert php_space.str_w(output[0]) == "Failed to find Python function or method"
+
+    def test_except_kwarg_from_php2(self, php_space):
+        output = self.run('''
+            class A {
+                static function f() {}
+            }
+            try {
+                call_py_func("A::f", [], ["a" => "z"]);
+                echo "fail";
+            } catch (BridgeException $e) {
+                echo $e->getMessage();
+            }
+        ''')
+        assert php_space.str_w(output[0]) == "Failed to find Python function or method"
+
+    def test_except_kwarg_from_php3(self, php_space):
+        output = self.run('''
+            $f = function() {};
+            try {
+                call_py_func($f, [], ["a" => "z"]);
+                echo "fail";
+            } catch (BridgeException $e) {
+                echo $e->getMessage();
+            }
+        ''')
+        assert php_space.str_w(output[0]) == "Invalid argument to call_py_func"
+
+    def test_except_kwarg_from_php4(self, php_space):
+        output = self.run('''
+            try {
+                call_py_func([], [], ["a" => "z"]);
+                echo "fail";
+            } catch (BridgeException $e) {
+                echo $e->getMessage();
+            }
+        ''')
+        err_s = "When passing an array to call_py_func, len must be 2"
+        assert php_space.str_w(output[0]) == err_s
+
+    def test_except_kwarg_from_php5(self, php_space):
+        output = self.run('''
+            try {
+                call_py_func([1, 2], [], ["a" => "z"]);
+                echo "fail";
+            } catch (BridgeException $e) {
+                echo $e->getMessage();
+            }
+        ''')
+        err_s = "method name should be a string"
+        assert php_space.str_w(output[0]) == err_s
+
+    def test_except_kwarg_from_php6(self, php_space):
+        expected_warnings = ["Fatal error: Call to a member function f() on a non-object"]
+        output = self.run('''
+            call_py_func([1, "f"], [], ["a" => "z"]);
+        ''', expected_warnings)
+
+    def test_except_kwarg_from_php7(self, php_space):
+        output = self.run('''
+            class A{};
+            $a = new A();
+            try {
+                call_py_func([$a, "f"], [], ["a" => "z"]);
+                echo "fail";
+            } catch (BridgeException $e) {
+                echo $e->getMessage();
+            }
+        ''')
+        assert php_space.str_w(output[0]) == "Failed to find Python function or method"
+
+    def test_except_kwarg_from_php8(self, php_space):
+        output = self.run('''
+            class A{
+                  private function f() {}
+            };
+            $a = new A();
+            try {
+                call_py_func([$a, "f"], [], ["a" => "z"]);
+                echo "fail";
+            } catch (BridgeException $e) {
+                echo $e->getMessage();
+            }
+        ''')
+        assert php_space.str_w(output[0]) == "Failed to find Python function or method"
+
+    def test_except_kwarg_from_php9(self, php_space):
+        output = self.run('''
+            class A {}
+            $src = <<<EOD
+            @php_decor(access="private")
+            def f(self, a="a", b="b", c="c"):
+                  return a + b + c
+            EOD;
+            embed_py_meth("A", $src);
+
+            $a = new A();
+            try {
+                call_py_func([$a, "f"], [], ["a" => "z"]);
+                echo "fail";
+            } catch (BridgeException $e) {
+                echo $e->getMessage();
+            }
+        ''')
+        assert php_space.str_w(output[0]) == "Failed to find Python function or method"
+
+    def test_except_kwarg_from_php10(self, php_space):
+        output = self.run('''
+            $src = <<<EOD
+            def f(a="a", b="b", c="c"):
+                  return a + b + c
+            EOD;
+
+            embed_py_func_global($src);
+            try {
+                call_py_func("f", [], [1 => "z"]);
+                echo "fail";
+            } catch (BridgeException $e) {
+                echo $e->getMessage();
+            }
+        ''')
+        assert php_space.str_w(output[0]) == "Python kwargs must have string keys"

@@ -177,7 +177,7 @@ class W_PyFuncGlobalAdapter(AbstractFunction):
             extract_php_metadata(interp.py_space, w_py_callable)
 
     def get_wrapped_py_obj(self):
-        return self.py_callable
+        return self.w_py_callable
 
     @jit.unroll_safe
     def call_args(self, interp, args_w, w_this=None, thisclass=None,
