@@ -1347,3 +1347,13 @@ class TestPyPyBridge(BaseTestInterpreter):
         assert php_space.str_w(output[4]) == "opz"
         assert php_space.str_w(output[5]) == "abc"
         assert php_space.str_w(output[6]) == "jkl"
+
+    def test_randrange_from_py(self, php_space):
+        self.engine.py_space.initialize()
+        output = self.run('''
+        $random = import_py_mod("random");
+        $num = $random->randrange(10, 20);
+        echo $num;
+        ''')
+        from hippy.objects.intobject import IntegerObject
+        assert isinstance(output[0], IntegerObject)

@@ -29,7 +29,15 @@ def hippy_fail(*args, **kwargs):
     return py.test.mark.xfail("not config.option.runappdirect",
             *args, **kwargs)
 
-SHARED_PY_SPACE = PyStdObjSpace()
+# If your composed tests need a module, you should make sure it is loaded here.
+from pypy.config.pypyoption import get_pypy_config
+pypy_config = get_pypy_config(translating=False)
+
+pypy_config.objspace.usemodules.binascii = True
+pypy_config.objspace.usemodules.time = True
+pypy_config.objspace.usemodules.struct = True
+
+SHARED_PY_SPACE = PyStdObjSpace(pypy_config)
 
 class BaseTestInterpreter(object):
     Engine = MockEngine
