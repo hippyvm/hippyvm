@@ -1355,5 +1355,5 @@ class TestPyPyBridge(BaseTestInterpreter):
         $num = $random->randrange(10, 20);
         echo $num;
         ''')
-        from hippy.objects.intobject import IntegerObject
-        assert isinstance(output[0], IntegerObject)
+        from hippy.objects.intobject import W_IntObject
+        assert isinstance(output[0], W_IntObject)
