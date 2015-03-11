@@ -175,6 +175,7 @@ class W_PyFuncGlobalAdapter(AbstractFunction):
         self.w_py_callable = w_py_callable
         self.php_args_by_ref, self.php_static, self.php_access = \
             extract_php_metadata(interp.py_space, w_py_callable)
+        self.interp = interp
 
     def get_wrapped_py_obj(self):
         return self.w_py_callable
@@ -222,7 +223,8 @@ class W_PyFuncGlobalAdapter(AbstractFunction):
         return True
 
     def get_identifier(self):
-        return self.w_py_callable.name.lower()
+        #return self.w_py_callable.name.lower()
+        return self.w_py_callable.getname(self.interp.py_space).lower()
 
     def to_py(self, interp, w_php_ref=None):
         return self.w_py_callable
