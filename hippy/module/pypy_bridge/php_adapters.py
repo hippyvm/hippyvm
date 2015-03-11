@@ -68,7 +68,6 @@ class W_PHPGenericAdapter(W_Root):
         # this step for us, but in Python obviously we can't do this.
         #
         # This is why we use getattr_ref instead of plain getattr.
-        import pdb; pdb.set_trace()
         w_php_target = w_php_val.getattr_ref(interp, name, w_contextclass,
                                          fail_with_none=True)
 
