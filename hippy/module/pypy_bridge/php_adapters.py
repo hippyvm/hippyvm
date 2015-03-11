@@ -55,7 +55,21 @@ class W_PHPGenericAdapter(W_Root):
         # PHP access modifiers are ignored when attributes are
         # accessed from Python.
         w_contextclass = w_php_val.getclass()
-        w_php_target = w_php_val.getattr(interp, name, w_contextclass,
+
+        # getattr_ref(self, interp, attr, contextclass):
+
+        # If what we are looking for is an aatribute, we must be very
+        # careful to put a reference back into the source location
+        # in-case Python mutates it. If we had neglected this step
+        # then there is a change PHP would not observe the mutation
+        # (e.g. if a copy or interp-level array conversion occurred).
+        #
+        # In a pure-php setting the ATTR_PTR+STORE would have dealt with
+        # this step for us, but in Python obviously we can't do this.
+        #
+        # This is why we use getattr_ref instead of plain getattr.
+        import pdb; pdb.set_trace()
+        w_php_target = w_php_val.getattr_ref(interp, name, w_contextclass,
                                          fail_with_none=True)
 
         if w_php_target is None:
@@ -67,6 +81,7 @@ class W_PHPGenericAdapter(W_Root):
             if w_php_target is None:
                 _raise_py_bridgeerror(py_space,
                         "Wrapped PHP instance has no attribute '%s'" % name)
+
         return w_php_target.to_py(interp)
 
     @unwrap_spec(name=str)
