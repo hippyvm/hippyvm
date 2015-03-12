@@ -1352,9 +1352,6 @@ class TestPyPyBridge(BaseTestInterpreter):
         output = self.run('''
             $cffi = import_py_mod("cffi");
             $ffi = new $cffi->FFI();
-            $s = <<<EOD
-                int printf(const char *format, ...);
-EOD;
-        $ffi->cdef($s);
+            $ffi->cdef("");
         ''')
         # should not crash
