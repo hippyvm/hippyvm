@@ -1347,3 +1347,25 @@ class TestPyPyBridge(BaseTestInterpreter):
         assert php_space.str_w(output[4]) == "opz"
         assert php_space.str_w(output[5]) == "abc"
         assert php_space.str_w(output[6]) == "jkl"
+
+    def test_this_ptr_works_py_to_php(self, php_space):
+        output = self.run('''
+        {
+            class Base {
+                public $a = 0;
+                function __construct($a) {
+                    $this->a = $a;
+                }
+            }
+
+            class Sub extends Base {
+            }
+
+            $src = "def __construct(self, a): Base.__construct(self, a)";
+            embed_py_meth("Sub", $src);
+
+            $inst = new Sub(6);
+            echo $inst->a;
+        }
+        ''')
+        assert php_space.int_w(output[0]) == 6
