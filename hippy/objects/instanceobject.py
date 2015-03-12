@@ -284,8 +284,8 @@ class W_InstanceObject(W_Object):
                              give_notice=give_notice,
                              fail_with_none=fail_with_none)
 
-    def getattr_ref(self, interp, attr, contextclass, fail_with_none=False):
-        return self._getattr(interp, attr, contextclass,
+    def getattr_ref(self, interp, name, contextclass=None, fail_with_none=False):
+        return self._getattr(interp, name, contextclass,
                              isref=True, give_notice=False, fail_with_none=fail_with_none)
 
     def _setattr(self, interp, attr, w_newvalue, contextclass,

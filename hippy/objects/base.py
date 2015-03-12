@@ -160,7 +160,7 @@ class W_Object(W_Root):
             interp.notice('Trying to get property of non-object')
         return interp.space.w_Null
 
-    def getattr_ref(self, interp, name, contextclass=None):
+    def getattr_ref(self, interp, name, contextclass=None, fail_with_none=False):
         """Get an attribute by reference
 
         Implements e.g. ... =& $x->attr
