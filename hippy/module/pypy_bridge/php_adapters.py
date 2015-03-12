@@ -372,7 +372,7 @@ class W_PHPUnboundMethAdapter(W_Root):
 
         if w_php_fst is None:
             _raise_py_bridgeerror(py_space, "Call to unbound PHP method " +
-                                  "requires at-least one srgument (for $this)")
+                                  "requires at-least one argument (for $this)")
 
 
         w_php_bound_meth = w_php_meth.bind(w_php_fst, w_php_fst.getclass())

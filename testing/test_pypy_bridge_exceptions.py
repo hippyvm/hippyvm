@@ -565,7 +565,7 @@ class TestPyPyBridgeExceptions(BaseTestInterpreter):
             }
         }
         ''')
-        err_s = "Call to unbound PHP method requires at-least one srgument (for $this)"
+        err_s = "Call to unbound PHP method requires at-least one argument (for $this)"
         assert php_space.str_w(output[0]) == err_s
 
     def test_php_unbound_meth_bad_ref_arg(self, php_space):
