@@ -538,3 +538,32 @@ class TestPyPyBridgeExceptions(BaseTestInterpreter):
             }
         ''')
         assert php_space.str_w(output[0]) == "Python kwargs must have string keys"
+
+    def test_this_ptr_raise_py_to_php_unbound(self, php_space):
+        output = self.run('''
+        {
+            class Base {
+                public $a = 0;
+                function __construct($a) {
+                    $this->a = $a;
+                }
+            }
+
+            class Sub extends Base {
+            }
+
+            // too few args, needs at the very least 1 to bind to
+            // when called will raise BridgeError which is passed up
+            $src = "def __construct(self, a): Base.__construct()";
+            embed_py_meth("Sub", $src);
+
+            try {
+                $inst = new Sub(6);
+                echo "fail";
+            } catch (PyException $e) {
+                echo $e->getMessage();
+            }
+        }
+        ''')
+        err_s = "Call to unbound PHP method requires at-least one srgument (for $this)"
+        assert php_space.str_w(output[0]) == err_s

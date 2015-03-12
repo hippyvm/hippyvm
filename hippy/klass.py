@@ -1204,6 +1204,11 @@ class Method(ClassMember):
     def signature_repr(self):
         return self.method_func.signature_repr()
 
+    def to_py(self, interp):
+        from hippy.module.pypy_bridge.php_adapters import (
+            W_PHPUnboundMethAdapter)
+        return W_PHPUnboundMethAdapter(interp.py_space, self)
+
 
 class W_BoundMethod(AbstractFunction):
     def __init__(self, w_instance, klass, method_func):
