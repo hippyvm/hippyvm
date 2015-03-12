@@ -1348,7 +1348,7 @@ class TestPyPyBridge(BaseTestInterpreter):
         assert php_space.str_w(output[5]) == "abc"
         assert php_space.str_w(output[6]) == "jkl"
 
-    def test_this_ptr_works_py_to_php(self, php_space):
+    def test_unbound_php_meth_adapter(self, php_space):
         output = self.run('''
         {
             class Base {

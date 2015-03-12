@@ -539,7 +539,7 @@ class TestPyPyBridgeExceptions(BaseTestInterpreter):
         ''')
         assert php_space.str_w(output[0]) == "Python kwargs must have string keys"
 
-    def test_this_ptr_raise_py_to_php_unbound(self, php_space):
+    def test_unbound_meth_too_no_self(self, php_space):
         output = self.run('''
         {
             class Base {
