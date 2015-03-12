@@ -1347,3 +1347,14 @@ class TestPyPyBridge(BaseTestInterpreter):
         assert php_space.str_w(output[4]) == "opz"
         assert php_space.str_w(output[5]) == "abc"
         assert php_space.str_w(output[6]) == "jkl"
+
+    def test_lukas_cffi_bug(self, php_space):
+        output = self.run('''
+            $cffi = import_py_mod("cffi");
+            $ffi = new $cffi->FFI();
+            $s = <<<EOD
+                int printf(const char *format, ...);
+EOD;
+        $ffi->cdef($s);
+        ''')
+        # should not crash
