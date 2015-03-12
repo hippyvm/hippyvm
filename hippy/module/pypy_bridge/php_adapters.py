@@ -334,7 +334,7 @@ class W_PHPUnboundMethAdapter(W_Root):
         self.w_phpexception = space.builtin.get("PHPException")
 
     def get_wrapped_php_obj(self):
-        return self.w_php_meth
+        assert False
 
     def get_php_interp(self):
         return self.space.get_php_interp()
@@ -387,7 +387,7 @@ class W_PHPUnboundMethAdapter(W_Root):
         if w_php_fst is None:
             _raise_py_bridgeerror(py_space, "Call to unbound PHP method " +
                                   "requires at-least one argument (for $this)")
-
+        assert w_php_fst is not None
 
         w_php_bound_meth = w_php_meth.bind(w_php_fst, w_php_fst.getclass())
         try:
@@ -407,10 +407,9 @@ class W_PHPUnboundMethAdapter(W_Root):
         return self.fast_call(__args__.arguments_w)
 
     def to_php(self, interp):
-        # we can't just unwrap the function, since PHP funcs are
-        # not first class.The best we can do is a closure.
+        # This doesn't really make sense, so just raise an exception.
         from hippy.objects.closureobject import new_closure
-        return new_closure(interp.space, self.w_php_meth, None)
+        _raise_py_bridgeerror(self.space, "Cannot unwrap unbound PHP method.")
 
 W_PHPUnboundMethAdapter.typedef = TypeDef("PHPUnboundMeth",
     __call__ = interp2app(W_PHPUnboundMethAdapter.descr_call),

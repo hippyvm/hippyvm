@@ -623,3 +623,28 @@ class TestPyPyBridgeExceptions(BaseTestInterpreter):
         ''')
         err_s = "Arg 1 of PHP func '__construct' is pass by value"
         assert php_space.str_w(output[0]) == err_s
+
+    def test_php_unbound_meth_unwrap_raises(self, php_space):
+        output = self.run('''
+        {
+            class Base {
+                public $a = 0;
+                function __construct($a) {
+                    $this->a = $a;
+                }
+            }
+
+            // will raise BridgeError
+            $src = "def f(): return Base.__construct";
+            embed_py_func_global($src);
+
+            try {
+                f();
+                echo "fail";
+            } catch (PyException $e) {
+                echo $e->getMessage();
+            }
+        }
+        ''')
+        err_s = "Cannot unwrap unbound PHP method."
+        assert php_space.str_w(output[0]) == err_s
