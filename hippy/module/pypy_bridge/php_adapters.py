@@ -55,7 +55,20 @@ class W_PHPGenericAdapter(W_Root):
         # PHP access modifiers are ignored when attributes are
         # accessed from Python.
         w_contextclass = w_php_val.getclass()
-        w_php_target = w_php_val.getattr(interp, name, w_contextclass,
+
+        # getattr_ref(self, interp, attr, contextclass):
+
+        # If what we are looking for is an aatribute, we must be very
+        # careful to put a reference back into the source location
+        # in-case Python mutates it. If we had neglected this step
+        # then there is a change PHP would not observe the mutation
+        # (e.g. if a copy or interp-level array conversion occurred).
+        #
+        # In a pure-php setting the ATTR_PTR+STORE would have dealt with
+        # this step for us, but in Python obviously we can't do this.
+        #
+        # This is why we use getattr_ref instead of plain getattr.
+        w_php_target = w_php_val.getattr_ref(interp, name, w_contextclass,
                                          fail_with_none=True)
 
         if w_php_target is None:
@@ -67,6 +80,7 @@ class W_PHPGenericAdapter(W_Root):
             if w_php_target is None:
                 _raise_py_bridgeerror(py_space,
                         "Wrapped PHP instance has no attribute '%s'" % name)
+
         return w_php_target.to_py(interp)
 
     @unwrap_spec(name=str)
@@ -194,7 +208,8 @@ class W_PHPClassAdapter(W_Root):
             else:
                 try:
                     w_php_method = self.w_php_cls.locate_method(name, None)
-                    return w_php_method.method_func.to_py(self.interp)
+                    #return w_php_method.method_func.to_py(self.interp)
+                    return w_php_method.to_py(self.interp)
                 except VisibilityError:
                     _raise_py_bridgeerror(py_space,
                         "Wrapped PHP class has not attribute '%s'" % name)
@@ -298,6 +313,106 @@ class W_PHPFuncAdapter(W_Root):
 
 W_PHPFuncAdapter.typedef = TypeDef("PHPFunc",
     __call__ = interp2app(W_PHPFuncAdapter.descr_call),
+)
+
+class W_PHPUnboundMethAdapter(W_Root):
+    """A Python callable that actually executes an unbound PHP method
+    When called, we bind the first argument as the instance."""
+
+    _immutable_fields_ = ["space", "w_php_meth"]
+
+    def __init__(self, space, w_php_meth):
+
+        # No double wrappings
+        from hippy.module.pypy_bridge.py_adapters import (
+            W_PyFuncAdapter, W_PyFuncGlobalAdapter)
+        assert not isinstance(w_php_meth, W_PyFuncAdapter) and \
+            not isinstance(w_php_meth, W_PyFuncGlobalAdapter)
+
+        self.space = space
+        self.w_php_meth = w_php_meth
+        self.w_phpexception = space.builtin.get("PHPException")
+
+    def get_wrapped_php_obj(self):
+        assert False
+
+    def get_php_interp(self):
+        return self.space.get_php_interp()
+
+    def is_w(self, space, other):
+        if isinstance(other, W_PHPUnboundMethAdapter):
+            return self.w_php_meth is other.w_php_meth
+        return False
+
+    @property
+    def name(self):
+        return self.w_php_meth.get_name()
+
+    @jit.unroll_safe
+    def fast_call(self, args):
+        py_space = self.space
+        php_interp = self.space.get_php_interp()
+        php_space = php_interp.space
+
+        w_php_meth = self.w_php_meth
+        w_method_func = w_php_meth.method_func
+        w_php_args_elems = [None] * (len(args) - 1)
+        w_php_fst = None
+
+        for i in xrange(len(args)):
+            w_py_arg = args[i]
+
+            if i == 0:
+                # we will bind the method to this argument
+                w_php_fst = w_py_arg.to_php(php_interp)
+                continue
+
+            if w_method_func.needs_ref(i - 1):
+                # if you try to pass a reference argument by value, fail.
+                if not isinstance(w_py_arg, W_PHPRefAdapter):
+                    err_str = "Arg %d of PHP func '%s' is pass by reference" % \
+                            (i, w_php_meth.get_name())
+                    _raise_py_bridgeerror(py_space, err_str)
+
+                w_php_args_elems[i - 1] = w_py_arg.w_php_ref
+            else:
+                # if you pass a value argument by reference, fail.
+                if isinstance(w_py_arg, W_PHPRefAdapter):
+                    err_str = "Arg %d of PHP func '%s' is pass by value" % \
+                            (i, w_php_meth.get_name())
+                    _raise_py_bridgeerror(py_space, err_str)
+
+                w_php_args_elems[i - 1] = w_py_arg.to_php(php_interp)
+
+        if w_php_fst is None:
+            _raise_py_bridgeerror(py_space, "Call to unbound PHP method " +
+                                  "requires at-least one argument (for $this)")
+        assert w_php_fst is not None
+
+        w_php_bound_meth = w_php_meth.bind(w_php_fst, w_php_fst.getclass())
+        try:
+            res = w_php_bound_meth.call_args(php_interp, w_php_args_elems)
+        except Throw as w_php_throw:
+            w_php_exn = w_php_throw.w_exc
+            raise OperationError(
+                    self.w_phpexception, w_php_exn.to_py(php_interp))
+
+        return res.to_py(php_interp)
+
+    def descr_call(self, __args__):
+        if __args__.keywords:
+            # PHP has no equivalent to keyword arguments.
+            _raise_py_bridgeerror(self.space,
+                    "Cannot use kwargs when calling PHP functions")
+        return self.fast_call(__args__.arguments_w)
+
+    def to_php(self, interp):
+        # This doesn't really make sense, so just raise an exception.
+        from hippy.objects.closureobject import new_closure
+        _raise_py_bridgeerror(self.space, "Cannot unwrap unbound PHP method.")
+
+W_PHPUnboundMethAdapter.typedef = TypeDef("PHPUnboundMeth",
+    __call__ = interp2app(W_PHPUnboundMethAdapter.descr_call),
 )
 
 class W_PHPRefAdapter(W_Root):

@@ -1153,6 +1153,78 @@ class TestPyPyBridgeArrayConversionsInstances(BaseTestInterpreter):
         assert php_space.int_w(output[0]) == 666
         assert php_space.int_w(output[1]) == 3
 
+    def test_list_in_php_attr_field_append(self, php_space):
+        output = self.run('''
+        class A {
+            public $elms;
+
+            function __construct() {
+                $this->elms = array();
+            }
+        }
+
+        $src = <<<EOD
+def add(self, elm):
+    elms_l = self.elms.as_list()
+    elms_l.append(elm)
+EOD;
+        embed_py_meth("A", $src);
+
+        $a = new A();
+        echo count($a->elms);
+
+        $a->add("one");
+        echo count($a->elms);
+        echo $a->elms[0];
+
+        $a->add("two");
+        echo count($a->elms);
+        echo $a->elms[1];
+        ''')
+        assert php_space.int_w(output[0]) == 0
+
+        assert php_space.int_w(output[1]) == 1
+        assert php_space.str_w(output[2]) == "one"
+
+        assert php_space.int_w(output[3]) == 2
+        assert php_space.str_w(output[4]) == "two"
+
+    def test_list_in_php_attr_field_setattr(self, php_space):
+        output = self.run('''
+        class A {
+            public $elms;
+
+            function __construct() {
+                $this->elms = array();
+            }
+
+        }
+
+        $src = <<<EOD
+def add(self, idx, elm):
+    elms_l = self.elms.as_list()
+    elms_l[idx] = elm
+EOD;
+        embed_py_meth("A", $src);
+
+        $a = new A();
+        echo count($a->elms);
+
+        $a->add(0, "one");
+        echo count($a->elms);
+        echo $a->elms[0];
+
+        $a->add(1, "two");
+        echo count($a->elms);
+        echo $a->elms[1];
+        ''')
+        assert php_space.int_w(output[0]) == 0
+
+        assert php_space.int_w(output[1]) == 1
+        assert php_space.str_w(output[2]) == "one"
+
+        assert php_space.int_w(output[3]) == 2
+        assert php_space.str_w(output[4]) == "two"
 
 # XXX no need for most of these to be interp-level
 class TestPyPyBridgeArrayConversionsInterp(BaseTestInterpreter):

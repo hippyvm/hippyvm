@@ -1357,3 +1357,25 @@ class TestPyPyBridge(BaseTestInterpreter):
         ''')
         from hippy.objects.intobject import W_IntObject
         assert isinstance(output[0], W_IntObject)
+
+    def test_unbound_php_meth_adapter(self, php_space):
+        output = self.run('''
+        {
+            class Base {
+                public $a = 0;
+                function __construct($a) {
+                    $this->a = $a;
+                }
+            }
+
+            class Sub extends Base {
+            }
+
+            $src = "def __construct(self, a): Base.__construct(self, a)";
+            embed_py_meth("Sub", $src);
+
+            $inst = new Sub(6);
+            echo $inst->a;
+        }
+        ''')
+        assert php_space.int_w(output[0]) == 6

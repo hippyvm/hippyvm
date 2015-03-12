@@ -270,12 +270,12 @@ class W_InstanceObject(W_Object):
         if give_notice:
             interp.notice("Undefined property: %s::$%s" % (
                 cls.name, attr))
+        if fail_with_none:
+            return None
         if isref:
             r_value = interp.space.empty_ref()
             self._create_attr(name, r_value)
             return r_value
-        if fail_with_none:
-            return None
         return interp.space.w_Null
 
     def getattr(self, interp, name, contextclass=None, give_notice=False,
@@ -284,9 +284,9 @@ class W_InstanceObject(W_Object):
                              give_notice=give_notice,
                              fail_with_none=fail_with_none)
 
-    def getattr_ref(self, interp, attr, contextclass):
-        return self._getattr(interp, attr, contextclass,
-                             isref=True, give_notice=False)
+    def getattr_ref(self, interp, name, contextclass=None, fail_with_none=False):
+        return self._getattr(interp, name, contextclass,
+                             isref=True, give_notice=False, fail_with_none=fail_with_none)
 
     def _setattr(self, interp, attr, w_newvalue, contextclass,
                  unique_item=False):

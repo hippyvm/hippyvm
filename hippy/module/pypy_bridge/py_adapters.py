@@ -196,14 +196,13 @@ class W_PyFuncGlobalAdapter(AbstractFunction):
 
         try:
             w_py_rv = py_space.call(self.w_py_callable, py_space.newlist(w_py_args_elems))
+            return w_py_rv.to_php(interp) # may also raise
         except OperationError as e:
             e.normalize_exception(py_space)
             w_py_exn = e.get_w_value(py_space)
             w_php_exn = w_py_exn.to_php(interp)
             from hippy.error import Throw
             raise Throw(w_php_exn)
-
-        return w_py_rv.to_php(interp)
 
     def _arg_index_adjust(self, i):
         return i
