@@ -353,11 +353,11 @@ class W_PHPUnboundMethAdapter(W_Root):
                 w_php_fst = w_py_arg.to_php(php_interp)
                 continue
 
-            if w_method_func.needs_ref(i):
+            if w_method_func.needs_ref(i - 1):
                 # if you try to pass a reference argument by value, fail.
                 if not isinstance(w_py_arg, W_PHPRefAdapter):
                     err_str = "Arg %d of PHP func '%s' is pass by reference" % \
-                            (i + 1, w_php_meth.get_name())
+                            (i, w_php_meth.get_name())
                     _raise_py_bridgeerror(py_space, err_str)
 
                 w_php_args_elems[i - 1] = w_py_arg.w_php_ref
@@ -365,7 +365,7 @@ class W_PHPUnboundMethAdapter(W_Root):
                 # if you pass a value argument by reference, fail.
                 if isinstance(w_py_arg, W_PHPRefAdapter):
                     err_str = "Arg %d of PHP func '%s' is pass by value" % \
-                            (i + 1, w_php_meth.get_name())
+                            (i, w_php_meth.get_name())
                     _raise_py_bridgeerror(py_space, err_str)
 
                 w_php_args_elems[i - 1] = w_py_arg.to_php(php_interp)
