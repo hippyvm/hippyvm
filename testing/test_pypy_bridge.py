@@ -1348,13 +1348,13 @@ class TestPyPyBridge(BaseTestInterpreter):
         assert php_space.str_w(output[5]) == "abc"
         assert php_space.str_w(output[6]) == "jkl"
 
-    def test_lukas_cffi_bug(self, php_space):
+    def test_new_on_py_class(self, php_space):
         output = self.run('''
-            $cffi = import_py_mod("cffi");
-            $ffi = new $cffi->FFI();
-            $ffi->cdef("");
+            $mod = import_py_mod("__builtin__");
+            $s1 = new $mod->set([65]);
+            echo $s1->pop();
         ''')
-        # should not crash
+        assert php_space.int_w(output[0]) == 65
 
     def test_randrange_from_py(self, php_space):
         self.engine.py_space.initialize()
