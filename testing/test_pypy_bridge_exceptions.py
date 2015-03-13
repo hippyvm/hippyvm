@@ -538,3 +538,113 @@ class TestPyPyBridgeExceptions(BaseTestInterpreter):
             }
         ''')
         assert php_space.str_w(output[0]) == "Python kwargs must have string keys"
+
+    def test_unbound_meth_too_no_self(self, php_space):
+        output = self.run('''
+        {
+            class Base {
+                public $a = 0;
+                function __construct($a) {
+                    $this->a = $a;
+                }
+            }
+
+            class Sub extends Base {
+            }
+
+            // too few args, needs at the very least 1 to bind to
+            // when called will raise BridgeError which is passed up
+            $src = "def __construct(self, a): Base.__construct()";
+            embed_py_meth("Sub", $src);
+
+            try {
+                $inst = new Sub(6);
+                echo "fail";
+            } catch (PyException $e) {
+                echo $e->getMessage();
+            }
+        }
+        ''')
+        err_s = "Call to unbound PHP method requires at-least one argument (for $this)"
+        assert php_space.str_w(output[0]) == err_s
+
+    def test_php_unbound_meth_bad_ref_arg(self, php_space):
+        output = self.run('''
+        {
+            class Base {
+                public $a = 0;
+                function __construct(&$a) {
+                    $this->a = $a;
+                }
+            }
+
+            class Sub extends Base {
+            }
+
+            // will raise BridgeError
+            $src = "def __construct(self, a): Base.__construct(self, a)";
+            embed_py_meth("Sub", $src);
+
+            try {
+                $inst = new Sub(6);
+                echo "fail";
+            } catch (PyException $e) {
+                echo $e->getMessage();
+            }
+        }
+        ''')
+        err_s = "Arg 1 of PHP func '__construct' is pass by reference"
+        assert php_space.str_w(output[0]) == err_s
+
+    def test_php_unbound_meth_bad_val_arg(self, php_space):
+        output = self.run('''
+        {
+            class Base {
+                public $a = 0;
+                function __construct($a) {
+                    $this->a = $a;
+                }
+            }
+
+            class Sub extends Base {
+            }
+
+            // will raise BridgeError
+            $src = "def __construct(self, a): Base.__construct(self, PHPRef(a))";
+            embed_py_meth("Sub", $src);
+
+            try {
+                $inst = new Sub(6);
+                echo "fail";
+            } catch (PyException $e) {
+                echo $e->getMessage();
+            }
+        }
+        ''')
+        err_s = "Arg 1 of PHP func '__construct' is pass by value"
+        assert php_space.str_w(output[0]) == err_s
+
+    def test_php_unbound_meth_unwrap_raises(self, php_space):
+        output = self.run('''
+        {
+            class Base {
+                public $a = 0;
+                function __construct($a) {
+                    $this->a = $a;
+                }
+            }
+
+            // will raise BridgeError
+            $src = "def f(): return Base.__construct";
+            embed_py_func_global($src);
+
+            try {
+                f();
+                echo "fail";
+            } catch (PyException $e) {
+                echo $e->getMessage();
+            }
+        }
+        ''')
+        err_s = "Cannot unwrap unbound PHP method."
+        assert php_space.str_w(output[0]) == err_s

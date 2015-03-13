@@ -175,6 +175,7 @@ class W_PyFuncGlobalAdapter(AbstractFunction):
         self.w_py_callable = w_py_callable
         self.php_args_by_ref, self.php_static, self.php_access = \
             extract_php_metadata(interp.py_space, w_py_callable)
+        self.interp = interp
 
     def get_wrapped_py_obj(self):
         return self.w_py_callable
@@ -195,14 +196,13 @@ class W_PyFuncGlobalAdapter(AbstractFunction):
 
         try:
             w_py_rv = py_space.call(self.w_py_callable, py_space.newlist(w_py_args_elems))
+            return w_py_rv.to_php(interp) # may also raise
         except OperationError as e:
             e.normalize_exception(py_space)
             w_py_exn = e.get_w_value(py_space)
             w_php_exn = w_py_exn.to_php(interp)
             from hippy.error import Throw
             raise Throw(w_php_exn)
-
-        return w_py_rv.to_php(interp)
 
     def _arg_index_adjust(self, i):
         return i
@@ -222,7 +222,8 @@ class W_PyFuncGlobalAdapter(AbstractFunction):
         return True
 
     def get_identifier(self):
-        return self.w_py_callable.name.lower()
+        #return self.w_py_callable.name.lower()
+        return self.w_py_callable.getname(self.interp.py_space).lower()
 
     def to_py(self, interp, w_php_ref=None):
         return self.w_py_callable
