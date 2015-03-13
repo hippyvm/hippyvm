@@ -64,6 +64,9 @@ class W_PyGenericAdapter(W_InstanceObject):
 
     _immutable_fields_ = ["interp", "w_py_inst"]
 
+    def __init__(self, klass, initial_storage):
+        W_InstanceObject.__init__(self, klass, initial_storage)
+
     def setup_instance(self, interp, w_py_inst):
         self.interp = interp
         self.w_py_inst = w_py_inst
@@ -81,6 +84,11 @@ class W_PyGenericAdapter(W_InstanceObject):
     def get_callable(self):
         """PHP interpreter calls this when calls a wrapped Python var"""
         return W_EmbeddedPyCallable(self.interp, self.w_py_inst)
+
+    def call_args(self, interp, args_w, w_this=None,
+                  thisclass=None, closureargs=None):
+        return self.get_callable().call_args(
+            interp, args_w, w_this, thisclass, closureargs)
 
     def to_py(self, interp, w_php_ref=None):
         return self.w_py_inst

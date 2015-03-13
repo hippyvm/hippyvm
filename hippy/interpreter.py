@@ -1336,7 +1336,14 @@ class Interpreter(object):
 
     def GETCLASS(self, bytecode, frame, space, arg, pc):
         w_obj = frame.pop().deref()
-        if isinstance(w_obj, W_InstanceObject):
+        from hippy.module.pypy_bridge.py_adapters import W_PyGenericAdapter
+        if isinstance(w_obj, W_PyGenericAdapter):
+            # PHP interpreter is asking the class of a Python object
+            # Most likely the user is instntiating a Python class using
+            # 'new' in PHP.
+            frame.push(w_obj)
+            return pc
+        elif isinstance(w_obj, W_InstanceObject):
             frame.push(w_obj.getclass())
             return pc
         name = space.getclassintfname(w_obj)
