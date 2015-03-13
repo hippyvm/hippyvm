@@ -454,7 +454,9 @@ class Interpreter(object):
         if py_scope is not None:
             w_php_v = py_scope.ph_lookup(name)
             if w_php_v is not None:
-                if isinstance(w_php_v, W_InstanceObject):
+                from hippy.module.pypy_bridge.py_adapters import (
+                    W_PyGenericAdapter)
+                if isinstance(w_php_v, W_PyGenericAdapter):
                     # It could be a callable Python class/instance for example.
                     # In this case we ask the adapter for it's callable.
                     w_php_v = w_php_v.get_callable()
