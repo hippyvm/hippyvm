@@ -1355,6 +1355,17 @@ class TestPyPyBridge(BaseTestInterpreter):
             $s1->copy();
         ''')
 
+    @pytest.mark.xfail
+    def test_pass_php_array_to_py_func(self, php_space):
+        output = self.run('''
+            $mod = import_py_mod("__builtin__");
+            $s1 = new $mod->set([345]);
+            echo $s1->pop();
+        ''')
+        # we get 0 because the PHP array becomes a python dict-like
+        # and the Python set constructor does not call as_list().
+        assert php_space.int_w(output[0]) == 345
+
     def test_randrange_from_py(self, php_space):
         self.engine.py_space.initialize()
         output = self.run('''

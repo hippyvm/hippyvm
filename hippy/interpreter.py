@@ -1407,6 +1407,9 @@ class Interpreter(object):
     def ARG_BY_VALUE(self, bytecode, frame, space, arg, pc):
         w_argument = frame.pop().deref()
         func = frame.pop()
+        from hippy.module.pypy_bridge.py_adapters import W_PyGenericAdapter
+        if isinstance(func, W_PyGenericAdapter):
+            func = func.get_callable()
         assert isinstance(func, AbstractFunction)
         if func.needs_ref(arg):
             raise self.fatal("Cannot pass parameter %d by reference"
