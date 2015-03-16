@@ -1284,3 +1284,21 @@ class TestPyPyBridgeArrayConversionsInterp(BaseTestInterpreter):
         w_php_actual = w_py_list.to_php(interp)
 
         assert php_space.is_true(php_space.eq(w_php_actual, w_php_expect))
+
+    def test_pop_on_php_array_strategy(self, php_space):
+        output = self.run('''
+        $src = "def f(a): return a.as_list().pop()";
+        embed_py_func_global($src);
+
+        echo f(array(8, 3, 2));
+        ''')
+        assert php_space.int_w(output[0]) == 2
+
+    def test_pop_on_php_array_strategy2(self, php_space):
+        output = self.run('''
+        $src = "def f(a): return a.pop('a')";
+        embed_py_func_global($src);
+
+        echo f(array("a" => "zzz", 0 => 666));
+        ''')
+        assert php_space.str_w(output[0]) == "zzz"

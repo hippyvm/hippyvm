@@ -85,6 +85,17 @@ class PHPArrayListStrategy(ListStrategy):
 
         w_php_arry_ref.setitem_ref(php_space, w_php_next_idx, w_php_item)
 
+    def pop(self, w_list, index):
+        # implementation essentially mimics array_pop()
+        interp = self.space.get_php_interp()
+        php_space = interp.space
+
+        w_php_arry_ref = self.unerase(w_list.lstorage)
+        w_php_arry = w_php_arry_ref.deref_temp()
+        w_php_val = w_php_arry._inplace_pop(php_space)
+
+        return w_php_val.to_py(interp)
+
 def make_wrapped_int_key_php_array(interp, w_php_arry_ref):
     assert isinstance(w_php_arry_ref, W_Reference)
 
@@ -182,6 +193,14 @@ class PHPArrayDictStrategy(DictStrategy):
         interp = self.space.get_php_interp()
         w_php_arry_ref = self.unerase(w_dict.dstorage)
         return make_wrapped_int_key_php_array(interp, w_php_arry_ref)
+
+    def delitem(self, w_dict, w_key):
+        interp = self.space.get_php_interp()
+        php_space = interp.space
+        w_php_arry_ref = self.unerase(w_dict.dstorage)
+        w_php_arry = w_php_arry_ref.deref_temp()
+        w_php_arg = w_key.to_php(interp)
+        w_php_arry._unsetitem(php_space, w_php_arg)
 
 class PHPArrayDictStrategyKeyIterator(object):
 

@@ -648,3 +648,26 @@ class TestPyPyBridgeExceptions(BaseTestInterpreter):
         ''')
         err_s = "Cannot unwrap unbound PHP method."
         assert php_space.str_w(output[0]) == err_s
+
+    def test_pop_empty_on_php_array_strategy(self, php_space):
+        output = self.run('''
+        $src = "def f(a): return a.as_list().pop()";
+        embed_py_func_global($src);
+
+        try {
+            f(array());
+            echo "fail";
+        } catch(PyException $e) {
+            echo $e->getMessage();
+        }
+        ''')
+        err_s = "pop from empty list"
+        assert php_space.str_w(output[0]) == err_s
+
+    def test_pop_empty_on_php_array_strategy2(self, php_space):
+        expected_warnings = ["Notice: Undefined index: a"]
+        output = self.run('''
+        $src = "def f(a): return a.pop('a')";
+        embed_py_func_global($src);
+        f(array());
+        ''', expected_warnings)
