@@ -261,7 +261,6 @@ def call_py_func(interp, w_func_or_w_name, w_args, w_kwargs):
             if not isinstance(w_php_func, W_PyFuncGlobalAdapter):
                 w_py_func = None
             else:
-                #w_py_func = w_php_func.w_py_callable
                 w_py_func = w_php_func.get_wrapped_py_obj()
     elif isinstance(w_func_or_w_name, W_ArrayObject):
         # static or dynamic method call
@@ -292,7 +291,6 @@ def call_py_func(interp, w_func_or_w_name, w_args, w_kwargs):
                 assert isinstance(w_py_meth, W_BoundMethod)
                 w_method_func = w_py_meth.method_func
                 assert isinstance(w_method_func, W_PyMethodFuncAdapter)
-                #w_py_func = w_method_func.w_py_callable
                 w_py_func = w_method_func.get_wrapped_py_obj()
                 w_self = [w_class_name_or_inst.to_py(interp)]
     elif isinstance(w_func_or_w_name, W_PyFuncAdapter):
@@ -306,7 +304,6 @@ def call_py_func(interp, w_func_or_w_name, w_args, w_kwargs):
         _raise_php_bridgeexception(interp, "Failed to find Python function or method")
     else:
         # we now have something callable, next perform the call
-
         w_py_args = w_self + [x.to_py(interp) for x in w_args.as_list_w()]
 
         w_kw_pairs = w_kwargs.as_pair_list(php_space)
@@ -320,6 +317,5 @@ def call_py_func(interp, w_func_or_w_name, w_args, w_kwargs):
             w_py_keywords_w.append(w_v.to_py(interp))
 
         args = Arguments(py_space, w_py_args, keywords=w_py_keywords, keywords_w=w_py_keywords_w)
-
         w_py_rv = w_py_func.call_args(args)
         return w_py_rv.to_php(interp)
