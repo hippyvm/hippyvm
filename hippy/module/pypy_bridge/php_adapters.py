@@ -208,7 +208,6 @@ class W_PHPClassAdapter(W_Root):
             else:
                 try:
                     w_php_method = self.w_php_cls.locate_method(name, None)
-                    #return w_php_method.method_func.to_py(self.interp)
                     return w_php_method.to_py(self.interp)
                 except VisibilityError:
                     _raise_py_bridgeerror(py_space,
@@ -361,7 +360,6 @@ class W_PHPUnboundMethAdapter(W_Root):
 
         for i in xrange(len(args)):
             w_py_arg = args[i]
-
             if i == 0:
                 # we will bind the method to this argument
                 w_php_fst = w_py_arg.to_php(php_interp)
@@ -373,7 +371,6 @@ class W_PHPUnboundMethAdapter(W_Root):
                     err_str = "Arg %d of PHP func '%s' is pass by reference" % \
                             (i, w_php_meth.get_name())
                     _raise_py_bridgeerror(py_space, err_str)
-
                 w_php_args_elems[i - 1] = w_py_arg.w_php_ref
             else:
                 # if you pass a value argument by reference, fail.
@@ -381,7 +378,6 @@ class W_PHPUnboundMethAdapter(W_Root):
                     err_str = "Arg %d of PHP func '%s' is pass by value" % \
                             (i, w_php_meth.get_name())
                     _raise_py_bridgeerror(py_space, err_str)
-
                 w_php_args_elems[i - 1] = w_py_arg.to_php(php_interp)
 
         if w_php_fst is None:
