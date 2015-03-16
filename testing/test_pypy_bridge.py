@@ -1397,3 +1397,39 @@ class TestPyPyBridge(BaseTestInterpreter):
         }
         ''')
         assert php_space.int_w(output[0]) == 6
+
+    def test_call_php_static_meth_from_python_meth(self, php_space):
+        output = self.run('''
+            class A {
+                static function add($a, $b) {
+                    return $a + $b;
+                }
+            }
+            $src = <<<EOD
+            @php_decor(static=True)
+            def addpy(a, b):
+                return A.add(a, b)
+            EOD;
+            embed_py_meth("A", $src);
+
+            echo A::addpy(4, 5);
+        ''')
+        assert php_space.int_w(output[0]) == 9
+
+    def test_call_php_dynamic_meth_from_python_meth(self, php_space):
+        output = self.run('''
+            class A {
+                function add($a, $b) {
+                    return $a + $b;
+                }
+            }
+            $src = <<<EOD
+            def addpy(self, a, b):
+                return self.add(a, b)
+            EOD;
+            embed_py_meth("A", $src);
+
+            $a = new A();
+            echo $a->addpy(4, 5);
+        ''')
+        assert php_space.int_w(output[0]) == 9
