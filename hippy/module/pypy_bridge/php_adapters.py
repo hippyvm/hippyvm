@@ -246,7 +246,6 @@ class W_PHPFuncAdapter(W_Root):
 
         self.space = space
         self.w_php_func = w_php_func
-        self.w_phpexception = space.builtin.get("PHPException")
 
     def get_wrapped_php_obj(self):
         return self.w_php_func
@@ -292,8 +291,8 @@ class W_PHPFuncAdapter(W_Root):
             res = self.w_php_func.call_args(php_interp, w_php_args_elems)
         except Throw as w_php_throw:
             w_php_exn = w_php_throw.w_exc
-            raise OperationError(
-                    self.w_phpexception, w_php_exn.to_py(php_interp))
+            raise OperationError(py_space.builtin.get("PHPException"),
+                                 w_php_exn.to_py(php_interp))
 
         return res.to_py(php_interp)
 
@@ -321,7 +320,6 @@ class W_PHPUnboundMethAdapter(W_Root):
     _immutable_fields_ = ["space", "w_php_meth"]
 
     def __init__(self, space, w_php_meth):
-
         # No double wrappings
         from hippy.module.pypy_bridge.py_adapters import (
             W_PyFuncAdapter, W_PyFuncGlobalAdapter)
@@ -330,7 +328,6 @@ class W_PHPUnboundMethAdapter(W_Root):
 
         self.space = space
         self.w_php_meth = w_php_meth
-        self.w_phpexception = space.builtin.get("PHPException")
 
     def get_wrapped_php_obj(self):
         assert False
@@ -390,8 +387,8 @@ class W_PHPUnboundMethAdapter(W_Root):
             res = w_php_bound_meth.call_args(php_interp, w_php_args_elems)
         except Throw as w_php_throw:
             w_php_exn = w_php_throw.w_exc
-            raise OperationError(
-                    self.w_phpexception, w_php_exn.to_py(php_interp))
+            raise OperationError(py_space.builtin.get("PHPException"),
+                                 w_php_exn.to_py(php_interp))
 
         return res.to_py(php_interp)
 
