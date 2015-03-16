@@ -71,10 +71,9 @@ class Attribute(AbstractAttribute):
         return "<attr %s %d>" % (self.name, self.index)
 
     def lookup(self, name):
-        self = jit.hint(self, promote=True)
         return self._lookup(name)
 
-    @jit.elidable
+    @jit.elidable_promote()
     def _lookup(self, name):
         while isinstance(self, Attribute):
             if self.name == name:
