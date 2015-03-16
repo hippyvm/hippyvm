@@ -56,20 +56,21 @@ class W_PHPGenericAdapter(W_Root):
         # accessed from Python.
         w_contextclass = w_php_val.getclass()
 
-        # getattr_ref(self, interp, attr, contextclass):
+        # When we're looking up an attribute, we're in a sticky situation if we
+        # look up an array and then mutate it. Calling getattr() would
+        # (conceptually) create a copy of the array, so Python's mutations
+        # wouldn't show up in PHP. We thus call getattr_ref() which returns a
+        # reference to a thingy rather than the thingy itself. Mutation then
+        # happens on the reference, and everything looks sensible to both Python
+        # and PHP. However, getting a reference to any PHP thingy is slow and,
+        # pointless, since most items are immutable (i.e. there's no point
+        # getting a reference to a PHP int, because we can't mutate the int). So
+        # we add a knob to getattr_ref called only_ref_arrays which only adds a
+        # new reference if the attribute we're looking for happens to be an
+        # array.
 
-        # If what we are looking for is an aatribute, we must be very
-        # careful to put a reference back into the source location
-        # in-case Python mutates it. If we had neglected this step
-        # then there is a change PHP would not observe the mutation
-        # (e.g. if a copy or interp-level array conversion occurred).
-        #
-        # In a pure-php setting the ATTR_PTR+STORE would have dealt with
-        # this step for us, but in Python obviously we can't do this.
-        #
-        # This is why we use getattr_ref instead of plain getattr.
         w_php_target = w_php_val.getattr_ref(interp, name, w_contextclass,
-                                         fail_with_none=True)
+                                         fail_with_none=True, ref_only_arrays=True)
 
         if w_php_target is None:
             try:

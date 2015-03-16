@@ -246,7 +246,7 @@ class W_InstanceObject(W_Object):
         self.storage_w[mapattr.index] = w_value
 
     def _getattr(self, interp, attr, contextclass, isref, give_notice=False,
-                 fail_with_none=False):
+                 fail_with_none=False, ref_only_arrays=False):
         cls = self.getclass()
         try:
             name = cls.lookup_property_name(LOOKUP_GETATTR, interp, self, attr,
@@ -262,8 +262,9 @@ class W_InstanceObject(W_Object):
             w_value = self.storage_w[mapattr.index]
             if w_value is not None:
                 if isref and not isinstance(w_value, W_Reference):
-                    w_value = W_Reference(w_value)
-                    self.storage_w[mapattr.index] = w_value
+                    if not (ref_only_arrays and not isinstance(w_value, W_ArrayObject)):
+                        w_value = W_Reference(w_value)
+                        self.storage_w[mapattr.index] = w_value
                 return w_value
         if cls.method__get is not None:
             return cls.do_get(interp, self, attr, isref)
@@ -284,9 +285,10 @@ class W_InstanceObject(W_Object):
                              give_notice=give_notice,
                              fail_with_none=fail_with_none)
 
-    def getattr_ref(self, interp, name, contextclass=None, fail_with_none=False):
+    def getattr_ref(self, interp, name, contextclass=None, fail_with_none=False, ref_only_arrays=False):
         return self._getattr(interp, name, contextclass,
-                             isref=True, give_notice=False, fail_with_none=fail_with_none)
+                             isref=True, give_notice=False, fail_with_none=fail_with_none,
+                             ref_only_arrays=ref_only_arrays)
 
     def _setattr(self, interp, attr, w_newvalue, contextclass,
                  unique_item=False):
