@@ -226,6 +226,7 @@ def _find_static_py_meth(interp, class_name, meth_name):
                 # first case.
                 assert False
 
+# XXX call_py_func isn't optimised, and isn't currently traceable.
 @wrap(['interp', W_PHP_Root, W_PHP_Root, W_PHP_Root], name='call_py_func')
 def call_py_func(interp, w_func_or_w_name, w_args, w_kwargs):
     """Calls a Python function with kwargs.
