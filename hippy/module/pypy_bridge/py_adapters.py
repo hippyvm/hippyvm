@@ -127,7 +127,6 @@ k_PyGenericAdapter = def_class('PyGenericAdapter',
 )
 
 class W_EmbeddedPyCallable(W_InvokeCall):
-
     _immutable_fields_ = ["w_py_func"]
 
     def __init__(self, interp, w_py_func):
@@ -145,7 +144,6 @@ class W_EmbeddedPyCallable(W_InvokeCall):
             w_this=None, thisclass=None, closureargs=None):
 
         py_space = interp.py_space
-
         w_py_args_elems = [ x.to_py(interp) for x in args_w ]
 
         try:
@@ -230,7 +228,6 @@ class W_PyFuncGlobalAdapter(AbstractFunction):
         return True
 
     def get_identifier(self):
-        #return self.w_py_callable.name.lower()
         return self.w_py_callable.getname(self.interp.py_space).lower()
 
     def to_py(self, interp, w_php_ref=None):
@@ -281,7 +278,6 @@ class W_PyFuncAdapter(W_InstanceObject):
                                                        self.w_py_func)
         return self.w_php_callable
 
-
     def to_py(self, interp, w_php_ref=None):
         return self.w_py_func
 
@@ -327,7 +323,6 @@ class W_PyModAdapter(WPh_Object):
         return self.w_py_mod
 
 class W_PyListAdapterIterator(BaseIterator):
-
     _immutable_fields_ = ["py_space", "storage_w"]
 
     def __init__(self, py_space, w_py_list):
@@ -433,7 +428,6 @@ class W_PyListAdapter(W_ArrayObject):
         return make_dict_like_py_list(interp, self.w_py_list)
 
 class W_PyDictAdapterIterator(BaseIterator):
-
     _immutable_fields_ = ["interp", "w_py_iter"]
 
     def __init__(self, py_space, rdct_w):

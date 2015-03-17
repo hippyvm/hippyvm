@@ -68,10 +68,8 @@ class W_PHPGenericAdapter(W_Root):
         # we add a knob to getattr_ref called only_ref_arrays which only adds a
         # new reference if the attribute we're looking for happens to be an
         # array.
-
         w_php_target = w_php_val.getattr_ref(interp, name, w_contextclass,
                                          fail_with_none=True, ref_only_arrays=True)
-
         if w_php_target is None:
             try:
                 w_php_target = w_php_val.getmeth(php_space, name, w_contextclass)
@@ -87,7 +85,6 @@ class W_PHPGenericAdapter(W_Root):
     @unwrap_spec(name=str)
     def descr_set(self, name, w_obj):
         interp = self.interp
-        php_space = self.interp.space
         py_space = self.interp.py_space
 
         w_php_val = self.w_php_obj
@@ -192,7 +189,6 @@ class W_PHPClassAdapter(W_Root):
                     "Cannot use kwargs with callable PHP instances")
         return self.fast_call(__args__.arguments_w)
 
-
     def descr_getattr(self, w_name):
         py_space = self.interp.py_space
         name = py_space.str_w(w_name)
@@ -202,10 +198,8 @@ class W_PHPClassAdapter(W_Root):
         else:
             w_php_const = self.w_php_cls.lookup_w_constant(self.interp.space,
                                                            py_space.str_w(w_name))
-
             if w_php_const is not None:
                 return w_php_const.to_py(self.interp)
-
             else:
                 try:
                     w_php_method = self.w_php_cls.locate_method(name, None)
@@ -267,7 +261,6 @@ class W_PHPFuncAdapter(W_Root):
     def fast_call(self, args):
         py_space = self.space
         php_interp = self.space.get_php_interp()
-        php_space = php_interp.space
 
         w_php_args_elems = [None] * len(args)
         for i, w_py_arg in enumerate(args):
@@ -277,7 +270,6 @@ class W_PHPFuncAdapter(W_Root):
                     err_str = "Arg %d of PHP func '%s' is pass by reference" % \
                             (i + 1, self.w_php_func.name)
                     _raise_py_bridgeerror(py_space, err_str)
-
                 w_php_args_elems[i] = w_py_arg.w_php_ref
             else:
                 # if you pass a value argument by reference, fail.
@@ -285,7 +277,6 @@ class W_PHPFuncAdapter(W_Root):
                     err_str = "Arg %d of PHP func '%s' is pass by value" % \
                             (i + 1, self.w_php_func.name)
                     _raise_py_bridgeerror(py_space, err_str)
-
                 w_php_args_elems[i] = w_py_arg.to_php(php_interp)
 
         try:
