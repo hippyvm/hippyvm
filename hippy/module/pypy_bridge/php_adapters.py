@@ -349,41 +349,32 @@ class W_PHPUnboundMethAdapter(W_Root):
     def fast_call(self, args):
         py_space = self.space
         php_interp = self.space.get_php_interp()
-        php_space = php_interp.space
+        if len(args) == 0:
+            _raise_py_bridgeerror(py_space, "Call to unbound PHP method " +
+                                  "requires at-least one argument (for $this)")
 
         w_php_meth = self.w_php_meth
+        w_php_fst = args[0].to_php(php_interp)
+        w_php_bound_meth = w_php_meth.bind(w_php_fst, w_php_fst.getclass())
         w_method_func = w_php_meth.method_func
         w_php_args_elems = [None] * (len(args) - 1)
-        w_php_fst = None
-
-        for i in xrange(len(args)):
-            w_py_arg = args[i]
-            if i == 0:
-                # we will bind the method to this argument
-                w_php_fst = w_py_arg.to_php(php_interp)
-                continue
-
-            if w_method_func.needs_ref(i - 1):
+        for i in range(len(args) - 1):
+            w_py_arg = args[i + 1]
+            if w_method_func.needs_ref(i):
                 # if you try to pass a reference argument by value, fail.
                 if not isinstance(w_py_arg, W_PHPRefAdapter):
                     err_str = "Arg %d of PHP func '%s' is pass by reference" % \
-                            (i, w_php_meth.get_name())
+                            (i + 1, w_php_meth.get_name())
                     _raise_py_bridgeerror(py_space, err_str)
-                w_php_args_elems[i - 1] = w_py_arg.w_php_ref
+                w_php_args_elems[i] = w_py_arg.w_php_ref
             else:
                 # if you pass a value argument by reference, fail.
                 if isinstance(w_py_arg, W_PHPRefAdapter):
                     err_str = "Arg %d of PHP func '%s' is pass by value" % \
-                            (i, w_php_meth.get_name())
+                            (i + 1, w_php_meth.get_name())
                     _raise_py_bridgeerror(py_space, err_str)
-                w_php_args_elems[i - 1] = w_py_arg.to_php(php_interp)
+                w_php_args_elems[i] = w_py_arg.to_php(php_interp)
 
-        if w_php_fst is None:
-            _raise_py_bridgeerror(py_space, "Call to unbound PHP method " +
-                                  "requires at-least one argument (for $this)")
-        assert w_php_fst is not None
-
-        w_php_bound_meth = w_php_meth.bind(w_php_fst, w_php_fst.getclass())
         try:
             res = w_php_bound_meth.call_args(php_interp, w_php_args_elems)
         except Throw as w_php_throw:
