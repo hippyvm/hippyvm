@@ -445,11 +445,16 @@ class ClassBase(AbstractFunction, AccessMixin):
         return method
 
     def lookup_w_constant(self, space, constantname):
+        w_value = self._lookup_w_constant(constantname)
+        if w_value is not None:
+            return w_value.eval_static(space)
+
+    @jit.elidable_promote()
+    def _lookup_w_constant(self, n):
         try:
-            w_value = self.constants_w[constantname]
+            return self.constants_w[n]
         except KeyError:
             return None
-        return w_value.eval_static(space)
 
     def check_constructor_from_context(self, interp, contextclass):
         if self.is_abstract():
