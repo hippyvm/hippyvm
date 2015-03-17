@@ -248,3 +248,19 @@ class TestPyPyBridgeConversions(BaseTestInterpreter):
         ''')
         expect = "[1, 2, 3]"
         assert php_space.str_w(output[0]) == expect
+
+    @pytest.mark.xfail
+    def test_inplaceop_on_php_adapter(self, php_space):
+        output = self.run('''
+        $src = <<<EOD
+        def f(inst, inst2):
+            inst += inst2;
+        EOD;
+
+        embed_py_func_global($src);
+
+        class A {};
+        $a = new A();
+        $b = new A();
+        f($a, $b); // what should happen?
+        ''')
