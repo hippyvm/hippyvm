@@ -50,7 +50,7 @@ class PHPArrayListStrategy(ListStrategy):
         self._check_valid_wrap(w_list)
 
         interp = self.space.get_php_interp()
-        py_space, php_space = self.space, interp.space
+        php_space = interp.space
 
         w_php_arry_ref = self.unerase(w_list.lstorage)
         w_php_index = php_space.wrap(index)
@@ -66,7 +66,7 @@ class PHPArrayListStrategy(ListStrategy):
     def setitem(self, w_list, key, w_value):
         # XXX again with the implicit cast on the key if not str or int
         interp = self.space.get_php_interp()
-        py_space, php_space = self.space, interp.space
+        php_space = interp.space
 
         w_php_arry_ref = self.unerase(w_list.lstorage)
         w_php_key = php_space.wrap(key) # key always an int
@@ -76,7 +76,7 @@ class PHPArrayListStrategy(ListStrategy):
 
     def append(self, w_list, w_item):
         interp = self.space.get_php_interp()
-        py_space, php_space = self.space, interp.space
+        php_space = interp.space
 
         w_php_arry_ref = self.unerase(w_list.lstorage)
         w_php_item = w_item.to_php(interp)
@@ -127,7 +127,6 @@ class PHPArrayDictStrategy(DictStrategy):
         # cast to mimick PHP semantics.
 
         interp = self.space.get_php_interp()
-        py_space = self.space
 
         w_php_arry = self.unerase(w_dict.dstorage)
         w_php_key = w_key.to_php(interp)
@@ -138,7 +137,7 @@ class PHPArrayDictStrategy(DictStrategy):
     def setitem(self, w_dict, w_key, w_value):
         # XXX again with the implicit cast on the key if not str or int
         interp = self.space.get_php_interp()
-        py_space, php_space = self.space, interp.space
+        php_space = interp.space
 
         w_php_arry_ref = self.unerase(w_dict.dstorage)
         w_php_key = w_key.to_php(interp)
@@ -148,7 +147,7 @@ class PHPArrayDictStrategy(DictStrategy):
 
     def setdefault(self, w_dict, w_key, w_default):
         interp = self.space.get_php_interp()
-        py_space, php_space = self.space, interp.space
+        php_space = interp.space
 
         w_php_key = w_key.to_php(interp)
         w_php_ary_ref = self.unerase(w_dict.dstorage)
@@ -203,7 +202,6 @@ class PHPArrayDictStrategy(DictStrategy):
         w_php_arry._unsetitem(php_space, w_php_arg)
 
 class PHPArrayDictStrategyKeyIterator(object):
-
     _immutable_fields_ = ["interp", "w_php_arry", "self.itr"]
 
     def __init__(self, interp, w_php_arry_ref):
@@ -226,7 +224,6 @@ class PHPArrayDictStrategyKeyIterator(object):
         return self.itr.next_item(self.interp.space)[0]
 
 class PHPArrayDictStrategyValueIterator(object):
-
     _immutable_fields_ = ["interp", "w_php_arry", "self.itr"]
 
     def __init__(self, interp, w_php_arry_ref):
@@ -249,7 +246,6 @@ class PHPArrayDictStrategyValueIterator(object):
         return self.itr.next(self.interp.space)
 
 class PHPArrayDictStrategyItemIterator(object):
-
     _immutable_fields_ = ["interp", "w_php_arry", "self.itr"]
 
     def __init__(self, interp, w_php_arry_ref):
@@ -347,7 +343,6 @@ class PyListDictStrategy(DictStrategy):
         return self.unerase(w_dict.dstorage)
 
 class W_PyListDictStrategyValueIterator(object):
-
     _immutable_fields_ = ["py_space", "w_py_itr"]
 
     def __init__(self, py_space, w_py_list):
@@ -361,7 +356,6 @@ class W_PyListDictStrategyValueIterator(object):
         return self.w_py_itr.descr_next(self.py_space)
 
 class W_PyListDictStrategyKeyIterator(object):
-
     _immutable_fields_ = ["py_space", "itr"]
 
     def __init__(self, py_space, length):
@@ -374,7 +368,6 @@ class W_PyListDictStrategyKeyIterator(object):
         return self.py_space.wrap(self.itr.next())
 
 class W_PyListDictStrategyItemsIterator(object):
-
     _immutable_fields_ = ["py_space", "itr"]
 
     def __init__(self, py_space, w_py_list):
