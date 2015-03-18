@@ -232,7 +232,7 @@ class ClassBase(AbstractFunction, AccessMixin):
         for p in self.properties.itervalues():
             if not p.is_static() and not p.is_special and p.klass is self:
                 w_val = p.value.eval_static(space)
-                base_map = base_map.add_attribute(p.mangle_name())
+                base_map = base_map.add_attribute(p.mangled_name)
                 assert isinstance(base_map, Attribute)
                 assert base_map.index == len(l)
                 l.append(w_val)
@@ -276,7 +276,7 @@ class ClassBase(AbstractFunction, AccessMixin):
         # the following can raise SpecialPropertyReturn, otherwise does
         # nothing in case it's a builtin property
         property.special_lookup(TYPE, interp, this, w_newvalue)
-        return property.mangle_name()
+        return property.mangled_name
 
     def can_access_protected_properties_from(self, contextclass):
         return contextclass is not None and (
@@ -658,7 +658,7 @@ class ClassBase(AbstractFunction, AccessMixin):
                 lst.extend(base.get_all_nonstatic_special_properties())
             for prop in self.properties.values():
                 if not prop.is_static() and prop.is_special:
-                    lst.append((prop.mangle_name(), prop))
+                    lst.append((prop.mangled_name, prop))
             result = lst[:]
             self._all_nonstatic_special_properties = result
         return result
@@ -1086,12 +1086,13 @@ class PropertyDeclaration(ClassMember):
 class Property(ClassMember):
     getter = None
 
-    _immutable_fields_ = ['name', 'access_flags', 'w_initial_value', 'getter']
+    _immutable_fields_ = ['name', 'mangled_name', 'access_flags', 'w_initial_value', 'getter']
 
     def __init__(self, name, klass, access_flags, w_initial_value, src=None):
         ClassMember.__init__(self, access_flags)
         self.name = name
         self.klass = klass
+        self.mangled_name = self.mk_mangled_name()
         self.src = src      # which Property this one is a copy() of
         assert w_initial_value is not None
         self.w_initial_value = w_initial_value
@@ -1107,7 +1108,7 @@ class Property(ClassMember):
     def getclass(self):
         return self.klass
 
-    def mangle_name(self):
+    def mk_mangled_name(self):
         if self.is_public():
             return self.name
         if self.is_protected():
@@ -1145,6 +1146,7 @@ class GetterSetter(Property):
         ClassMember.__init__(self, access_flags)
         self.name = name
         self.klass = klass
+        self.mangled_name = self.mk_mangled_name()
         self.getter = getter
         self.setter = setter
 
