@@ -95,6 +95,11 @@ class PHP_Scope(WPy_Root):
                 self.set_name_type(n, PHP_FRAME)
                 return ph_v.to_py(ph_interp)
 
+        py_scope = ph_frame.bytecode.py_scope
+        if py_scope is not None:
+            self.set_name_type(n, PHP_PARENT)
+            return py_scope.py_lookup(n)
+
         ph_v = ph_interp.lookup_function(n)
         if ph_v is not None:
             self.set_name_type(n, PHP_FUNC)
@@ -109,11 +114,6 @@ class PHP_Scope(WPy_Root):
         if ph_v is not None:
             self.set_name_type(n, PHP_CONST)
             return ph_v.to_py(ph_interp)
-
-        py_scope = ph_frame.bytecode.py_scope
-        if py_scope is not None:
-            self.set_name_type(n, PHP_PARENT)
-            return py_scope.py_lookup(n)
 
 
 class W_PHPGlobalScope(WPy_Root):
