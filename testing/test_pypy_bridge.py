@@ -1433,3 +1433,23 @@ class TestPyPyBridge(BaseTestInterpreter):
             echo $a->addpy(4, 5);
         ''')
         assert php_space.int_w(output[0]) == 9
+
+    def test_py_meth_call_py_static_meth(self, php_space):
+        output = self.run('''
+        class A {};
+
+        $src = "def f(self): return A.g()";
+        embed_py_meth("A", $src);
+
+        $src2 = <<<EOD
+        @php_decor(static=True)
+        def g():
+            return 456
+        EOD;
+        embed_py_meth("A", $src2);
+
+        $a = new A();
+        echo $a->f();
+        ''')
+        assert php_space.int_w(output[0]) == 456
+
