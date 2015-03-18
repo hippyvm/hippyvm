@@ -1215,8 +1215,14 @@ class Method(ClassMember):
         from hippy.module.pypy_bridge.php_adapters import (
             W_PHPUnboundMethAdapter, W_PHPFuncAdapter)
         # Should only get here if we address a PHP method statically from PHP.
-        if self.is_static():
-            return W_PHPFuncAdapter(interp.py_space, self.method_func)
+        w_php_func = self.method_func
+
+        w_py_inside = w_php_func.get_wrapped_py_obj()
+        if w_py_inside is not None:
+            # trivial unwrapping
+            return w_py_inside
+        elif self.is_static():
+            return W_PHPFuncAdapter(interp.py_space, w_php_func)
         else:
             return W_PHPUnboundMethAdapter(interp.py_space, self)
 
