@@ -1453,3 +1453,16 @@ class TestPyPyBridge(BaseTestInterpreter):
         ''')
         assert php_space.int_w(output[0]) == 456
 
+    def test_py_type_cmp_on_php_adapters(self, php_space):
+        output = self.run('''
+        $src = "def cmp_typ(o1, o2): return type(o1) == type(o2)";
+        embed_py_func_global($src);
+
+        class A {};
+        class B {};
+
+        echo cmp_typ(new A(), new B());
+        echo cmp_typ(new A(), new A());
+        ''')
+        assert not php_space.is_true(output[0])
+        assert php_space.is_true(output[1])
