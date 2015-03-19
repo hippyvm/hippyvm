@@ -683,6 +683,21 @@ class TestPyPyBridgeScope(BaseTestInterpreter):
         ''')
         assert php_space.int_w(output[0]) == 123
 
+    def test_global_var_tried_first(self, php_space):
+        output = self.run('''
+            $src = <<<EOD
+            def f():
+                GLOBALS = "g"
+                php_src = "function g() { echo(\$GLOBALS); }"
+                g = embed_php_func(php_src)
+                return g()
+            EOD;
+            $f = embed_py_func($src);
+            $f();
+        ''')
+        assert len(output) == 1 \
+           and php_space.str_w(output[0]) != "g"
+
     def test_access_global_nonexistent_global_var_from_global_py_func(self, php_space):
         output = self.run('''
         $src = <<<EOD
