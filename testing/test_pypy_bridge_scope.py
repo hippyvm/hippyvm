@@ -670,9 +670,8 @@ class TestPyPyBridgeScope(BaseTestInterpreter):
 
     def test_access_global_scope_name_clash_from_global_py_func(self, php_space):
         output = self.run('''
-
         $p = 123; // global var
-        class P {}; // clashing var name
+        class p {}; // clashing var name
 
         $src = <<<EOD
         def f():
