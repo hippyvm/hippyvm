@@ -448,7 +448,6 @@ class Interpreter(object):
     def locate_function(self, name):
         frame = self.topframeref()
         py_scope = frame.bytecode.py_scope
-        ph_v = None
         if py_scope is not None:
             ph_v = py_scope.ph_lookup_local_recurse(name)
 
@@ -468,10 +467,10 @@ class Interpreter(object):
                 if not isinstance(ph_v, py_adapters.W_EmbeddedPyCallable):
                     self.fatal("Can only call Python functions from PHP")
                 return ph_v
-
-        func = self.lookup_function(name)
-        if func is not None:
-            return func
+        else:
+            func = self.lookup_function(name)
+            if func is not None:
+                return func
         self.fatal("Call to undefined function %s()" % name)
 
     def get_this(self, frame):
