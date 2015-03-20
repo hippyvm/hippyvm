@@ -1248,6 +1248,7 @@ class TestPyPyBridge(BaseTestInterpreter):
         assert php_space.str_w(output[5]) == "abc"
         assert php_space.str_w(output[6]) == "jkl"
 
+    @pytest.mark.xfail
     def test_kwarg_from_php3(self, php_space):
         output = self.run('''
             class A {};
@@ -1275,6 +1276,7 @@ class TestPyPyBridge(BaseTestInterpreter):
         assert php_space.str_w(output[5]) == "abc"
         assert php_space.str_w(output[6]) == "jkl"
 
+    @pytest.mark.xfail
     def test_kwarg_from_php4(self, php_space):
         output = self.run('''
             $src = <<<EOD
@@ -1322,6 +1324,7 @@ class TestPyPyBridge(BaseTestInterpreter):
         assert php_space.str_w(output[5]) == "abc"
         assert php_space.str_w(output[6]) == "jkl"
 
+    @pytest.mark.xfail
     def test_kwarg_from_php6(self, php_space):
         output = self.run('''
             class A {};

@@ -56,64 +56,62 @@ class PHP_Scope(WPy_Root):
     def set_name_type(self, n, t):
         self.name_map = jit.promote(self.name_map).extend(n, t)
 
-    def py_lookup(self, n):
-        """Lookup 'n' in this scope and return it as a PyPy object or None
-        if not found."""
+    @jit.unroll_safe
+    def py_lookup_local_recurse(self, n):
+        ph_scope = self
+        while ph_scope is not None:
+            py_v = ph_scope.ph_lookup_local(n)
+            if py_v is not None:
+                return py_v.to_py(self.ph_interp)
+            py_scope = ph_scope.ph_frame.bytecode.py_scope
+            if py_scope is None:
+                return
+            py_v = py_scope.py_lookup_local(n)
+            if py_v is not None:
+                return py_v
+            ph_scope = py_scope.py_frame.php_scope
 
+    def py_store_local_recurse(self, n, py_v):
+        ph_scope = self
+        while ph_scope is not None:
+            if ph_scope.py_set_local(n, py_v):
+                return True
+            raise NotImplementedError
+            # XXX rest unwritten
+            #if py_v is not None:
+            #    return py_v.to_py(self.ph_interp)
+            #py_scope = ph_scope.ph_frame.bytecode.py_scope
+            #if py_scope is None:
+            #    return
+            #py_v = py_scope.py_lookup_local(n)
+            #if py_v is not None:
+            #    return py_v
+            #ph_scope = py_scope.py_frame.php_scope
+
+    def ph_lookup_local(self, n):
+        return self.ph_frame.lookup_ref_by_name_no_create(n)
+
+    def py_set_local(self, n, py_v):
+        ref = self.ph_frame.lookup_ref_by_name_no_create(n)
+        if ref is None:
+            return False
+        ref.store(py_v.to_php(self.ph_interp))
+        return True
+
+    def ph_lookup_global(self, n):
         ph_interp = self.ph_interp
-        ph_frame = self.ph_frame
-
-        # If we've looked up n in the past, we use the same lookup scheme as
-        # before.
-
-        t = self.lookup_name_type(n)
-        if t == PHP_FRAME:
-            ph_v = self.ph_frame.lookup_ref_by_name_no_create(n)
-            if ph_v is None:
-                # Someone unset a variable.
-                from hippy.module.pypy_bridge.bridge import _raise_php_bridgeexception
-                _raise_php_bridgeexception(ph_interp,
-                   "Variable '%s' has been unset" % n)
-            return ph_v.to_py(self.ph_interp)
-        elif t == PHP_FUNC:
-            return ph_interp.lookup_function(n).to_py(ph_interp)
-        elif t == PHP_CLASS:
-            return ph_interp.lookup_class_or_intf(n).to_py(ph_interp)
-        elif t == PHP_CONST:
-            return ph_interp.lookup_constant(n).to_py(ph_interp)
-        elif t == PHP_PARENT:
-            return self.ph_frame.bytecode.py_scope.py_lookup(n)
-
-        # If we haven't looked up n before, we have to slowly go through the
-        # possibilities and see which one matches.
-
-        assert t == PHP_UNKNOWN
-
-        if ph_frame is not None:
-            ph_v = ph_frame.lookup_ref_by_name_no_create(n)
-            if ph_v is not None:
-                self.set_name_type(n, PHP_FRAME)
-                return ph_v.to_py(ph_interp)
-
-        py_scope = ph_frame.bytecode.py_scope
-        if py_scope is not None:
-            self.set_name_type(n, PHP_PARENT)
-            return py_scope.py_lookup(n)
 
         ph_v = ph_interp.lookup_function(n)
         if ph_v is not None:
-            self.set_name_type(n, PHP_FUNC)
-            return ph_v.to_py(ph_interp)
+            return ph_v
 
         ph_v = ph_interp.lookup_class_or_intf(n)
         if ph_v is not None:
-            self.set_name_type(n, PHP_CLASS)
-            return ph_v.to_py(ph_interp)
+            return ph_v
 
         ph_v = ph_interp.lookup_constant(n)
         if ph_v is not None:
-            self.set_name_type(n, PHP_CONST)
-            return ph_v.to_py(ph_interp)
+            return ph_v
 
 
 class W_PHPGlobalScope(WPy_Root):
@@ -162,25 +160,27 @@ class Py_Scope(WPHP_Root):
         self.py_interp = py_interp
         self.py_frame = py_frame
 
+    @jit.unroll_safe
+    def ph_lookup_local_recurse(self, n):
+        py_scope = self
+        while py_scope is not None:
+            py_v = py_scope.py_lookup_local(n)
+            if py_v is not None:
+                return py_v.to_php(self.py_frame.space.get_php_interp())
+            ph_scope = py_scope.py_frame.php_scope
+            if ph_scope is None:
+                return
+            ph_v = ph_scope.ph_lookup_local(n)
+            if ph_v is not None:
+                return ph_v
+            py_scope = ph_scope.ph_frame.bytecode.py_scope
 
-    def ph_lookup(self, n):
-        """Lookup 'n' in this scope and return it as a Hippy object or None
-        if not found."""
+    def ph_lookup_global(self, n):
+        return self.py_lookup_global(n).to_php(self.py_frame.space.get_php_interp())
 
-        py_v = self.py_lookup(n)
-        if py_v is not None:
-            return py_v.to_php(self.py_interp.get_php_interp())
-        return None
-
-
-    def py_lookup(self, n):
-        """Lookup 'n' in this scope and return it as a PyPy object or
-        not found."""
-
+    def py_lookup_local(self, n):
         py_frame = self.py_frame
         py_interp = self.py_interp
-
-        # Look in regular Python scope
         if py_frame.w_locals is None:
             # If no-one has called fast2locals, we can bypass the slow
             # dictionary lookup by accessing locals_stack_w directly.
@@ -193,23 +193,15 @@ class Py_Scope(WPHP_Root):
             if py_v is not None:
                 return py_v
 
+    def py_lookup_global(self, n):
+        py_frame = self.py_frame
+        py_interp = self.py_interp
+
         py_v = py_interp.finditem_str(py_frame.w_globals, n)
         if py_v is not None:
             return py_v
 
-        php_scope = py_frame.php_scope
-        if php_scope is not None:
-            py_v = php_scope.py_lookup(n)
-            if py_v is not None:
-                return py_v
-
-            php_py_scope = php_scope.ph_frame.bytecode.py_scope
-            if php_py_scope is not None:
-                return None
-
-        builtins = py_frame.get_builtin()
-        py_v = py_interp.finditem_str(builtins.w_dict, n)
+        py_v = py_frame.get_builtin().getdictvalue(py_frame.space, n)
         if py_v is not None:
             return py_v
 
-        return None

@@ -195,36 +195,38 @@ def import_py_mod(interp, modname):
 
 def _find_static_py_meth(interp, class_name, meth_name):
     # first look in PHP scope for a class of this name
-    kls = interp.lookup_class_or_intf(class_name)
-    if kls is not None:
-        ctx_kls = interp.get_contextclass()
-        meth = kls.locate_static_method(meth_name, ctx_kls, True)
-        if meth is None or not isinstance(meth.method_func, W_PyMethodFuncAdapter):
-            return None
-        else:
-            return meth.method_func.get_wrapped_py_obj()
-    else:
-        # otherwise we have to search lexical scopes upwards for the class
-        py_scope = interp.get_current_bytecode().py_scope
-        if py_scope is not None:
-            from pypy.objspace.std.typeobject import W_TypeObject
-            kls = py_scope.py_lookup(class_name)
-            if kls is None:
-                return None
-            elif isinstance(kls, W_TypeObject):
-                meth = kls.lookup(meth_name)
-                from pypy.interpreter.function import StaticMethod
-                if isinstance(meth, StaticMethod):
-                    w_py_func = meth.w_function
-                    assert isinstance(w_py_func, Py_Function)
-                    return w_py_func
-                else:
-                    return None
-            else:
-                # should not be reachable.
-                # If there was a PHP class we would have found it in the
-                # first case.
-                assert False
+    return None # disable for the time being
+    # XXX it seems very unlikely that this scoping mechanism is defensible
+#    kls = interp.lookup_class_or_intf(class_name)
+#    if kls is not None:
+#        ctx_kls = interp.get_contextclass()
+#        meth = kls.locate_static_method(meth_name, ctx_kls, True)
+#        if meth is None or not isinstance(meth.method_func, W_PyMethodFuncAdapter):
+#            return None
+#        else:
+#            return meth.method_func.get_wrapped_py_obj()
+#    else:
+#        # otherwise we have to search lexical scopes upwards for the class
+#        py_scope = interp.get_current_bytecode().py_scope
+#        if py_scope is not None:
+#            from pypy.objspace.std.typeobject import W_TypeObject
+#            kls = py_scope.py_lookup(class_name)
+#            if kls is None:
+#                return None
+#            elif isinstance(kls, W_TypeObject):
+#                meth = kls.lookup(meth_name)
+#                from pypy.interpreter.function import StaticMethod
+#                if isinstance(meth, StaticMethod):
+#                    w_py_func = meth.w_function
+#                    assert isinstance(w_py_func, Py_Function)
+#                    return w_py_func
+#                else:
+#                    return None
+#            else:
+#                # should not be reachable.
+#                # If there was a PHP class we would have found it in the
+#                # first case.
+#                assert False
 
 # XXX call_py_func isn't optimised, and isn't currently traceable.
 @wrap(['interp', W_PHP_Root, W_PHP_Root, W_PHP_Root], name='call_py_func')

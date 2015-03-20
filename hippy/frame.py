@@ -187,9 +187,8 @@ class Frame(object):
         assert no >= 0
         return self.vars_w[no]
 
-    def lookup_deref(self, no, give_notice=False, one_level=False):
+    def lookup_deref(self, no, give_notice=False):
         w_var = self.lookup_variable_temp(no)
-
         if w_var is not None:
             if isinstance(w_var, W_Reference):
                 return w_var.deref()
@@ -197,16 +196,15 @@ class Frame(object):
                 self.unique_items[no] = False
                 return w_var
 
-        if not one_level:
-            bytecode = self.bytecode
-            py_scope = bytecode.py_scope
-            if py_scope is not None:
-                w_var = py_scope.ph_lookup(bytecode.varnames[no])
-                if w_var is not None:
-                    return w_var
+        vn = self.bytecode.varnames[no] # varname
+        py_scope = self.bytecode.py_scope
+        if py_scope is not None:
+            ph_v = py_scope.ph_lookup_local_recurse(vn)
+            if ph_v is not None:
+                return ph_v
+
         if give_notice:
-            self.interp.notice("Undefined variable: %s" % (
-                self.bytecode.varnames[no],))
+            self.interp.notice("Undefined variable: %s" % vn)
         return self.interp.space.w_Null
 
     def lookup_deref_temp(self, no, give_notice=False):

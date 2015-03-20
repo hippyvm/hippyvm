@@ -430,21 +430,40 @@ class TestPyPyBridgeScope(BaseTestInterpreter):
            and php_space.str_w(output[0]) == "0" \
            and php_space.str_w(output[1]) == "1"
 
-    def test_get_php_count(self, php_space):
-        output = self.run('''
-            $src = <<<EOD
-            def f():
-                def count(x): return -1
-                php_src = "function g() { return count(array(0, 1)); }"
-                g = embed_php_func(php_src)
-                return g()
-            EOD;
-            $f = embed_py_func($src);
+    def test_get_py_range_nested(self, php_space):
+        output = self.run(r'''
+            embed_py_func_global("def f():\n    g = embed_php_func(\"\"\"\nfunction g() {\n        \$h = embed_py_func(\\\"def h(): return range(2)\\\");;\n        return \$h();\n    }\n\"\"\")\n    return g()");
 
-            echo($f());
+            foreach (f() as $i) { echo $i; }
         ''')
-        assert self.space.int_w(output[0]) == 2
+        assert len(output) == 2 \
+           and php_space.str_w(output[0]) == "0" \
+           and php_space.str_w(output[1]) == "1"
 
+    def test_get_py_range_nested2(self, php_space):
+        output = self.run(r'''
+            embed_py_func_global("def f():\n    g = embed_php_func(\"\"\"\nfunction g() {\n        \$range = function (\$i) {return array(0); };\n        \$h = embed_py_func(\\\"def h(): return range(2)\\\");;\n        return \$h();\n    }\n\"\"\")\n    return g()");
+
+            foreach (f() as $i) { echo $i; }
+        ''')
+        assert len(output) == 1 \
+           and php_space.str_w(output[0]) == "0"
+
+    def test_get_py_and_php_range(self, php_space):
+        output = self.run(r'''
+            embed_py_func_global("def f():\n    embed_php_func(\"\"\"\nfunction g() { foreach (range(0, 2) as \$i) { echo \$i; } }\n\"\"\")()\n    return range(0, 2)\n");
+            foreach (f() as $i) {
+                echo $i;
+            }
+        ''')
+        assert len(output) == 5 \
+           and php_space.str_w(output[0]) == "0" \
+           and php_space.str_w(output[1]) == "1" \
+           and php_space.str_w(output[2]) == "2" \
+           and php_space.str_w(output[3]) == "0" \
+           and php_space.str_w(output[4]) == "1" \
+
+    @pytest.mark.xfail
     def test_scopes_are_deterministic1(self, php_space):
         output = self.run('''
             function b() { return "b"; }
@@ -477,6 +496,7 @@ class TestPyPyBridgeScope(BaseTestInterpreter):
         assert self.space.str_w(output[0]) == "b" \
           and self.space.str_w(output[1]) == "b"
 
+    @pytest.mark.xfail
     def test_scopes_are_deterministic3(self, php_space):
         output = self.run('''
             $b = 2;
@@ -683,7 +703,7 @@ class TestPyPyBridgeScope(BaseTestInterpreter):
         ''')
         assert php_space.int_w(output[0]) == 123
 
-    def test_global_var_tried_first(self, php_space):
+    def test_superglobals_var_tried_first(self, php_space):
         output = self.run('''
             $src = <<<EOD
             def f():
@@ -697,6 +717,23 @@ class TestPyPyBridgeScope(BaseTestInterpreter):
         ''')
         assert len(output) == 1 \
            and php_space.str_w(output[0]) != "g"
+
+    def test_global_func_tried_second(self, php_space):
+        output = self.run('''
+            function z() { echo "z1"; }
+            $src = <<<EOD
+            def f():
+                def z():
+                    return "z2"
+                php_src = "function g() { echo(z()); }"
+                g = embed_php_func(php_src)
+                return g()
+            EOD;
+            $f = embed_py_func($src);
+            $f();
+        ''')
+        assert len(output) == 1 \
+           and php_space.str_w(output[0]) == "z2"
 
     def test_access_global_nonexistent_global_var_from_global_py_func(self, php_space):
         output = self.run('''
