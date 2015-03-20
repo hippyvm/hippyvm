@@ -1432,7 +1432,8 @@ class Interpreter(object):
                 # arrays are special.
                 # We want these to be *always* mutible from Python, so
                 # it is essential to pass a reference. Without doing so,
-                # copy on write will allocate a new array at mutation time.
+                # copy on write may allocate a new array which is unobserved
+                # by PHP.
                 w_argument = ptr_argument.get_ref(self)
             else:
                 w_argument = w_points_to
