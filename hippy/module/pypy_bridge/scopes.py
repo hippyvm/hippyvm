@@ -8,12 +8,11 @@ from pypy.interpreter.typedef import TypeDef
 from pypy.interpreter.gateway import interp2app
 
 
-PHP_UNKNOWN = 0
-PHP_FRAME   = 1
-PHP_FUNC    = 2
-PHP_CLASS   = 3
-PHP_CONST   = 4
-PHP_PARENT  = 5
+PHP_UNKNOWN   = 0
+PHP_FUNC      = 1
+PHP_CLASS     = 2
+PHP_CONST     = 3
+PHP_NOT_FOUND = 4
 
 class _Name_Map(object):
     _immutable_fields_ = ["name_map", "other_maps"]
@@ -101,16 +100,34 @@ class PHP_Scope(WPy_Root):
     def ph_lookup_global(self, n):
         ph_interp = self.ph_interp
 
+        t = self.lookup_name_type(n)
+        if t == PHP_FUNC:
+            return ph_interp.lookup_function(n)
+        elif t == PHP_CLASS:
+            return ph_interp.lookup_class_or_intf(n)
+        elif t == PHP_CONST:
+            return ph_interp.lookup_constant(n)
+        elif t == PHP_NOT_FOUND:
+            return
+
+        # If we haven't looked up n before, we have to slowly go through the
+        # possibilities and see which one matches.
+
+        assert t == PHP_UNKNOWN
+
         ph_v = ph_interp.lookup_function(n)
         if ph_v is not None:
+            self.set_name_type(n, PHP_FUNC)
             return ph_v
 
         ph_v = ph_interp.lookup_class_or_intf(n)
         if ph_v is not None:
+            self.set_name_type(n, PHP_CLASS)
             return ph_v
 
         ph_v = ph_interp.lookup_constant(n)
         if ph_v is not None:
+            self.set_name_type(n, PHP_CONST)
             return ph_v
 
 
