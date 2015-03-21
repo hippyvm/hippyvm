@@ -35,6 +35,15 @@ def _run_fastcgi_server(server_port):
 
 def mk_entry_point(py_space=None):
   # XXX 2 space indent to make merging with master less painful XXX
+
+  # equivalent to the hack in app_main.py of PyPy, albiet interp-level.
+  w_sys = py_space.sys
+  w_modnames = w_sys.get("builtin_module_names")
+  w_in = py_space.contains(w_modnames, py_space.wrap("__pypy__"))
+  if not py_space.is_true(w_in):
+    rl = py_space.sys.get("setrecursionlimit")
+    py_space.call(rl, py_space.newlist([py_space.wrap(5000)]))
+
   def entry_point(argv):
     i = 1
     fname = None
