@@ -671,3 +671,27 @@ class TestPyPyBridgeExceptions(BaseTestInterpreter):
         embed_py_func_global($src);
         f(array());
         ''', expected_warnings)
+
+    @pytest.mark.xfail
+    def test_incorrect_access_on_php_decor(self, php_space):
+        output = self.run('''
+        $src = <<<EOD
+        @php_decor(access="bacon")
+        def f(self):
+            pass
+        EOD;
+
+        class A{};
+
+        embed_py_meth("A", $src);
+        /*
+        try {
+            embed_py_meth("A", $src);
+            echo "fail";
+        } catch (PyException $e) {
+            echo "ok";
+        }
+        */
+        ''')
+        # XXX suitable error message
+        assert php_space.str_w(output[0]) == "ok"
