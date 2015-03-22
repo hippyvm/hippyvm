@@ -805,3 +805,39 @@ def f():
         echo f();
         ''')
         assert php_space.str_w(output[0]) == "3"
+
+    def test_mutate_php_global(self, php_space):
+        output = self.run('''
+        $x = array(1, 3, 3, 7);
+
+        $src = "def f(): x['a'] = 47;";
+        embed_py_func_global($src);
+
+        echo count($x);
+        f();
+        echo count($x);
+        echo $x["a"];
+        ''')
+        assert php_space.int_w(output[0]) == 4
+        assert php_space.int_w(output[1]) == 5
+        assert php_space.int_w(output[2]) == 47
+
+    def test_mutate_php_global2(self, php_space):
+        output = self.run('''
+        $x = array(1, 3, 3, 7);
+
+        $src = <<<EOD
+        def f():
+            src2 = "function g() { \$x['a'] = 47; }"
+            embed_php_func(src2)()
+        EOD;
+        embed_py_func_global($src);
+
+        echo count($x);
+        f();
+        echo count($x);
+        echo $x["a"];
+        ''')
+        assert php_space.int_w(output[0]) == 4
+        assert php_space.int_w(output[1]) == 5
+        assert php_space.int_w(output[2]) == 47
