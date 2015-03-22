@@ -810,7 +810,7 @@ def f():
         output = self.run('''
         $x = array(1, 3, 3, 7);
 
-        $src = "def f(): x['a'] = 47;";
+        $src = "def f(): x['a'] = 47";
         embed_py_func_global($src);
 
         echo count($x);
