@@ -1226,6 +1226,26 @@ EOD;
         assert php_space.int_w(output[3]) == 2
         assert php_space.str_w(output[4]) == "two"
 
+    def test_array_attr_set_from_py(self, php_space):
+        output = self.run('''
+        class A {
+            public $elms;
+
+            function __construct() {
+                $this->elms = array(1, 2, 3);
+            }
+
+        }
+
+        $src = "def addidx(inst, idx, elm): inst.elms[idx] = elm";
+        embed_py_func_global($src);
+
+        $a = new A();
+        addidx($a, "here", "value");
+        echo $a->elms["here"];
+        ''')
+        assert php_space.str_w(output[0]) == "value"
+
 # XXX no need for most of these to be interp-level
 class TestPyPyBridgeArrayConversionsInterp(BaseTestInterpreter):
 
