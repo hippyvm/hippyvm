@@ -239,6 +239,12 @@ class Frame(object):
     def load_ref(self, no):
         """Return a W_Reference and force it on the frame if necessary."""
         w_value = self.lookup_variable_temp(no)
+        if w_value is None:
+            vn = self.bytecode.varnames[no] # varname
+            py_scope = self.bytecode.py_scope
+            if py_scope is not None:
+                w_value = py_scope.ph_lookup_local_recurse(vn)
+
         if isinstance(w_value, W_Reference):
             return w_value
         r_value = self.interp.space.empty_ref()
