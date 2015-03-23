@@ -55,7 +55,8 @@ class PHPArrayListStrategy(ListStrategy):
         w_php_arry_ref = self.unerase(w_list.lstorage)
         w_php_index = php_space.wrap(index)
 
-        w_php_elem = w_php_arry_ref.getitem_ref(
+        w_php_arry = w_php_arry_ref.deref_temp()
+        w_php_elem = w_php_arry.getitem(
                 php_space, w_php_index, allow_undefined=False)
 
         if w_php_elem is None:
