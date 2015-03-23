@@ -118,7 +118,6 @@ class TestPyPyBridgeScope(BaseTestInterpreter):
         assert php_space.int_w(output[0]) == 42
 
     def test_php_can_call_python_builtin(self, php_space):
-
         output = self.run('''
             $src = <<<EOD
             def c():
@@ -132,8 +131,15 @@ class TestPyPyBridgeScope(BaseTestInterpreter):
         ''')
         assert php_space.int_w(output[0]) == 4
 
-    def test_python_can_call_php_global_builtin(self, php_space):
+    @pytest.mark.xfail
+    # Currently PHP outer frames don't have access to a Python scope object.
+    def test_php_can_call_python_builtin_from_outer_frame(self, php_space):
+        output = self.run('''
+            echo(len("123"));
+        ''')
+        assert php_space.int_w(output[0]) == 3
 
+    def test_python_can_call_php_global_builtin(self, php_space):
         output = self.run('''
             $src = <<<EOD
             def c(ary):
