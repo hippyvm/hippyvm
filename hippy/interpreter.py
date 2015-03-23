@@ -447,30 +447,29 @@ class Interpreter(object):
 
     def locate_function(self, name):
         frame = self.topframeref()
-        py_scope = frame.bytecode.py_scope
-        if py_scope is not None:
-            ph_v = py_scope.ph_lookup_local_recurse(name)
+        if frame is not None:
+            py_scope = frame.bytecode.py_scope
+            if py_scope is not None:
+                ph_v = py_scope.ph_lookup_local_recurse(name)
+                if ph_v is None:
+                    func = self.lookup_function(name)
+                    if func is not None:
+                        return func
+                    ph_v = py_scope.ph_lookup_global(name)
 
-            if ph_v is None:
-                func = self.lookup_function(name)
-                if func is not None:
-                    return func
-
-                ph_v = py_scope.ph_lookup_global(name)
-
-            if ph_v is not None:
-                from hippy.module.pypy_bridge.py_adapters import W_PyGenericAdapter
-                if isinstance(ph_v, W_PyGenericAdapter):
-                    # It could be a callable Python class/instance for example.
-                    # In this case we ask the adapter for its callable.
-                    ph_v = ph_v.get_callable()
-                if not isinstance(ph_v, py_adapters.W_EmbeddedPyCallable):
-                    self.fatal("Can only call Python functions from PHP")
-                return ph_v
-        else:
-            func = self.lookup_function(name)
-            if func is not None:
-                return func
+                if ph_v is not None:
+                    from hippy.module.pypy_bridge.py_adapters import W_PyGenericAdapter
+                    if isinstance(ph_v, W_PyGenericAdapter):
+                        # It could be a callable Python class/instance for example.
+                        # In this case we ask the adapter for its callable.
+                        ph_v = ph_v.get_callable()
+                    if not isinstance(ph_v, py_adapters.W_EmbeddedPyCallable):
+                        self.fatal("Can only call Python functions from PHP")
+                    return ph_v
+                self.fatal("Call to undefined function %s()" % name)
+        func = self.lookup_function(name)
+        if func is not None:
+            return func
         self.fatal("Call to undefined function %s()" % name)
 
     def get_this(self, frame):
