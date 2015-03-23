@@ -53,6 +53,8 @@ def _contextname(contextclass):
 
 class VisibilityError(Exception):
     def __init__(self, visibility, klass, name, contextclass):
+        from hippy.klass import ClassBase
+        assert isinstance(klass, ClassBase)
         self.visibility = visibility
         self.klass = klass
         self.name = name

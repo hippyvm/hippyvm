@@ -919,3 +919,38 @@ EOD;
         ''')
         err_s = "embed_php_func expects source code for a single PHP function"
         assert php_space.str_w(output[0]) == err_s
+
+    def test_call_pyclass_attr(self, php_space):
+        expected_warnings = ["Fatal error: Call to undefined method A::x()"]
+        output = self.run('''
+        $src = <<<EOD
+        def f():
+            class A:
+                x = 1
+            return A
+        EOD;
+        embed_py_func_global($src);
+        $a = f();
+        $a::x(); // bogus
+        ''', expected_warnings)
+
+    def test_call_py_func_on_pyclass_attr(self, php_space):
+        output = self.run('''
+        $src = <<<EOD
+        def f():
+            class A:
+                x = 1
+            return A
+        EOD;
+        embed_py_func_global($src);
+        $a = f();
+
+        try {
+            call_py_func([$a, "x"], [], []); // bogus
+            echo "fail";
+        } catch(BridgeException $e) {
+            echo $e->getMessage();
+        }
+        ''')
+        err_s = "Failed to find Python function or method"
+        assert php_space.str_w(output[0]) == err_s

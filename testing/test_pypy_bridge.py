@@ -1283,8 +1283,8 @@ class TestPyPyBridge(BaseTestInterpreter):
                     def f(a="a", b="b", c="c"):
                         return a + b + c
 
-                pysrc = "function g() { return call_py_func('A::f', [], ['a' => 'z']); }";
-                g = embed_php_func(pysrc)
+                phpsrc = "function g() { return call_py_func('A::f', [], ['a' => 'z']); }";
+                g = embed_php_func(phpsrc)
                 return g()
             EOD;
 
@@ -1396,6 +1396,36 @@ class TestPyPyBridge(BaseTestInterpreter):
         ''')
         assert php_space.str_w(output[0]) == "OK"
 
+    def test_kwarg_from_php9(self, php_space):
+        output = self.run('''
+            $src = <<<EOD
+            def mk():
+                class F(object):
+                    @staticmethod
+                    def x(a="a", b="b", c="c"):
+                          return a + b + c
+                return F
+            EOD;
+            embed_py_func_global($src);
+
+            $f = mk();
+
+            echo call_py_func([$f, "x"], [], ["a" => "z"]);
+            echo call_py_func([$f, "x"], ["z"], ["c" => "o"]);
+            echo call_py_func([$f, "x"], [], ["a" => "x", "b" => "y", "c" => "z"]);
+            echo call_py_func([$f, "x"], [], ["b" => "y", "c" => "z", "a" => "x"]);
+            echo call_py_func([$f, "x"], ["o", "p"], ["c" => "z"]);
+            echo call_py_func([$f, "x"], [], []);
+            echo call_py_func([$f, "x"], ["j", "k", "l"], []);
+        ''')
+        assert php_space.str_w(output[0]) == "zbc"
+        assert php_space.str_w(output[1]) == "zbo"
+        assert php_space.str_w(output[2]) == "xyz"
+        assert php_space.str_w(output[3]) == "xyz"
+        assert php_space.str_w(output[4]) == "opz"
+        assert php_space.str_w(output[5]) == "abc"
+        assert php_space.str_w(output[6]) == "jkl"
+
     def test_new_on_py_class(self, php_space):
         output = self.run('''
             $mod = import_py_mod("__builtin__");
@@ -1500,6 +1530,42 @@ class TestPyPyBridge(BaseTestInterpreter):
         echo $a->f();
         ''')
         assert php_space.int_w(output[0]) == 456
+
+    def test_call_pyclass_static_meth(self, php_space):
+        output = self.run('''
+        $src = <<<EOD
+        def f():
+            class A:
+                @staticmethod
+                def x():
+                    return 666
+            return A
+        EOD;
+        embed_py_func_global($src);
+        $a = f();
+        echo($a::x());
+        ''')
+        assert php_space.int_w(output[0]) == 666
+
+    def test_unwrap_pyclassadapter(self, php_space):
+        output = self.run('''
+        $src1 = <<<EOD
+        def f():
+            class A:
+                x = 1212
+            return A
+        EOD;
+        embed_py_func_global($src1);
+
+        $src2 = <<<EOD
+        def g(a):
+            return a.x
+        EOD;
+        embed_py_func_global($src2);
+
+        echo g(f());
+        ''')
+        assert php_space.int_w(output[0]) == 1212
 
 class TestPyPyBridgeInterp(object):
 

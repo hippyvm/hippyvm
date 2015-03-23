@@ -604,3 +604,128 @@ k_PyExceptionAdapter = def_class('PyException',
 from hippy.builtin_klass import k_Exception
 # Indicates an error in PHP->Py glue code
 k_BridgeException = def_class('BridgeException', [], [], extends=k_Exception)
+
+
+class W_PyClassAdapter(W_InstanceObject):
+    # Represents an adapted Python class.
+    # Unlike in PHP, we allow this to be a first-class citizen.
+    # We would have liked to make this adapter both a native PHP class
+    # and a first class citizen, but this is awkward since is means
+    # multiple inheritance from W_Object and W_ClassBase. This
+    # would require major restructuring due to _mixin_.
+
+    _immutable_fields_ = ["w_py_kls", "interp"]
+
+    def setup_instance(self, interp, w_py_kls):
+        from pypy.objspace.std.typeobject import W_TypeObject
+        from pypy.module.__builtin__.interp_classobj import W_ClassObject
+        assert isinstance(w_py_kls, W_TypeObject) or \
+            isinstance(w_py_kls, W_ClassObject)
+
+        self.w_py_kls = w_py_kls
+        self.interp = interp
+
+    @staticmethod
+    def from_w_py_inst(interp, w_py_kls):
+        w_py_adptr = W_PyClassAdapter(k_PyClassAdapter, [])
+        w_py_adptr.setup_instance(interp, w_py_kls)
+        return w_py_adptr
+
+    @jit.unroll_safe
+    def call_args(self, interp, args_w, w_this=None, thisclass=None,
+                  closureargs=None):
+        py_space = interp.py_space
+
+        from pypy.interpreter.argument import Arguments
+        w_py_args = Arguments(py_space, [x.to_py(interp) for x in args_w])
+        w_py_inst = py_space.call_args(self.w_py_kls, w_py_args)
+        return w_py_inst.to_php(interp)
+
+    def get_wrapped_py_obj(self):
+        return self.w_py_kls
+
+    # PHP interpreter asking for the class of a PyClassAdapter
+    def getclass(self):
+        return W_PyClassAdapterClass(self.w_py_kls)
+
+    def find_static_py_meth(self, interp, meth_name):
+            w_py_meth = interp.py_space.getattr(self.w_py_kls,
+                                                interp.py_space.wrap(meth_name))
+            if not isinstance(w_py_meth, PyFunction):
+                from hippy.error import VisibilityError
+                raise VisibilityError("undefined", self.getclass(), meth_name, None)
+            else:
+                return w_py_meth
+
+    def get_callable(self):
+        return W_EmbeddedPyCallable(self.interp, self.w_py_kls)
+
+    def to_py(self, interp, w_php_ref=None):
+        return self.w_py_kls
+
+k_PyClassAdapter = def_class('PyClassAdapter',
+                             [], [],
+                             instance_class=W_PyClassAdapter)
+
+from hippy.klass import ClassBase
+class W_PyClassAdapterClass(ClassBase):
+    # Represents the class of an adapted Python class.
+    # This is needed because PHP clearly separateds the notion of first class
+    # values from that of classes. Classes are certainly not first class in
+    # PHP.
+
+    _immutable_fields_ = ["name", "w_py_kls"]
+
+    def __init__(self, w_py_kls):
+        from pypy.objspace.std.typeobject import W_TypeObject
+        from pypy.module.__builtin__.interp_classobj import W_ClassObject
+        assert isinstance(w_py_kls, W_TypeObject) or \
+            isinstance(w_py_kls, W_ClassObject)
+
+        # hack to make RPython accept old and new style Python classes
+        self.name = None
+        if isinstance(w_py_kls, W_TypeObject):
+            self.name = w_py_kls.name
+        elif isinstance(w_py_kls, W_ClassObject):
+            self.name = w_py_kls.name
+        else:
+            assert False
+        assert self.name is not None
+
+        ClassBase.__init__(self, self.name)
+        self.w_py_kls = w_py_kls
+
+    def get_wrapped_py_obj(self):
+        return self.w_py_kls
+
+    def find_static_py_meth(self, interp, meth_name):
+            w_py_meth = interp.py_space.getattr(self.w_py_kls,
+                                                interp.py_space.wrap(meth_name))
+            if not isinstance(w_py_meth, PyFunction):
+                from hippy.error import VisibilityError
+                raise VisibilityError("undefined", self, meth_name, None)
+            else:
+                return w_py_meth
+
+    def getstaticmeth(self, methname, contextclass, w_this, interp):
+        # we ignore access rules, as Python has none
+        w_py_func = self.find_static_py_meth(interp, methname)
+        from hippy import consts
+        from hippy.klass import Method
+        flags = consts.ACC_STATIC | consts.ACC_PUBLIC
+        return Method(w_py_func.to_php(interp), flags, self)
+
+    # Some PHP bytecodes will insantiate classes by calling the internal
+    # PHP class representation.
+    @jit.unroll_safe
+    def call_args(self, interp, args_w, w_this=None, thisclass=None, closureargs=None):
+        from pypy.interpreter.argument import Arguments
+        py_space = interp.py_space
+        w_py_args = Arguments(py_space, [x.to_py(interp) for x in args_w])
+        return py_space.call_args(self.w_py_kls, w_py_args).to_php(interp)
+
+    def create_instance(self, interp, storage_w):
+        assert False
+
+
+k_PyClassAdapterClass = def_class('PyClassAdapterClass', [], [])

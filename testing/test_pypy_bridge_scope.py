@@ -117,6 +117,20 @@ class TestPyPyBridgeScope(BaseTestInterpreter):
         ''')
         assert php_space.int_w(output[0]) == 42
 
+    def test_php_sees_outer_py_class(self, php_space):
+        output = self.run('''
+            $pysrc = <<<EOD
+            def f():
+                class C: x = 2
+
+                phsrc = "function h() { return new C(); }"
+                return embed_php_func(phsrc)()
+            EOD;
+            $f = embed_py_func($pysrc);
+            echo($f()->x);
+        ''')
+        assert php_space.int_w(output[0]) == 2
+
     def test_php_can_call_python_builtin(self, php_space):
         output = self.run('''
             $src = <<<EOD

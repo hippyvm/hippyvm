@@ -229,4 +229,3 @@ class Py_Scope(WPHP_Root):
         py_v = py_frame.get_builtin().getdictvalue(py_frame.space, n)
         if py_v is not None:
             return py_v
-

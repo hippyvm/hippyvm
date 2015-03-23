@@ -463,7 +463,8 @@ class Interpreter(object):
                         # It could be a callable Python class/instance for example.
                         # In this case we ask the adapter for its callable.
                         ph_v = ph_v.get_callable()
-                    if not isinstance(ph_v, py_adapters.W_EmbeddedPyCallable):
+                    if not isinstance(ph_v, py_adapters.W_EmbeddedPyCallable) and \
+                            not isinstance(ph_v, py_adapters.W_PyClassAdapter):
                         self.fatal("Can only call Python functions from PHP")
                     return ph_v
                 self.fatal("Call to undefined function %s()" % name)
@@ -493,6 +494,27 @@ class Interpreter(object):
             name = name[1:]
         if not name:
             return None
+        from hippy.module.pypy_bridge.py_adapters import W_PyClassAdapter
+        # XXX next line causes a call in the trace. Can this be avoided?
+        # XXX: note self.topframeref is a vref
+        frame = self.topframeref()
+        if frame is not None:
+            py_scope = frame.bytecode.py_scope
+            if py_scope is not None:
+                ph_v = py_scope.ph_lookup_local_recurse(name)
+                if ph_v is not None:
+                    if isinstance(ph_v, W_PyClassAdapter):
+                        return ph_v.getclass()
+                    else:
+                        return None
+
+                ph_v = py_scope.ph_lookup_global(name)
+                if ph_v is not None:
+                    if isinstance(ph_v, W_PyClassAdapter):
+                        return ph_v.getclass()
+                    else:
+                        return None
+
         kls = self._class_get(name)
         if kls is None:
             if autoload:
@@ -1345,14 +1367,7 @@ class Interpreter(object):
 
     def GETCLASS(self, bytecode, frame, space, arg, pc):
         w_obj = frame.pop().deref()
-        from hippy.module.pypy_bridge.py_adapters import W_PyGenericAdapter
-        if isinstance(w_obj, W_PyGenericAdapter):
-            # PHP interpreter is asking the class of a Python object
-            # Most likely the user is instntiating a Python class using
-            # 'new' in PHP.
-            frame.push(w_obj)
-            return pc
-        elif isinstance(w_obj, W_InstanceObject):
+        if isinstance(w_obj, W_InstanceObject):
             frame.push(w_obj.getclass())
             return pc
         name = space.getclassintfname(w_obj)
@@ -1416,8 +1431,9 @@ class Interpreter(object):
     def ARG_BY_VALUE(self, bytecode, frame, space, arg, pc):
         w_argument = frame.pop().deref()
         func = frame.pop()
-        from hippy.module.pypy_bridge.py_adapters import W_PyGenericAdapter
-        if isinstance(func, W_PyGenericAdapter):
+        from hippy.module.pypy_bridge.py_adapters import (
+            W_PyGenericAdapter, W_PyClassAdapter)
+        if isinstance(func, W_PyGenericAdapter) or isinstance(func, W_PyClassAdapter):
             func = func.get_callable()
         assert isinstance(func, AbstractFunction)
         if func.needs_ref(arg):
