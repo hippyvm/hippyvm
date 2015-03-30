@@ -239,6 +239,16 @@ class W_PHPFuncAdapter(W_Root):
         assert not isinstance(w_php_func, W_PyFuncAdapter) and \
             not isinstance(w_php_func, W_PyFuncGlobalAdapter)
 
+        # compiling python functions inside python makes no sense
+        # We catch this before it is called.
+        from hippy.module.pypy_bridge.bridge import (
+            embed_py_func, embed_py_func_global, embed_py_meth)
+        if w_php_func is embed_py_func or \
+                w_php_func is embed_py_func_global or \
+                w_php_func is embed_py_meth:
+            _raise_py_bridgeerror(space,
+                                  "Detected cross-language Python compilation from Python")
+
         self.space = space
         self.w_php_func = w_php_func
 
@@ -262,15 +272,6 @@ class W_PHPFuncAdapter(W_Root):
         py_space = self.space
         php_interp = self.space.get_php_interp()
         w_php_func = self.w_php_func
-
-        # compiling python functions inside python makes no sense
-        from hippy.module.pypy_bridge.bridge import (
-            embed_py_func, embed_py_func_global, embed_py_meth)
-        if w_php_func is embed_py_func or \
-                w_php_func is embed_py_func_global or \
-                w_php_func is embed_py_meth:
-            _raise_py_bridgeerror(py_space,
-                                  "Detected cross-language Python compilation from Python")
 
         w_php_args_elems = [None] * len(args)
         for i, w_py_arg in enumerate(args):
