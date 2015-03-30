@@ -1,10 +1,20 @@
 Post-paper-submission Tasks
 ===========================
 
- * Use correct error interval on ACR plots.
+Definitely these:
  * call_py_func is inefficient.
- * Fix bugs on pypy-hippy-bridge tracker.
-   https://bitbucket.org/softdevteam/pypy-hippy-bridge/issues?status=new&status=open
  * Maybe clean up exceptions (print better error msgs etc.)
- * Make PyHyp work with pip?
- * Make it possible to start in Python.
+ * Match stock PyPy recursion limit (see branch)
+ * Embed py in py should raise (see branch)
+ * type comparisons using old-style mechanism (branch)
+ * Look for bugs we want to fix on the tracker:
+   https://bitbucket.org/softdevteam/pypy-hippy-bridge/issues?status=new&status=open
+
+Maybe these:
+ * Make PyHyp work with pip (?)
+ * Make it possible to start in Python (?)
+
+Paper related:
+ * Make more benchmarks.
+ * Use correct error interval on ACR plots.
+ * Re-benchmark
