@@ -847,19 +847,3 @@ def f():
         assert php_space.int_w(output[0]) == 4
         assert php_space.int_w(output[1]) == 5
         assert php_space.int_w(output[2]) == 47
-
-    def test_compile_py_in_py(self, php_space):
-        output = self.run('''
-        $x = 4;
-
-        $src = <<<EOD
-        def f():
-            x = 3
-            src2 = "def g(): return x"
-            g = embed_py_func(src2)
-            return g()
-        EOD;
-        $f = embed_py_func($src);
-        echo $f();
-        ''')
-        assert php_space.int_w(output[0]) == 3

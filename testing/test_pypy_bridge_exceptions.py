@@ -695,3 +695,65 @@ class TestPyPyBridgeExceptions(BaseTestInterpreter):
         ''')
         # XXX suitable error message
         assert php_space.str_w(output[0]) == "ok"
+
+    def test_compile_py_in_py(self, php_space):
+        output = self.run('''
+
+        $src = <<<EOD
+        def f():
+            src2 = 'def g(): return 123'
+            g = embed_py_func(src2)
+            return g()
+        EOD;
+        $f = embed_py_func($src);
+        try {
+            $f();
+            echo 'fail';
+        } catch (PyException $e) {
+            echo $e->getMessage();
+        }
+        ''')
+        err_s = 'Detected cross-language Python compilation from Python'
+        assert php_space.str_w(output[0]) == err_s
+
+    def test_compile_py_in_py2(self, php_space):
+        output = self.run('''
+        $src = <<<EOD
+        def f():
+            src2 = 'def g(): 123'
+            embed_py_func_global(src2)
+        EOD;
+        $f = embed_py_func($src);
+        try {
+            $f();
+            echo 'fail';
+        } catch (PyException $e) {
+            echo $e->getMessage();
+        }
+        ''')
+        err_s = 'Detected cross-language Python compilation from Python'
+        assert php_space.str_w(output[0]) == err_s
+
+    def test_compile_py_in_py3(self, php_space):
+        output = self.run('''
+        {
+            class A {};
+
+            $src = <<<EOD
+def f():
+    src2 = 'def g(): return 123'
+    embed_py_meth('A', src2)
+EOD;
+            $f = embed_py_func($src);
+
+            $a = new A();
+            try {
+                $f();
+                echo 'fail';
+            } catch (PyException $e) {
+                echo $e->getMessage();
+            }
+        }
+        ''')
+        err_s = 'Detected cross-language Python compilation from Python'
+        assert php_space.str_w(output[0]) == err_s
