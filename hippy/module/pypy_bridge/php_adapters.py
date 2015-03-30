@@ -247,7 +247,7 @@ class W_PHPFuncAdapter(W_Root):
                 w_php_func is embed_py_func_global or \
                 w_php_func is embed_py_meth:
             _raise_py_bridgeerror(space,
-                                  "Detected cross-language Python compilation from Python")
+                                  "Adapting forbidden PHP function")
 
         self.space = space
         self.w_php_func = w_php_func

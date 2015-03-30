@@ -713,7 +713,7 @@ class TestPyPyBridgeExceptions(BaseTestInterpreter):
             echo $e->getMessage();
         }
         ''')
-        err_s = 'Detected cross-language Python compilation from Python'
+        err_s = 'Adapting forbidden PHP function'
         assert php_space.str_w(output[0]) == err_s
 
     def test_compile_py_in_py2(self, php_space):
@@ -731,7 +731,7 @@ class TestPyPyBridgeExceptions(BaseTestInterpreter):
             echo $e->getMessage();
         }
         ''')
-        err_s = 'Detected cross-language Python compilation from Python'
+        err_s = 'Adapting forbidden PHP function'
         assert php_space.str_w(output[0]) == err_s
 
     def test_compile_py_in_py3(self, php_space):
@@ -755,5 +755,5 @@ EOD;
             }
         }
         ''')
-        err_s = 'Detected cross-language Python compilation from Python'
+        err_s = 'Adapting forbidden PHP function'
         assert php_space.str_w(output[0]) == err_s
