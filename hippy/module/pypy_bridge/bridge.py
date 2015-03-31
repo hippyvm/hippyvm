@@ -228,8 +228,8 @@ def _find_static_py_meth(interp, class_name, meth_name):
 #                # first case.
 #                assert False
 
-# XXX call_py_func isn't optimised, and isn't currently traceable.
 @wrap(['interp', W_PHP_Root, W_PHP_Root, W_PHP_Root], name='call_py_func')
+@jit.unroll_safe
 def call_py_func(interp, w_func_or_w_name, w_args, w_kwargs):
     """Calls a Python function with kwargs.
 
@@ -247,8 +247,17 @@ def call_py_func(interp, w_func_or_w_name, w_args, w_kwargs):
     call_py_func(["MyClass", "my_static_meth"], ...)
     call_py_func([$my_inst, "my_meth"], ...)
     """
+
+    if not isinstance(w_args, W_ArrayObject):
+        _raise_php_bridgeexception(interp,
+                "Positional arguments should be passed as an array with integer keys")
+
+    if not isinstance(w_kwargs, W_ArrayObject):
+        _raise_php_bridgeexception(interp,
+                "Keyword arguments should be passed as associative arrays")
+
     py_space, php_space = interp.py_space, interp.space
-    w_self = []
+    w_self = None
     w_py_func = None
 
     if isinstance(w_func_or_w_name, W_StringObject):
@@ -295,30 +304,74 @@ def call_py_func(interp, w_func_or_w_name, w_args, w_kwargs):
                 w_method_func = w_py_meth.method_func
                 assert isinstance(w_method_func, W_PyMethodFuncAdapter)
                 w_py_func = w_method_func.get_wrapped_py_obj()
-                w_self = [w_class_name_or_inst.to_py(interp)]
+                w_self = w_class_name_or_inst.to_py(interp)
     elif isinstance(w_func_or_w_name, W_PyFuncAdapter):
         # a callable python instance object
         w_py_func = w_func_or_w_name.w_py_func
     else:
         _raise_php_bridgeexception(interp, "Invalid argument to call_py_func")
 
-    assert w_py_func is None or isinstance(w_py_func, Py_Function)
     if w_py_func is None:
         _raise_php_bridgeexception(interp, "Failed to find Python function or method")
     else:
         # we now have something callable, next perform the call
-        w_py_args = w_self + [x.to_py(interp) for x in w_args.as_list_w()]
+        args_len = w_args.arraylen()
+        if w_self is not None:
+            args_len_with_self = args_len + 1
+        else:
+            args_len_with_self = args_len
 
-        w_kw_pairs = w_kwargs.as_pair_list(php_space)
-        w_py_keywords = []
-        w_py_keywords_w = []
-        for pair in w_kw_pairs:
-            w_k, w_v = pair
-            if not isinstance(w_k, W_StringObject):
-                _raise_php_bridgeexception(interp, "Python kwargs must have string keys")
-            w_py_keywords.append(php_space.str_w(w_k))
-            w_py_keywords_w.append(w_v.to_py(interp))
+        # scaffold list of correct length
+        w_py_args = [None for x in xrange(args_len_with_self)]
+        curidx = 0
 
+        # We know that positional args should never have string keys.
+        from hippy.objects.arrayobject import W_ListArrayObject
+        assert isinstance(w_args, W_ListArrayObject) # XXX exception
+        w_args_raw = w_args.lst_w
+
+        if w_self is not None:
+            w_py_args[0] = w_self
+            curidx += 1
+
+        for idx in xrange(args_len):
+            w_py_elem = w_args_raw[idx].to_py(interp)
+            w_py_args[curidx] = w_py_elem
+            curidx += 1
+
+        # keyword args
+        # Should either be an empty array or a string keyed array
+        w_py_keywords = w_py_keywords_w = None
+        from hippy.objects.arrayobject import W_RDictArrayObject
+        if isinstance(w_kwargs, W_RDictArrayObject):
+            w_kwargs_raw = w_kwargs.dct_w
+
+            kwargs_len = len(w_kwargs_raw)
+            w_py_keywords = [None for i in xrange(kwargs_len)]
+            w_py_keywords_w = [None for i in xrange(kwargs_len)]
+            curidx = 0
+            for w_k, w_v in w_kwargs_raw.iteritems():
+                if not isinstance(w_k, str):
+                    _raise_php_bridgeexception(interp, "Python kwargs must have string keys")
+                assert isinstance(w_k, str) # seems hippy even stores int keys as str
+                w_py_keywords[curidx] = w_k
+                w_py_keywords_w[curidx] = w_v.to_py(interp)
+                curidx += 1
+        else:
+            # if we get here we should have the empty array (which will have list storage)
+            assert isinstance(w_kwargs, W_ListArrayObject)
+            assert len(w_kwargs.lst_w) == 0
+            w_py_keywords = []
+            w_py_keywords_w = []
+
+        assert w_py_keywords is not None
+        assert w_py_keywords_w is not None
+
+        w_py_rv = None
         args = Arguments(py_space, w_py_args, keywords=w_py_keywords, keywords_w=w_py_keywords_w)
-        w_py_rv = w_py_func.call_args(args)
+        try:
+            w_py_rv = py_space.call_args(w_py_func, args)
+        except OperationError as e:
+            _raise_php_bridgeexception(interp, e.errorstr(py_space))
+        assert w_py_rv is not None
         return w_py_rv.to_php(interp)

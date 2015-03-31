@@ -531,13 +531,46 @@ class TestPyPyBridgeExceptions(BaseTestInterpreter):
 
             embed_py_func_global($src);
             try {
+                // 1 indistinguishable from "1" in array key in PHP
                 call_py_func("f", [], [1 => "z"]);
                 echo "fail";
             } catch (BridgeException $e) {
                 echo $e->getMessage();
             }
         ''')
-        assert php_space.str_w(output[0]) == "Python kwargs must have string keys"
+        assert php_space.str_w(output[0]) == "TypeError: f() got an unexpected keyword argument '1'"
+
+    def test_except_kwarg_from_php11(self, php_space):
+        output = self.run('''
+            // any old python function
+            $sys = import_py_mod("sys");
+            $rl = $sys->getrecursionlimit;
+
+            try {
+                call_py_func($rl, 1, []); // type is wrong
+                echo "fail";
+            } catch (BridgeException $e) {
+                echo $e->getMessage();
+            }
+        ''')
+        err_s = "Positional arguments should be passed as an array with integer keys"
+        assert php_space.str_w(output[0]) == err_s
+
+    def test_except_kwarg_from_php12(self, php_space):
+        output = self.run('''
+            // any old python function
+            $sys = import_py_mod("sys");
+            $rl = $sys->getrecursionlimit;
+
+            try {
+                call_py_func($rl, [], 1); // type is wrong
+                echo "fail";
+            } catch (BridgeException $e) {
+                echo $e->getMessage();
+            }
+        ''')
+        err_s = "Keyword arguments should be passed as associative arrays"
+        assert php_space.str_w(output[0]) == err_s
 
     def test_unbound_meth_too_no_self(self, php_space):
         output = self.run('''
