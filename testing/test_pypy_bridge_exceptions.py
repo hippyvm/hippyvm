@@ -757,3 +757,23 @@ EOD;
         ''')
         err_s = 'Adapting forbidden PHP function'
         assert php_space.str_w(output[0]) == err_s
+
+    def test_compile_php_in_php(self, php_space):
+        output = self.run('''
+
+        $src = <<<EOD
+        def f():
+            src2 = "function g() { embed_php_func('function h(){}'); }"
+            return embed_php_func(src2)
+        EOD;
+        $f = embed_py_func($src);
+        try {
+            $ff = $f();
+            $ff();
+            echo 'fail';
+        } catch (BridgeException $e) {
+            echo $e->getMessage();
+        }
+        ''')
+        err_s = "Adapting forbidden Python function"
+        assert php_space.str_w(output[0]) == err_s
