@@ -3,7 +3,6 @@ Post-paper-submission Tasks
 
 Definitely these:
  * call_py_func is inefficient.
- * Maybe clean up exceptions (print better error msgs etc.)
  * Match stock PyPy recursion limit (see branch)
  v Embed py in py should raise (see branch)
  v Embed php in php should raise (see branch)
@@ -16,6 +15,7 @@ Definitely these:
 Maybe these:
  * Make PyHyp work with pip (?)
  * Make it possible to start in Python (?)
+ * Maybe clean up exceptions (print better error msgs etc.)
 
 Paper related:
  * Make more benchmarks.
