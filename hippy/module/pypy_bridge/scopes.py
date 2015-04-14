@@ -70,6 +70,14 @@ class PHP_Scope(WPy_Root):
                 return py_v
             ph_scope = py_scope.py_frame.php_scope
 
+    # Same as py_lookup_local_recurse() just returning a PHP result
+    def ph_lookup_local_recurse(self, n):
+        w_res = self.py_lookup_local_recurse(n)
+        if w_res is not None:
+            return w_res.to_php(self.ph_interp)
+        else:
+            return None
+
     def py_store_local_recurse(self, n, py_v):
         ph_scope = self
         while ph_scope is not None:

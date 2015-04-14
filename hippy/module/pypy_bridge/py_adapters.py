@@ -178,6 +178,9 @@ class W_EmbeddedPyCallable(W_InvokeCall):
     def is_py_call(self):
         return True
 
+    def get_wrapped_py_obj(self):
+        return self.w_py_func
+
 class W_PyFuncGlobalAdapter(AbstractFunction):
     _immutable_fields_ = ["w_py_callable"]
 
@@ -290,6 +293,9 @@ class W_PyFuncAdapter(W_InstanceObject):
 
     def get_identifier(self):
         return self.w_py_callable.name.lower()
+
+    def get_wrapped_py_obj(self):
+        return self.w_py_func
 
 k_PyFuncAdapter = def_class('PyFunc', [])
 

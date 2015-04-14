@@ -430,7 +430,8 @@ class TestPyPyBridgeExceptions(BaseTestInterpreter):
                 echo $e->getMessage();
             }
         ''')
-        assert php_space.str_w(output[0]) == "Failed to find Python function or method"
+        err_s = "Method 'f' is not a static Python method"
+        assert php_space.str_w(output[0]) == err_s
 
     def test_except_kwarg_from_php3(self, php_space):
         output = self.run('''
@@ -442,7 +443,7 @@ class TestPyPyBridgeExceptions(BaseTestInterpreter):
                 echo $e->getMessage();
             }
         ''')
-        assert php_space.str_w(output[0]) == "Invalid argument to call_py_func"
+        assert php_space.str_w(output[0]) == "Not a Python callable"
 
     def test_except_kwarg_from_php4(self, php_space):
         output = self.run('''
@@ -553,7 +554,7 @@ class TestPyPyBridgeExceptions(BaseTestInterpreter):
                 echo $e->getMessage();
             }
         ''')
-        err_s = "Positional arguments should be passed as an array with integer keys"
+        err_s = "Bad call_py_func argument specification"
         assert php_space.str_w(output[0]) == err_s
 
     def test_except_kwarg_from_php12(self, php_space):
@@ -569,7 +570,96 @@ class TestPyPyBridgeExceptions(BaseTestInterpreter):
                 echo $e->getMessage();
             }
         ''')
-        err_s = "Keyword arguments should be passed as associative arrays"
+        err_s = "Bad call_py_func argument specification"
+        assert php_space.str_w(output[0]) == err_s
+
+    def test_except_kwarg_from_php13(self, php_space):
+        output = self.run('''
+            class A {
+                function a() {} // not in Python
+            };
+
+            try {
+                call_py_func('A::a', [], []);
+                echo "fail";
+            } catch (BridgeException $e) {
+                echo $e->getMessage();
+            }
+        ''')
+        err_s = "Method 'a' is not a static Python method"
+        assert php_space.str_w(output[0]) == err_s
+
+    def test_except_kwarg_from_php14(self, php_space):
+        output = self.run('''
+            class A {
+            };
+
+            $src = 'def a(): pass'; // not static
+            embed_py_meth("A", $src);
+
+            try {
+                call_py_func('A::a', [], []);
+                echo "fail";
+            } catch (BridgeException $e) {
+                echo $e->getMessage();
+            }
+        ''')
+        err_s = "Method 'a' is not a static Python method"
+        assert php_space.str_w(output[0]) == err_s
+
+    def test_kwarg_from_php15(self, php_space):
+        output = self.run('''
+            $A = 1;
+            try {
+                call_py_func(["A", "f"], [], []);
+                echo "fail";
+            } catch(BridgeException $e) {
+                echo $e->getMessage();
+            }
+        ''')
+        err_s = "Name 'A' is not a class"
+        assert php_space.str_w(output[0]) == err_s
+
+    def test_kwarg_from_php16(self, php_space):
+        output = self.run('''
+            $pysrc = <<<EOD
+            def f():
+                A = 1 # not a class
+                php_src = "function g() { call_py_func('A::k', [], []); }"
+                g = embed_php_func(php_src)
+                return g
+            EOD;
+            $f = embed_py_func($pysrc);
+            $g = $f();
+
+            try {
+                $g();
+                echo "fail";
+            } catch(BridgeException $e) {
+                echo $e->getMessage();
+            }
+        ''')
+        err_s = "Name 'A' is not a class"
+        assert php_space.str_w(output[0]) == err_s
+
+    def test_kwarg_from_php17(self, php_space):
+        output = self.run('''
+            $src = <<<EOD
+            def f(a="a", b="b", c="c"):
+                  return a + b + c
+            EOD;
+
+            $f = embed_py_func_global($src);
+
+            try {
+                // positional arguments with string keys -- bogus
+                call_py_func("f", ["b" => "b"], ["a" => "z"]);
+                echo "fail";
+            } catch(BridgeException $e) {
+                echo $e->getMessage();
+            }
+        ''')
+        err_s = "Bad call_py_func argument specification"
         assert php_space.str_w(output[0]) == err_s
 
     def test_unbound_meth_too_no_self(self, php_space):
