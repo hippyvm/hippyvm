@@ -126,6 +126,12 @@ def main(filename, rest_of_args, cgi, gcdump, debugger_pipes=(-1, -1),
     if py_space is not None:
         py_space.startup() # must be called once prior to use
 
+        # set sys.prefix and sys.exec_prefix to avoid errors when loading modules
+        # XXX to do it properly we need to change this to pypy's location and set
+        # path variables as in pypy/pypy/modules/sys/initpath.py
+        py_space.setitem(py_space.sys.w_dict, py_space.wrap('prefix'), py_space.wrap(""))
+        py_space.setitem(py_space.sys.w_dict, py_space.wrap('exec_prefix'), py_space.wrap(""))
+
     interp = Interpreter(space, py_space=py_space)
 
     try:
