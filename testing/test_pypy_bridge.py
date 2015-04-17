@@ -1502,3 +1502,32 @@ class TestPyPyBridge(BaseTestInterpreter):
         ''')
         assert php_space.int_w(output[0]) == 456
 
+class TestPyPyBridgeInterp(object):
+
+    def test_php_code_cache(self):
+        from pypy.config.pypyoption import get_pypy_config
+        from hippy.interpreter import Interpreter
+        from pypy.config.pypyoption import enable_translationmodules
+        from pypy.objspace.std import StdObjSpace as PyStdObjSpace
+        from hippy.objspace import getspace
+        from pypy.module.__builtin__.hippy_bridge import (
+            _compile_php_func_from_string_cached)
+
+        pypy_config = get_pypy_config(translating=False)
+        py_space = PyStdObjSpace(pypy_config)
+        php_space = getspace()
+        interp = Interpreter(php_space, py_space=py_space)
+
+        src = '<?php function f($a) { return "hello $a"; } ?>'
+
+        # compile same source code twice
+        comp1 = _compile_php_func_from_string_cached(interp, src)
+        comp2 = _compile_php_func_from_string_cached(interp, src)
+
+        # This function however, is an imposter
+        src2 = '<?php function f($a) { return ""; } ?>'
+        comp3 = _compile_php_func_from_string_cached(interp, src2)
+
+        assert comp1 is comp2
+        assert comp1 is not comp3
+        assert comp2 is not comp3
