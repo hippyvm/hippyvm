@@ -900,3 +900,22 @@ EOD;
         ''')
         err_s = "Adapting forbidden Python function"
         assert php_space.str_w(output[0]) == err_s
+
+    def test_embed_php_func_two_funcs(self, php_space):
+        output = self.run('''
+            $pysrc = <<<EOD
+            def comp():
+                php_src = "function f(){}; function g(){};"
+                g = embed_php_func(php_src)
+            EOD;
+
+            $comp = embed_py_func($pysrc);
+            try {
+                $comp();
+                echo "fail";
+            } catch (PyException $e) {
+                echo $e->getMessage();
+            }
+        ''')
+        err_s = "embed_php_func expects source code for a single PHP function"
+        assert php_space.str_w(output[0]) == err_s
