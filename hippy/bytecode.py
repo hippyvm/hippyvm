@@ -55,6 +55,14 @@ class ByteCode(object):
                 self.static_vars[cm] = v
         self.py_scope = None
 
+    def clone(self):
+        # Used by PyHyp PHP bytecode cache.
+        return ByteCode(self.code, self.consts, self.names, self.varnames,
+                        self.late_declarations, self.classes, self.functions,
+                        self.filename, self.sourcelines, self.method_of_class,
+                        self.startlineno, self.bc_mapping, self.name,
+                        self.superglobals, self.this_var_num, self.static_vars)
+
     def getline(self, no):
         try:
             return self.sourcelines[no - 1]
