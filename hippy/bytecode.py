@@ -57,11 +57,11 @@ class ByteCode(object):
 
     def clone(self):
         # Used by PyHyp PHP bytecode cache.
+        # We supply only the positional args since it is only really the
+        # functions that we care for.
         return ByteCode(self.code, self.consts, self.names, self.varnames,
                         self.late_declarations, self.classes, self.functions,
-                        self.filename, self.sourcelines, self.method_of_class,
-                        self.startlineno, self.bc_mapping, self.name,
-                        self.superglobals, self.this_var_num, self.static_vars)
+                        self.filename, self.sourcelines)
 
     def getline(self, no):
         try:
