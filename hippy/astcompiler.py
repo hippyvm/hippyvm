@@ -306,8 +306,8 @@ class CompilerContext(object):
             raise CompilerError("'goto' to undefined label '%s'" % (
                 self.pending_gotos.keys()[0],))
         return ByteCode("".join(self.data), self.consts[:], self.names[:],
-                        self.varnames[:], self.decls,
-                        self.classes, self.functions,
+                        self.varnames[:], self.decls[:],
+                        self.classes, self.functions[:],
                         self.filename, self.sourcelines, self.method_of_class,
                         self.startlineno,
                         self.lineno_map[:], self.name, self.superglobals,

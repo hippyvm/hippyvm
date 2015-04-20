@@ -25,7 +25,9 @@ class ByteCode(object):
                  classes, functions,
                  filename, sourcelines, method_of_class=None,
                  startlineno=0, bc_mapping=None, name='<main>',
-                 superglobals=None, this_var_num=-1, static_vars=None):
+                 superglobals=None, this_var_num=-1, static_vars=None,
+                 cloned_static_vars=None):
+        # Note: Many list arguments are expected to be provably fixed size.
         self.code = code
         self.name = name      # not necessarily lowercase
         self.filename = filename
@@ -37,9 +39,9 @@ class ByteCode(object):
         self.stackdepth = self.count_stack_depth()
         self.var_to_pos = {}
         self.names_to_pos = {}
-        self.late_declarations = late_declarations[:]
+        self.late_declarations = late_declarations
         self.classes = classes[:]
-        self.functions = functions[:]
+        self.functions = functions
         self.method_of_class = method_of_class
         self.bc_mapping = bc_mapping
         for i, v in enumerate(varnames):
@@ -50,18 +52,30 @@ class ByteCode(object):
         self.superglobals = superglobals
         self.this_var_num = this_var_num
         self.static_vars = {}
+
+        # In normal operation, static vars is processed into an internal
+        # representation. When cloning, the transformation has already happened,
+        # and we just want to copy.
+        assert not (static_vars is not None and cloned_static_vars is not None)
         if static_vars is not None:
             for k, (v, cm, no) in static_vars.iteritems():
                 self.static_vars[cm] = v
+        else:
+            self.static_vars = cloned_static_vars
         self.py_scope = None
 
     def clone(self):
         # Used by PyHyp PHP bytecode cache.
-        # We supply only the positional args since it is only really the
-        # functions that we care for.
-        return ByteCode(self.code, self.consts, self.names, self.varnames,
-                        self.late_declarations, self.classes, self.functions,
-                        self.filename, self.sourcelines)
+        return ByteCode(self.code, self.consts[:], self.names[:],
+                        self.varnames[:], self.late_declarations[:],
+                        self.classes[:], self.functions[:],
+                        self.filename, self.sourcelines[:],
+                        method_of_class=self.method_of_class,
+                        startlineno=self.startlineno,
+                        bc_mapping=self.bc_mapping,
+                        name=self.name, superglobals=self.superglobals,
+                        this_var_num=self.this_var_num,
+                        cloned_static_vars=self.static_vars)
 
     def getline(self, no):
         try:

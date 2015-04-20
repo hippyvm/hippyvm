@@ -1531,3 +1531,38 @@ class TestPyPyBridgeInterp(object):
         assert comp1 is comp2
         assert comp1 is not comp3
         assert comp2 is not comp3
+
+    def test_php_code_cache_clone(self):
+        from pypy.config.pypyoption import get_pypy_config
+        from hippy.interpreter import Interpreter
+        from pypy.config.pypyoption import enable_translationmodules
+        from pypy.objspace.std import StdObjSpace as PyStdObjSpace
+        from hippy.objspace import getspace
+        from pypy.module.__builtin__.hippy_bridge import (
+            _compile_php_func_from_string_cached)
+
+        pypy_config = get_pypy_config(translating=False)
+        py_space = PyStdObjSpace(pypy_config)
+        php_space = getspace()
+        interp = Interpreter(php_space, py_space=py_space)
+
+        src = '<?php function f($a) { return "hello $a"; } ?>'
+
+        # compile same source code twice
+        bc1 = _compile_php_func_from_string_cached(interp, src)
+        bc1.py_scope = 1 # would really be a Py_Scope instance.
+        bc2 = bc1.clone()
+
+        check_attrs = ["code", "name", "filename", "startlineno",
+                       "sourcelines", "consts", "names", "varnames",
+                       "stackdepth", "var_to_pos", "names_to_pos",
+                       "late_declarations", "classes", "functions",
+                       "method_of_class", "bc_mapping", "superglobals",
+                       "this_var_num", "static_vars"]
+
+        for name in check_attrs:
+            a1 = getattr(bc1, name)
+            a2 = getattr(bc2, name)
+            assert a1 == a2
+
+        assert bc1.py_scope is not bc2.py_scope
