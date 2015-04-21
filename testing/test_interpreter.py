@@ -54,6 +54,8 @@ class BaseTestInterpreter(object):
     def init_space(self):
         self.space = getspace()
         self.py_space = SHARED_PY_SPACE
+        from hippy.main import setup_pypy_for_pyhyp
+        setup_pypy_for_pyhyp(self.py_space)
         if option.runappdirect:
             self.engine = self.DirectRunner(self.space, self.py_space)
         else:

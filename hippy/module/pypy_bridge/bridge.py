@@ -448,7 +448,6 @@ def call_py_func(interp, w_func_or_w_name, w_args, w_kwargs):
     assert w_py_rv is not None
     return w_py_rv.to_php(interp)
 
-
 from pypy.interpreter.pytraceback import PyTraceback
 class DummyPyTraceback(PyTraceback):
 
