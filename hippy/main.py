@@ -236,6 +236,9 @@ if __name__ == '__main__':
     from pypy.config.pypyoption import enable_translationmodules
     enable_translationmodules(pypy_config)
 
+    # XXX enable CFFI untranslated for debugging -- remove after XXX
+    pypy_config.objspace.usemodules._cffi_backend = True
+
     from pypy.objspace.std import StdObjSpace as PyStdObjSpace
     py_space = PyStdObjSpace(pypy_config)
 
