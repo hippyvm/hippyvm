@@ -170,9 +170,19 @@ class W_PHPGlobalScope(WPy_Root):
         from hippy.module.pypy_bridge.bridge import _raise_php_bridgeexception
         _raise_php_bridgeexception(ph_interp, "Unknown PHP global variable '%s'" % n)
 
+    def descr_set(self, w_py_name, w_py_val):
+        php_space, py_space = self.interp.space, self.interp.py_space
+        frame = self.interp.global_frame
+
+        w_php_val = w_py_val.to_php(self.interp)
+        name = py_space.str_w(w_py_name)
+
+        frame = self.interp.global_frame
+        frame.get_ref_by_name(name).store(w_php_val)
+
 W_PHPGlobalScope.typedef = TypeDef("PHPGlobalScope",
     __getattr__ = interp2app(W_PHPGlobalScope.descr_get),
-    #__setattr__ = interp2app(W_PHPGenericAdapter.descr_set),
+    __setattr__ = interp2app(W_PHPGlobalScope.descr_set),
 )
 
 
