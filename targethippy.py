@@ -138,6 +138,11 @@ def target(driver, args):
     pypy_config.translation.jit = config.translation.jit
     pypy_config.translation.gc = config.translation.gc
 
+    # Copy over make_jobs from hippy.
+    # XXX could do something similar for -O, but benchmark to ensure we don't
+    # affect performance.
+    pypy_config.translation.make_jobs = config.translation.make_jobs
+
     merge_configs(config, pypy_config, "Hippy", "PyPy")
 
     # XXX Turn continuations on. Or we get:
