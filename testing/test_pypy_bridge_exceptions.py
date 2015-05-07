@@ -982,7 +982,6 @@ EOD;
         err_s = "Wrapped PHP instance has no attribute 'secret'"
         assert php_space.str_w(output[0]) == err_s
 
-    @pytest.mark.xfail
     def test_call_private_method_from_py_func(self, php_space):
         output = self.run('''
         {
@@ -1007,3 +1006,72 @@ EOD;
         ''')
         err_s = "Wrapped PHP instance has no attribute 'secret'"
         assert php_space.str_w(output[0]) == err_s
+
+    def test_get_private_attr_from_subclass_in_py(self, php_space):
+        output = self.run('''
+        {
+        class A {
+            private $secret = 454;
+        }
+
+        class B extends A{};
+
+        $pysrc = <<<EOD
+        def get_secret(self):
+            return self.secret
+        EOD;
+        embed_py_meth("B", $pysrc);
+
+        $b = new B();
+        try {
+            echo $b->get_secret();
+        } catch(PyException $e) {
+            echo $e->getMessage();
+        }
+        }
+        ''')
+        err_s = "Wrapped PHP instance has no attribute 'secret'"
+        assert php_space.str_w(output[0]) == err_s
+
+    def test_get_private_attr_from_py_func(self, php_space):
+        errs = ["Fatal error: Cannot access private property A::$secret"]
+        output = self.run('''
+        {
+        class A {
+            private $secret = 454;
+        }
+
+        $pysrc = <<<EOD
+        def get_secret():
+            a = A();
+            return a.secret
+        EOD;
+        embed_py_func_global($pysrc);
+
+        get_secret();
+        }
+        ''', expected_warnings=errs)
+
+    def test_set_private_attr_from_py_func(self, php_space):
+        errs = ["Fatal error: Cannot access private property A::$secret"]
+        output = self.run('''
+        {
+        class A {
+            private $secret = 454;
+        }
+
+        $pysrc = <<<EOD
+        def set_secret():
+            a = A();
+            a.secret = 555;
+            return a.secret
+        EOD;
+        embed_py_func_global($pysrc);
+
+        try {
+            echo set_secret();
+        } catch(PyException $e) {
+            echo $e->getMessage();
+        }
+        }
+        ''', errs)
