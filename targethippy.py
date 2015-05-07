@@ -16,8 +16,8 @@ class ConfigMergeError(Exception): pass
 #     but 'cpyext,main' in 'PyPy'
 # 'translation.withsmallfuncsets' is '5' in 'Hippy' but '0' in 'PyPy'
 MERGE_RESOLUTIONS = {
-    'translation.secondaryentrypoints' : 'cpyext,main', # PyPy
-    'translation.withsmallfuncsets' : 5,                # Hippy
+#    'translation.secondaryentrypoints' : 'cpyext,main', # PyPy
+#    'translation.withsmallfuncsets' : 5,                # Hippy
 }
 
 def _pstr(path_list):
@@ -90,7 +90,6 @@ def target(driver, args):
     parser = to_optparse(config, parserkwargs={'usage': SUPPRESS_USAGE })
     parser.parse_args(args)
 
-
     from hippy.hippyoption import (
         OPTIONAL_EXTS, is_optional_extension_enabled, HippyOptionError)
 
@@ -130,25 +129,38 @@ def target(driver, args):
                 "Try --opt=2 or --opt=jit, or equivalently -O2 or -Ojit .")
 
     # set up the objspace optimizations based on the --opt argument
-    from pypy.config.pypyoption import set_pypy_opt_level
-    set_pypy_opt_level(pypy_config, translateconfig.opt)
+    #from pypy.config.pypyoption import set_pypy_opt_level
+    #set_pypy_opt_level(pypy_config, translateconfig.opt)
+
+    config.translation.secondaryentrypoints = \
+            pypy_config.translation.secondaryentrypoints
 
     # JIT/GC enablement should mirror from hippy
     # (just to prevent merge conflicts)
-    pypy_config.translation.jit = config.translation.jit
-    pypy_config.translation.gc = config.translation.gc
+    #pypy_config.translation.jit = config.translation.jit
+    #pypy_config.translation.gc = config.translation.gc
+    from rpython.config.translationoption import set_opt_level
+    set_opt_level(pypy_config, translateconfig.opt)
 
-    # Copy over make_jobs from hippy.
-    # XXX could do something similar for -O, but benchmark to ensure we don't
-    # affect performance.
+    # Copy over some options that should be the same in both configs
     pypy_config.translation.make_jobs = config.translation.make_jobs
+    if config.translation.output is not None:
+        pypy_config.translation.output = config.translation.output
 
     merge_configs(config, pypy_config, "Hippy", "PyPy")
 
     # XXX Turn continuations on. Or we get:
     # AssertionError: stacklet: you have to translate with --continuation
     # Should be fixed properly someday.
-    config.translation.continuation = True
+    #config.translation.continuation = True
+    #config.translation.continuation = True
+    #pypy_config.translation.continuation = True
+
+    #setattr(config.translation, "continuation", True)
+    #setattr(pypy_config.translation, "continuation", True)
+    config.translation.setoption("continuation", True, who="default")
+    pypy_config.translation.setoption("continuation", True, who="default")
+
 
     # PyPy needs threads
     config.translation.thread = True
