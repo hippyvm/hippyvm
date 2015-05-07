@@ -165,7 +165,7 @@ class Interpreter(object):
     """ Interpreter keeps the state of the current run. There will be a new
     interpreter instance per run of script
     """
-    _immutable_fields_ = ['debugger?', 'globals']
+    _immutable_fields_ = ['debugger?', 'globals', 'py_space']
     cgi = 0
     web_config = None
     debugger = None

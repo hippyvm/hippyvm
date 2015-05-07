@@ -44,17 +44,36 @@ class W_PHPGenericAdapter(W_Root):
             return self.w_php_obj is other.w_php_obj
         return False
 
-    @unwrap_spec(name=str)
-    def descr_get(self, name):
-        """Python is asking for an attribute of a proxied PHP object"""
+    def _determine_ctxkls(self, py_frame=None):
+        # determine (from the top Python frame) to context class
+        py_space = self.interp.py_space
+
+        if py_frame is None:
+            # Slow! Try to pass frame where possible.
+            py_ec = py_space.getexecutioncontext()
+            py_frame = py_ec.topframeref()
+
+        py_code = py_frame.getcode()
+
+        # we stashed this (or left it None) at Python function/method compilation time.
+        w_contextclass = py_code.php_contextclass
+        return jit.promote(w_contextclass) # PHP classes dont change once created.
+
+    def descr_get(self, w_name):
+        # avoid calling, as it doesn't pass down the py_frame.
+        return self._descr_get(w_name)
+
+    def _descr_get(self, w_name, py_frame=None):
+        """Python is asking for an attribute of a proxied PHP object
+        Wherever possible pass in the py_frame, as it avoids expensive
+        operations around the executioncontext"""
         interp = self.interp
         php_space = interp.space
         py_space = interp.py_space
 
+        name = py_space.str_w(w_name)
         w_php_val = self.w_php_obj
-        # PHP access modifiers are ignored when attributes are
-        # accessed from Python.
-        w_contextclass = w_php_val.getclass()
+        w_contextclass = self._determine_ctxkls(py_frame)
 
         # When we're looking up an attribute, we're in a sticky situation if we
         # look up an array and then mutate it. Calling getattr() would
@@ -68,6 +87,7 @@ class W_PHPGenericAdapter(W_Root):
         # we add a knob to getattr_ref called only_ref_arrays which only adds a
         # new reference if the attribute we're looking for happens to be an
         # array.
+
         w_php_target = w_php_val.getattr_ref(interp, name, w_contextclass,
                                          fail_with_none=True, ref_only_arrays=True)
         if w_php_target is None:
@@ -82,15 +102,17 @@ class W_PHPGenericAdapter(W_Root):
 
         return w_php_target.to_py(interp)
 
-    @unwrap_spec(name=str)
-    def descr_set(self, name, w_obj):
+    def descr_set(self, w_name, w_newvalue):
+        # avoid calling, as it doesn't pass down the py_frame.
+        return self._descr_set(w_name, w_newvalue)
+
+    def _descr_set(self, w_name, w_obj, py_frame=None):
         interp = self.interp
         py_space = self.interp.py_space
 
+        name = py_space.str_w(w_name)
         w_php_val = self.w_php_obj
-        # PHP access modifiers are ignored when attributes are
-        # accessed from Python.
-        w_contextclass = w_php_val.getclass()
+        w_contextclass = self._determine_ctxkls(py_frame)
         w_php_val.setattr(interp, name, w_obj.to_php(interp), w_contextclass)
 
         return py_space.w_None

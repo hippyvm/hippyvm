@@ -374,6 +374,14 @@ class ClassBase(AbstractFunction, AccessMixin):
 
         assert not self.is_subclassed # XXX
 
+        # store a backref to the class in the Python bytecode.
+        # This will be used to decide contextclass for calls from
+        # Python funcs/methods to PHP methods.
+        w_py_func = w_php_func_adapt.w_py_callable
+        from pypy.interpreter.function import Function as PyFunction
+        assert isinstance(w_py_func, PyFunction)
+        w_py_func.getcode().php_contextclass = self
+
         flags = w_php_func_adapt.php_static | w_php_func_adapt.php_access
         w_py_meth = Method(w_php_func_adapt, flags, self)
         self.methods[name.lower()] = w_py_meth

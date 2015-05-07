@@ -53,8 +53,13 @@ class AbstractAttribute(object):
         return l
 
     def get_storage(self, old_storage):
-        res = [None] * self.get_next_index()
-        res[:len(old_storage)] = old_storage
+        jit.promote(len(old_storage))
+        next_index = self.get_next_index()
+        next_index_m1 = next_index - 1
+        assert next_index_m1 >= 0
+        res = [None] * next_index
+        assert len(old_storage) == next_index - 1
+        res[:next_index_m1] = old_storage
         return res
 
 class Attribute(AbstractAttribute):

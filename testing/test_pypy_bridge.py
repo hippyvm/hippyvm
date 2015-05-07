@@ -1626,6 +1626,124 @@ class TestPyPyBridge(BaseTestInterpreter):
         ''')
         assert php_space.int_w(output[0]) == 31415
 
+    def test_set_protected_attr_from_same_class_in_py(self, php_space):
+        output = self.run('''
+        {
+        class A {
+            protected $secret = 454;
+        }
+
+        $pysrc = <<<EOD
+        def set_secret(self):
+            self.secret = 555
+            return self.secret
+        EOD;
+        embed_py_meth("A", $pysrc);
+
+        $a = new A();
+        echo $a->set_secret();
+        }
+        ''')
+        assert php_space.int_w(output[0]) == 555
+
+    def test_get_protected_attr_from_same_class_in_py(self, php_space):
+        output = self.run('''
+        {
+        class A {
+            protected $secret = 454;
+        }
+
+        $pysrc = <<<EOD
+        def get_secret(self):
+            return self.secret
+        EOD;
+        embed_py_meth("A", $pysrc);
+
+        $a = new A();
+        echo $a->get_secret();
+        }
+        ''')
+        assert php_space.int_w(output[0]) == 454
+
+    def test_set_protected_attr_from_subclass_in_py(self, php_space):
+        output = self.run('''
+        {
+        class A {
+            protected $secret = 454;
+        }
+
+        class B extends A{};
+
+        $pysrc = <<<EOD
+        def set_secret(self):
+            self.secret = 555
+            return self.secret
+        EOD;
+        embed_py_meth("B", $pysrc);
+
+        $b = new B();
+        echo $b->set_secret();
+        }
+        ''')
+        assert php_space.int_w(output[0]) == 555
+
+    def test_get_protected_attr_from_subclass_in_py(self, php_space):
+        output = self.run('''
+        {
+        class A {
+            protected $secret = 454;
+        }
+
+        class B extends A{};
+
+        $pysrc = <<<EOD
+        def get_secret(self):
+            return self.secret
+        EOD;
+        embed_py_meth("B", $pysrc);
+
+        $b = new B();
+        echo $b->get_secret();
+        }
+        ''')
+        assert php_space.int_w(output[0]) == 454
+
+    # This is quite unintuitive
+    # If you set a private attr which you don't have access to, you make a
+    # new field of the same name in the superclass.
+    def test_set_private_attr_from_subclass_in_py(self, php_space):
+        output = self.run('''
+        {
+        class A {
+            private $secret = 454;
+
+            function get_secret_a() {
+                return $this->secret;
+            }
+        }
+
+        class B extends A{
+            function get_secret_b() {
+                return $this->secret;
+            }
+        };
+
+        $pysrc = <<<EOD
+        def set_secret(self):
+            self.secret = 555
+            return self.secret
+        EOD;
+        embed_py_meth("B", $pysrc);
+
+        $b = new B();
+        $b->set_secret(); // will not fail!
+        echo $b->get_secret_a();
+        echo $b->get_secret_b();
+        }
+        ''')
+        assert php_space.int_w(output[0]) == 454
+        assert php_space.int_w(output[1]) == 555
+
 
 class TestPyPyBridgeInterp(object):
 
