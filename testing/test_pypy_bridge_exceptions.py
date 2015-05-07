@@ -954,3 +954,56 @@ EOD;
         ''')
         err_s = "Failed to find Python function or method"
         assert php_space.str_w(output[0]) == err_s
+
+    def test_call_private_method_from_subclass_in_py(self, php_space):
+        output = self.run('''
+        {
+        class A {
+            private function secret() { return 31415; }
+        }
+
+        class B extends A {}
+
+        $pysrc = <<<EOD
+        def get_secret(self):
+            return self.secret()
+        EOD;
+        embed_py_meth("B", $pysrc);
+
+        $b = new B();
+        try {
+            $b->get_secret();
+            echo "failed";
+        } catch (PyException $e) {
+            echo $e->getMessage();
+        }
+        }
+        ''')
+        err_s = "Wrapped PHP instance has no attribute 'secret'"
+        assert php_space.str_w(output[0]) == err_s
+
+    @pytest.mark.xfail
+    def test_call_private_method_from_py_func(self, php_space):
+        output = self.run('''
+        {
+        class A {
+            private function secret() { return 31415; }
+        }
+
+        $pysrc = <<<EOD
+        def get_secret():
+            a = A()
+            return a.secret()
+        EOD;
+        embed_py_func_global($pysrc);
+
+        try {
+            $s = get_secret();
+            echo $s;
+        } catch (PyException $e) {
+            echo $e->getMessage();
+        }
+        }
+        ''')
+        err_s = "Wrapped PHP instance has no attribute 'secret'"
+        assert php_space.str_w(output[0]) == err_s

@@ -1567,6 +1567,66 @@ class TestPyPyBridge(BaseTestInterpreter):
         ''')
         assert php_space.int_w(output[0]) == 1212
 
+    def test_call_private_method_from_same_class_in_py(self, php_space):
+        output = self.run('''
+        {
+        class A {
+            private function secret() { return 31415; }
+        }
+
+        $pysrc = <<<EOD
+        def get_secret(self):
+            return self.secret()
+        EOD;
+        embed_py_meth("A", $pysrc);
+
+        $a = new A();
+        echo $a->get_secret();
+        }
+        ''')
+        assert php_space.int_w(output[0]) == 31415
+
+    def test_call_protected_method_from_same_class_in_py(self, php_space):
+        output = self.run('''
+        {
+        class A {
+            protected function secret() { return 31415; }
+        }
+
+        $pysrc = <<<EOD
+        def get_secret(self):
+            return self.secret()
+        EOD;
+        embed_py_meth("A", $pysrc);
+
+        $a = new A();
+        echo $a->get_secret();
+        }
+        ''')
+        assert php_space.int_w(output[0]) == 31415
+
+    def test_call_protected_method_from_subclass_in_py(self, php_space):
+        output = self.run('''
+        {
+        class A {
+            protected function secret() { return 31415; }
+        }
+
+        class B extends A {}
+
+        $pysrc = <<<EOD
+        def get_secret(self):
+            return self.secret()
+        EOD;
+        embed_py_meth("B", $pysrc);
+
+        $b = new B();
+        echo $b->get_secret();
+        }
+        ''')
+        assert php_space.int_w(output[0]) == 31415
+
+
 class TestPyPyBridgeInterp(object):
 
     def test_php_code_cache(self):
