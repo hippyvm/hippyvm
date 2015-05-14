@@ -15,7 +15,7 @@ class TestPyPyBridgeMeta(BaseTestInterpreter):
             class A: pass
             return A
         EOD;
-        embed_py_func_global($src);
+        compile_py_func_global($src);
         $a = f();
         echo get_class($a);
         ''')

@@ -12,7 +12,7 @@ class TestPyPyBridgeSpecialMethods(BaseTestInterpreter):
             }
 
             $src = "def f(): return str(C())";
-            $f = embed_py_func($src);
+            $f = compile_py_func($src);
 
             echo($f());
         ''')

@@ -11,7 +11,7 @@ class TestPyPyBridgeArrayConversions(BaseTestInterpreter):
             return [1, 2, ["a", "b", "c"]]
         EOD;
 
-        $make = embed_py_func($src);
+        $make = compile_py_func($src);
         $arr = $make();
 
         echo count($arr);
@@ -39,7 +39,7 @@ class TestPyPyBridgeArrayConversions(BaseTestInterpreter):
             return [1, 2, ["a", "b", "c"]]
         EOD;
 
-        $make = embed_py_func($src);
+        $make = compile_py_func($src);
         $arr1 = $make();
         $arr2 = array(1, 2, array("a", "b", "c"));
 
@@ -53,7 +53,7 @@ class TestPyPyBridgeArrayConversions(BaseTestInterpreter):
             def f(): return [1,2,3]
             EOD;
 
-            $f = embed_py_func($src);
+            $f = compile_py_func($src);
             $ar = $f();
             echo(count($ar));
         ''')
@@ -65,7 +65,7 @@ class TestPyPyBridgeArrayConversions(BaseTestInterpreter):
             def f(): return [3, 2, 1]
             EOD;
 
-            $f = embed_py_func($src);
+            $f = compile_py_func($src);
             $ar = $f();
 
             for ($i = 0; $i < 3; $i++) {
@@ -78,7 +78,7 @@ class TestPyPyBridgeArrayConversions(BaseTestInterpreter):
     def test_cannot_getitem_str_on_py_list_in_php(self, php_space):
         output = self.run('''
             $src = "def f(): return [3, 2, 1]";
-            $f = embed_py_func($src);
+            $f = compile_py_func($src);
 
             $ar = $f();
             try {
@@ -93,7 +93,7 @@ class TestPyPyBridgeArrayConversions(BaseTestInterpreter):
     def test_cannot_setitem_str_on_py_list_in_php(self, php_space):
         output = self.run('''
             $src = "def f(): return [3, 2, 1]";
-            $f = embed_py_func($src);
+            $f = compile_py_func($src);
 
             $ar = $f();
             try {
@@ -111,7 +111,7 @@ class TestPyPyBridgeArrayConversions(BaseTestInterpreter):
             def f(): return [3, 2, 1]
             EOD;
 
-            $f = embed_py_func($src);
+            $f = compile_py_func($src);
             $ar = $f();
 
             foreach ($ar as $i) {
@@ -127,7 +127,7 @@ class TestPyPyBridgeArrayConversions(BaseTestInterpreter):
             def f(): return ["zero", "one", "two"]
             EOD;
 
-            $f = embed_py_func($src);
+            $f = compile_py_func($src);
             $ar = $f();
 
             foreach ($ar as $k => $v) {
@@ -145,7 +145,7 @@ class TestPyPyBridgeArrayConversions(BaseTestInterpreter):
             def f(): return ["zero", "one", "two"]
             EOD;
 
-            $f = embed_py_func($src);
+            $f = compile_py_func($src);
             $ar = $f();
 
             $ar[1] = "three";
@@ -163,7 +163,7 @@ class TestPyPyBridgeArrayConversions(BaseTestInterpreter):
             def f(): return ["zero", "one", "two"]
             EOD;
 
-            $f = embed_py_func($src);
+            $f = compile_py_func($src);
             $ar1 = $f();
             $ar2 = $ar1;
 
@@ -181,7 +181,7 @@ class TestPyPyBridgeArrayConversions(BaseTestInterpreter):
             def f(): return ["zero", "one", "two"]
             EOD;
 
-            $f = embed_py_func($src);
+            $f = compile_py_func($src);
             $ar1 = $f();
             $ar2 = $ar1;
 
@@ -199,7 +199,7 @@ class TestPyPyBridgeArrayConversions(BaseTestInterpreter):
             def f(): return { "aa" : "a", "bb" : "b", "cc" : "c" }
             EOD;
 
-            $f = embed_py_func($src);
+            $f = compile_py_func($src);
             $ar1 = $f();
             $ar2 = $ar1;
 
@@ -217,7 +217,7 @@ class TestPyPyBridgeArrayConversions(BaseTestInterpreter):
             def f(): return { "aa" : "a", "bb" : "b", "cc" : "c" }
             EOD;
 
-            $f = embed_py_func($src);
+            $f = compile_py_func($src);
             $ar1 = $f();
             $ar2 = $ar1;
 
@@ -235,7 +235,7 @@ class TestPyPyBridgeArrayConversions(BaseTestInterpreter):
             def f(): return ["zero", "one", "two"]
             EOD;
 
-            $f = embed_py_func($src);
+            $f = compile_py_func($src);
             $ar = $f();
 
             $ar[] = "three";
@@ -254,7 +254,7 @@ class TestPyPyBridgeArrayConversions(BaseTestInterpreter):
             def f(): return {"a" : "b", "c" : "d", "e" : "f"}
             EOD;
 
-            $f = embed_py_func($src);
+            $f = compile_py_func($src);
             $ar = $f();
             echo(count($ar));
         ''')
@@ -266,7 +266,7 @@ class TestPyPyBridgeArrayConversions(BaseTestInterpreter):
             def f(): return {"a" : "b", "c" : "d", "e" : "f"}
             EOD;
 
-            $f = embed_py_func($src);
+            $f = compile_py_func($src);
             $ar = $f();
             echo($ar["a"]);
             echo($ar["c"]);
@@ -282,7 +282,7 @@ class TestPyPyBridgeArrayConversions(BaseTestInterpreter):
             def f(): return {6 : "a", 7 : "b", 8 : "c"}
             EOD;
 
-            $f = embed_py_func($src);
+            $f = compile_py_func($src);
             $ar = $f();
             echo($ar[8]);
             echo($ar[7]);
@@ -298,7 +298,7 @@ class TestPyPyBridgeArrayConversions(BaseTestInterpreter):
             def f(): return {"x" : 10, 999 : 14, "z" : -1}
             EOD;
 
-            $f = embed_py_func($src);
+            $f = compile_py_func($src);
             $ar = $f();
 
             foreach ($ar as $i) {
@@ -316,7 +316,7 @@ class TestPyPyBridgeArrayConversions(BaseTestInterpreter):
             def f(): return {"x" : 10, 999 : 14, "z" : -1}
             EOD;
 
-            $f = embed_py_func($src);
+            $f = compile_py_func($src);
             $ar = $f();
 
             foreach ($ar as $k => $v) {
@@ -334,7 +334,7 @@ class TestPyPyBridgeArrayConversions(BaseTestInterpreter):
             def f(): return { 0 : "one", 1 : "two", 2 : "three" }
             EOD;
 
-            $f = embed_py_func($src);
+            $f = compile_py_func($src);
             $ar = $f();
 
             $ar[1] = "bumble";
@@ -352,7 +352,7 @@ class TestPyPyBridgeArrayConversions(BaseTestInterpreter):
             def f(): return { 0 : "one", 1 : "two", 2 : "three" }
             EOD;
 
-            $f = embed_py_func($src);
+            $f = compile_py_func($src);
             $ar = $f();
 
             $ar["x"] = "bumble";
@@ -372,7 +372,7 @@ class TestPyPyBridgeArrayConversions(BaseTestInterpreter):
             def f(): return { "one" : "one", "two" : "two", "three" : "three" }
             EOD;
 
-            $f = embed_py_func($src);
+            $f = compile_py_func($src);
             $ar = $f();
 
             $ar["two"] = "bumble";
@@ -391,7 +391,7 @@ class TestPyPyBridgeArrayConversions(BaseTestInterpreter):
             def f(): return { "x" : "one", "y" : "two", "z" : "three" }
             EOD;
 
-            $f = embed_py_func($src);
+            $f = compile_py_func($src);
             $ar = $f();
 
             $ar[] = "bumble"; # ?!?!
@@ -401,7 +401,7 @@ class TestPyPyBridgeArrayConversions(BaseTestInterpreter):
     def test_array_type_over_php_py_boundary(self, php_space):
         output = self.run('''
             $src = "def f(a): return type(a) == dict";
-            $f = embed_py_func($src);
+            $f = compile_py_func($src);
 
             $in = array("my", "array", 2, 3);
 
@@ -412,7 +412,7 @@ class TestPyPyBridgeArrayConversions(BaseTestInterpreter):
     def test_array_type_over_php_py_boundary2(self, php_space):
         output = self.run('''
             $src = "def f(a): return type(a.as_list()) == list";
-            $f = embed_py_func($src);
+            $f = compile_py_func($src);
 
             $in = array(1, 2, 4, 8, 16);
 
@@ -432,7 +432,7 @@ class TestPyPyBridgeArrayConversions(BaseTestInterpreter):
                     return "fail"
             EOD;
 
-            $f = embed_py_func($src);
+            $f = compile_py_func($src);
             $in = array("a" => 1); // mixed keys
             echo($f($in));
         ''')
@@ -453,7 +453,7 @@ class TestPyPyBridgeArrayConversions(BaseTestInterpreter):
                 return "fail"
             EOD;
 
-            $f = embed_py_func($src);
+            $f = compile_py_func($src);
             $in = array(1, 2, 3); // int keys
             echo($f($in));
         ''')
@@ -467,7 +467,7 @@ class TestPyPyBridgeArrayConversions(BaseTestInterpreter):
     def test_php_empty_array_len_in_python(self, php_space):
         output = self.run('''
             $src = "def f(a): return len(a)";
-            $f = embed_py_func($src);
+            $f = compile_py_func($src);
             $in = array();
             echo($f($in));
         ''')
@@ -476,7 +476,7 @@ class TestPyPyBridgeArrayConversions(BaseTestInterpreter):
     def test_php_int_key_array_len_in_python(self, php_space):
         output = self.run('''
             $src = "def f(a): return len(a.as_list())";
-            $f = embed_py_func($src);
+            $f = compile_py_func($src);
             $in = array("an", "intkeyed", "array");
             echo($f($in));
         ''')
@@ -485,7 +485,7 @@ class TestPyPyBridgeArrayConversions(BaseTestInterpreter):
     def test_php_mixed_key_array_len_in_python(self, php_space):
         output = self.run('''
             $src = "def f(ary): return len(ary)";
-            $f = embed_py_func($src);
+            $f = compile_py_func($src);
             $in = array("a" => 1, "b" => "mixed-key", "c" => "array");
             echo($f($in));
         ''')
@@ -494,7 +494,7 @@ class TestPyPyBridgeArrayConversions(BaseTestInterpreter):
     def test_php_int_key_array_vals_in_python(self, php_space):
         output = self.run('''
             $src = "def f(ary, idx): return ary[idx]";
-            $f = embed_py_func($src);
+            $f = compile_py_func($src);
             $in = array("an", "intkeyed", "array");
 
             echo($f($in, 0));
@@ -513,7 +513,7 @@ class TestPyPyBridgeArrayConversions(BaseTestInterpreter):
                 return ls[idx]
             EOD;
 
-            $f = embed_py_func($src);
+            $f = compile_py_func($src);
             $in = array("an", "intkeyed", "array");
 
             echo($f($in, 0));
@@ -527,7 +527,7 @@ class TestPyPyBridgeArrayConversions(BaseTestInterpreter):
     def test_php_int_key_array_len_in_python_as_list(self, php_space):
         output = self.run('''
             $src = "def f(ary): return len(ary.as_list())";
-            $f = embed_py_func($src);
+            $f = compile_py_func($src);
             $in = array("an", "intkeyed", "array");
             echo($f($in));
         ''')
@@ -536,7 +536,7 @@ class TestPyPyBridgeArrayConversions(BaseTestInterpreter):
     def test_php_mixed_key_array_vals_in_python(self, php_space):
         output = self.run('''
             $src = "def f(ary, idx): return ary[idx]";
-            $f = embed_py_func($src);
+            $f = compile_py_func($src);
             $in = array("a" => 1, "b" => 22, "c" => 333);
 
             echo($f($in, "a"));
@@ -557,7 +557,7 @@ class TestPyPyBridgeArrayConversions(BaseTestInterpreter):
                 return "|".join(ret)
             EOD;
 
-            $f = embed_py_func($src);
+            $f = compile_py_func($src);
             $in = array("a" => 1, "b" => 22, "c" => 333);
             echo($f($in));
         ''')
@@ -571,7 +571,7 @@ class TestPyPyBridgeArrayConversions(BaseTestInterpreter):
                 return "|".join(ret)
             EOD;
 
-            $f = embed_py_func($src);
+            $f = compile_py_func($src);
             $in = array("a" => 1, "b" => 22, "c" => 333);
             echo($f($in));
         ''')
@@ -585,7 +585,7 @@ class TestPyPyBridgeArrayConversions(BaseTestInterpreter):
                 return "|".join(ret)
             EOD;
 
-            $f = embed_py_func($src);
+            $f = compile_py_func($src);
             $in = array("a" => 1, "b" => 22, "c" => 333);
             echo($f($in));
         ''')
@@ -601,7 +601,7 @@ class TestPyPyBridgeArrayConversions(BaseTestInterpreter):
                 return "|".join(ret)
             EOD;
 
-            $f = embed_py_func($src);
+            $f = compile_py_func($src);
             $in = array(2, 1, 0);
             echo($f($in));
         ''')
@@ -615,7 +615,7 @@ class TestPyPyBridgeArrayConversions(BaseTestInterpreter):
                 return "|".join(ret)
             EOD;
 
-            $f = embed_py_func($src);
+            $f = compile_py_func($src);
             $in = array("a", "b", "c");
             echo($f($in));
         ''')
@@ -629,7 +629,7 @@ class TestPyPyBridgeArrayConversions(BaseTestInterpreter):
                 return "|".join(ret)
             EOD;
 
-            $f = embed_py_func($src);
+            $f = compile_py_func($src);
             $in = array("x", "y", "z");
             echo($f($in));
         ''')
@@ -643,7 +643,7 @@ class TestPyPyBridgeArrayConversions(BaseTestInterpreter):
                 return ary
             EOD;
 
-            $f= embed_py_func($src);
+            $f= compile_py_func($src);
             $in = array("x", "y", "z");
             $out = $f($in);
             echo $out["x"];
@@ -659,7 +659,7 @@ class TestPyPyBridgeArrayConversions(BaseTestInterpreter):
                 return ary_l
             EOD;
 
-            $f = embed_py_func($src);
+            $f = compile_py_func($src);
             $in = array("x", "y", "z");
             $out = $f($in);
             echo $out[3];
@@ -679,7 +679,7 @@ class TestPyPyBridgeArrayConversions(BaseTestInterpreter):
                     return False
             EOD;
 
-            $f = embed_py_func($src);
+            $f = compile_py_func($src);
             echo($f());
         ''')
         assert php_space.is_true(output[0])
@@ -695,7 +695,7 @@ class TestPyPyBridgeArrayConversions(BaseTestInterpreter):
                     assert r[i] == i + 1
             EOD;
 
-            $f = embed_py_func($src);
+            $f = compile_py_func($src);
             $f();
         ''')
         # will fail if py assert raises
@@ -711,7 +711,7 @@ class TestPyPyBridgeArrayConversions(BaseTestInterpreter):
                 assert r[0] == 666
             EOD;
 
-            $f = embed_py_func($src);
+            $f = compile_py_func($src);
             $f();
         ''')
         # will fail if py assert raises
@@ -726,7 +726,7 @@ class TestPyPyBridgeArrayConversions(BaseTestInterpreter):
                 return len(r)
             EOD;
 
-            $f = embed_py_func($src);
+            $f = compile_py_func($src);
             echo($f());
         ''')
         assert php_space.int_w(output[0]) == 3
@@ -741,7 +741,7 @@ class TestPyPyBridgeArrayConversions(BaseTestInterpreter):
                 return list(r.iterkeys())
             EOD;
 
-            $f = embed_py_func($src);
+            $f = compile_py_func($src);
             $a = $f();
             echo $a[0];
             echo $a[1];
@@ -761,7 +761,7 @@ class TestPyPyBridgeArrayConversions(BaseTestInterpreter):
                 return list(r.itervalues())
             EOD;
 
-            $f = embed_py_func($src);
+            $f = compile_py_func($src);
             $a = $f();
             echo $a[0];
             echo $a[1];
@@ -781,7 +781,7 @@ class TestPyPyBridgeArrayConversions(BaseTestInterpreter):
                 return [ "%s%s" % (k, v) for k, v in r.iteritems() ]
             EOD;
 
-            $f = embed_py_func($src);
+            $f = compile_py_func($src);
             $a = $f();
             echo $a[0];
             echo $a[1];
@@ -803,7 +803,7 @@ class TestPyPyBridgeArrayConversions(BaseTestInterpreter):
                 return r_l
             EOD;
 
-            $f = embed_py_func($src);
+            $f = compile_py_func($src);
             $lst = $f();
             for ($i = 0; $i < 3; $i++) {
                 echo $lst[$i];
@@ -831,7 +831,7 @@ class TestPyPyBridgeArrayConversions(BaseTestInterpreter):
                 except StopIteration:
                     return "ok"
             EOD;
-            $f = embed_py_func($src);
+            $f = compile_py_func($src);
             echo($f());
         ''')
         assert php_space.str_w(output[0]) == "ok"
@@ -847,15 +847,15 @@ class TestPyPyBridgeArrayConversions(BaseTestInterpreter):
                     s.append(i)
                 return "".join(s)
             EOD;
-            $f = embed_py_func($src);
+            $f = compile_py_func($src);
             echo($f());
         ''')
         assert php_space.str_w(output[0]) == "abc"
 
     def test_str_of_py_list_passed_to_php_and_back(self, php_space):
         output = self.run('''
-            $mk = embed_py_func("def mk(): return [1,2,3]");
-            $str_ary = embed_py_func("def str_ary(a): return str(a)");
+            $mk = compile_py_func("def mk(): return [1,2,3]");
+            $str_ary = compile_py_func("def str_ary(a): return str(a)");
 
             $x = $mk();
             $s = $str_ary($x);
@@ -869,7 +869,7 @@ class TestPyPyBridgeArrayConversions(BaseTestInterpreter):
             def sd(ary, key, default):
                 return ary.setdefault(key, default)
             EOD;
-            $sd = embed_py_func($src);
+            $sd = compile_py_func($src);
 
             $ary = array("x" => "y");
             echo $sd($ary, "x", "k");
@@ -884,7 +884,7 @@ class TestPyPyBridgeArrayConversions(BaseTestInterpreter):
             def createarray():
                 return {0: "a", 1: "b", 32: "c", 3: "d"}
             EOD;
-            $ca = embed_py_func($src);
+            $ca = compile_py_func($src);
 
             $ary = $ca();
             $ary[] = "item";
@@ -907,7 +907,7 @@ class TestPyPyBridgeArrayConversions(BaseTestInterpreter):
             def createarray():
                 return {1: "a", 2: "b"}
             EOD;
-            $ca = embed_py_func($src);
+            $ca = compile_py_func($src);
 
             $ary = $ca();
             try {
@@ -925,7 +925,7 @@ class TestPyPyBridgeArrayConversions(BaseTestInterpreter):
             def createlist():
                 return [1,2,3]
             EOD;
-            $ca = embed_py_func($src);
+            $ca = compile_py_func($src);
 
             $ary = $ca();
             $ary[] = "c";
@@ -947,7 +947,7 @@ class TestPyPyBridgeArrayConversions(BaseTestInterpreter):
             def createdict():
                 return {1: "a", 2: "b"}
             EOD;
-            $ca = embed_py_func($src);
+            $ca = compile_py_func($src);
             $ary = $ca();
 
             try {
@@ -965,7 +965,7 @@ class TestPyPyBridgeArrayConversions(BaseTestInterpreter):
             def createlist():
                 return [1,2,3]
             EOD;
-            $ca = embed_py_func($src);
+            $ca = compile_py_func($src);
             $ary = $ca();
 
             echo end($ary);
@@ -984,7 +984,7 @@ class TestPyPyBridgeArrayConversions(BaseTestInterpreter):
             def createlist():
                 return []
             EOD;
-            $ca = embed_py_func($src);
+            $ca = compile_py_func($src);
             $ary = $ca();
 
             echo end($ary);
@@ -997,7 +997,7 @@ class TestPyPyBridgeArrayConversions(BaseTestInterpreter):
             def createlist():
                 return []
             EOD;
-            $ca = embed_py_func($src);
+            $ca = compile_py_func($src);
             $a1 = $ca();
             $a1[] = 100;
             $a2 = $ca();
@@ -1019,7 +1019,7 @@ class TestPyPyBridgeArrayConversions(BaseTestInterpreter):
             def createlist():
                 return []
             EOD;
-            $ca = embed_py_func($src);
+            $ca = compile_py_func($src);
             $a1 = $ca();
             $a1[] = 100;
             $a2 = $ca();
@@ -1040,7 +1040,7 @@ class TestPyPyBridgeArrayConversions(BaseTestInterpreter):
             def createlist():
                 return {}
             EOD;
-            $ca = embed_py_func($src);
+            $ca = compile_py_func($src);
             $a1 = $ca();
             $a1["foo"] = 100;
             $a2 = $ca();
@@ -1061,7 +1061,7 @@ class TestPyPyBridgeArrayConversions(BaseTestInterpreter):
             def createlist():
                 return {}
             EOD;
-            $ca = embed_py_func($src);
+            $ca = compile_py_func($src);
             $a1 = $ca();
             $a1[1] = 100;
             $a2 = $ca();
@@ -1085,7 +1085,7 @@ class TestPyPyBridgeArrayConversions(BaseTestInterpreter):
             xl += yl
             return xl
         EOD;
-        $ext = embed_py_func($src);
+        $ext = compile_py_func($src);
 
         $a = array("1");
         $b = array("2");
@@ -1106,7 +1106,7 @@ class TestPyPyBridgeArrayConversionsInstances(BaseTestInterpreter):
             def A_construct(self, v):
                 self.v = v + 1
             EOD;
-            $A_construct = embed_py_func($src);
+            $A_construct = compile_py_func($src);
 
             class A {
                 function __construct($v) {
@@ -1129,7 +1129,7 @@ class TestPyPyBridgeArrayConversionsInstances(BaseTestInterpreter):
                 return ary == ary_l
             EOD;
 
-            $f = embed_py_func($src);
+            $f = compile_py_func($src);
             $in = array("x", "y", "z");
             $rv = $f($in);
             echo $rv;
@@ -1143,7 +1143,7 @@ class TestPyPyBridgeArrayConversionsInstances(BaseTestInterpreter):
                 ary[3] = 666;
             EOD;
 
-            $f = embed_py_func($src);
+            $f = compile_py_func($src);
             $in = array(0, 1, 2);
             $f($in);
             echo $in[3];
@@ -1168,7 +1168,7 @@ def add(self, elm):
     elms_l = self.elms.as_list()
     elms_l.append(elm)
 EOD;
-        embed_py_meth("A", $src);
+        compile_py_meth("A", $src);
 
         $a = new A();
         echo count($a->elms);
@@ -1205,7 +1205,7 @@ def add(self, idx, elm):
     elms_l = self.elms.as_list()
     elms_l[idx] = elm
 EOD;
-        embed_py_meth("A", $src);
+        compile_py_meth("A", $src);
 
         $a = new A();
         echo count($a->elms);
@@ -1238,7 +1238,7 @@ EOD;
         }
 
         $src = "def addidx(inst, idx, elm): inst.elms[idx] = elm";
-        embed_py_func_global($src);
+        compile_py_func_global($src);
 
         $a = new A();
         addidx($a, "here", "value");
@@ -1308,7 +1308,7 @@ class TestPyPyBridgeArrayConversionsInterp(BaseTestInterpreter):
     def test_pop_on_php_array_strategy(self, php_space):
         output = self.run('''
         $src = "def f(a): return a.as_list().pop()";
-        embed_py_func_global($src);
+        compile_py_func_global($src);
 
         echo f(array(8, 3, 2));
         ''')
@@ -1317,7 +1317,7 @@ class TestPyPyBridgeArrayConversionsInterp(BaseTestInterpreter):
     def test_pop_on_php_array_strategy2(self, php_space):
         output = self.run('''
         $src = "def f(a): return a.pop('a')";
-        embed_py_func_global($src);
+        compile_py_func_global($src);
 
         echo f(array("a" => "zzz", 0 => 666));
         ''')

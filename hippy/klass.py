@@ -366,7 +366,7 @@ class ClassBase(AbstractFunction, AccessMixin):
             self._visibility_check(result, name, contextclass)
         return result
 
-    def embed_py_meth(self, name, w_php_func_adapt):
+    def compile_py_meth(self, name, w_php_func_adapt):
         # Allow overide from a superclass, but not a duplicate from this class.
         existing_meth = self.methods.get(name, None)
         if existing_meth is not None:

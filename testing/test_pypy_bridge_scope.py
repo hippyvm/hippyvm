@@ -4,11 +4,11 @@ import pytest
 
 class TestPyPyBridgeScope(BaseTestInterpreter):
 
-    def test_embed_py_func_inside_php_func(self, php_space):
+    def test_compile_py_func_inside_php_func(self, php_space):
         output = self.run('''
             function make() {
                 $src = "def f(a, b): return sum([a, b])";
-                $f = embed_py_func($src);
+                $f = compile_py_func($src);
                 return $f;
             }
 
@@ -17,12 +17,12 @@ class TestPyPyBridgeScope(BaseTestInterpreter):
         ''')
         assert php_space.int_w(output[0]) == 12
 
-    def test_embed_py_func_resolve_var_outer(self, php_space):
+    def test_compile_py_func_resolve_var_outer(self, php_space):
         output = self.run('''
             function make() {
                 $a = 2;
                 $src = "def f(b): return sum([a, b])";
-                $f = embed_py_func($src);
+                $f = compile_py_func($src);
                 return $f;
             }
 
@@ -37,11 +37,11 @@ class TestPyPyBridgeScope(BaseTestInterpreter):
             def f():
                 x = 1
                 php_src = "function g(\$a) { return \$a + \$x; }"
-                g = embed_php_func(php_src)
+                g = compile_php_func(php_src)
                 return g
             EOD;
 
-            $f = embed_py_func($pysrc);
+            $f = compile_py_func($pysrc);
             $g = $f();
             echo $g(7);
         ''')
@@ -54,7 +54,7 @@ class TestPyPyBridgeScope(BaseTestInterpreter):
             def f():
                 return x
             EOD;
-            $f = embed_py_func($pysrc);
+            $f = compile_py_func($pysrc);
             echo($f());
         ''')
         assert php_space.int_w(output[0]) == 3
@@ -71,15 +71,15 @@ class TestPyPyBridgeScope(BaseTestInterpreter):
                 src2 = """
                 function f2() {
                     \$src3 = "def f3(): return x";
-                    \$f3 = embed_py_func(\$src3);
+                    \$f3 = compile_py_func(\$src3);
                     return \$f3();
                 }
                 """
-                f2 = embed_php_func(src2)
+                f2 = compile_php_func(src2)
                 return f2();
             EOD;
 
-            $f1 = embed_py_func($src1);
+            $f1 = compile_py_func($src1);
             echo $f1();
         ''')
         assert php_space.int_w(output[0]) == 668
@@ -91,11 +91,11 @@ class TestPyPyBridgeScope(BaseTestInterpreter):
             def f():
                 global x
                 php_src = "function g() { return \$x; }"
-                g = embed_php_func(php_src)
+                g = compile_php_func(php_src)
                 x += 1
                 return g()
             EOD;
-            $f = embed_py_func($src);
+            $f = compile_py_func($src);
 
             echo($f());
         ''')
@@ -108,11 +108,11 @@ class TestPyPyBridgeScope(BaseTestInterpreter):
                 def g(): return 42
 
                 phsrc = "function h() { return g(); }"
-                h = embed_php_func(phsrc)
+                h = compile_php_func(phsrc)
 
                 return h()
             EOD;
-            $f = embed_py_func($pysrc);
+            $f = compile_py_func($pysrc);
             echo($f());
         ''')
         assert php_space.int_w(output[0]) == 42
@@ -124,9 +124,9 @@ class TestPyPyBridgeScope(BaseTestInterpreter):
                 class C: x = 2
 
                 phsrc = "function h() { return new C(); }"
-                return embed_php_func(phsrc)()
+                return compile_php_func(phsrc)()
             EOD;
-            $f = embed_py_func($pysrc);
+            $f = compile_py_func($pysrc);
             echo($f()->x);
         ''')
         assert php_space.int_w(output[0]) == 2
@@ -136,10 +136,10 @@ class TestPyPyBridgeScope(BaseTestInterpreter):
             $src = <<<EOD
             def c():
                 src2 = "function c2(\$ls) { return len(\$ls); }"
-                c2 = embed_php_func(src2)
+                c2 = compile_php_func(src2)
                 return(c2([1,2,3,4]))
             EOD;
-            $c = embed_py_func($src);
+            $c = compile_py_func($src);
             $n = $c();
             echo($n);
         ''')
@@ -159,7 +159,7 @@ class TestPyPyBridgeScope(BaseTestInterpreter):
             def c(ary):
                 return count(ary) # count is a PHP builtin func
             EOD;
-            $c = embed_py_func($src);
+            $c = compile_py_func($src);
             $n = $c(array(1, 2, 3, 4, 5, 6));
             echo($n);
         ''')
@@ -173,11 +173,11 @@ class TestPyPyBridgeScope(BaseTestInterpreter):
                     g = 42
 
                     phsrc = "function h() { return g(); }"
-                    h = embed_php_func(phsrc)
+                    h = compile_php_func(phsrc)
 
                     return h()
                 EOD;
-                $f = embed_py_func($pysrc);
+                $f = compile_py_func($pysrc);
                 echo($f());
             ''')
 
@@ -191,7 +191,7 @@ class TestPyPyBridgeScope(BaseTestInterpreter):
             def test():
                 return f()
             EOD;
-            $test = embed_py_func($src);
+            $test = compile_py_func($src);
 
             echo($test());
         ''')
@@ -207,7 +207,7 @@ class TestPyPyBridgeScope(BaseTestInterpreter):
             def test():
                 return "%s %s" % (f(), F())
             EOD;
-            $test = embed_py_func($src);
+            $test = compile_py_func($src);
 
             echo($test());
         ''')
@@ -220,7 +220,7 @@ class TestPyPyBridgeScope(BaseTestInterpreter):
                 return C()
             EOD;
 
-            $ref = embed_py_func($src);
+            $ref = compile_py_func($src);
 
             class C {
                 function m() { return "c.m"; }
@@ -237,7 +237,7 @@ class TestPyPyBridgeScope(BaseTestInterpreter):
             def ref():
                 return C(2).x
             EOD;
-            $ref = embed_py_func($src);
+            $ref = compile_py_func($src);
 
             class C {
                 public $x;
@@ -255,7 +255,7 @@ class TestPyPyBridgeScope(BaseTestInterpreter):
             def ref(c):
                 c.x = 3
             EOD;
-            $ref = embed_py_func($src);
+            $ref = compile_py_func($src);
 
             class C {
                 public $x;
@@ -275,7 +275,7 @@ class TestPyPyBridgeScope(BaseTestInterpreter):
             def ref():
                 return C().m()
             EOD;
-            $ref = embed_py_func($src);
+            $ref = compile_py_func($src);
 
             class C {
                 function m() { return "c.m"; }
@@ -290,7 +290,7 @@ class TestPyPyBridgeScope(BaseTestInterpreter):
             def ref():
                 return C().M()
             EOD;
-            $ref = embed_py_func($src);
+            $ref = compile_py_func($src);
 
             class C {
                 function M() { return "c.m"; }
@@ -308,7 +308,7 @@ class TestPyPyBridgeScope(BaseTestInterpreter):
             def ref():
                 return b
             EOD;
-            $ref = embed_py_func($src);
+            $ref = compile_py_func($src);
             echo($ref());
         """)
         assert self.space.str_w(output[0]) == "c"
@@ -342,7 +342,7 @@ class TestPyPyBridgeScope(BaseTestInterpreter):
             def f():
                 return x;
             EOD;
-            $f = embed_py_func($src);
+            $f = compile_py_func($src);
             $x = 43;
 
             echo($f());
@@ -358,7 +358,7 @@ class TestPyPyBridgeScope(BaseTestInterpreter):
                     return x;
                 return g
             EOD;
-            $f = embed_py_func($src);
+            $f = compile_py_func($src);
             $x = 11;
 
             $g = $f();
@@ -372,11 +372,11 @@ class TestPyPyBridgeScope(BaseTestInterpreter):
             def f():
                 x = 44
                 php_src = "function g() { return \$x; }"
-                g = embed_php_func(php_src)
+                g = compile_php_func(php_src)
                 x += 1
                 return g()
             EOD;
-            $f = embed_py_func($src);
+            $f = compile_py_func($src);
 
             echo($f());
         ''')
@@ -388,11 +388,11 @@ class TestPyPyBridgeScope(BaseTestInterpreter):
             $src = <<<EOD
             def f():
                 php_src = "function g() { return \$x; }"
-                g = embed_php_func(php_src)
+                g = compile_php_func(php_src)
                 x = 45
                 return g()
             EOD;
-            $f = embed_py_func($src);
+            $f = compile_py_func($src);
 
             echo($f());
         ''')
@@ -404,11 +404,11 @@ class TestPyPyBridgeScope(BaseTestInterpreter):
             def f():
                 x = 44
                 php_src = "function g() { return \$x; }"
-                g = embed_php_func(php_src)
+                g = compile_php_func(php_src)
                 x += 1
                 return g
             EOD;
-            $f = embed_py_func($src);
+            $f = compile_py_func($src);
             $g = $f();
 
             echo($g());
@@ -420,10 +420,10 @@ class TestPyPyBridgeScope(BaseTestInterpreter):
             $src = <<<EOD
             def f():
                 php_src = "function g() { return range(0, 2); }"
-                g = embed_php_func(php_src)
+                g = compile_php_func(php_src)
                 return g()
             EOD;
-            $f = embed_py_func($src);
+            $f = compile_py_func($src);
 
             foreach ($f() as $i) {
                 echo($i);
@@ -440,7 +440,7 @@ class TestPyPyBridgeScope(BaseTestInterpreter):
             def f():
                 return range(0, 2)
             EOD;
-            $f = embed_py_func($src);
+            $f = compile_py_func($src);
 
             foreach ($f() as $i) {
                 echo($i);
@@ -452,7 +452,7 @@ class TestPyPyBridgeScope(BaseTestInterpreter):
 
     def test_get_py_range_nested(self, php_space):
         output = self.run(r'''
-            embed_py_func_global("def f():\n    g = embed_php_func(\"\"\"\nfunction g() {\n        \$h = embed_py_func(\\\"def h(): return range(2)\\\");;\n        return \$h();\n    }\n\"\"\")\n    return g()");
+            compile_py_func_global("def f():\n    g = compile_php_func(\"\"\"\nfunction g() {\n        \$h = compile_py_func(\\\"def h(): return range(2)\\\");;\n        return \$h();\n    }\n\"\"\")\n    return g()");
 
             foreach (f() as $i) { echo $i; }
         ''')
@@ -462,7 +462,7 @@ class TestPyPyBridgeScope(BaseTestInterpreter):
 
     def test_get_py_range_nested2(self, php_space):
         output = self.run(r'''
-            embed_py_func_global("def f():\n    g = embed_php_func(\"\"\"\nfunction g() {\n        \$range = function (\$i) {return array(0); };\n        \$h = embed_py_func(\\\"def h(): return range(2)\\\");;\n        return \$h();\n    }\n\"\"\")\n    return g()");
+            compile_py_func_global("def f():\n    g = compile_php_func(\"\"\"\nfunction g() {\n        \$range = function (\$i) {return array(0); };\n        \$h = compile_py_func(\\\"def h(): return range(2)\\\");;\n        return \$h();\n    }\n\"\"\")\n    return g()");
 
             foreach (f() as $i) { echo $i; }
         ''')
@@ -471,7 +471,7 @@ class TestPyPyBridgeScope(BaseTestInterpreter):
 
     def test_get_py_and_php_range(self, php_space):
         output = self.run(r'''
-            embed_py_func_global("def f():\n    embed_php_func(\"\"\"\nfunction g() { foreach (range(0, 2) as \$i) { echo \$i; } }\n\"\"\")()\n    return range(0, 2)\n");
+            compile_py_func_global("def f():\n    compile_php_func(\"\"\"\nfunction g() { foreach (range(0, 2) as \$i) { echo \$i; } }\n\"\"\")()\n    return range(0, 2)\n");
             foreach (f() as $i) {
                 echo $i;
             }
@@ -492,7 +492,7 @@ class TestPyPyBridgeScope(BaseTestInterpreter):
                 print "f", b
                 return b()
             EOD;
-            $f = embed_py_func($src);
+            $f = compile_py_func($src);
             echo $f();
             $a = "b";
             $$a = 2;
@@ -509,7 +509,7 @@ class TestPyPyBridgeScope(BaseTestInterpreter):
             def f():
                 return b()
             EOD;
-            $f = embed_py_func($src);
+            $f = compile_py_func($src);
             echo $f();
             echo $f();
         ''')
@@ -525,7 +525,7 @@ class TestPyPyBridgeScope(BaseTestInterpreter):
             def f():
                 return b
             EOD;
-            $f = embed_py_func($src);
+            $f = compile_py_func($src);
             echo $f();
             unset($b);
             try {
@@ -546,7 +546,7 @@ class TestPyPyBridgeScope(BaseTestInterpreter):
             def f1():
                 return b
             EOD;
-            $f1 = embed_py_func($src);
+            $f1 = compile_py_func($src);
             echo $f1();
             echo $f1();
             unset($b);
@@ -554,7 +554,7 @@ class TestPyPyBridgeScope(BaseTestInterpreter):
             def f2():
                 return b()
             EOD;
-            $f2 = embed_py_func($src);
+            $f2 = compile_py_func($src);
             echo $f2();
             echo $f2();
         ''')
@@ -571,7 +571,7 @@ class TestPyPyBridgeScope(BaseTestInterpreter):
             def g():
                 return php_global_ns().f()
             EOD;
-            $f = embed_py_func($pysrc);
+            $f = compile_py_func($pysrc);
             echo($f());
         ''')
         assert self.space.str_w(output[0]) == "f"
@@ -584,7 +584,7 @@ class TestPyPyBridgeScope(BaseTestInterpreter):
             def g():
                 return php_global_ns().e()
             EOD;
-            $f = embed_py_func($pysrc);
+            $f = compile_py_func($pysrc);
             try {
                 $f();
             } catch (BridgeException $e) {
@@ -601,7 +601,7 @@ class TestPyPyBridgeScope(BaseTestInterpreter):
             $x = 10;
 
             $pysrc = "def g(): php_global_ns().x = 666";
-            $f = embed_py_func($pysrc);
+            $f = compile_py_func($pysrc);
             $f();
             echo $x;
         ''')
@@ -612,11 +612,11 @@ class TestPyPyBridgeScope(BaseTestInterpreter):
             $y = null;
 
             $pysrc = "def g(): php_global_ns().y = 666; return y";
-            $f = embed_py_func($pysrc);
+            $f = compile_py_func($pysrc);
             echo $f();
 
             $pysrc = "def h(): return y";
-            $f = embed_py_func($pysrc);
+            $f = compile_py_func($pysrc);
             echo $f();
         ''')
         assert self.space.int_w(output[0]) == 666
@@ -625,7 +625,7 @@ class TestPyPyBridgeScope(BaseTestInterpreter):
     def test_mutate_php_array_in_py_scope_as_dict(self, php_space):
         output = self.run('''
         $arry = array(1, 2, 3);
-        $f = embed_py_func("def f(): arry[3] = 4");
+        $f = compile_py_func("def f(): arry[3] = 4");
 
         $f();
         echo count($arry);
@@ -637,7 +637,7 @@ class TestPyPyBridgeScope(BaseTestInterpreter):
     def test_mutate_php_array_in_py_scope_as_list(self, php_space):
         output = self.run('''
         $arry = array(1, 2, 3);
-        $f = embed_py_func("def f(): arry.as_list()[3] = 4");
+        $f = compile_py_func("def f(): arry.as_list()[3] = 4");
 
         $f();
         echo count($arry);
@@ -653,7 +653,7 @@ class TestPyPyBridgeScope(BaseTestInterpreter):
 
             function getA() { return $this->a; }
         }
-        embed_py_meth("A", "def __construct(self): self.a = 1");
+        compile_py_meth("A", "def __construct(self): self.a = 1");
 
         $a = new A();
         echo $a->getA();
@@ -667,7 +667,7 @@ class TestPyPyBridgeScope(BaseTestInterpreter):
 
             function getA() { return $this->a; }
         }
-        embed_py_meth("A", "def __construct(self): self.a = 1");
+        compile_py_meth("A", "def __construct(self): self.a = 1");
 
         $a = new A();
         echo $a->getA();
@@ -679,7 +679,7 @@ class TestPyPyBridgeScope(BaseTestInterpreter):
         class A {
             private $a = 666;
         }
-        embed_py_meth("A", "def getA(self): return self.a");
+        compile_py_meth("A", "def getA(self): return self.a");
 
         $a = new A();
         echo $a->getA();
@@ -691,7 +691,7 @@ class TestPyPyBridgeScope(BaseTestInterpreter):
         class A {
             protected $a = 666;
         }
-        embed_py_meth("A", "def getA(self): return self.a");
+        compile_py_meth("A", "def getA(self): return self.a");
 
         $a = new A();
         echo $a->getA();
@@ -703,7 +703,7 @@ class TestPyPyBridgeScope(BaseTestInterpreter):
         class A {
             private function g() { return 3; }
         }
-        embed_py_meth("A", "def f(self): return self.g()");
+        compile_py_meth("A", "def f(self): return self.g()");
 
         $a = new A();
         echo $a->f();
@@ -715,7 +715,7 @@ class TestPyPyBridgeScope(BaseTestInterpreter):
         class A {
             protected function g() { return 3; }
         }
-        embed_py_meth("A", "def f(self): return self.g()");
+        compile_py_meth("A", "def f(self): return self.g()");
 
         $a = new A();
         echo $a->f();
@@ -731,7 +731,7 @@ class TestPyPyBridgeScope(BaseTestInterpreter):
         def f():
             return p
         EOD;
-        embed_py_func_global($src);
+        compile_py_func_global($src);
 
         echo f();
         ''')
@@ -743,10 +743,10 @@ class TestPyPyBridgeScope(BaseTestInterpreter):
             def f():
                 GLOBALS = "g"
                 php_src = "function g() { echo(\$GLOBALS); }"
-                g = embed_php_func(php_src)
+                g = compile_php_func(php_src)
                 return g()
             EOD;
-            $f = embed_py_func($src);
+            $f = compile_py_func($src);
             $f();
         ''')
         assert len(output) == 1 \
@@ -760,10 +760,10 @@ class TestPyPyBridgeScope(BaseTestInterpreter):
                 def z():
                     return "z2"
                 php_src = "function g() { echo(z()); }"
-                g = embed_php_func(php_src)
+                g = compile_php_func(php_src)
                 return g()
             EOD;
-            $f = embed_py_func($src);
+            $f = compile_py_func($src);
             $f();
         ''')
         assert len(output) == 1 \
@@ -775,7 +775,7 @@ class TestPyPyBridgeScope(BaseTestInterpreter):
         def f():
             return p
         EOD;
-        embed_py_func_global($src);
+        compile_py_func_global($src);
 
         try {
             f();
@@ -791,13 +791,13 @@ class TestPyPyBridgeScope(BaseTestInterpreter):
 
             function scope1() {
                 $x = 1;
-                $f = embed_py_func(PYSRC);
+                $f = compile_py_func(PYSRC);
                 return $f();
             }
 
             function scope2() {
                 $x = 2;
-                $f = embed_py_func(PYSRC);
+                $f = compile_py_func(PYSRC);
                 return $f();
             }
 
@@ -815,10 +815,10 @@ class TestPyPyBridgeScope(BaseTestInterpreter):
 
     def test_call_builtin_py_func(self, php_space):
         output = self.run('''
-        embed_py_func_global("
+        compile_py_func_global("
 def f():
     php = \\"function g() { return str('123'); }\\"
-    g = embed_php_func(php)
+    g = compile_php_func(php)
     return g()
         ");
 
@@ -829,10 +829,10 @@ def f():
     def test_inter_language_lexical_before_global(self, php_space):
         output = self.run('''
         $len = 3;
-        embed_py_func_global("
+        compile_py_func_global("
 def f():
     php = \\"function g() { return $len; }\\"
-    g = embed_php_func(php)
+    g = compile_php_func(php)
     return g()
         ");
 
@@ -845,7 +845,7 @@ def f():
         $x = array(1, 3, 3, 7);
 
         $src = "def f(): x['a'] = 47";
-        embed_py_func_global($src);
+        compile_py_func_global($src);
 
         echo count($x);
         f();
@@ -863,9 +863,9 @@ def f():
         $src = <<<EOD
         def f():
             src2 = "function g() { \$x['a'] = 47; }"
-            embed_php_func(src2)()
+            compile_php_func(src2)()
         EOD;
-        embed_py_func_global($src);
+        compile_py_func_global($src);
 
         echo count($x);
         f();

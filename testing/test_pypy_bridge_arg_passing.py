@@ -6,7 +6,7 @@ class TestPyPyBridgeArgPassing(BaseTestInterpreter):
     def test_php2py_by_ref_assign_does_not_change_ref(self, php_space):
         output = self.run('''
         $src = "@php_decor(refs=[0])\ndef no_mutate_ref(y): y = 111";
-        $mutate_ref = embed_py_func($src);
+        $mutate_ref = compile_py_func($src);
 
         $a = 1;
         $mutate_ref($a);
@@ -21,7 +21,7 @@ class TestPyPyBridgeArgPassing(BaseTestInterpreter):
             };
 
             $src = "def f(x): x = A(666)";
-            $f = embed_py_func($src);
+            $f = compile_py_func($src);
 
             $a = new A(1);
             echo $a->v;
@@ -42,7 +42,7 @@ class TestPyPyBridgeArgPassing(BaseTestInterpreter):
             def f(x):
                 x.store(A(666))
             EOD;
-            $f = embed_py_func($src);
+            $f = compile_py_func($src);
 
             $a = new A(1);
             echo $a->v;
@@ -59,7 +59,7 @@ class TestPyPyBridgeArgPassing(BaseTestInterpreter):
                 s = s.replace("1", "x")
             EOD;
 
-            $f = embed_py_func($src);
+            $f = compile_py_func($src);
 
             $in = "123";
             $f($in);
@@ -75,7 +75,7 @@ class TestPyPyBridgeArgPassing(BaseTestInterpreter):
                 s.store(s.deref().replace("1", "x"))
             EOD;
 
-            $f = embed_py_func($src);
+            $f = compile_py_func($src);
 
             $in = "123";
             $f($in);
@@ -90,7 +90,7 @@ class TestPyPyBridgeArgPassing(BaseTestInterpreter):
                 ary["x"] = "y" # *should* mutate!
             EOD;
 
-            $f = embed_py_func($src);
+            $f = compile_py_func($src);
             $in = array("x" => "x");
             $f($in);
             echo $in["x"];
@@ -104,7 +104,7 @@ class TestPyPyBridgeArgPassing(BaseTestInterpreter):
                 ary["x"] = "y" # *should* mutate
             EOD;
 
-            embed_py_func_global($src);
+            compile_py_func_global($src);
             $in = array("x" => "x");
             f($in);
             echo $in["x"];
@@ -119,7 +119,7 @@ class TestPyPyBridgeArgPassing(BaseTestInterpreter):
                 ary1.store(ary2)
             EOD;
 
-            embed_py_func_global($src);
+            compile_py_func_global($src);
             $in1 = array("x" => "x");
             $in2 = array("x" => "y");
             f($in1, $in2);
@@ -135,7 +135,7 @@ class TestPyPyBridgeArgPassing(BaseTestInterpreter):
             def f(self, ary):
                 ary["x"] = "y" # *should* mutate
             EOD;
-            embed_py_meth("A", $src);
+            compile_py_meth("A", $src);
 
             $a = new A();
 
@@ -154,7 +154,7 @@ class TestPyPyBridgeArgPassing(BaseTestInterpreter):
             def f(self, ary1, ary2):
                 ary1.store(ary2)
             EOD;
-            embed_py_meth("A", $src);
+            compile_py_meth("A", $src);
 
             $a = new A();
 
@@ -173,7 +173,7 @@ class TestPyPyBridgeArgPassing(BaseTestInterpreter):
                 ary1.store(ary2)
             EOD;
 
-            $f = embed_py_func($src);
+            $f = compile_py_func($src);
             $in1 = array("x" => "x");
             $in2 = array("x" => "y");
             $f($in1, $in2);
@@ -189,7 +189,7 @@ class TestPyPyBridgeArgPassing(BaseTestInterpreter):
                 ary_l[0] = "a" # *should* mutate
             EOD;
 
-            $f = embed_py_func($src);
+            $f = compile_py_func($src);
             $in = array("x");
             $f($in);
             echo $in[0];
@@ -204,7 +204,7 @@ class TestPyPyBridgeArgPassing(BaseTestInterpreter):
                 ary1.store(ary2)
             EOD;
 
-            $f = embed_py_func($src);
+            $f = compile_py_func($src);
             $in1 = array("x");
             $in2 = array("a");
             $f($in1, $in2);
@@ -220,7 +220,7 @@ class TestPyPyBridgeArgPassing(BaseTestInterpreter):
                 ary_l.append("a")
             EOD;
 
-            $f = embed_py_func($src);
+            $f = compile_py_func($src);
             $in = array("x");
             $f($in);
             echo count($in);
@@ -233,7 +233,7 @@ class TestPyPyBridgeArgPassing(BaseTestInterpreter):
         output = self.run('''
         function takes_ref(&$x) {
             $src = "def mutate_ref(y): y = 666";
-            $mutate_ref = embed_py_func($src);
+            $mutate_ref = compile_py_func($src);
             $mutate_ref($x);
             echo $x;
         }
@@ -249,7 +249,7 @@ class TestPyPyBridgeArgPassing(BaseTestInterpreter):
         output = self.run('''
         function takes_ref(&$x) {
             $src = "@php_decor(refs=[0])\ndef mutate_ref(y): y.store(666)";
-            $mutate_ref = embed_py_func($src);
+            $mutate_ref = compile_py_func($src);
             $mutate_ref($x);
             echo $x;
         }
@@ -264,7 +264,7 @@ class TestPyPyBridgeArgPassing(BaseTestInterpreter):
     def test_php2py_int_by_ref_func(self, php_space):
         output = self.run('''
         $src = "@php_decor(refs=[0])\ndef mutate_ref(y): y.store(666)";
-        $mutate_ref = embed_py_func($src);
+        $mutate_ref = compile_py_func($src);
 
         $a = 1;
         $mutate_ref($a);
@@ -276,7 +276,7 @@ class TestPyPyBridgeArgPassing(BaseTestInterpreter):
         output = self.run('''
         function takes_ref(&$x) {
             $src = "def mutate_ref(y): y = y + 1";
-            $mutate_ref = embed_py_func($src);
+            $mutate_ref = compile_py_func($src);
             $mutate_ref($x);
             echo $x;
         }
@@ -292,7 +292,7 @@ class TestPyPyBridgeArgPassing(BaseTestInterpreter):
         output = self.run('''
         function takes_ref(&$x) {
             $src = "@php_decor(refs=[0])\ndef mutate_ref(y): y.store(y.deref() + 1)";
-            $mutate_ref = embed_py_func($src);
+            $mutate_ref = compile_py_func($src);
             $mutate_ref($x);
             echo $x;
         }
@@ -313,7 +313,7 @@ class TestPyPyBridgeArgPassing(BaseTestInterpreter):
             return y
         EOD;
 
-        $f = embed_py_func($src);
+        $f = compile_py_func($src);
 
         $x = 1;
         $z = $f($x);
@@ -331,7 +331,7 @@ class TestPyPyBridgeArgPassing(BaseTestInterpreter):
             return y
         EOD;
 
-        $f = embed_py_func($src);
+        $f = compile_py_func($src);
 
         $x = 1;
         $z = $f($x);
@@ -349,7 +349,7 @@ class TestPyPyBridgeArgPassing(BaseTestInterpreter):
             return y
         EOD;
 
-        $f = embed_py_func($src);
+        $f = compile_py_func($src);
 
         $x = 1;
         $z = $f($x);
@@ -371,7 +371,7 @@ class TestPyPyBridgeArgPassing(BaseTestInterpreter):
 
             function g($l) { $l[0] = 666; }
 
-            $f = embed_py_func($src);
+            $f = compile_py_func($src);
             $r = $f();
             echo $r;
         ''')
@@ -388,7 +388,7 @@ class TestPyPyBridgeArgPassing(BaseTestInterpreter):
 
             function g(&$l) { $l[0] = 666; }
 
-            $f = embed_py_func($src);
+            $f = compile_py_func($src);
             $r = $f();
             echo $r;
         ''')
@@ -405,7 +405,7 @@ class TestPyPyBridgeArgPassing(BaseTestInterpreter):
 
             function g($d) { $d["a"] = "z"; }
 
-            $f = embed_py_func($src);
+            $f = compile_py_func($src);
             $r = $f();
             echo $r;
         ''')
@@ -423,7 +423,7 @@ class TestPyPyBridgeArgPassing(BaseTestInterpreter):
 
             function g(&$d) { $d["a"] = "z"; }
 
-            $f = embed_py_func($src);
+            $f = compile_py_func($src);
             $r = $f();
             echo $r;
         ''')
@@ -441,7 +441,7 @@ class TestPyPyBridgeArgPassing(BaseTestInterpreter):
 
             function g($i) { $i = 666; }
 
-            $f = embed_py_func($src);
+            $f = compile_py_func($src);
             $r = $f();
             echo $r;
         ''')
@@ -458,7 +458,7 @@ class TestPyPyBridgeArgPassing(BaseTestInterpreter):
 
             function g(&$i) { $i = 666; }
 
-            $f = embed_py_func($src);
+            $f = compile_py_func($src);
             $r = $f();
             echo $r;
         ''')
@@ -474,7 +474,7 @@ class TestPyPyBridgeArgPassing(BaseTestInterpreter):
                 return [a1, a2]
             EOD;
 
-            $f = embed_py_func($src);
+            $f = compile_py_func($src);
 
             class C {
                 function __construct($v) {
@@ -508,7 +508,7 @@ class TestPyPyBridgeArgPassing(BaseTestInterpreter):
                 return [p1.deref(), p2.deref()]
             EOD;
 
-            $f = embed_py_func($src);
+            $f = compile_py_func($src);
 
             class C {
                 function __construct($v) {
@@ -543,7 +543,7 @@ class TestPyPyBridgeArgPassing(BaseTestInterpreter):
 
             function g($s) { $s = "new"; }
 
-            $f = embed_py_func($src);
+            $f = compile_py_func($src);
             $r = $f();
             echo $r;
         ''')
@@ -560,7 +560,7 @@ class TestPyPyBridgeArgPassing(BaseTestInterpreter):
 
             function g($s) { $s[0] = "x"; }
 
-            $f = embed_py_func($src);
+            $f = compile_py_func($src);
             $r = $f();
             echo $r;
         ''')
@@ -577,7 +577,7 @@ class TestPyPyBridgeArgPassing(BaseTestInterpreter):
 
             function g(&$s) { $s = "new"; }
 
-            $f = embed_py_func($src);
+            $f = compile_py_func($src);
             $r = $f();
             echo $r;
         ''')
@@ -594,7 +594,7 @@ class TestPyPyBridgeArgPassing(BaseTestInterpreter):
 
             function g(&$s) { $s[0] = "x"; }
 
-            $f = embed_py_func($src);
+            $f = compile_py_func($src);
             $r = $f();
             echo $r;
         ''')
@@ -614,7 +614,7 @@ class TestPyPyBridgeArgPassing(BaseTestInterpreter):
 
             function g($s) {}
 
-            $f = embed_py_func($src);
+            $f = compile_py_func($src);
             $r = $f();
             echo($r);
         ''')
@@ -635,7 +635,7 @@ class TestPyPyBridgeArgPassing(BaseTestInterpreter):
 
             function g(&$s) {}
 
-            $f = embed_py_func($src);
+            $f = compile_py_func($src);
             $r = $f();
             echo($r);
         ''')
@@ -658,7 +658,7 @@ class TestPyPyBridgeArgPassing(BaseTestInterpreter):
                 a3 = "m3"
             EOD;
 
-            $f = embed_py_func($src);
+            $f = compile_py_func($src);
 
             // inputs
             $a0 = "0";
