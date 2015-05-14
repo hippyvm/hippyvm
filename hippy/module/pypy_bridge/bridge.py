@@ -6,7 +6,7 @@ from hippy.objects.arrayobject import W_ArrayObject
 from hippy.module.pypy_bridge.scopes import PHP_Scope, Py_Scope
 from hippy.module.pypy_bridge.util import _raise_php_bridgeexception
 from hippy.module.pypy_bridge.py_adapters import (
-        new_embedded_py_func, k_BridgeException, W_PyFuncGlobalAdapter,
+        new_adapted_py_func, k_BridgeException, W_PyFuncGlobalAdapter,
         W_PyMethodFuncAdapter, W_PyFuncAdapter, W_PyGenericAdapter,
         W_PyClassAdapter)
 from hippy.builtin_klass import k_Exception, W_ExceptionObject
@@ -133,7 +133,7 @@ def compile_py_func(interp, func_source):
             interp, func_source, php_frame)
 
     # make a callable instance a bit like a closure
-    return new_embedded_py_func(interp, w_py_func)
+    return new_adapted_py_func(interp, w_py_func)
 
 @wrap(['interp', str], name='compile_py_func_global')
 def compile_py_func_global(interp, func_source):
