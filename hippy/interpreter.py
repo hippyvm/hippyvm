@@ -463,7 +463,7 @@ class Interpreter(object):
                         # It could be a callable Python class/instance for example.
                         # In this case we ask the adapter for its callable.
                         ph_v = ph_v.get_callable()
-                    if not isinstance(ph_v, py_adapters.W_EmbeddedPyCallable) and \
+                    if not isinstance(ph_v, py_adapters.W_PyCallable) and \
                             not isinstance(ph_v, py_adapters.W_PyClassAdapter):
                         self.fatal("Can only call Python functions from PHP")
                     return ph_v
@@ -1302,7 +1302,7 @@ class Interpreter(object):
         return method.bind(w_this, klass)
 
     def getfunc(self, w_name, w_this, contextclass):
-        if isinstance(w_name, py_adapters.W_EmbeddedPyCallable):
+        if isinstance(w_name, py_adapters.W_PyCallable):
             # Calling a (stored and adapted) Python callable.
             # The bridge bridge will have directly put a callable where Hippy
             # would usually put the name of the function to retrieve.

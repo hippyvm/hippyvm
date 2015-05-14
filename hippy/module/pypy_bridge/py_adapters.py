@@ -83,7 +83,7 @@ class W_PyGenericAdapter(W_InstanceObject):
 
     def get_callable(self):
         """PHP interpreter calls this when calls a wrapped Python var"""
-        return W_EmbeddedPyCallable(self.interp, self.w_py_inst)
+        return W_PyCallable(self.interp, self.w_py_inst)
 
     def call_args(self, interp, args_w, w_this=None,
                   thisclass=None, closureargs=None):
@@ -126,7 +126,7 @@ k_PyGenericAdapter = def_class('PyGenericAdapter',
     [], instance_class=W_PyGenericAdapter
 )
 
-class W_EmbeddedPyCallable(W_InvokeCall):
+class W_PyCallable(W_InvokeCall):
     _immutable_fields_ = ["w_py_func"]
 
     def __init__(self, interp, w_py_func):
@@ -284,7 +284,7 @@ class W_PyFuncAdapter(W_InstanceObject):
 
     def get_callable(self):
         if self.w_php_callable is None:
-            self.w_php_callable = W_EmbeddedPyCallable(self.interp,
+            self.w_php_callable = W_PyCallable(self.interp,
                                                        self.w_py_func)
         return self.w_php_callable
 
@@ -299,7 +299,7 @@ class W_PyFuncAdapter(W_InstanceObject):
 
 k_PyFuncAdapter = def_class('PyFunc', [])
 
-def new_embedded_py_func(interp, w_py_func):
+def new_adapted_py_func(interp, w_py_func):
     return W_PyFuncAdapter(interp, w_py_func, k_PyFuncAdapter,
             k_PyFuncAdapter.get_initial_storage_w(interp.space)[:])
 
@@ -658,7 +658,7 @@ class W_PyClassAdapter(W_InstanceObject):
                 return w_py_meth
 
     def get_callable(self):
-        return W_EmbeddedPyCallable(self.interp, self.w_py_kls)
+        return W_PyCallable(self.interp, self.w_py_kls)
 
     def to_py(self, interp, w_php_ref=None):
         return self.w_py_kls
@@ -670,7 +670,7 @@ k_PyClassAdapter = def_class('PyClassAdapter',
 from hippy.klass import ClassBase
 class W_PyClassAdapterClass(ClassBase):
     # Represents the class of an adapted Python class.
-    # This is needed because PHP clearly separateds the notion of first class
+    # This is needed because PHP clearly separates the notion of first class
     # values from that of classes. Classes are certainly not first class in
     # PHP.
 
