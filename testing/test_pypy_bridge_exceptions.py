@@ -10,7 +10,7 @@ class TestPyPyBridgeExceptions(BaseTestInterpreter):
     def test_py_exn_is_passed_up_to_phpc(self, php_space):
         output = self.run('''
             $src = "def raise_ex(): raise ValueError('my error')";
-            $raise_ex = embed_py_func($src);
+            $raise_ex = compile_py_func($src);
             try {
                 $raise_ex();
                 echo "no";
@@ -23,7 +23,7 @@ class TestPyPyBridgeExceptions(BaseTestInterpreter):
     def test_wrapped_py_exn_message(self, php_space):
         output = self.run('''
             $src = "def raise_ex(): raise ValueError('my error')";
-            $raise_ex = embed_py_func($src);
+            $raise_ex = compile_py_func($src);
             try {
                 $raise_ex();
                 echo "no";
@@ -44,7 +44,7 @@ class TestPyPyBridgeExceptions(BaseTestInterpreter):
                     return "ok"
             EOD;
 
-            $catch_php_exn = embed_py_func($src);
+            $catch_php_exn = compile_py_func($src);
 
             function raise_php_exn() {
                 throw new RuntimeException("oh no!");
@@ -67,7 +67,7 @@ class TestPyPyBridgeExceptions(BaseTestInterpreter):
                     return str(e)
             EOD;
 
-            $catch_php_exn = embed_py_func($src);
+            $catch_php_exn = compile_py_func($src);
 
             function raise_php_exn() {
                 throw new RuntimeException("oh no!");
@@ -91,7 +91,7 @@ class TestPyPyBridgeExceptions(BaseTestInterpreter):
                     return e.message
             EOD;
 
-            $catch_php_exn = embed_py_func($src);
+            $catch_php_exn = compile_py_func($src);
 
             function raise_php_exn() {
                 throw new RuntimeException("oh no!");
@@ -108,10 +108,10 @@ class TestPyPyBridgeExceptions(BaseTestInterpreter):
     def test_exns_can_pass_pass_thru_multiple_langs(self, php_space):
         output = self.run('''
             $src = "def py_f1(): php_f()";
-            $py_f1 = embed_py_func($src);
+            $py_f1 = compile_py_func($src);
 
             $src2 = "def py_f2(): raise ValueError('explosion')";
-            $py_f2 = embed_py_func($src2);
+            $py_f2 = compile_py_func($src2);
 
             function php_f() {
                 global $py_f2;
@@ -138,7 +138,7 @@ class TestPyPyBridgeExceptions(BaseTestInterpreter):
                 except BridgeError as e:
                     return e.message
             EOD;
-            $ref = embed_py_func($src);
+            $ref = compile_py_func($src);
 
             class C {}
             echo($ref());
@@ -157,7 +157,7 @@ class TestPyPyBridgeExceptions(BaseTestInterpreter):
                 except Exception as e:
                     return e.message
             EOD;
-            $do = embed_py_func($src);
+            $do = compile_py_func($src);
             echo($do());
         """)
         e_str = "test"
@@ -190,7 +190,7 @@ class TestPyPyBridgeExceptions(BaseTestInterpreter):
             except BridgeError as e:
                 return e.message
         EOD;
-        $py_func = embed_py_func($src);
+        $py_func = compile_py_func($src);
         echo($py_func());
         ''')
         err_s = "Cannot use kwargs when calling PHP functions"
@@ -210,7 +210,7 @@ class TestPyPyBridgeExceptions(BaseTestInterpreter):
             except BridgeError as e:
                 return e.message
         EOD;
-        $py_func = embed_py_func($src);
+        $py_func = compile_py_func($src);
 
         $inst = new A();
         echo($py_func($inst));
@@ -232,7 +232,7 @@ class TestPyPyBridgeExceptions(BaseTestInterpreter):
             except BridgeError as e:
                 return e.message
         EOD;
-        $py_func = embed_py_func($src);
+        $py_func = compile_py_func($src);
 
         $inst = new A();
         echo($py_func($inst));
@@ -254,7 +254,7 @@ class TestPyPyBridgeExceptions(BaseTestInterpreter):
                     return e.message
             EOD;
 
-            $f = embed_py_func($src);
+            $f = compile_py_func($src);
             echo($f());
         ''')
         err_s = "list index out of range"
@@ -274,7 +274,7 @@ class TestPyPyBridgeExceptions(BaseTestInterpreter):
                     return e.message
             EOD;
 
-            $f = embed_py_func($src);
+            $f = compile_py_func($src);
             echo($f());
         ''')
         err_s = "list index out of range"
@@ -294,7 +294,7 @@ class TestPyPyBridgeExceptions(BaseTestInterpreter):
                     return e.message
             EOD;
 
-            $f = embed_py_func($src);
+            $f = compile_py_func($src);
             echo($f());
         ''')
         err_s = "Non-integer key used on a Python dict with internal list storage"
@@ -314,7 +314,7 @@ class TestPyPyBridgeExceptions(BaseTestInterpreter):
                     return e.message
             EOD;
 
-            $f = embed_py_func($src);
+            $f = compile_py_func($src);
             echo($f());
         ''')
         err_s = "Non-integer key used on a Python dict with internal list storage"
@@ -332,7 +332,7 @@ class TestPyPyBridgeExceptions(BaseTestInterpreter):
                     return e.message
             EOD;
 
-            $f = embed_py_func($src);
+            $f = compile_py_func($src);
             echo($f());
         ''')
         err_s = "as_list does not apply"
@@ -349,7 +349,7 @@ class TestPyPyBridgeExceptions(BaseTestInterpreter):
                     return e.message
             EOD;
 
-            $f = embed_py_func($src);
+            $f = compile_py_func($src);
             echo($f());
         ''')
         err_s = "Cannot use kwargs when calling PHP functions"
@@ -359,7 +359,7 @@ class TestPyPyBridgeExceptions(BaseTestInterpreter):
         output = self.run('''
             $src = "    def bad_indent(): pass";
             try {
-                $f = embed_py_func($src);
+                $f = compile_py_func($src);
                 echo "fail";
             } catch (BridgeException $e) {
                 echo $e->getMessage();
@@ -372,7 +372,7 @@ class TestPyPyBridgeExceptions(BaseTestInterpreter):
         output = self.run('''
             class A {};
             $src = "def f(): pass";
-            embed_py_meth("A", $src);
+            compile_py_meth("A", $src);
             $a = new A();
 
             try {
@@ -394,7 +394,7 @@ class TestPyPyBridgeExceptions(BaseTestInterpreter):
             return A
         EOD;
 
-        embed_py_func_global($src);
+        compile_py_func_global($src);
         try {
             f();
             $s = "failed";
@@ -511,7 +511,7 @@ class TestPyPyBridgeExceptions(BaseTestInterpreter):
             def f(self, a="a", b="b", c="c"):
                   return a + b + c
             EOD;
-            embed_py_meth("A", $src);
+            compile_py_meth("A", $src);
 
             $a = new A();
             try {
@@ -530,7 +530,7 @@ class TestPyPyBridgeExceptions(BaseTestInterpreter):
                   return a + b + c
             EOD;
 
-            embed_py_func_global($src);
+            compile_py_func_global($src);
             try {
                 // 1 indistinguishable from "1" in array key in PHP
                 call_py_func("f", [], [1 => "z"]);
@@ -595,7 +595,7 @@ class TestPyPyBridgeExceptions(BaseTestInterpreter):
             };
 
             $src = 'def a(): pass'; // not static
-            embed_py_meth("A", $src);
+            compile_py_meth("A", $src);
 
             try {
                 call_py_func('A::a', [], []);
@@ -626,10 +626,10 @@ class TestPyPyBridgeExceptions(BaseTestInterpreter):
             def f():
                 A = 1 # not a class
                 php_src = "function g() { call_py_func('A::k', [], []); }"
-                g = embed_php_func(php_src)
+                g = compile_php_func(php_src)
                 return g
             EOD;
-            $f = embed_py_func($pysrc);
+            $f = compile_py_func($pysrc);
             $g = $f();
 
             try {
@@ -649,7 +649,7 @@ class TestPyPyBridgeExceptions(BaseTestInterpreter):
                   return a + b + c
             EOD;
 
-            $f = embed_py_func_global($src);
+            $f = compile_py_func_global($src);
 
             try {
                 // positional arguments with string keys -- bogus
@@ -678,7 +678,7 @@ class TestPyPyBridgeExceptions(BaseTestInterpreter):
             // too few args, needs at the very least 1 to bind to
             // when called will raise BridgeError which is passed up
             $src = "def __construct(self, a): Base.__construct()";
-            embed_py_meth("Sub", $src);
+            compile_py_meth("Sub", $src);
 
             try {
                 $inst = new Sub(6);
@@ -706,7 +706,7 @@ class TestPyPyBridgeExceptions(BaseTestInterpreter):
 
             // will raise BridgeError
             $src = "def __construct(self, a): Base.__construct(self, a)";
-            embed_py_meth("Sub", $src);
+            compile_py_meth("Sub", $src);
 
             try {
                 $inst = new Sub(6);
@@ -734,7 +734,7 @@ class TestPyPyBridgeExceptions(BaseTestInterpreter):
 
             // will raise BridgeError
             $src = "def __construct(self, a): Base.__construct(self, PHPRef(a))";
-            embed_py_meth("Sub", $src);
+            compile_py_meth("Sub", $src);
 
             try {
                 $inst = new Sub(6);
@@ -759,7 +759,7 @@ class TestPyPyBridgeExceptions(BaseTestInterpreter):
 
             // will raise BridgeError
             $src = "def f(): return Base.__construct";
-            embed_py_func_global($src);
+            compile_py_func_global($src);
 
             try {
                 f();
@@ -775,7 +775,7 @@ class TestPyPyBridgeExceptions(BaseTestInterpreter):
     def test_pop_empty_on_php_array_strategy(self, php_space):
         output = self.run('''
         $src = "def f(a): return a.as_list().pop()";
-        embed_py_func_global($src);
+        compile_py_func_global($src);
 
         try {
             f(array());
@@ -791,7 +791,7 @@ class TestPyPyBridgeExceptions(BaseTestInterpreter):
         expected_warnings = ["Notice: Undefined index: a"]
         output = self.run('''
         $src = "def f(a): return a.pop('a')";
-        embed_py_func_global($src);
+        compile_py_func_global($src);
         f(array());
         ''', expected_warnings)
 
@@ -806,10 +806,10 @@ class TestPyPyBridgeExceptions(BaseTestInterpreter):
 
         class A{};
 
-        embed_py_meth("A", $src);
+        compile_py_meth("A", $src);
         /*
         try {
-            embed_py_meth("A", $src);
+            compile_py_meth("A", $src);
             echo "fail";
         } catch (PyException $e) {
             echo "ok";
@@ -825,10 +825,10 @@ class TestPyPyBridgeExceptions(BaseTestInterpreter):
         $src = <<<EOD
         def f():
             src2 = 'def g(): return 123'
-            g = embed_py_func(src2)
+            g = compile_py_func(src2)
             return g()
         EOD;
-        $f = embed_py_func($src);
+        $f = compile_py_func($src);
         try {
             $f();
             echo 'fail';
@@ -844,9 +844,9 @@ class TestPyPyBridgeExceptions(BaseTestInterpreter):
         $src = <<<EOD
         def f():
             src2 = 'def g(): 123'
-            embed_py_func_global(src2)
+            compile_py_func_global(src2)
         EOD;
-        $f = embed_py_func($src);
+        $f = compile_py_func($src);
         try {
             $f();
             echo 'fail';
@@ -865,9 +865,9 @@ class TestPyPyBridgeExceptions(BaseTestInterpreter):
             $src = <<<EOD
 def f():
     src2 = 'def g(): return 123'
-    embed_py_meth('A', src2)
+    compile_py_meth('A', src2)
 EOD;
-            $f = embed_py_func($src);
+            $f = compile_py_func($src);
 
             $a = new A();
             try {
@@ -886,10 +886,10 @@ EOD;
 
         $src = <<<EOD
         def f():
-            src2 = "function g() { embed_php_func('function h(){}'); }"
-            return embed_php_func(src2)
+            src2 = "function g() { compile_php_func('function h(){}'); }"
+            return compile_php_func(src2)
         EOD;
-        $f = embed_py_func($src);
+        $f = compile_py_func($src);
         try {
             $ff = $f();
             $ff();
@@ -901,15 +901,15 @@ EOD;
         err_s = "Adapting forbidden Python function"
         assert php_space.str_w(output[0]) == err_s
 
-    def test_embed_php_func_two_funcs(self, php_space):
+    def test_compile_php_func_two_funcs(self, php_space):
         output = self.run('''
             $pysrc = <<<EOD
             def comp():
                 php_src = "function f(){}; function g(){};"
-                g = embed_php_func(php_src)
+                g = compile_php_func(php_src)
             EOD;
 
-            $comp = embed_py_func($pysrc);
+            $comp = compile_py_func($pysrc);
             try {
                 $comp();
                 echo "fail";
@@ -917,7 +917,7 @@ EOD;
                 echo $e->getMessage();
             }
         ''')
-        err_s = "embed_php_func expects source code for a single PHP function"
+        err_s = "compile_php_func expects source code for a single PHP function"
         assert php_space.str_w(output[0]) == err_s
 
     def test_call_pyclass_attr(self, php_space):
@@ -929,7 +929,7 @@ EOD;
                 x = 1
             return A
         EOD;
-        embed_py_func_global($src);
+        compile_py_func_global($src);
         $a = f();
         $a::x(); // bogus
         ''', expected_warnings)
@@ -942,7 +942,7 @@ EOD;
                 x = 1
             return A
         EOD;
-        embed_py_func_global($src);
+        compile_py_func_global($src);
         $a = f();
 
         try {
@@ -968,7 +968,7 @@ EOD;
         def get_secret(self):
             return self.secret()
         EOD;
-        embed_py_meth("B", $pysrc);
+        compile_py_meth("B", $pysrc);
 
         $b = new B();
         try {
@@ -994,7 +994,7 @@ EOD;
             a = A()
             return a.secret()
         EOD;
-        embed_py_func_global($pysrc);
+        compile_py_func_global($pysrc);
 
         try {
             $s = get_secret();
@@ -1020,7 +1020,7 @@ EOD;
         def get_secret(self):
             return self.secret
         EOD;
-        embed_py_meth("B", $pysrc);
+        compile_py_meth("B", $pysrc);
 
         $b = new B();
         try {
@@ -1046,7 +1046,7 @@ EOD;
             a = A();
             return a.secret
         EOD;
-        embed_py_func_global($pysrc);
+        compile_py_func_global($pysrc);
 
         get_secret();
         }
@@ -1066,7 +1066,7 @@ EOD;
             a.secret = 555;
             return a.secret
         EOD;
-        embed_py_func_global($pysrc);
+        compile_py_func_global($pysrc);
 
         try {
             echo set_secret();

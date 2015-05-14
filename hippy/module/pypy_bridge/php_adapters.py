@@ -264,10 +264,10 @@ class W_PHPFuncAdapter(W_Root):
         # compiling python functions inside python makes no sense
         # We catch this before it is called.
         from hippy.module.pypy_bridge.bridge import (
-            embed_py_func, embed_py_func_global, embed_py_meth)
-        if w_php_func is embed_py_func or \
-                w_php_func is embed_py_func_global or \
-                w_php_func is embed_py_meth:
+            compile_py_func, compile_py_func_global, compile_py_meth)
+        if w_php_func is compile_py_func or \
+                w_php_func is compile_py_func_global or \
+                w_php_func is compile_py_meth:
             _raise_py_bridgeerror(space,
                                   "Adapting forbidden PHP function")
 

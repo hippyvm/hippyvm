@@ -45,7 +45,7 @@ class TestPyPyBridgeConversions(BaseTestInterpreter):
         def dummy(x):
             return x
         EOD;
-        $dummy = embed_py_func($src);
+        $dummy = compile_py_func($src);
 
         class C { }
         $x = new C();
@@ -99,7 +99,7 @@ class TestPyPyBridgeConversions(BaseTestInterpreter):
             print x, dummy(x)
             return x is dummy(x)
         EOD;
-        $tst = embed_py_func($src);
+        $tst = compile_py_func($src);
 
         echo($tst());
         ''')
@@ -111,7 +111,7 @@ class TestPyPyBridgeConversions(BaseTestInterpreter):
         def n():
             return None
         EOD;
-        $n = embed_py_func($src);
+        $n = compile_py_func($src);
 
         echo(null === $n());
         ''')
@@ -129,7 +129,7 @@ class TestPyPyBridgeConversions(BaseTestInterpreter):
                 return e.message
             return "test failed"
         EOD;
-        $f = embed_py_func($src);
+        $f = compile_py_func($src);
 
         $inst = new A();
         echo $f($inst);
@@ -149,7 +149,7 @@ class TestPyPyBridgeConversions(BaseTestInterpreter):
         def py_func(inst):
             return inst()
         EOD;
-        $py_func = embed_py_func($src);
+        $py_func = compile_py_func($src);
 
         $inst = new A();
         echo($py_func($inst));
@@ -168,7 +168,7 @@ class TestPyPyBridgeConversions(BaseTestInterpreter):
         def py_func(inst):
             return inst("abc", "123")
         EOD;
-        $py_func = embed_py_func($src);
+        $py_func = compile_py_func($src);
 
         $inst = new A();
         echo($py_func($inst));
@@ -188,7 +188,7 @@ class TestPyPyBridgeConversions(BaseTestInterpreter):
     def test_py_generic_adapter_is_stringable_in_php(self, php_space):
         output = self.run('''
         $src = "def get(): return (1, 2, 3)";
-        $get = embed_py_func($src);
+        $get = compile_py_func($src);
 
         echo($get());
         ''')
@@ -198,7 +198,7 @@ class TestPyPyBridgeConversions(BaseTestInterpreter):
     def test_py_list_adapter_is_stringable_in_php(self, php_space):
         output = self.run('''
         $src = "def get(): return [1, 2, 3]";
-        $get = embed_py_func($src);
+        $get = compile_py_func($src);
 
         echo($get());
         ''')
@@ -207,7 +207,7 @@ class TestPyPyBridgeConversions(BaseTestInterpreter):
     def test_py_dict_adapter_is_stringable_in_php(self, php_space):
         output = self.run('''
                           $src = "def get(): return {1: 2}";
-        $get = embed_py_func($src);
+        $get = compile_py_func($src);
 
         echo($get());
         ''')
@@ -219,7 +219,7 @@ class TestPyPyBridgeConversions(BaseTestInterpreter):
         class A {};
 
         $src = "def s(o): return str(o)";
-        $s = embed_py_func($src);
+        $s = compile_py_func($src);
 
         $o = new A();
         echo($s($o));
@@ -230,7 +230,7 @@ class TestPyPyBridgeConversions(BaseTestInterpreter):
     def test_php_array_adapter_is_stringable_in_python(self, php_space):
         output = self.run('''
         $src = "def s(o): return str(o)";
-        $s = embed_py_func($src);
+        $s = compile_py_func($src);
 
         $a = array(1, 2, 3);
         echo($s($a));
@@ -241,7 +241,7 @@ class TestPyPyBridgeConversions(BaseTestInterpreter):
     def test_php_array_adapter_is_stringable_as_list_in_python(self, php_space):
         output = self.run('''
         $src = "def s(o): return str(o.as_list())";
-        $s = embed_py_func($src);
+        $s = compile_py_func($src);
 
         $a = array(1, 2, 3);
         echo($s($a));
@@ -257,7 +257,7 @@ class TestPyPyBridgeConversions(BaseTestInterpreter):
             inst += inst2;
         EOD;
 
-        embed_py_func_global($src);
+        compile_py_func_global($src);
 
         class A {};
         $a = new A();
