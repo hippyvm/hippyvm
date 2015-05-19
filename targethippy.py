@@ -12,29 +12,9 @@ def get_additional_config_options():
 
 class ConfigMergeError(Exception): pass
 
-# 'translation.secondaryentrypoints' is 'main' in 'Hippy'
-#     but 'cpyext,main' in 'PyPy'
-# 'translation.withsmallfuncsets' is '5' in 'Hippy' but '0' in 'PyPy'
-MERGE_RESOLUTIONS = {
-    'translation.secondaryentrypoints' : 'cpyext,main', # PyPy
-    'translation.withsmallfuncsets' : 5,                # Hippy
-}
-
 def _pstr(path_list):
     """ path list to string """
     return ".".join(path_list)
-
-def get_merge_resolution(path_elems):
-    try:
-        return MERGE_RESOLUTIONS[_pstr(path_elems)]
-    except KeyError:
-        return None
-
-def check_no_resolution(path_elems):
-    res = get_merge_resolution(path_elems)
-    if res is not None:
-        raise ConfigMergeError(
-                "Redundent merge resolution: '%s'" % _pstr(path_elems))
 
 def merge_configs(c1, c2, c1_who="config1", c2_who="config2", path=[]):
     from rpython.config.config import Config
@@ -54,24 +34,18 @@ def merge_configs(c1, c2, c1_who="config1", c2_who="config2", path=[]):
 
             if type(c1_sub) == Config:
                 # Recurse lower
-                check_no_resolution(path + [name])
                 merge_configs(c1_sub, c2_sub, c1_who, c2_who, path + [name])
             else:
                 # A leaf, check the values are the same
                 if c1_sub != c2_sub:
-                    resolution = get_merge_resolution(path + [name])
-                    if resolution is None:
-                        # Merge conflict with no resolution. Barf.
-                        raise ConfigMergeError(
-                                "'%s' is '%s' in '%s' but '%s' in '%s'" % (
-                                _pstr(path + [name]),
-                                c1_sub, c1_who, c2_sub, c2_who))
-                    else:
-                        # use the resolved value
-                        setattr(c1, name, resolution)
+                    # Merge conflict
+                    raise ConfigMergeError(
+                            "'%s' is '%s' in '%s' but '%s' in '%s'" % (
+                            _pstr(path + [name]),
+                            c1_sub, c1_who, c2_sub, c2_who))
                 else:
                     # If we get here, it was a leaf with no conflict, do nothing
-                    check_no_resolution(path + [name])
+                    pass
         else:
             # c1 does not have this whole subtree, so just copy it in
             value = getattr(c2, child._name)
@@ -79,6 +53,10 @@ def merge_configs(c1, c2, c1_who="config1", c2_who="config2", path=[]):
 
 # Stashed from handle_config
 TRANSLATECONFIG = [None]
+
+def force_set_option(option, name, value):
+    """Set an option, bypassing normal dependency mechanisms"""
+    getattr(option._cfgimpl_descr, name).setoption(option, value, "required")
 
 def target(driver, args):
     driver.exe_name = 'hippy-c'
@@ -89,7 +67,6 @@ def target(driver, args):
     from rpython.config.config import to_optparse, SUPPRESS_USAGE
     parser = to_optparse(config, parserkwargs={'usage': SUPPRESS_USAGE })
     parser.parse_args(args)
-
 
     from hippy.hippyoption import (
         OPTIONAL_EXTS, is_optional_extension_enabled, HippyOptionError)
@@ -131,24 +108,23 @@ def target(driver, args):
 
     # set up the objspace optimizations based on the --opt argument
     from pypy.config.pypyoption import set_pypy_opt_level
+    from rpython.config.translationoption import set_opt_level
     set_pypy_opt_level(pypy_config, translateconfig.opt)
+    #set_pypy_opt_level(config, translateconfig.opt)
+    set_opt_level(pypy_config, translateconfig.opt)
 
-    # JIT/GC enablement should mirror from hippy
-    # (just to prevent merge conflicts)
-    pypy_config.translation.jit = config.translation.jit
-    pypy_config.translation.gc = config.translation.gc
+    config.translation.secondaryentrypoints = \
+            pypy_config.translation.secondaryentrypoints
 
-    # Copy over make_jobs from hippy.
-    # XXX could do something similar for -O, but benchmark to ensure we don't
-    # affect performance.
+    # Copy over some options that should be the same in both configs
     pypy_config.translation.make_jobs = config.translation.make_jobs
+    if config.translation.output is not None:
+        pypy_config.translation.output = config.translation.output
+
+    force_set_option(config.translation, "continuation", True)
+    force_set_option(pypy_config.translation, "continuation", True)
 
     merge_configs(config, pypy_config, "Hippy", "PyPy")
-
-    # XXX Turn continuations on. Or we get:
-    # AssertionError: stacklet: you have to translate with --continuation
-    # Should be fixed properly someday.
-    config.translation.continuation = True
 
     # PyPy needs threads
     config.translation.thread = True
