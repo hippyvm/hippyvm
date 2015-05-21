@@ -23,7 +23,7 @@ class TestPyPyBridge(BaseTestInterpreter):
                 echo $e->getMessage();
             }
         ''')
-        err_s = "No module named __ThIs_DoEs_NoT_ExIsT"
+        err_s = "ImportError: No module named __ThIs_DoEs_NoT_ExIsT"
         assert php_space.str_w(output[0]) == err_s
 
     def test_import_py_mod_attr(self, php_space):
