@@ -575,6 +575,7 @@ class W_PyExceptionAdapter(W_ExceptionObject):
 
     def set_w_py_exception(self, php_interp, w_py_exn):
         assert isinstance(w_py_exn, OperationError)
+        from pypy.interpreter.pytraceback import PyTraceback
 
         W_ExceptionObject.setup(self, php_interp)
         self.w_py_exn = w_py_exn
@@ -583,6 +584,7 @@ class W_PyExceptionAdapter(W_ExceptionObject):
 
         tb = w_py_exn.get_traceback()
         if tb is not None:
+            assert isinstance(tb, PyTraceback)
             py_frame = tb.frame
             php_frame = py_frame.php_scope.ph_frame
         else:
@@ -605,6 +607,7 @@ class W_PyExceptionAdapter(W_ExceptionObject):
         # build a PHP traceback from Python tracebacks
         more_tb_frames = []
         while tb is not None:
+            assert isinstance(tb, PyTraceback)
             frame = tb.frame
             bc = frame.getcode()
             filename, php_funcname, line_offset = \
