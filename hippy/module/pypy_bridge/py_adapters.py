@@ -158,8 +158,7 @@ class W_PyCallable(W_InvokeCall):
         except OperationError as e:
             # Convert the Python exception to a PHP one.
             e.normalize_exception(py_space)
-            w_py_exn = e.get_w_value(py_space)
-            w_php_exn = w_py_exn.to_php(interp)
+            w_php_exn = e.to_php(interp)
             from hippy.error import Throw
             raise Throw(w_php_exn)
 
@@ -215,8 +214,7 @@ class W_PyFuncGlobalAdapter(AbstractFunction):
             return w_py_rv.to_php(interp) # may also raise
         except OperationError as e:
             e.normalize_exception(py_space)
-            w_py_exn = e.get_w_value(py_space)
-            w_php_exn = w_py_exn.to_php(interp)
+            w_php_exn = e.to_php(interp)
             from hippy.error import Throw
             raise Throw(w_php_exn)
 
@@ -568,31 +566,57 @@ class W_PyExceptionAdapter(W_ExceptionObject):
     def __init__(self, klass, dct_w):
         W_ExceptionObject.__init__(self, klass, dct_w)
         self.w_py_exn = None
+        self.traceback = None # later
+
+    # overide the default traceback generation mechanism
+    def setup(self, interp):
+        #self.traceback = interp.get_traceback()
+        pass
 
     def set_w_py_exception(self, php_interp, w_py_exn):
+        assert isinstance(w_py_exn, OperationError)
+
         W_ExceptionObject.setup(self, php_interp)
         self.w_py_exn = w_py_exn
 
         php_space, py_space = php_interp.space, php_interp.py_space
 
-        # XXX these need to be properly populated to give the user a
-        # meaningful error message. The comments show how these fields
-        # would be populated if they were a standard PHP exception.
+        tb = w_py_exn.get_traceback()
+        if tb is not None:
+            py_frame = tb.frame
+            php_frame = py_frame.php_scope.ph_frame
+        else:
+            # Python frame was never opened.
+            # e.g. import_py_mod raised
+            php_frame = php_interp.topframeref()
 
-        #this.setattr(interp, 'file', space.wrap(this.traceback[0][0]), k_Exception)
-        self.file = None
+        filename, php_funcname, line = php_frame.get_position()
 
-        #this.setattr(interp, 'line', space.wrap(this.traceback[0][2]), k_Exception)
-        self.line = -1
+        # Populate PHP exception with info from the Python exception
+        # NOte that this will report the line the compile_py_func occurred on
+        self.file = php_space.wrap(filename)
+        self.line = php_space.wrap(line)
+        self.code = "" # XXX
 
-        #this.setattr(interp, 'message', space.wrap(message), k_Exception)
-        w_py_exn_str = py_space.getattr(self.w_py_exn, py_space.wrap("message"))
-        msg = py_space.str_w(w_py_exn_str)
+        msg = w_py_exn.errorstr(py_space)
         self.setattr(php_interp, 'message',
                 php_space.wrap(msg), k_PyExceptionAdapter)
 
-        #this.setattr(interp, 'code', space.wrap(code), k_Exception)
-        self.code = None
+        # build a PHP traceback from Python tracebacks
+        more_tb_frames = []
+        while tb is not None:
+            frame = tb.frame
+            bc = frame.getcode()
+            filename, php_funcname, line_offset = \
+                frame.php_scope.ph_frame.get_position()
+            # frame.get_last_lineno() is the offset into the Python func
+            file_descr = "Python code (line %d) %s" % \
+                (frame.get_last_lineno(), bc.co_filename)
+            info = (file_descr, bc.co_name, line_offset, "")
+            more_tb_frames.append(info)
+            tb = tb.next
+        self.traceback += more_tb_frames
+
 
 @wrap_method(['interp', ThisUnwrapper(W_PyExceptionAdapter)], name='PyException::getMessage')
 def w_py_exc_getMessage(interp, this):

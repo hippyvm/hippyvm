@@ -85,7 +85,6 @@ def _compile_py_func_from_string_cached(interp, func_source):
             _raise_php_bridgeexception(interp,
                                        "Failed to compile Python code: %s" %
                                        e.errorstr(py_space))
-
         PYCODE_CACHE.update(func_source, w_py_code)
 
     return w_py_code
@@ -95,6 +94,10 @@ def _compile_py_func_from_string(
     """ compiles a string returning a <name, func> pair """
 
     py_space = interp.py_space
+
+    jit.jit_debug(">>> _compile_py_func_from_string: topframeref()")
+    filename, funcname, line = interp.topframeref().get_position() # XXX may cause slowdown
+    jit.jit_debug(">>>  END _compile_py_func_from_string: topframeref()")
 
     w_py_code = _compile_py_func_from_string_cached(interp, func_source)
 
@@ -189,8 +192,7 @@ def import_py_mod(interp, modname):
                 py_space.w_None, py_space.wrap(modname.split(".")[-1]))
     except OperationError as e: # import failed, pass exn up to PHP
         e.normalize_exception(py_space)
-        w_py_exn = e.get_w_value(py_space)
-        w_php_exn = w_py_exn.to_php(interp)
+        w_php_exn = e.to_php(interp)
         from hippy.error import Throw
         raise Throw(w_php_exn)
 
