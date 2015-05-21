@@ -603,19 +603,24 @@ class W_PyExceptionAdapter(W_ExceptionObject):
                 php_space.wrap(msg), k_PyExceptionAdapter)
 
         # build a PHP traceback from Python tracebacks
+        from hippy.module.pypy_bridge.bridge import DummyPyTraceback
         more_tb_frames = []
         while tb is not None:
-            frame = tb.frame
-            bc = frame.getcode()
-            filename, php_funcname, line_offset = \
-                frame.php_scope.ph_frame.get_position()
-            # frame.get_last_lineno() is the offset into the Python func
-            file_descr = "Python code (line %d) %s" % \
-                (frame.get_last_lineno(), bc.co_filename)
-            info = (file_descr, bc.co_name, line_offset, "")
-            more_tb_frames.append(info)
-            tb = tb.next
-        self.traceback += more_tb_frames
+            if isinstance(tb, DummyPyTraceback):
+                # This is a deeper PHP traceback bubbling up
+                more_tb_frames = tb.php_traceback + more_tb_frames
+                break
+            else:
+                # tracebacks for regular python frames
+                frame = tb.frame
+                bc = frame.getcode()
+                filename, php_funcname, line_offset = \
+                    frame.php_scope.ph_frame.get_position()
+                src = "" # XXX
+                info = (bc.co_filename, bc.co_name, frame.get_last_lineno(), src)
+                more_tb_frames.append(info)
+                tb = tb.next
+        self.traceback = more_tb_frames + self.traceback
 
 
 @wrap_method(['interp', ThisUnwrapper(W_PyExceptionAdapter)], name='PyException::getMessage')

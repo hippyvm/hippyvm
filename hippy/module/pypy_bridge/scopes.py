@@ -211,7 +211,11 @@ class Py_Scope(WPHP_Root):
             py_scope = ph_scope.ph_frame.bytecode.py_scope
 
     def ph_lookup_global(self, n):
-        return self.py_lookup_global(n).to_php(self.py_frame.space.get_php_interp())
+        v = self.py_lookup_global(n)
+        if v is not None:
+            return v.to_php(self.py_frame.space.get_php_interp())
+        else:
+            return self.py_interp.get_php_interp().space.w_Null
 
     def py_lookup_local(self, n):
         py_frame = self.py_frame

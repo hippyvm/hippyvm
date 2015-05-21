@@ -777,7 +777,7 @@ class Interpreter(object):
             if funcname == '<main>':
                 msg = '{main}'
             else:
-                msg = '%s(%s)' % (filename, line)
+                msg = '%s(%s): %s()' % (filename, line, funcname)
             self.err_write("#%d %s\n" % (i, msg))
         filename, _, line, _ = tb[len(tb) - 1]
         self.err_write("  thrown in %s on line %d\n" % (filename, line))
