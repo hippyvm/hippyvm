@@ -246,6 +246,33 @@ W_PHPClassAdapter.typedef = TypeDef("PHPClassAdapter",
     __setattr__ = interp2app(W_PHPClassAdapter.descr_setattr),
 )
 
+def reraise_py_exception_to_php(php_interp, w_php_throw):
+    """Take a Python exception and propogate up to PHP, carrying
+    along with it the relevant backtrace information"""
+
+    w_exc = w_php_throw.w_exc
+
+    # We will need to chop off items from the PHP backtrace, from
+    # this frame upwards. Therefore, we first walk up the stack seeing
+    # how deep we are at this point.
+    # Yeh, this is slow, but it is an *exception* case after all.
+    n_chop = 0
+    f = php_interp.topframeref()
+    while True:
+        if f is not None:
+            n_chop += 1
+            f = f.f_backref()
+        else:
+            break
+
+    # And chop
+    traceback = w_exc.traceback[:-n_chop]
+
+    from hippy.module.pypy_bridge.bridge import DummyPyTraceback
+    pt = DummyPyTraceback(php_interp, traceback)
+    raise OperationError(php_interp.py_space.builtin.get("PHPException"),
+                         w_exc.to_py(php_interp), pt)
+
 class W_PHPFuncAdapter(W_Root):
     """A Python callable that actually executes a PHP function"""
 
@@ -315,9 +342,7 @@ class W_PHPFuncAdapter(W_Root):
         try:
             res = w_php_func.call_args(php_interp, w_php_args_elems)
         except Throw as w_php_throw:
-            w_php_exn = w_php_throw.w_exc
-            raise OperationError(py_space.builtin.get("PHPException"),
-                                 w_php_exn.to_py(php_interp))
+            reraise_py_exception_to_php(php_interp, w_php_throw)
 
         return res.to_py(php_interp)
 
@@ -402,9 +427,7 @@ class W_PHPUnboundMethAdapter(W_Root):
         try:
             res = w_php_bound_meth.call_args(php_interp, w_php_args_elems)
         except Throw as w_php_throw:
-            w_php_exn = w_php_throw.w_exc
-            raise OperationError(py_space.builtin.get("PHPException"),
-                                 w_php_exn.to_py(php_interp))
+            reraise_py_exception_to_php(php_interp, w_php_throw)
 
         return res.to_py(php_interp)
 

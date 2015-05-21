@@ -783,7 +783,7 @@ class TestPyPyBridgeScope(BaseTestInterpreter):
             echo $e->getMessage();
         }
         ''')
-        assert php_space.str_w(output[0]) == "global name 'p' is not defined"
+        assert php_space.str_w(output[0]) == "NameError: global name 'p' is not defined"
 
     def test_py_code_cache_is_per_scope(self, php_space):
         output = self.run('''

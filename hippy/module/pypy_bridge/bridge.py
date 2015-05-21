@@ -79,7 +79,7 @@ def _compile_py_func_from_string_cached(interp, func_source):
     if w_py_code is None:
         try:
             w_py_code = py_compiling.compile(
-                    py_space, py_space.wrap(func_source), "<string>", "exec")
+                    py_space, py_space.wrap(func_source), "<python_box>", "exec")
         except OperationError as e:
             e.normalize_exception(py_space)
             _raise_php_bridgeexception(interp,
@@ -451,3 +451,14 @@ def call_py_func(interp, w_func_or_w_name, w_args, w_kwargs):
         _raise_php_bridgeexception(interp, e.errorstr(py_space))
     assert w_py_rv is not None
     return w_py_rv.to_php(interp)
+
+
+from pypy.interpreter.pytraceback import PyTraceback
+class DummyPyTraceback(PyTraceback):
+
+    def __init__(self, interp, php_traceback):
+        self.php_traceback = php_traceback
+
+    def mark_escaped_frame(self):
+        pass
+

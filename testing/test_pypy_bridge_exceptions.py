@@ -31,7 +31,7 @@ class TestPyPyBridgeExceptions(BaseTestInterpreter):
                 echo $e->getMessage();
             }
         ''')
-        assert php_space.str_w(output[0]) == "my error"
+        assert php_space.str_w(output[0]) == "ValueError: my error"
 
     def test_php_exn_is_passed_up_to_py(self, php_space):
         output = self.run('''
@@ -125,7 +125,7 @@ class TestPyPyBridgeExceptions(BaseTestInterpreter):
                 echo $e->getMessage();
             }
         ''')
-        assert php_space.str_w(output[0]) == "explosion"
+        assert php_space.str_w(output[0]) == "PHPException: ValueError: explosion"
 
     def test_python_lookup_missing_php_attr(self, php_space):
         output = self.run("""
@@ -382,7 +382,7 @@ class TestPyPyBridgeExceptions(BaseTestInterpreter):
                 echo $e->getMessage();
             }
         ''')
-        err_s = "f() takes no arguments (4 given)"
+        err_s = "TypeError: f() takes no arguments (4 given)"
         assert php_space.str_w(output[0]) == err_s
 
     def test_class_cannot_be_passed_to_php(self, php_space):
@@ -688,7 +688,7 @@ class TestPyPyBridgeExceptions(BaseTestInterpreter):
             }
         }
         ''')
-        err_s = "Call to unbound PHP method requires at-least one argument (for $this)"
+        err_s = "BridgeError: Call to unbound PHP method requires at-least one argument (for $this)"
         assert php_space.str_w(output[0]) == err_s
 
     def test_php_unbound_meth_bad_ref_arg(self, php_space):
@@ -716,7 +716,7 @@ class TestPyPyBridgeExceptions(BaseTestInterpreter):
             }
         }
         ''')
-        err_s = "Arg 1 of PHP func '__construct' is pass by reference"
+        err_s = "BridgeError: Arg 1 of PHP func '__construct' is pass by reference"
         assert php_space.str_w(output[0]) == err_s
 
     def test_php_unbound_meth_bad_val_arg(self, php_space):
@@ -744,7 +744,7 @@ class TestPyPyBridgeExceptions(BaseTestInterpreter):
             }
         }
         ''')
-        err_s = "Arg 1 of PHP func '__construct' is pass by value"
+        err_s = "BridgeError: Arg 1 of PHP func '__construct' is pass by value"
         assert php_space.str_w(output[0]) == err_s
 
     def test_php_unbound_meth_unwrap_raises(self, php_space):
@@ -769,7 +769,7 @@ class TestPyPyBridgeExceptions(BaseTestInterpreter):
             }
         }
         ''')
-        err_s = "Cannot unwrap unbound PHP method."
+        err_s = "BridgeError: Cannot unwrap unbound PHP method."
         assert php_space.str_w(output[0]) == err_s
 
     def test_pop_empty_on_php_array_strategy(self, php_space):
@@ -784,7 +784,7 @@ class TestPyPyBridgeExceptions(BaseTestInterpreter):
             echo $e->getMessage();
         }
         ''')
-        err_s = "pop from empty list"
+        err_s = "IndexError: pop from empty list"
         assert php_space.str_w(output[0]) == err_s
 
     def test_pop_empty_on_php_array_strategy2(self, php_space):
@@ -836,7 +836,7 @@ class TestPyPyBridgeExceptions(BaseTestInterpreter):
             echo $e->getMessage();
         }
         ''')
-        err_s = 'Adapting forbidden PHP function'
+        err_s = 'BridgeError: Adapting forbidden PHP function'
         assert php_space.str_w(output[0]) == err_s
 
     def test_compile_py_in_py2(self, php_space):
@@ -854,7 +854,7 @@ class TestPyPyBridgeExceptions(BaseTestInterpreter):
             echo $e->getMessage();
         }
         ''')
-        err_s = 'Adapting forbidden PHP function'
+        err_s = 'BridgeError: Adapting forbidden PHP function'
         assert php_space.str_w(output[0]) == err_s
 
     def test_compile_py_in_py3(self, php_space):
@@ -878,7 +878,7 @@ EOD;
             }
         }
         ''')
-        err_s = 'Adapting forbidden PHP function'
+        err_s = 'BridgeError: Adapting forbidden PHP function'
         assert php_space.str_w(output[0]) == err_s
 
     def test_compile_php_in_php(self, php_space):
@@ -917,7 +917,7 @@ EOD;
                 echo $e->getMessage();
             }
         ''')
-        err_s = "compile_php_func expects source code for a single PHP function"
+        err_s = "BridgeError: compile_php_func expects source code for a single PHP function"
         assert php_space.str_w(output[0]) == err_s
 
     def test_call_pyclass_attr(self, php_space):
@@ -979,7 +979,7 @@ EOD;
         }
         }
         ''')
-        err_s = "Wrapped PHP instance has no attribute 'secret'"
+        err_s = "BridgeError: Wrapped PHP instance has no attribute 'secret'"
         assert php_space.str_w(output[0]) == err_s
 
     def test_call_private_method_from_py_func(self, php_space):
@@ -1004,7 +1004,7 @@ EOD;
         }
         }
         ''')
-        err_s = "Wrapped PHP instance has no attribute 'secret'"
+        err_s = "BridgeError: Wrapped PHP instance has no attribute 'secret'"
         assert php_space.str_w(output[0]) == err_s
 
     def test_get_private_attr_from_subclass_in_py(self, php_space):
@@ -1030,7 +1030,7 @@ EOD;
         }
         }
         ''')
-        err_s = "Wrapped PHP instance has no attribute 'secret'"
+        err_s = "BridgeError: Wrapped PHP instance has no attribute 'secret'"
         assert php_space.str_w(output[0]) == err_s
 
     def test_get_private_attr_from_py_func(self, php_space):
