@@ -191,9 +191,7 @@ def import_py_mod(interp, modname):
                 py_space.w_None, py_space.wrap(modname.split(".")[-1]))
     except OperationError as e: # import failed, pass exn up to PHP
         e.normalize_exception(py_space)
-        w_php_exn = e.to_php(interp)
-        from hippy.error import Throw
-        raise Throw(w_php_exn)
+        raise e.to_php(interp)
 
     return w_obj.to_php(interp)
 

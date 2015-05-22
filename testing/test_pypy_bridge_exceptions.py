@@ -1088,7 +1088,7 @@ EOD;
 
         try {
             f();
-        } catch(PyException $e) {
+        } catch(LogicException $e) {
             echo $e->getMessage();
         }
         ''')

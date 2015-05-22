@@ -247,7 +247,7 @@ W_PHPClassAdapter.typedef = TypeDef("PHPClassAdapter",
 )
 
 def reraise_py_exception_to_php(php_interp, w_php_throw):
-    """Take a Python exception and propogate up to PHP, carrying
+    """Take a PHP exception and propogate up to Python, carrying
     along with it the relevant backtrace information"""
 
     w_exc = w_php_throw.w_exc
@@ -278,6 +278,25 @@ def reraise_py_exception_to_php(php_interp, w_php_throw):
     pt = DummyPyTraceback(php_interp, traceback)
     raise OperationError(php_interp.py_space.builtin.get("PHPException"),
                          w_exc.to_py(php_interp), pt)
+
+    # XXX blast away old adapter!!!
+    #import pdb; pdb.set_trace()
+    #raise OperationError(W_PHPExceptionAdapter, w_exc.to_py(php_interp), pt)
+
+from pypy.module.exceptions.interp_exceptions import W_BaseException
+class W_PHPExceptionAdapter(W_BaseException):
+
+    def __init__(self, space):
+        W_BaseException.__init__(self, space)
+        self.w_php_exn = None # set later
+
+    def to_php(self, interp):
+        return self.w_php_exn
+
+W_PHPExceptionAdapter.typedef = TypeDef("PHPException", W_BaseException.typedef)
+
+#W_TypeError = _new_exception('TypeError', W_StandardError,
+#                             """Inappropriate argument type.""")
 
 class W_PHPFuncAdapter(W_Root):
     """A Python callable that actually executes a PHP function"""

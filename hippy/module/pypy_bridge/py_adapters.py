@@ -158,9 +158,7 @@ class W_PyCallable(W_InvokeCall):
         except OperationError as e:
             # Convert the Python exception to a PHP one.
             e.normalize_exception(py_space)
-            w_php_exn = e.to_php(interp)
-            from hippy.error import Throw
-            raise Throw(w_php_exn)
+            raise e.to_php(interp)
 
         return rv.to_php(interp)
 
@@ -214,9 +212,7 @@ class W_PyFuncGlobalAdapter(AbstractFunction):
             return w_py_rv.to_php(interp) # may also raise
         except OperationError as e:
             e.normalize_exception(py_space)
-            w_php_exn = e.to_php(interp)
-            from hippy.error import Throw
-            raise Throw(w_php_exn)
+            raise e.to_php(interp)
 
     def _arg_index_adjust(self, i):
         return i
@@ -563,26 +559,28 @@ class W_PyDictAdapter(W_ArrayObject):
 class W_PyExceptionAdapter(W_ExceptionObject):
     """Wraps up a Python exception"""
 
-    def __init__(self, klass, dct_w):
-        W_ExceptionObject.__init__(self, klass, dct_w)
+    def __init__(self, klass, initial_storage):
+        W_ExceptionObject.__init__(self, klass, initial_storage)
         self.w_py_exn = None
-        self.traceback = None # later
 
     # overide the default traceback generation mechanism
     def setup(self, interp):
         #self.traceback = interp.get_traceback()
         pass
 
-    def set_w_py_exception(self, php_interp, w_py_exn):
-        assert isinstance(w_py_exn, OperationError)
-        from pypy.interpreter.pytraceback import PyTraceback
+    def get_message(self, interp):
+        import pdb; pdb.set_trace()
 
-        W_ExceptionObject.setup(self, php_interp)
-        self.w_py_exn = w_py_exn
+
+
+    def set_backtrace(self, php_interp, w_py_operr):
+        """Sets useful debugging info"""
+        assert isinstance(w_py_operr, OperationError)
+        from pypy.interpreter.pytraceback import PyTraceback
 
         php_space, py_space = php_interp.space, php_interp.py_space
 
-        tb = w_py_exn.get_traceback()
+        tb = w_py_operr.get_traceback()
         if tb is not None:
             assert isinstance(tb, PyTraceback)
             py_frame = tb.frame
@@ -600,7 +598,7 @@ class W_PyExceptionAdapter(W_ExceptionObject):
         self.line = php_space.wrap(line)
         self.code = "" # XXX
 
-        msg = w_py_exn.errorstr(py_space)
+        msg = w_py_operr.errorstr(py_space)
         self.setattr(php_interp, 'message',
                 php_space.wrap(msg), k_PyExceptionAdapter)
 
@@ -626,7 +624,10 @@ class W_PyExceptionAdapter(W_ExceptionObject):
 
 @wrap_method(['interp', ThisUnwrapper(W_PyExceptionAdapter)], name='PyException::getMessage')
 def w_py_exc_getMessage(interp, this):
-    return this.getattr(interp, "message")
+    py_space = interp.py_space
+    exn_typename = py_space.type(this.w_py_exn).getname(py_space)
+    msg = py_space.str_w(this.w_py_exn.w_message)
+    return interp.space.wrap(exn_typename + ": " + msg)
 
 k_PyExceptionAdapter = def_class('PyException',
     [w_py_exc_getMessage], [], instance_class=W_PyExceptionAdapter)

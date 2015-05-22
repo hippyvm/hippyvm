@@ -46,6 +46,12 @@ class W_ExceptionObject(W_InstanceObject):
     def get_message(self, interp):
         return self.getattr(interp, 'message', k_Exception)
 
+    def to_py(self, interp):
+        from hippy.module.pypy_bridge.php_adapters import W_PHPExceptionAdapter
+        w_py_ex = W_PHPExceptionAdapter(interp.py_space)
+        w_py_ex.w_php_exn = self
+        return w_py_ex
+
 
 @wrap_method(['interp', ThisUnwrapper(W_ExceptionObject),
               Optional(str), Optional(int), Optional(Nullable('object'))],
