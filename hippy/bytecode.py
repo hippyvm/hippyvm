@@ -62,7 +62,9 @@ class ByteCode(object):
                 self.static_vars[cm] = v
         else:
             self.static_vars = cloned_static_vars
+            # XXX add these last two fields to clone()?
         self.py_scope = None
+        self.line_offset = 0 # used for language composition
 
     def clone(self):
         # Used by PyHyp PHP bytecode cache.

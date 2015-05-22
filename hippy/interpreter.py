@@ -943,7 +943,8 @@ class Interpreter(object):
         while frame is not None:
             filename, funcname, line = frame.get_position()
             source = frame.bytecode.getline(line)
-            tb.append((filename, funcname, line, source))
+            line_offset = frame.bytecode.line_offset # language composition
+            tb.append((filename, funcname, line + line_offset, source))
             frame = frame.f_backref()
         return tb
 
