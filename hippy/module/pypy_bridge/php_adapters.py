@@ -252,6 +252,9 @@ def reraise_py_exception_to_php(php_interp, w_php_throw):
 
     w_exc = w_php_throw.w_exc
 
+    from hippy.builtin_klass import W_ExceptionObject
+    assert isinstance(w_exc, W_ExceptionObject)
+
     # We will need to chop off items from the PHP backtrace, from
     # this frame upwards. Therefore, we first walk up the stack seeing
     # how deep we are at this point.
@@ -266,7 +269,10 @@ def reraise_py_exception_to_php(php_interp, w_php_throw):
             break
 
     # And chop
-    traceback = w_exc.traceback[:-n_chop]
+    #assert n_chop <= len(w_exc.traceback)
+    end = len(w_exc.traceback) - n_chop
+    assert end >= 0
+    traceback = w_exc.traceback[0:end]
 
     from hippy.module.pypy_bridge.bridge import DummyPyTraceback
     pt = DummyPyTraceback(php_interp, traceback)
@@ -339,11 +345,13 @@ class W_PHPFuncAdapter(W_Root):
                     _raise_py_bridgeerror(py_space, err_str)
                 w_php_args_elems[i] = w_py_arg.to_php(php_interp)
 
+        res = None
         try:
             res = w_php_func.call_args(php_interp, w_php_args_elems)
         except Throw as w_php_throw:
             reraise_py_exception_to_php(php_interp, w_php_throw)
 
+        assert res is not None
         return res.to_py(php_interp)
 
     def descr_call(self, __args__):
@@ -424,11 +432,13 @@ class W_PHPUnboundMethAdapter(W_Root):
                     _raise_py_bridgeerror(py_space, err_str)
                 w_php_args_elems[i] = w_py_arg.to_php(php_interp)
 
+        res = None
         try:
             res = w_php_bound_meth.call_args(php_interp, w_php_args_elems)
         except Throw as w_php_throw:
             reraise_py_exception_to_php(php_interp, w_php_throw)
 
+        assert res is not None
         return res.to_py(php_interp)
 
     def descr_call(self, __args__):

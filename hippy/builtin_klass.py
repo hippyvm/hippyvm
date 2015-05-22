@@ -39,6 +39,7 @@ class GetterSetterWrapper(object):
 
 
 class W_ExceptionObject(W_InstanceObject):
+    _attrs_ = ('map', 'storage_w', 'instance_number', 'w_rdict_array', 'traceback') # XXX needed?
     def setup(self, interp):
         self.traceback = interp.get_traceback()
 
