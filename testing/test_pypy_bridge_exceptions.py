@@ -1075,3 +1075,21 @@ EOD;
         }
         }
         ''', errs)
+
+    def test_throw_from_php_box(self, php_space):
+        output = self.run('''
+        $src = <<<EOD
+        def f():
+            psrc = "function g() { throw new LogicException('oops'); }"
+            g = compile_php_func(psrc)
+            g();
+        EOD;
+        compile_py_func_global($src);
+
+        try {
+            f();
+        } catch(PyException $e) {
+            echo $e->getMessage();
+        }
+        ''')
+        assert php_space.str_w(output[0]) == "oops"
