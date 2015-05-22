@@ -90,18 +90,14 @@ def _compile_py_func_from_string_cached(interp, func_source):
     return w_py_code
 
 def _compile_py_func_from_string(
-        interp, func_source, parent_php_scope):
+        interp, func_source, filename, line_offset, parent_php_scope):
     """ compiles a string returning a <name, func> pair """
 
     py_space = interp.py_space
 
-    jit.jit_debug(">>> _compile_py_func_from_string: topframeref()")
-    filename, funcname, line = interp.topframeref().get_position() # XXX may cause slowdown
-    jit.jit_debug(">>>  END _compile_py_func_from_string: topframeref()")
-
     w_py_code = _compile_py_func_from_string_cached(interp, func_source)
 
-    # Eval it into a dict
+    # Eval it into a dict -- this *copies* the python bytecode
     w_py_fake_locals = py_space.newdict()
     py_compiling.eval(py_space, w_py_code, py_space.newdict(), w_py_fake_locals)
 
@@ -121,11 +117,15 @@ def _compile_py_func_from_string(
 
     # inject parent scope (which may well be None)
     w_py_func.php_scope = PHP_Scope(interp, parent_php_scope)
+    w_py_func.getcode().filename = line_offset
+    w_py_func.getcode().line_offset = line_offset
 
     return w_py_func_name, w_py_func
 
-@wrap(['interp', str], name='compile_py_func')
-def compile_py_func(interp, func_source):
+DFL_FILENAME = "<python_box>"
+
+@wrap(['interp', str, Optional(str), Optional(int)], name='compile_py_func')
+def compile_py_func(interp, func_source, filename=DFL_FILENAME, line_offset=0):
     """Embeds a python function returning a callable PHP instance.
     Lexical scope *is* associated"""
     php_space, py_space = interp.space, interp.py_space
@@ -133,13 +133,13 @@ def compile_py_func(interp, func_source):
     # Compile
     php_frame = interp.get_frame()
     w_py_func_name, w_py_func = _compile_py_func_from_string(
-            interp, func_source, php_frame)
+            interp, func_source, filename, line_offset, php_frame)
 
     # make a callable instance a bit like a closure
     return new_adapted_py_func(interp, w_py_func)
 
-@wrap(['interp', str], name='compile_py_func_global')
-def compile_py_func_global(interp, func_source):
+@wrap(['interp', str, Optional(str), Optional(int)], name='compile_py_func_global')
+def compile_py_func_global(interp, func_source, filename=DFL_FILENAME, line_offset=0):
     """Puts a python function into the global function cache.
     no lexical scope is associated, thus mimicking the behaviour of
     a standard php function. to embed a python function with scope,
@@ -150,15 +150,14 @@ def compile_py_func_global(interp, func_source):
     # Compile (note *no* parent PHP frame passed)
     w_py_func_name, w_py_func = \
             _compile_py_func_from_string(interp,
-                                         func_source, interp.global_frame)
+                                         func_source, filename, line_offset, interp.global_frame)
 
     # Masquerade it as a PHP function in the global function cache
     w_php_func = W_PyFuncGlobalAdapter(interp, w_py_func)
     php_space.global_function_cache.declare_new(py_space.str_w(w_py_func_name), w_php_func)
 
-from hippy.builtin import Optional
-@wrap(['interp', str, str], name='compile_py_meth')
-def compile_py_meth(interp, class_name, func_source):
+@wrap(['interp', str, str, Optional(str), Optional(int)], name='compile_py_meth')
+def compile_py_meth(interp, class_name, func_source, filename=DFL_FILENAME, line_offset=0):
     """Inject a Python method into a PHP class.
     Here a Python method is a function accepting self as the first arg.
     """
@@ -166,7 +165,7 @@ def compile_py_meth(interp, class_name, func_source):
 
     php_frame = interp.get_frame()
     w_py_func_name, w_py_func = \
-            _compile_py_func_from_string(interp, func_source, php_frame)
+            _compile_py_func_from_string(interp, func_source, filename, line_offset, php_frame)
     w_php_func = W_PyMethodFuncAdapter(interp, w_py_func)
 
     w_php_class = interp.lookup_class_or_intf(class_name, autoload=True)

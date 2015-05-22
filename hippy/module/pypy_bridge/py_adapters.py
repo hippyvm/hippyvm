@@ -617,10 +617,8 @@ class W_PyExceptionAdapter(W_ExceptionObject):
                 assert isinstance(tb, PyTraceback)
                 frame = tb.frame
                 bc = frame.getcode()
-                filename, php_funcname, line_offset = \
-                    frame.php_scope.ph_frame.get_position()
                 src = "" # XXX
-                info = (bc.co_filename, bc.co_name, frame.get_last_lineno(), src)
+                info = (bc.co_filename, bc.co_name, frame.get_last_lineno() + bc.line_offset, src)
                 more_tb_frames.append(info)
                 tb = tb.next
         self.traceback = more_tb_frames + self.traceback
