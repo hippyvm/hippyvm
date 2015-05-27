@@ -55,37 +55,37 @@ class PyCodeCache(object):
     _immutable_fields_ = ["cache"]
 
     def __init__(self):
-        # maps: func_source -> pycode
+        # maps: func_source * filename -> pycode
         self.cache = {}
         self.version = PyCodeCacheVersion()
 
     @jit.elidable_promote()
-    def _read(self, func_source, version):
-        return self.cache.get(func_source, None)
+    def _read(self, func_source, filename, version):
+        return self.cache.get((func_source, filename), None)
 
-    def read(self, func_source):
-        return self._read(func_source, self.version)
+    def read(self, func_source, filename):
+        return self._read(func_source, filename, self.version)
 
-    def update(self, func_source, pycode):
-        self.cache[func_source] = pycode
+    def update(self, func_source, filename, pycode):
+        self.cache[func_source, filename] = pycode
         self.version = PyCodeCacheVersion()
 
 PYCODE_CACHE = PyCodeCache()
 
-def _compile_py_func_from_string_cached(interp, func_source):
+def _compile_py_func_from_string_cached(interp, func_source, filename):
     py_space = interp.py_space
 
-    w_py_code = PYCODE_CACHE.read(func_source)
+    w_py_code = PYCODE_CACHE.read(func_source, filename)
     if w_py_code is None:
         try:
             w_py_code = py_compiling.compile(
-                    py_space, py_space.wrap(func_source), "<python_box>", "exec")
+                    py_space, py_space.wrap(func_source), filename, "exec")
         except OperationError as e:
             e.normalize_exception(py_space)
             _raise_php_bridgeexception(interp,
                                        "Failed to compile Python code: %s" %
                                        e.errorstr(py_space))
-        PYCODE_CACHE.update(func_source, w_py_code)
+        PYCODE_CACHE.update(func_source, w_py_code, filename)
 
     return w_py_code
 
@@ -95,9 +95,9 @@ def _compile_py_func_from_string(
 
     py_space = interp.py_space
 
-    w_py_code = _compile_py_func_from_string_cached(interp, func_source)
+    w_py_code = _compile_py_func_from_string_cached(interp, func_source, filename)
 
-    # Eval it into a dict -- this *copies* the python bytecode
+    # Eval it into a dict
     w_py_fake_locals = py_space.newdict()
     py_compiling.eval(py_space, w_py_code, py_space.newdict(), w_py_fake_locals)
 
@@ -117,7 +117,6 @@ def _compile_py_func_from_string(
 
     # inject parent scope (which may well be None)
     w_py_func.php_scope = PHP_Scope(interp, parent_php_scope)
-    w_py_func.getcode().filename = line_offset
     w_py_func.getcode().line_offset = line_offset
 
     return w_py_func_name, w_py_func
