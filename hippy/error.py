@@ -42,6 +42,43 @@ class Throw(Exception):
 
         assert isinstance(w_exc, W_InstanceObject)
         self.w_exc = w_exc
+
+    def to_py(self, interp):
+        """Take a PHP exception and propogate up to Python, carrying
+        along with it the relevant backtrace information"""
+
+        w_exc = self.w_exc
+
+        from hippy.builtin_klass import W_ExceptionObject
+        assert isinstance(w_exc, W_ExceptionObject)
+
+        # We will need to chop off items from the PHP backtrace, from
+        # this frame upwards. Therefore, we first walk up the stack seeing
+        # how deep we are at this point.
+        # Yeh, this is slow, but it is an *exception* case after all.
+        n_chop = 0
+        f = interp.topframeref()
+        while True:
+            if f is not None:
+                n_chop += 1
+                f = f.f_backref()
+            else:
+                break
+
+        # And chop
+        #assert n_chop <= len(w_exc.traceback)
+        end = len(w_exc.traceback) - n_chop
+        assert end >= 0
+        traceback = w_exc.traceback[0:end]
+
+        from hippy.module.pypy_bridge.bridge import DummyPyTraceback
+        from pypy.interpreter.error import OperationError
+        pt = DummyPyTraceback(interp, traceback)
+
+        w_py_exc = w_exc.to_py(interp)
+        rv = OperationError(interp.py_space.type(w_py_exc), w_py_exc, pt)
+        return rv
+
 PHPException = Throw  # deprecated alias
 
 

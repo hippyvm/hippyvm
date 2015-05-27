@@ -125,7 +125,7 @@ class TestPyPyBridgeExceptions(BaseTestInterpreter):
                 echo $e->getMessage();
             }
         ''')
-        assert php_space.str_w(output[0]) == "PHPException: ValueError: explosion"
+        assert php_space.str_w(output[0]) == "ValueError: explosion"
 
     def test_python_lookup_missing_php_attr(self, php_space):
         output = self.run("""

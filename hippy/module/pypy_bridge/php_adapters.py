@@ -246,43 +246,6 @@ W_PHPClassAdapter.typedef = TypeDef("PHPClassAdapter",
     __setattr__ = interp2app(W_PHPClassAdapter.descr_setattr),
 )
 
-def reraise_py_exception_to_php(php_interp, w_php_throw):
-    """Take a PHP exception and propogate up to Python, carrying
-    along with it the relevant backtrace information"""
-
-    w_exc = w_php_throw.w_exc
-
-    from hippy.builtin_klass import W_ExceptionObject
-    assert isinstance(w_exc, W_ExceptionObject)
-
-    # We will need to chop off items from the PHP backtrace, from
-    # this frame upwards. Therefore, we first walk up the stack seeing
-    # how deep we are at this point.
-    # Yeh, this is slow, but it is an *exception* case after all.
-    n_chop = 0
-    f = php_interp.topframeref()
-    while True:
-        if f is not None:
-            n_chop += 1
-            f = f.f_backref()
-        else:
-            break
-
-    # And chop
-    #assert n_chop <= len(w_exc.traceback)
-    end = len(w_exc.traceback) - n_chop
-    assert end >= 0
-    traceback = w_exc.traceback[0:end]
-
-    from hippy.module.pypy_bridge.bridge import DummyPyTraceback
-    pt = DummyPyTraceback(php_interp, traceback)
-    raise OperationError(php_interp.py_space.builtin.get("PHPException"),
-                         w_exc.to_py(php_interp), pt)
-
-    # XXX blast away old adapter!!!
-    #import pdb; pdb.set_trace()
-    #raise OperationError(W_PHPExceptionAdapter, w_exc.to_py(php_interp), pt)
-
 from pypy.module.exceptions.interp_exceptions import W_BaseException
 class W_PHPExceptionAdapter(W_BaseException):
 
@@ -290,13 +253,16 @@ class W_PHPExceptionAdapter(W_BaseException):
         W_BaseException.__init__(self, space)
         self.w_php_exn = None # set later
 
+    def set_php_exn(self, interp, w_php_exn):
+        self.w_php_exn = w_php_exn
+        w_py_msg = w_php_exn.get_message(interp).to_py(interp)
+        self.args_w = [w_py_msg]
+        self.w_message = w_py_msg
+
     def to_php(self, interp):
         return self.w_php_exn
 
 W_PHPExceptionAdapter.typedef = TypeDef("PHPException", W_BaseException.typedef)
-
-#W_TypeError = _new_exception('TypeError', W_StandardError,
-#                             """Inappropriate argument type.""")
 
 class W_PHPFuncAdapter(W_Root):
     """A Python callable that actually executes a PHP function"""
@@ -368,7 +334,7 @@ class W_PHPFuncAdapter(W_Root):
         try:
             res = w_php_func.call_args(php_interp, w_php_args_elems)
         except Throw as w_php_throw:
-            reraise_py_exception_to_php(php_interp, w_php_throw)
+            raise w_php_throw.to_py(php_interp)
 
         assert res is not None
         return res.to_py(php_interp)
@@ -455,7 +421,7 @@ class W_PHPUnboundMethAdapter(W_Root):
         try:
             res = w_php_bound_meth.call_args(php_interp, w_php_args_elems)
         except Throw as w_php_throw:
-            reraise_py_exception_to_php(php_interp, w_php_throw)
+            raise w_php_throw.to_py(interp)
 
         assert res is not None
         return res.to_py(php_interp)

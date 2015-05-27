@@ -48,10 +48,39 @@ class W_ExceptionObject(W_InstanceObject):
 
     def to_py(self, interp):
         from hippy.module.pypy_bridge.php_adapters import W_PHPExceptionAdapter
-        w_py_ex = W_PHPExceptionAdapter(interp.py_space)
-        w_py_ex.w_php_exn = self
+        w_py_ex = W_PHPExceptionAdapter(interp.py_space, [self.get_message(interp)])
+        w_py_ex.set_php_exn(interp, self)
         return w_py_ex
 
+    def append_py_traceback(self, php_interp, w_py_operr):
+        """Appends Python traceback frames to this exception"""
+
+        from pypy.interpreter.error import OperationError
+        assert isinstance(w_py_operr, OperationError)
+        from pypy.interpreter.pytraceback import PyTraceback
+
+        php_space, py_space = php_interp.space, php_interp.py_space
+
+        tb = w_py_operr.get_traceback()
+
+        # build a PHP traceback from Python tracebacks
+        from hippy.module.pypy_bridge.bridge import DummyPyTraceback
+        more_tb_frames = []
+        while tb is not None:
+            if isinstance(tb, DummyPyTraceback):
+                # This is a deeper PHP traceback bubbling up
+                more_tb_frames = tb.php_traceback + more_tb_frames
+                break
+            else:
+                # tracebacks for regular python frames
+                assert isinstance(tb, PyTraceback)
+                frame = tb.frame
+                bc = frame.getcode()
+                src = "" # XXX
+                info = (bc.co_filename, bc.co_name, frame.get_last_lineno() + bc.line_offset, src)
+                more_tb_frames.append(info)
+                tb = tb.next
+        self.traceback = more_tb_frames + self.traceback
 
 @wrap_method(['interp', ThisUnwrapper(W_ExceptionObject),
               Optional(str), Optional(int), Optional(Nullable('object'))],

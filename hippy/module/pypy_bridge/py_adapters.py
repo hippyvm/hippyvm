@@ -561,19 +561,9 @@ class W_PyExceptionAdapter(W_ExceptionObject):
 
     def __init__(self, klass, initial_storage):
         W_ExceptionObject.__init__(self, klass, initial_storage)
-        self.w_py_exn = None
+        self.w_py_exn = None # set elsewhere
 
-    # overide the default traceback generation mechanism
-    def setup(self, interp):
-        #self.traceback = interp.get_traceback()
-        pass
-
-    def get_message(self, interp):
-        import pdb; pdb.set_trace()
-
-
-
-    def set_backtrace(self, php_interp, w_py_operr):
+    def set_exninfo(self, php_interp, w_py_operr):
         """Sets useful debugging info"""
         assert isinstance(w_py_operr, OperationError)
         from pypy.interpreter.pytraceback import PyTraceback
@@ -602,37 +592,13 @@ class W_PyExceptionAdapter(W_ExceptionObject):
         self.setattr(php_interp, 'message',
                 php_space.wrap(msg), k_PyExceptionAdapter)
 
-        # build a PHP traceback from Python tracebacks
-        from hippy.module.pypy_bridge.bridge import DummyPyTraceback
-        more_tb_frames = []
-        while tb is not None:
-            if isinstance(tb, DummyPyTraceback):
-                # This is a deeper PHP traceback bubbling up
-                more_tb_frames = tb.php_traceback + more_tb_frames
-                break
-            else:
-                # tracebacks for regular python frames
-                assert isinstance(tb, PyTraceback)
-                frame = tb.frame
-                bc = frame.getcode()
-                src = "" # XXX
-                info = (bc.co_filename, bc.co_name, frame.get_last_lineno() + bc.line_offset, src)
-                more_tb_frames.append(info)
-                tb = tb.next
-        self.traceback = more_tb_frames + self.traceback
-
-
-@wrap_method(['interp', ThisUnwrapper(W_PyExceptionAdapter)], name='PyException::getMessage')
-def w_py_exc_getMessage(interp, this):
-    py_space = interp.py_space
-    exn_typename = py_space.type(this.w_py_exn).getname(py_space)
-    msg = py_space.str_w(this.w_py_exn.w_message)
-    return interp.space.wrap(exn_typename + ": " + msg)
-
-k_PyExceptionAdapter = def_class('PyException',
-    [w_py_exc_getMessage], [], instance_class=W_PyExceptionAdapter)
+    def to_py(self, interp):
+        return self.w_py_exn
 
 from hippy.builtin_klass import k_Exception
+k_PyExceptionAdapter = def_class('PyException',
+    [], [], instance_class=W_PyExceptionAdapter, extends=k_Exception)
+
 # Indicates an error in PHP->Py glue code
 k_BridgeException = def_class('BridgeException', [], [], extends=k_Exception)
 
