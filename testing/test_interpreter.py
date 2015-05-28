@@ -4168,3 +4168,22 @@ class TestLocalInterpreter(LocalRunTestInterpreter, _TestInterpreter):
 
 class TestMultipleInterpreters(TestInterpreter):
     Engine = MockServerEngine
+
+class SeqAssert(object):
+    """A helper for ordered sequences of assertions"""
+
+    def __init__(self, php_space, output):
+        self.php_space = php_space
+        self.output = output
+        self.i = 0
+
+    def asrt(self, typ, val):
+        if typ is int:
+            assert self.php_space.int_w(self.output[self.i]) == val
+        elif typ is str:
+            assert self.php_space.str_w(self.output[self.i]) == val
+        else:
+            raise ValueError("bad type argument to asrt")
+
+        self.i += 1
+
