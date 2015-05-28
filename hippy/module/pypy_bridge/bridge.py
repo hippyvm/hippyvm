@@ -85,7 +85,7 @@ def _compile_py_func_from_string_cached(interp, func_source, filename):
             _raise_php_bridgeexception(interp,
                                        "Failed to compile Python code: %s" %
                                        e.errorstr(py_space))
-        PYCODE_CACHE.update(func_source, w_py_code, filename)
+        PYCODE_CACHE.update(func_source, filename, w_py_code)
 
     return w_py_code
 
