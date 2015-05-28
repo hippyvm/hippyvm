@@ -48,7 +48,7 @@ class W_ExceptionObject(W_InstanceObject):
 
     def to_py(self, interp):
         from hippy.module.pypy_bridge.php_adapters import W_PHPExceptionAdapter
-        w_py_ex = W_PHPExceptionAdapter(interp.py_space, [self.get_message(interp)])
+        w_py_ex = W_PHPExceptionAdapter(interp.py_space)
         w_py_ex.set_php_exn(interp, self)
         return w_py_ex
 
@@ -78,7 +78,7 @@ class W_ExceptionObject(W_InstanceObject):
                 bc = frame.getcode()
                 src = "" # XXX
                 info = (bc.co_filename, bc.co_name, frame.get_last_lineno() + bc.line_offset, src)
-                more_tb_frames.append(info)
+                more_tb_frames.insert(0, info) # insert is slow
                 tb = tb.next
         self.traceback = more_tb_frames + self.traceback
 
