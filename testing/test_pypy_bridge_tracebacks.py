@@ -479,3 +479,91 @@ class TestPyPyBridgeTraceBacks(BaseTestInterpreter):
         sa.asrt(int, 10)
         sa.asrt(str, "<main>")
         sa.asrt(str, "")
+
+    def test_php_py_php_unbound_raise(self, php_space):
+        output = self.run('''
+            class A {
+                static function g() { throw new LogicException("eek"); }
+            };
+
+            $src = "def f(): A.g()";
+            $f = compile_py_func($src);
+
+            try {
+                $f();
+            } catch (LogicException $e) {
+                $ts = $e->getTrace();
+                echo count($ts);
+                echo $e->getMessage();
+
+                foreach ($ts as $t) {
+                    echo $t["file"];
+                    echo $t["line"];
+                    echo $t["function"];
+                    echo $t["args"];
+                }
+            }
+        ''')
+        sa = SeqAssert(php_space, output)
+        sa.asrt(int, 3)
+        sa.asrt(str, "eek")
+
+        sa.asrt(str, "<input>")
+        sa.asrt(int, 3)
+        sa.asrt(str, "g")
+        sa.asrt(str, "")
+
+        sa.asrt(str, "<python_box>")
+        sa.asrt(int, 1)
+        sa.asrt(str, "f")
+        sa.asrt(str, "")
+
+        sa.asrt(str, "<input>")
+        sa.asrt(int, 8)
+        sa.asrt(str, "<main>")
+        sa.asrt(str, "")
+
+    def test_php_py_php_unbound_raise2(self, php_space):
+        output = self.run('''
+            class A {
+                function g() { throw new LogicException("eek"); }
+            };
+
+            $my_a = new A();
+
+            $src = "def f(): A.g(my_a)";
+            $f = compile_py_func($src);
+
+            try {
+                $f();
+            } catch (LogicException $e) {
+                $ts = $e->getTrace();
+                echo count($ts);
+                echo $e->getMessage();
+
+                foreach ($ts as $t) {
+                    echo $t["file"];
+                    echo $t["line"];
+                    echo $t["function"];
+                    echo $t["args"];
+                }
+            }
+        ''')
+        sa = SeqAssert(php_space, output)
+        sa.asrt(int, 3)
+        sa.asrt(str, "eek")
+
+        sa.asrt(str, "<input>")
+        sa.asrt(int, 3)
+        sa.asrt(str, "g")
+        sa.asrt(str, "")
+
+        sa.asrt(str, "<python_box>")
+        sa.asrt(int, 1)
+        sa.asrt(str, "f")
+        sa.asrt(str, "")
+
+        sa.asrt(str, "<input>")
+        sa.asrt(int, 9)
+        sa.asrt(str, "<main>")
+        sa.asrt(str, "")

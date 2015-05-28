@@ -421,7 +421,7 @@ class W_PHPUnboundMethAdapter(W_Root):
         try:
             res = w_php_bound_meth.call_args(php_interp, w_php_args_elems)
         except Throw as w_php_throw:
-            raise w_php_throw.to_py(interp)
+            raise w_php_throw.to_py(php_interp)
 
         assert res is not None
         return res.to_py(php_interp)
