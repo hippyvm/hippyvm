@@ -30,17 +30,18 @@ class TestPyPyBridgeTraceBacks(BaseTestInterpreter):
                 }
             }
         ''')
-        assert php_space.int_w(output[0]) == 2
+        sa = SeqAssert(php_space, output)
+        sa.asrt(int, 2)
 
-        assert php_space.str_w(output[1]) == "<python_box>"
-        assert php_space.int_w(output[2]) == 1
-        assert php_space.str_w(output[3]) == "f"
-        assert php_space.str_w(output[4]) == ""
+        sa.asrt(str, "<python_box>")
+        sa.asrt(int, 1)
+        sa.asrt(str, "f")
+        sa.asrt(str, "")
 
-        assert php_space.str_w(output[5]) == "<input>"
-        assert php_space.int_w(output[6]) == 5
-        assert php_space.str_w(output[7]) == "<main>"
-        assert php_space.str_w(output[8]) == ""
+        sa.asrt(str, "<input>")
+        sa.asrt(int, 5)
+        sa.asrt(str, "<main>")
+        sa.asrt(str, "")
 
     def test_simple2(self, php_space):
         output = self.run('''
@@ -60,17 +61,18 @@ class TestPyPyBridgeTraceBacks(BaseTestInterpreter):
                 }
             }
         ''')
-        assert php_space.int_w(output[0]) == 2
+        sa = SeqAssert(php_space, output)
+        sa.asrt(int, 2)
 
-        assert php_space.str_w(output[1]) == "myfile.php"
-        assert php_space.int_w(output[2]) == 11
-        assert php_space.str_w(output[3]) == "f"
-        assert php_space.str_w(output[4]) == ""
+        sa.asrt(str, "myfile.php")
+        sa.asrt(int, 11)
+        sa.asrt(str, "f")
+        sa.asrt(str, "")
 
-        assert php_space.str_w(output[5]) == "<input>"
-        assert php_space.int_w(output[6]) == 5
-        assert php_space.str_w(output[7]) == "<main>"
-        assert php_space.str_w(output[8]) == ""
+        sa.asrt(str, "<input>")
+        sa.asrt(int, 5)
+        sa.asrt(str, "<main>")
+        sa.asrt(str, "")
 
     def test_simple3(self, php_space):
         output = self.run('''
@@ -90,17 +92,18 @@ class TestPyPyBridgeTraceBacks(BaseTestInterpreter):
                 }
             }
         ''')
-        assert php_space.int_w(output[0]) == 2
+        sa = SeqAssert(php_space, output)
+        sa.asrt(int, 2)
 
-        assert php_space.str_w(output[1]) == "<python_box>"
-        assert php_space.int_w(output[2]) == 1
-        assert php_space.str_w(output[3]) == "f"
-        assert php_space.str_w(output[4]) == ""
+        sa.asrt(str, "<python_box>")
+        sa.asrt(int, 1)
+        sa.asrt(str, "f")
+        sa.asrt(str, "")
 
-        assert php_space.str_w(output[5]) == "<input>"
-        assert php_space.int_w(output[6]) == 5
-        assert php_space.str_w(output[7]) == "<main>"
-        assert php_space.str_w(output[8]) == ""
+        sa.asrt(str, "<input>")
+        sa.asrt(int, 5)
+        sa.asrt(str, "<main>")
+        sa.asrt(str, "")
 
     def test_simple4(self, php_space):
         output = self.run('''
@@ -120,17 +123,18 @@ class TestPyPyBridgeTraceBacks(BaseTestInterpreter):
                 }
             }
         ''')
-        assert php_space.int_w(output[0]) == 2
+        sa = SeqAssert(php_space, output)
+        sa.asrt(int, 2)
 
-        assert php_space.str_w(output[1]) == "afile.php"
-        assert php_space.int_w(output[2]) == 667
-        assert php_space.str_w(output[3]) == "f"
-        assert php_space.str_w(output[4]) == ""
+        sa.asrt(str, "afile.php")
+        sa.asrt(int, 667)
+        sa.asrt(str, "f")
+        sa.asrt(str, "")
 
-        assert php_space.str_w(output[5]) == "<input>"
-        assert php_space.int_w(output[6]) == 5
-        assert php_space.str_w(output[7]) == "<main>"
-        assert php_space.str_w(output[8]) == ""
+        sa.asrt(str, "<input>")
+        sa.asrt(int, 5)
+        sa.asrt(str, "<main>")
+        sa.asrt(str, "")
 
     def test_php_py_php_raise(self, php_space):
         output = self.run('''
@@ -154,23 +158,24 @@ class TestPyPyBridgeTraceBacks(BaseTestInterpreter):
                 }
             }
         ''')
-        assert php_space.int_w(output[0]) == 3
-        assert php_space.str_w(output[1]) == "eek"
+        sa = SeqAssert(php_space, output)
+        sa.asrt(int, 3)
+        sa.asrt(str, "eek")
 
-        assert php_space.str_w(output[2]) == "<input>"
-        assert php_space.int_w(output[3]) == 2
-        assert php_space.str_w(output[4]) == "g"
-        assert php_space.str_w(output[5]) == ""
+        sa.asrt(str, "<input>")
+        sa.asrt(int, 2)
+        sa.asrt(str, "g")
+        sa.asrt(str, "")
 
-        assert php_space.str_w(output[6]) == "<python_box>"
-        assert php_space.int_w(output[7]) == 1
-        assert php_space.str_w(output[8]) == "f"
-        assert php_space.str_w(output[9]) == ""
+        sa.asrt(str, "<python_box>")
+        sa.asrt(int, 1)
+        sa.asrt(str, "f")
+        sa.asrt(str, "")
 
-        assert php_space.str_w(output[10]) == "<input>"
-        assert php_space.int_w(output[11]) == 6
-        assert php_space.str_w(output[12]) == "<main>"
-        assert php_space.str_w(output[13]) == ""
+        sa.asrt(str, "<input>")
+        sa.asrt(int, 6)
+        sa.asrt(str, "<main>")
+        sa.asrt(str, "")
 
     def test_php_py_php_py_raise(self, php_space):
         output = self.run('''
