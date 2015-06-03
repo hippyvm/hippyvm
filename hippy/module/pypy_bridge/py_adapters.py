@@ -592,7 +592,7 @@ class W_PyExceptionAdapter(W_ExceptionObject):
         self.setattr(php_interp, 'message',
                 php_space.wrap(msg), k_PyExceptionAdapter)
 
-    def to_py(self, interp):
+    def to_py(self, interp, w_php_ref=None):
         return self.w_py_exn
 
 from hippy.builtin_klass import k_Exception

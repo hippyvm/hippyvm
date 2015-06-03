@@ -43,7 +43,7 @@ class Throw(Exception):
         assert isinstance(w_exc, W_InstanceObject)
         self.w_exc = w_exc
 
-    def to_py(self, interp):
+    def to_py(self, interp, w_php_ref=None):
         """Take a PHP exception and propogate up to Python, carrying
         along with it the relevant backtrace information"""
 
