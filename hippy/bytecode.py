@@ -26,7 +26,7 @@ class ByteCode(object):
                  filename, sourcelines, method_of_class=None,
                  startlineno=0, bc_mapping=None, name='<main>',
                  superglobals=None, this_var_num=-1, static_vars=None,
-                 cloned_static_vars=None):
+                 cloned_static_vars=None, py_scope=None, line_offset=0):
         # Note: Many list arguments are expected to be provably fixed size.
         self.code = code
         self.name = name      # not necessarily lowercase
@@ -62,9 +62,8 @@ class ByteCode(object):
                 self.static_vars[cm] = v
         else:
             self.static_vars = cloned_static_vars
-            # XXX add these last two fields to clone()?
-        self.py_scope = None
-        self.line_offset = 0 # used for language composition
+        self.py_scope = py_scope
+        self.line_offset = line_offset # used for language composition
 
     def clone(self):
         # Used by PyHyp PHP bytecode cache.
@@ -77,7 +76,9 @@ class ByteCode(object):
                         bc_mapping=self.bc_mapping,
                         name=self.name, superglobals=self.superglobals,
                         this_var_num=self.this_var_num,
-                        cloned_static_vars=self.static_vars)
+                        cloned_static_vars=self.static_vars,
+                        line_offset=self.line_offset)
+                        # we don't copy the py_scope
 
     def getline(self, no):
         try:

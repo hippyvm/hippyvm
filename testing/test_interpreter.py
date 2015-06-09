@@ -4186,4 +4186,3 @@ class SeqAssert(object):
             raise ValueError("bad type argument to asrt")
 
         self.i += 1
-

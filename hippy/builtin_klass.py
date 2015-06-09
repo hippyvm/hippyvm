@@ -39,7 +39,6 @@ class GetterSetterWrapper(object):
 
 
 class W_ExceptionObject(W_InstanceObject):
-    _attrs_ = ('map', 'storage_w', 'instance_number', 'w_rdict_array', 'traceback') # XXX needed?
     def setup(self, interp):
         self.traceback = interp.get_traceback()
 
@@ -63,23 +62,42 @@ class W_ExceptionObject(W_InstanceObject):
 
         tb = w_py_operr.get_traceback()
 
-        # build a PHP traceback from Python tracebacks
+        # count how many tracebacks in chain, so we can preallocate list of the right size
         from hippy.module.pypy_bridge.bridge import DummyPyTraceback
-        more_tb_frames = []
+        c_tb = tb
+        n_tbs = 0
+        while c_tb is not None:
+            if isinstance(c_tb, DummyPyTraceback):
+                n_tbs += len(c_tb.php_traceback)
+                break
+            else:
+                assert isinstance(c_tb, PyTraceback)
+                n_tbs += 1
+                c_tb = c_tb.next
+
+        # build a PHP traceback from Python tracebacks
+        more_tb_frames = [(None, None, 666, None)] * n_tbs # use 666 as ints are not noneable
+        tb_idx = n_tbs - 1
         while tb is not None:
             if isinstance(tb, DummyPyTraceback):
                 # This is a deeper PHP traceback bubbling up
-                more_tb_frames = tb.php_traceback + more_tb_frames
+                #more_tb_frames = tb.php_traceback + more_tb_frames
+                for i in reversed(tb.php_traceback):
+                    more_tb_frames[tb_idx] = i
+                    tb_idx -= 1
                 break
             else:
                 # tracebacks for regular python frames
                 assert isinstance(tb, PyTraceback)
                 frame = tb.frame
                 bc = frame.getcode()
-                src = "" # XXX
+                # can populate src if we find something that uses this (tracebacks don't it seems)
+                src = ""
                 info = (bc.co_filename, bc.co_name, frame.get_last_lineno() + bc.line_offset, src)
-                more_tb_frames.insert(0, info) # insert is slow
+                more_tb_frames[tb_idx] = info
+                tb_idx -= 1
                 tb = tb.next
+        assert tb_idx == -1
         self.traceback = more_tb_frames + self.traceback
 
 @wrap_method(['interp', ThisUnwrapper(W_ExceptionObject),

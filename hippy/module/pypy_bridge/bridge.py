@@ -457,4 +457,3 @@ class DummyPyTraceback(PyTraceback):
 
     def mark_escaped_frame(self):
         pass
-

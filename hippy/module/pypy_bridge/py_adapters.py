@@ -586,7 +586,7 @@ class W_PyExceptionAdapter(W_ExceptionObject):
         # NOte that this will report the line the compile_py_func occurred on
         self.file = php_space.wrap(filename)
         self.line = php_space.wrap(line)
-        self.code = "" # XXX
+        self.code = ""
 
         msg = w_py_operr.errorstr(py_space)
         self.setattr(php_interp, 'message',
