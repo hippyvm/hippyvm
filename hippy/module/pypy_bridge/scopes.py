@@ -220,15 +220,16 @@ class Py_Scope(WPHP_Root):
     def py_lookup_local(self, n):
         py_frame = self.py_frame
         py_interp = self.py_interp
-        if py_frame.w_locals is None:
+        w_locals = py_frame.getorcreatedebug().w_locals
+        if w_locals is None:
             # If no-one has called fast2locals, we can bypass the slow
-            # dictionary lookup by accessing locals_stack_w directly.
+            # dictionary lookup by accessing locals_cells_stack_w directly.
             off = py_frame.pycode.get_var_off(n)
             if off >= 0:
-                return py_frame.locals_stack_w[off]
+                return py_frame.locals_cells_stack_w[off]
         else:
             py_frame.fast2locals()
-            py_v = py_interp.finditem_str(py_frame.w_locals, n)
+            py_v = py_interp.finditem_str(w_locals, n)
             if py_v is not None:
                 return py_v
 
