@@ -924,3 +924,69 @@ def f():
         assert php_space.int_w(output[0]) == 4
         assert php_space.int_w(output[1]) == 5
         assert php_space.int_w(output[2]) == 47
+
+    # This seems consistent with how outer scope lookups work in Python
+    # E.g.:
+    #
+    # def f():
+    #     x = 7
+    #     def g():
+    #         x = 666
+    #     g()
+    #     print(x) # prints 7
+    #
+    # And adding `global x1` in g() would make no difference.
+    def test_dont_implicit_mutate_outer_py_scope_in_php(self, php_space):
+        output = self.run('''
+
+        $pysrc = <<<EOD
+        def f():
+            z = 7
+            phpsrc = 'function g() { \$z = 666; }'
+            g = compile_php_func(phpsrc)
+            g()
+            return z
+        EOD;
+        $f = compile_py_func($pysrc);
+        $res = $f();
+
+        echo $res;
+        ''')
+        assert php_space.int_w(output[0]) == 7
+
+    # `global` keyword in PHP only aliases to the PHP global scope, so
+    # it should have no bearing on a parent Python scope.
+    def test_php_global_kw_no_mutate_outer_py_scope(self, php_space):
+        output = self.run('''
+
+        $pysrc = <<<EOD
+        def f():
+            z = 7
+            phpsrc = 'function g() { global \$z; \$z = 666; }'
+            g = compile_php_func(phpsrc)
+            g()
+            return z
+        EOD;
+        $f = compile_py_func($pysrc);
+        $res = $f();
+
+        echo $res;
+        ''')
+        assert php_space.int_w(output[0]) == 7
+
+    def test_implicit_read_outer_py_scope_in_php(self, php_space):
+        output = self.run('''
+
+        $pysrc = <<<EOD
+        def f():
+            z = 7
+            phpsrc = 'function g() { return \$z; }'
+            g = compile_php_func(phpsrc)
+            return g()
+        EOD;
+        $f = compile_py_func($pysrc);
+        $res = $f();
+
+        echo $res;
+        ''')
+        assert php_space.int_w(output[0]) == 7
