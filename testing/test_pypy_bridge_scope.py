@@ -593,9 +593,6 @@ class TestPyPyBridgeScope(BaseTestInterpreter):
         ''')
         assert self.space.str_w(output[0]) == "caught"
 
-    # Should be possible to modify global PHP scope by this mechanism
-    # Currently: PHPGlobalScope' object has no attribute 'x'
-    # Probably just needs a __setattr__()
     def test_php_global_scope_modify(self, php_space):
         output = self.run('''
             $x = 10;
