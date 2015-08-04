@@ -604,11 +604,63 @@ class TestPyPyBridgeScope(BaseTestInterpreter):
         ''')
         assert self.space.int_w(output[0]) == 666
 
+    def test_php_global_scope_no_modify_no_global_keyword(self, php_space):
+        output = self.run('''
+            $x = 10;
+
+            $pysrc = "def g(): x = 666"; // should not mutate
+            $f = compile_py_func($pysrc);
+            $f();
+            echo $x;
+        ''')
+        assert self.space.int_w(output[0]) == 10
+
+    def test_php_global_scope_modify_with_global_keyword(self, php_space):
+        output = self.run('''
+            $x = 10;
+
+            $pysrc = "def g(): global x; x = 666";
+            $f = compile_py_func($pysrc);
+            $f();
+            echo $x;
+        ''')
+        assert self.space.int_w(output[0]) == 666
+
     def test_php_global_scope_modify2(self, php_space):
         output = self.run('''
             $y = null;
 
             $pysrc = "def g(): php_global_ns().y = 666; return y";
+            $f = compile_py_func($pysrc);
+            echo $f();
+
+            $pysrc = "def h(): return y";
+            $f = compile_py_func($pysrc);
+            echo $f();
+        ''')
+        assert self.space.int_w(output[0]) == 666
+        assert self.space.int_w(output[1]) == 666
+
+    def test_php_global_scope_no_modify_no_global_keyword2(self, php_space):
+        output = self.run('''
+            $y = null;
+
+            $pysrc = "def g(): y = 666; return y";
+            $f = compile_py_func($pysrc);
+            echo $f();
+
+            $pysrc = "def h(): return y";
+            $f = compile_py_func($pysrc);
+            echo $f();
+        ''')
+        assert self.space.int_w(output[0]) == 666
+        assert self.space.int_w(output[1]) == 0
+
+    def test_php_global_scope_modify_with_global_keyword2(self, php_space):
+        output = self.run('''
+            $y = null;
+
+            $pysrc = "def g(): global y; y = 666; return y";
             $f = compile_py_func($pysrc);
             echo $f();
 
