@@ -593,9 +593,6 @@ class TestPyPyBridgeScope(BaseTestInterpreter):
         ''')
         assert self.space.str_w(output[0]) == "caught"
 
-    # Should be possible to modify global PHP scope by this mechanism
-    # Currently: PHPGlobalScope' object has no attribute 'x'
-    # Probably just needs a __setattr__()
     def test_php_global_scope_modify(self, php_space):
         output = self.run('''
             $x = 10;
@@ -607,11 +604,63 @@ class TestPyPyBridgeScope(BaseTestInterpreter):
         ''')
         assert self.space.int_w(output[0]) == 666
 
+    def test_php_global_scope_no_modify_no_global_keyword(self, php_space):
+        output = self.run('''
+            $x = 10;
+
+            $pysrc = "def g(): x = 666"; // should not mutate
+            $f = compile_py_func($pysrc);
+            $f();
+            echo $x;
+        ''')
+        assert self.space.int_w(output[0]) == 10
+
+    def test_php_global_scope_modify_with_global_keyword(self, php_space):
+        output = self.run('''
+            $x = 10;
+
+            $pysrc = "def g(): global x; x = 666";
+            $f = compile_py_func($pysrc);
+            $f();
+            echo $x;
+        ''')
+        assert self.space.int_w(output[0]) == 666
+
     def test_php_global_scope_modify2(self, php_space):
         output = self.run('''
             $y = null;
 
             $pysrc = "def g(): php_global_ns().y = 666; return y";
+            $f = compile_py_func($pysrc);
+            echo $f();
+
+            $pysrc = "def h(): return y";
+            $f = compile_py_func($pysrc);
+            echo $f();
+        ''')
+        assert self.space.int_w(output[0]) == 666
+        assert self.space.int_w(output[1]) == 666
+
+    def test_php_global_scope_no_modify_no_global_keyword2(self, php_space):
+        output = self.run('''
+            $y = null;
+
+            $pysrc = "def g(): y = 666; return y";
+            $f = compile_py_func($pysrc);
+            echo $f();
+
+            $pysrc = "def h(): return y";
+            $f = compile_py_func($pysrc);
+            echo $f();
+        ''')
+        assert self.space.int_w(output[0]) == 666
+        assert self.space.int_w(output[1]) == 0
+
+    def test_php_global_scope_modify_with_global_keyword2(self, php_space):
+        output = self.run('''
+            $y = null;
+
+            $pysrc = "def g(): global y; y = 666; return y";
             $f = compile_py_func($pysrc);
             echo $f();
 
@@ -875,3 +924,69 @@ def f():
         assert php_space.int_w(output[0]) == 4
         assert php_space.int_w(output[1]) == 5
         assert php_space.int_w(output[2]) == 47
+
+    # This seems consistent with how outer scope lookups work in Python
+    # E.g.:
+    #
+    # def f():
+    #     x = 7
+    #     def g():
+    #         x = 666
+    #     g()
+    #     print(x) # prints 7
+    #
+    # And adding `global x1` in g() would make no difference.
+    def test_dont_implicit_mutate_outer_py_scope_in_php(self, php_space):
+        output = self.run('''
+
+        $pysrc = <<<EOD
+        def f():
+            z = 7
+            phpsrc = 'function g() { \$z = 666; }'
+            g = compile_php_func(phpsrc)
+            g()
+            return z
+        EOD;
+        $f = compile_py_func($pysrc);
+        $res = $f();
+
+        echo $res;
+        ''')
+        assert php_space.int_w(output[0]) == 7
+
+    # `global` keyword in PHP only aliases to the PHP global scope, so
+    # it should have no bearing on a parent Python scope.
+    def test_php_global_kw_no_mutate_outer_py_scope(self, php_space):
+        output = self.run('''
+
+        $pysrc = <<<EOD
+        def f():
+            z = 7
+            phpsrc = 'function g() { global \$z; \$z = 666; }'
+            g = compile_php_func(phpsrc)
+            g()
+            return z
+        EOD;
+        $f = compile_py_func($pysrc);
+        $res = $f();
+
+        echo $res;
+        ''')
+        assert php_space.int_w(output[0]) == 7
+
+    def test_implicit_read_outer_py_scope_in_php(self, php_space):
+        output = self.run('''
+
+        $pysrc = <<<EOD
+        def f():
+            z = 7
+            phpsrc = 'function g() { return \$z; }'
+            g = compile_php_func(phpsrc)
+            return g()
+        EOD;
+        $f = compile_py_func($pysrc);
+        $res = $f();
+
+        echo $res;
+        ''')
+        assert php_space.int_w(output[0]) == 7
