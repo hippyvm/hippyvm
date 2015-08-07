@@ -1009,3 +1009,13 @@ def f():
         echo $f();
         ''')
         assert php_space.str_w(output[0]) == "ok"
+
+    def test_unset_py_var2(self, php_space):
+        """Too complicated to craft by hand"""
+        output = self.run(r'''
+{
+$f = compile_py_func("def f():\n    x = \"unset me\"\n    g = compile_php_func(\"\"\"\nfunction g() {\n        \$h = compile_py_func(\\\"def h():\\\\n            compile_php_func(\\\\\\\"\\\\\\\"\\\\\\\"\\\\nfunction i() {\\\\n                unset(\\\\\$x);\\\\n            }\\\\n\\\\\\\"\\\\\\\"\\\\\\\")\\\\n            i()\\\");;\n    }\n    \$h();\n\"\"\")\n    g()\n    try:\n        y = x\n        return \"fail\"\n    except NameError:\n        return \"ok\"");;
+echo $f();
+}
+        ''')
+        assert php_space.str_w(output[0]) == "ok"
