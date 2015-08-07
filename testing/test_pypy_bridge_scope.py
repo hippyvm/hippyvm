@@ -990,3 +990,22 @@ def f():
         echo $res;
         ''')
         assert php_space.int_w(output[0]) == 7
+
+    def test_unset_py_var(self, php_space):
+        output = self.run('''
+        $pysrc = <<<EOD
+        def f():
+            x = "unset me"
+            phpsrc = 'function g() { unset(\$x); }';
+            g = compile_php_func(phpsrc)
+            g();
+            try:
+                y = x  # should fail
+                return "fail"
+            except NameError:
+                return "ok"
+        EOD;
+        $f = compile_py_func($pysrc);
+        echo $f();
+        ''')
+        assert php_space.str_w(output[0]) == "ok"
