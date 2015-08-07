@@ -269,6 +269,22 @@ class Frame(object):
         assert no >= 0
         self.vars_w[no] = None
         #
+
+        py_scope = self.bytecode.py_scope
+        if py_scope is not None:
+            vn = self.bytecode.varnames[no]
+            ph_v = py_scope.ph_lookup_local_recurse(vn)
+            if ph_v is not None:
+                py_frame = py_scope.py_frame
+                py_space = py_frame.space
+                frame_dbg = py_frame.getorcreatedebug()
+                if frame_dbg.w_locals is None:
+                    py_frame.fast2locals()
+                py_scope.py_interp.delitem(
+                    py_frame.getorcreatedebug().w_locals, py_space.wrap(vn))
+                # Copy back to fast store
+                py_frame.locals2fast()
+
         if self.is_global_level:
             globals = self.interp.globals
             globals.unset_var(self.bytecode.varnames[no])
@@ -338,6 +354,7 @@ class Frame(object):
             self.vars_w[no] = r_value
 
     def unset_ref_by_name(self, name):
+        import pdb; pdb.set_trace()
         no = self.bytecode.lookup_var_pos(name)
         if no == -1:
             ev = self.extra_variables
