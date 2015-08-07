@@ -38,7 +38,7 @@ class _Name_Map(object):
 
 _EMPTY_MAP = _Name_Map()
 
-class PHP_Scope(WPy_Root):
+class PHPScope(WPy_Root):
     _immutable_fields_ = ["ph_interp"]
     # ph_frame is in a sense immutable, but the elidable_promote on
     # _lookup_name_map then gets an indirect constant access to a virtualisable
@@ -186,10 +186,10 @@ W_PHPGlobalScope.typedef = TypeDef("PHPGlobalScope",
 )
 
 
-class Py_Scope(WPHP_Root):
+class PyScope(WPHP_Root):
     _immutable_fields_ = ["py_interp"]
     # py_frame is not included in the immutable fields for the same reason as on
-    # PHP_Scope.
+    # PHPScope.
 
     def __init__(self, py_interp, py_frame):
         self.py_interp = py_interp

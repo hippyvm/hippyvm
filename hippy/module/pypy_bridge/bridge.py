@@ -3,7 +3,7 @@ from hippy.objects.base import W_Root as W_PHP_Root
 from hippy.objects.instanceobject import W_InstanceObject
 from hippy.objects.strobject import W_StringObject
 from hippy.objects.arrayobject import W_ArrayObject
-from hippy.module.pypy_bridge.scopes import PHP_Scope, Py_Scope
+from hippy.module.pypy_bridge.scopes import PHPScope, PyScope
 from hippy.module.pypy_bridge.util import _raise_php_bridgeexception
 from hippy.module.pypy_bridge.py_adapters import (
         new_adapted_py_func, k_BridgeException, W_PyFuncGlobalAdapter,
@@ -116,7 +116,7 @@ def _compile_py_func_from_string(
                 "compile_py_func: Python source must define exactly one function")
 
     # inject parent scope (which may well be None)
-    w_py_func.php_scope = PHP_Scope(interp, parent_php_scope)
+    w_py_func.php_scope = PHPScope(interp, parent_php_scope)
     w_py_func.getcode().line_offset = line_offset
 
     return w_py_func_name, w_py_func
@@ -248,7 +248,7 @@ def _call_py_func_find_static_py_meth(interp, class_name, meth_name):
     php_frame = interp.topframeref()
     w_kls = None
     if php_frame is not None:
-        php_scope = PHP_Scope(interp, php_frame)
+        php_scope = PHPScope(interp, php_frame)
         w_kls = php_scope.ph_lookup_local_recurse(class_name)
         if w_kls is None:
             w_kls = php_scope.ph_lookup_global(class_name)

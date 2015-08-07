@@ -1793,7 +1793,7 @@ class TestPyPyBridgeInterp(object):
 
         # compile same source code twice
         bc1 = _compile_php_func_from_string_cached(interp, src)
-        bc1.py_scope = 1 # would really be a Py_Scope instance.
+        bc1.py_scope = 1 # would really be a PyScope instance.
         bc2 = bc1.clone()
 
         check_attrs = ["code", "name", "filename", "startlineno",
