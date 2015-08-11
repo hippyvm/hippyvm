@@ -990,3 +990,74 @@ def f():
         echo $res;
         ''')
         assert php_space.int_w(output[0]) == 7
+
+    def test_x_const_lookup001(self, php_space):
+        output = self.run(r'''
+        define("X", "jkl");
+
+        $pysrc = "def f(): return X";
+        $f = compile_py_func($pysrc);
+        echo $f();
+        ''')
+        assert php_space.str_w(output[0]) == "jkl"
+
+    def test_x_const_lookup002(self, php_space):
+        output = self.run(r'''
+        define("X", "jkl");
+
+        $pysrc = <<<EOD
+        def f():
+            phpsrc = "function g() { return X; }"
+            g = compile_php_func(phpsrc)
+            return g()
+        EOD;
+        $f = compile_py_func($pysrc);
+        echo $f();
+        ''')
+        assert php_space.str_w(output[0]) == "jkl"
+
+    def test_x_const_lookup003(self, php_space):
+        warns = ["Notice: Constant X already defined"]
+        output = self.run(r'''
+        define("X", "jkl");
+
+        $pysrc = <<<EOD
+        def f():
+            phpsrc = "function g() { define('X', 'yui'); return X; }"
+            g = compile_php_func(phpsrc)
+            g()
+        EOD;
+        $f = compile_py_func($pysrc);
+        $f();
+        ''', warns)
+
+    def test_x_const_lookup004(self, php_space):
+        output = self.run(r'''
+        define("X", "jkl");
+
+        $pysrc = <<<EOD
+        def f():
+            phpsrc = "function g() { \$pysrc2 = 'def h(): return X'; \$h = compile_py_func(\$pysrc2); return \$h(); }"
+            g = compile_php_func(phpsrc)
+            return g()
+        EOD;
+        $f = compile_py_func($pysrc);
+        echo $f();
+        ''')
+        assert php_space.str_w(output[0]) == "jkl"
+
+    def test_x_const_lookup005(self, php_space):
+        output = self.run(r'''
+        define("X", "jkl");
+
+        $pysrc = <<<EOD
+        def f():
+            X = "qpq"
+            phpsrc = "function g() { return X; }"
+            g = compile_php_func(phpsrc)
+            return g()
+        EOD;
+        $f = compile_py_func($pysrc);
+        echo $f();
+        ''')
+        assert php_space.str_w(output[0]) == "qpq"
