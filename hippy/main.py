@@ -60,10 +60,7 @@ def setup_pypy_for_pyhyp(py_space):
 
   # Should always be able to import Python modules in CWD.
   w_sys_path = py_space.getattr(w_sys, py_space.wrap("path"))
-  w_sys_path_append = py_space.getattr(w_sys_path, py_space.wrap("append"))
-  from pypy.interpreter.argument import Arguments
-  py_space.call_args(w_sys_path_append,
-                     Arguments(py_space, [py_space.wrap(".")]))
+  py_space.call_method(w_sys_path, 'append', py_space.wrap("."))
 
   # Set sys.executable in PyPy -- some modules rely upon this existing.
   py_space.setattr(w_sys, py_space.wrap("executable"),
