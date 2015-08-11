@@ -33,8 +33,10 @@ def _run_fastcgi_server(server_port):
     print "Running fcgi server on port %d" % (server_port,)
     return run_fcgi_server(port=server_port)
 
-def mk_entry_point(py_space=None):
-  # XXX 2 space indent to make merging with master less painful XXX
+def setup_pypy_for_pyhyp(py_space):
+  """Respoonsible for setting PyPy up when running in PyHyp.
+  This stuff is mostly needed as PyPy's app_main does not get a chance
+  to run."""
 
   # equivalent to the hack in app_main.py of PyPy, albiet interp-level.
   w_sys = py_space.sys
@@ -43,6 +45,30 @@ def mk_entry_point(py_space=None):
   if not py_space.is_true(w_in):
     rl = py_space.sys.get("setrecursionlimit")
     py_space.call(rl, py_space.newlist([py_space.wrap(5000)]))
+
+  w_sys.pyhyp_enabled = True
+
+  # This stuff is needed to set sys.path and sys.exec_path
+  # CFFI needs this, for example.
+  from pypy.module.sys.initpath import pypy_find_stdlib
+  res = pypy_find_stdlib(py_space, None)
+
+  if res == py_space.w_None:
+      print("To run PyHyp, you must set PYPY_PREFIX to the directory "
+            "containing the PyPy libraries")
+      sys.exit(1)
+
+  # Should always be able to import Python modules in CWD.
+  w_sys_path = py_space.getattr(w_sys, py_space.wrap("path"))
+  py_space.call_method(w_sys_path, 'append', py_space.wrap("."))
+
+  # Set sys.executable in PyPy -- some modules rely upon this existing.
+  py_space.setattr(w_sys, py_space.wrap("executable"),
+                   py_space.wrap(os.path.abspath(sys.argv[0])))
+
+def mk_entry_point(py_space=None):
+  # XXX 2 space indent to make merging with master less painful XXX
+  setup_pypy_for_pyhyp(py_space)
 
   def entry_point(argv):
     i = 1

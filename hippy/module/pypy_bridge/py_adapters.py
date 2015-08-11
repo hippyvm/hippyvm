@@ -574,10 +574,16 @@ class W_PyExceptionAdapter(W_ExceptionObject):
         if tb is not None:
             assert isinstance(tb, PyTraceback)
             py_frame = tb.frame
-            php_frame = py_frame.php_scope.ph_frame
+            php_scope = py_frame.php_scope
+            if php_scope is not None:
+                php_frame = py_frame.php_scope.ph_frame
+            else:
+                # This Python code has no parent Python frame,
+                # per-se. This happens when an exception occurs
+                # inside PyHyp's import_py_mod().
+                php_frame = php_interp.topframeref()
         else:
-            # Python frame was never opened.
-            # e.g. import_py_mod raised
+            # This case can also occur if import_py_mod() raised.
             php_frame = php_interp.topframeref()
 
         filename, php_funcname, line = php_frame.get_position()

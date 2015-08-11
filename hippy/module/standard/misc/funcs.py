@@ -198,3 +198,7 @@ def usleep(interp, microseconds):
 def clock_gettime_monotonic(interp):
     """Read the monotonic system clock and return a Python float"""
     return interp.space.wrap(_clock_gettime_monotonic())
+
+@wrap(['interp'])
+def is_pyhyp_enabled(interp):
+    return interp.space.wrap(interp.py_space.sys.is_pyhyp_enabled())

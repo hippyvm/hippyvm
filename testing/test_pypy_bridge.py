@@ -7,6 +7,61 @@ class TestPyPyBridge(BaseTestInterpreter):
     def php_space(self):
         return self.space
 
+    def test_is_pyhyp_enabled(self, php_space):
+        """is_pyhyp_enabled should be visible in PyPy sys module and as a global php func"""
+        output = self.run(r'''
+        $pysrc = <<<EOD
+        def f():
+            import sys
+            return sys.is_pyhyp_enabled()
+        EOD;
+        $f = compile_py_func($pysrc);
+        echo $f();
+        echo is_pyhyp_enabled();
+        ''')
+        assert php_space.is_true(output[0])
+        assert php_space.is_true(output[1])
+
+    def test_dot_in_pypy_sys_path(self, php_space):
+        output = self.run(r'''
+        $pysrc = <<<EOD
+        def f():
+            import sys
+            return "." in sys.path
+        EOD;
+        $f = compile_py_func($pysrc);
+        echo $f();
+        ''')
+        assert php_space.is_true(output[0])
+
+    def test_sys_executable_in_pyhyp(self, php_space):
+        output = self.run('''
+        $sys = import_py_mod("sys");
+        echo $sys->executable;
+        ''')
+        exe = php_space.str_w(output[0])
+        # Not ideal, since under tests sys.argv[0] is py.test.
+        # When run untranslated as hippy/main.py or translated, sys.argv[0]
+        # makes more sense.
+        # The point is, that sys.executable was set and is an absolute path.
+        assert exe.startswith("/")
+
+    def test_import_py_mod_when_mod_broken(self, php_space):
+        pytest.skip("sometimes broken -- depends how pytest is invoked as to whether this passes")
+        # running just this file under testing works.
+        # running all tests, fails to find testing module.
+        # XXX
+        output = self.run('''
+        try {
+            import_py_mod("testing.bogus_py_mod");
+            echo "fail";
+        } catch (PyException $e) {
+            echo $e->getMessage();
+        }
+        ''')
+        err_s = "SyntaxError: EOL while scanning string literal (bogus_py_mod.py, line 2)"
+        assert php_space.str_w(output[0]) == err_s
+
     def test_import_py_mod_func(self, php_space):
         output = self.run('''
             $math = import_py_mod("math");
@@ -1743,6 +1798,37 @@ class TestPyPyBridge(BaseTestInterpreter):
         ''')
         assert php_space.int_w(output[0]) == 454
         assert php_space.int_w(output[1]) == 555
+
+
+    # Problems with pycparser
+    @pytest.mark.xfail
+    def test_cffi(self, php_space):
+        output = self.run(r'''
+            $cffi = import_py_mod("cffi");
+            $sys = import_py_mod("sys");
+            $builtin = import_py_mod("__builtin__");
+
+            $ffi = new $cffi->FFI();
+
+            $ffi->cdef("double _clock_gettime_monotonic();");
+            $csrc = <<<EOD
+              #include <time.h>
+              #include <math.h>
+              #include <stdlib.h>
+
+              double _clock_gettime_monotonic(){
+                struct timespec ts;
+                if ((clock_gettime(CLOCK_MONOTONIC, &ts)) == -1)
+                  err(1, "clock_gettime error");
+                return ts.tv_sec + ts.tv_nsec * pow(10, -9);
+              }
+            EOD;
+
+            $C = $ffi->verify($csrc);
+            echo "Monotonic time: " . $C->_clock_gettime_monotonic();
+        ''')
+        assert php_space.str_w(output[0]).startswith("Monotonic time")
+        #  i.e. didn't crash
 
 
 class TestPyPyBridgeInterp(object):
