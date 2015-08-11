@@ -425,6 +425,18 @@ class Interpreter(object):
         self.constant_names.append(name)
 
     def locate_constant(self, name, complain=True):
+        # Before looking to PHP constant cache, we recurse outwards
+        # over cross-language scopes looking for something of the same name
+        frame = self.topframeref()
+        if frame is not None:
+            py_scope = frame.bytecode.py_scope
+            if py_scope is not None:
+                ph_v = py_scope.ph_lookup_local_recurse(name)
+                if ph_v is not None:
+                    return ph_v
+
+        # We didn't find that name is parent cross-language scopes
+        # Resume normal PHP behaviour
         c = self.lookup_constant(name)
         if c is not None:
             return c
