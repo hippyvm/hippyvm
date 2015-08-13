@@ -117,7 +117,7 @@ class TestPyPyBridgeScope(BaseTestInterpreter):
         ''')
         assert php_space.int_w(output[0]) == 42
 
-    def test_php_sees_outer_py_class(self, php_space):
+    def test_php_sees_outer_py_class001(self, php_space):
         output = self.run('''
             $pysrc = <<<EOD
             def f():
@@ -130,6 +130,79 @@ class TestPyPyBridgeScope(BaseTestInterpreter):
             echo($f()->x);
         ''')
         assert php_space.int_w(output[0]) == 2
+
+    def test_php_sees_outer_py_class002(self, php_space):
+        output = self.run('''
+            class C { // should not pick up this class
+                function __construct() {
+                    $this->x = 3;
+                }
+            };
+
+            $pysrc = <<<EOD
+            def f():
+                class C: x = 2
+
+                phsrc = "function h() { return new C(); }"
+                return compile_php_func(phsrc)()
+            EOD;
+            $f = compile_py_func($pysrc);
+            echo($f()->x);
+        ''')
+        assert php_space.int_w(output[0]) == 2
+
+
+    def test_php_sees_outer_py_class003(self, php_space):
+        output = self.run('''
+            class C {
+                function __construct() {
+                    $this->x = 3;
+                }
+            };
+
+            $pysrc = <<<EOD
+            def f():
+                phsrc = "function h() { return new C(); }"
+                return compile_php_func(phsrc)()
+            EOD;
+            $f = compile_py_func($pysrc);
+            echo($f()->x);
+        ''')
+        assert php_space.int_w(output[0]) == 3
+
+
+    def test_php_sees_outer_py_class004(self, php_space):
+        output = self.run('''
+            class C {
+                function __construct($v) {
+                    $this->x = $v;
+                }
+            };
+
+            $pysrc = <<<EOD
+            def f():
+                phsrc = "function h() { return new C(1); }"
+                h = compile_php_func(phsrc)
+                return [h(), C(2)];
+            EOD;
+            $f = compile_py_func($pysrc);
+            $cs = $f();
+
+            $c1 = $cs[0];
+            $c2 = $cs[1];
+            $c3 = new C(2);
+
+            $tc1 = get_class($c1);
+            $tc2 = get_class($c2);
+            $tc3 = get_class($c3);
+
+            echo $tc1 == $tc2;
+            echo $tc2 == $tc3;
+            echo $tc1 == $tc3;
+        ''')
+        assert php_space.is_true(output[0])
+        assert php_space.is_true(output[1])
+        assert php_space.is_true(output[2])
 
     def test_php_can_call_python_builtin(self, php_space):
         output = self.run('''
