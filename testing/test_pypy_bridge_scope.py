@@ -1061,3 +1061,128 @@ def f():
         echo $f();
         ''')
         assert php_space.str_w(output[0]) == "qpq"
+
+    def test_raise_foregin_exception001(self, php_space):
+       output = self.run(r'''
+            $pysrc = "def f(): raise RuntimeException('argh')";
+            $f = compile_py_func($pysrc);
+            try {
+                $f();
+                echo "fail";
+            } catch (RuntimeException $e) {
+                echo $e->getMessage();
+            }
+       ''')
+       assert php_space.str_w(output[0]) == "argh"
+
+    def test_raise_foregin_exception002(self, php_space):
+        output = self.run(r'''
+            $pysrc = <<<EOD
+            def f():
+                php_src = 'function g() { throw new IndexError("yikes"); }'
+                g = compile_php_func(php_src)
+                g()
+            EOD;
+            $f = compile_py_func($pysrc);
+            try {
+                $f();
+                echo "fail";
+            } catch (PyException $e) {
+                echo $e->getMessage();
+            }
+        ''')
+        assert php_space.str_w(output[0]) == "IndexError: yikes"
+
+    def test_raise_foregin_exception003(self, php_space):
+        output = self.run(r'''
+            $pysrc = <<<EOD
+            def f():
+                def f2():
+                    php_src = 'function g() { throw new IndexError("yikes"); }'
+                    g = compile_php_func(php_src)
+                    g()
+                f2()
+            EOD;
+            $f = compile_py_func($pysrc);
+            try {
+                $f();
+                echo "fail";
+            } catch (PyException $e) {
+                echo $e->getMessage();
+            }
+        ''')
+        assert php_space.str_w(output[0]) == "IndexError: yikes"
+
+    # XXX: Cannot catch Python exceptions by name in PHP yet
+    @pytest.mark.xfail
+    def test_raise_foregin_exception004(self, php_space):
+        output = self.run(r'''
+        $pysrc = <<<EOD
+        def f():
+            php_src = 'function g() { throw new IndexError("yikes"); }'
+            g = compile_php_func(php_src)
+            g()
+        EOD;
+        $f = compile_py_func($pysrc);
+        try {
+            $f();
+            echo "fail";
+        } catch (IndexError $e) {
+            echo $e->getMessage();
+        }
+        ''')
+        assert php_space.str_w(output[0]) == "IndexError: yikes"
+
+    def test_raise_foregin_exception005(self, php_space):
+        output = self.run(r'''
+        $pysrc = <<<EOD
+        def f():
+            raise LogicException("most illogical")
+        EOD;
+        $f = compile_py_func($pysrc);
+        try {
+            $f();
+            echo "fail";
+        } catch (LogicException $e) {
+            echo $e->getMessage();
+        }
+        ''')
+        assert php_space.str_w(output[0]) == "most illogical"
+
+    def test_raise_foregin_exception006(self, php_space):
+        output = self.run(r'''
+        $pysrc = <<<EOD
+        def f():
+            def g():
+                raise LogicException("most illogical")
+
+            try:
+                g()
+                return "fail"
+            except PHPException as e:
+                return e.message
+        EOD;
+        $f = compile_py_func($pysrc);
+        echo $f();
+        ''')
+        assert php_space.str_w(output[0]) == "most illogical"
+
+    # XXX: We yet catch a foreign PHP exception under Python by name.
+    @pytest.mark.xfail
+    def test_raise_foregin_exception007(self, php_space):
+        output = self.run(r'''
+        $pysrc = <<<EOD
+        def f():
+            def g():
+                raise LogicException("most illogical")
+
+            try:
+                g()
+                return "fail"
+            except LogicException as e:
+                return e.message
+        EOD;
+        $f = compile_py_func($pysrc);
+        echo $f();
+        ''')
+        assert php_space.str_w(output[0]) == "most illogical"
