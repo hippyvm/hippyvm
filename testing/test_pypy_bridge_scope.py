@@ -1167,7 +1167,7 @@ def f():
         ''')
         assert php_space.str_w(output[0]) == "most illogical"
 
-    # XXX: We yet catch a foreign PHP exception under Python by name.
+    # XXX: We can't yet catch a foreign PHP exception under Python by name.
     @pytest.mark.xfail
     def test_raise_foregin_exception007(self, php_space):
         output = self.run(r'''
