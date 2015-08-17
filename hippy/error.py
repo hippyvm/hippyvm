@@ -55,7 +55,6 @@ class Throw(Exception):
         # We will need to chop off items from the PHP backtrace, from
         # this frame upwards. Therefore, we first walk up the stack seeing
         # how deep we are at this point.
-        # Yeh, this is slow, but it is an *exception* case after all.
         n_chop = 0
         f = interp.topframeref()
         while True:
@@ -66,7 +65,6 @@ class Throw(Exception):
                 break
 
         # And chop
-        #assert n_chop <= len(w_exc.traceback)
         end = len(w_exc.traceback) - n_chop
         assert end >= 0
         traceback = w_exc.traceback[0:end]
