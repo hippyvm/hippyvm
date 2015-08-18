@@ -264,3 +264,21 @@ class TestPyPyBridgeConversions(BaseTestInterpreter):
         $b = new A();
         f($a, $b); // what should happen?
         ''')
+
+    def test_return_lambda_to_php(self, php_space):
+        output = self.run(r'''
+        $pysrc = "def f(): return lambda x: x + 2";
+        $f = compile_py_func($pysrc);
+        $g = $f();
+        echo $g(2);
+        ''')
+        assert php_space.int_w(output[0]) == 4
+
+    def test_return_lambda_closure_to_php(self, php_space):
+        output = self.run(r'''
+        $pysrc = "def f(y): return lambda x: x + y";
+        $f = compile_py_func($pysrc);
+        $g = $f(3);
+        echo $g(2);
+        ''')
+        assert php_space.int_w(output[0]) == 5
