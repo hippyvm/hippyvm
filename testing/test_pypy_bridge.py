@@ -1831,6 +1831,22 @@ class TestPyPyBridge(BaseTestInterpreter):
         #  i.e. didn't crash
 
 
+    # Not really excercising pyhyp, but can't hurt.
+    def test_range_to_py_wrong_args(self, php_space):
+        warns = ["Warning: range() expects at least 2 parameters, 1 given"]
+        output = self.run(r'''
+
+        $pysrc = <<<EOD
+        def f(it):
+            return isinstance(it, bool)
+        EOD;
+        $f = compile_py_func($pysrc);
+
+        echo $f(range(1)); // range returns false due to wrong args
+        ''', warns)
+        assert php_space.is_true(output[0])
+
+
 class TestPyPyBridgeInterp(object):
 
     def test_php_code_cache(self):
