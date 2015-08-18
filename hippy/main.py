@@ -62,7 +62,7 @@ def check_pypy_prefix_env(py_space):
     from pypy.module.sys.initpath import pypy_find_stdlib
     res = pypy_find_stdlib(py_space, None)
 
-    if res == py_space.w_None:
+    if py_space.is_w(res, py_space.w_None):
         print("To run PyHyp, you must set PYPY_PREFIX to the directory "
               "containing the PyPy libraries")
         return False
