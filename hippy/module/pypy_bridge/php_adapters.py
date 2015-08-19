@@ -5,19 +5,13 @@ wrap PHP objects for use within Python programs.
 
 from pypy.interpreter.baseobjspace import W_Root
 from pypy.interpreter.typedef import TypeDef
-from pypy.interpreter.gateway import interp2app, unwrap_spec
-from pypy.interpreter.function import Function as Py_Function
-from pypy.interpreter.argument import Arguments
-from pypy.interpreter.error import OperationError
+from pypy.interpreter.gateway import interp2app
 
 from hippy.objects.reference import W_Reference
-from hippy.klass import def_class
-from hippy.builtin import wrap_method
 from hippy.error import Throw, VisibilityError
 from hippy.module.pypy_bridge.util import _raise_py_bridgeerror
-from hippy.builtin import wrap_method, ThisUnwrapper
 
-from rpython.rlib import jit, rerased, unroll
+from rpython.rlib import jit
 
 
 class W_PHPGenericAdapter(W_Root):
@@ -452,7 +446,6 @@ class W_PHPUnboundMethAdapter(W_Root):
 
     def to_php(self, interp):
         # This doesn't really make sense, so just raise an exception.
-        from hippy.objects.closureobject import new_closure
         _raise_py_bridgeerror(self.space, "Cannot unwrap unbound PHP method.")
 
 
