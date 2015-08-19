@@ -356,7 +356,14 @@ class W_PHPFuncAdapter(W_Root):
         # we can't just unwrap the function, since PHP funcs are
         # not first class.The best we can do is a closure.
         from hippy.objects.closureobject import new_closure
-        return new_closure(interp.space, self.w_php_func, None)
+        from hippy.builtin import BuiltinFunction
+        if isinstance(self.w_php_func, BuiltinFunction):
+            # PHP builtins can not be stashed inside of a PHP closure!
+            from hippy.module.pypy_bridge.bridge import _raise_php_bridgeexception
+            _raise_php_bridgeexception(
+                interp, "Can't pass PHP builtin's from Python to PHP")
+        else:
+            return new_closure(interp.space, self.w_php_func, None)
 
     def descr_str(self):
         return self.space.wrap(self.w_php_func.name)
