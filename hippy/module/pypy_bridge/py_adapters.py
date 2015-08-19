@@ -93,9 +93,11 @@ class W_PyGenericAdapter(W_InstanceObject):
     def to_py(self, interp, w_php_ref=None):
         return self.w_py_inst
 
-    def as_string(self, space, quiet=False):
-        """ Tells PHP how to str_w this should we wrap a string """
-        return self.w_py_inst.to_php(self.interp)
+
+    def str(self, space, quiet=False):
+        py_space = self.interp.py_space
+        w_py_str = py_space.str(self.w_py_inst)
+        return py_space.str_w(w_py_str)
 
 @wrap_method(['interp', ThisUnwrapper(W_PyGenericAdapter), str],
         name='GenericPyProxy::__get')
@@ -237,6 +239,11 @@ class W_PyFuncGlobalAdapter(AbstractFunction):
     def to_py(self, interp, w_php_ref=None):
         return self.w_py_callable
 
+    def str(self, space, quiet=False):
+        py_space = self.interp.py_space
+        w_py_str = py_space.str(self.w_py_callable)
+        return py_space.str_w(w_py_str)
+
 class W_PyMethodFuncAdapter(W_PyFuncGlobalAdapter):
     """Only exists because method indicies for methods are skewed by one
     between Python and PHP. In PHP $this is implicit"""
@@ -291,6 +298,12 @@ class W_PyFuncAdapter(W_InstanceObject):
     def get_wrapped_py_obj(self):
         return self.w_py_func
 
+
+    def str(self, space, quiet=False):
+        py_space = self.interp.py_space
+        w_py_str = py_space.str(self.w_py_func)
+        return py_space.str_w(w_py_str)
+
 k_PyFuncAdapter = def_class('PyFunc', [])
 
 def new_adapted_py_func(interp, w_py_func):
@@ -328,6 +341,11 @@ class W_PyModAdapter(WPh_Object):
 
     def to_py(self, interp, w_php_ref=None):
         return self.w_py_mod
+
+
+    def str(self, space, quiet=False):
+        w_py_str = self.py_space.str(self.w_py_mod)
+        return self.py_space.str_w(w_py_str)
 
 class W_PyListAdapterIterator(BaseIterator):
     _immutable_fields_ = ["py_space", "storage_w"]
@@ -562,6 +580,11 @@ class W_PyExceptionAdapter(W_ExceptionObject):
     def __init__(self, klass, initial_storage):
         W_ExceptionObject.__init__(self, klass, initial_storage)
         self.w_py_exn = None # set elsewhere
+        self.interp = None   # also set elsewhere
+
+    def set_w_py_exn(self, interp, w_py_exn):
+        self.interp = interp
+        self.w_py_exn = w_py_exn
 
     def set_exninfo(self, php_interp, w_py_operr):
         """Sets useful debugging info"""
@@ -600,6 +623,12 @@ class W_PyExceptionAdapter(W_ExceptionObject):
 
     def to_py(self, interp, w_php_ref=None):
         return self.w_py_exn
+
+
+    def str(self, space, quiet=False):
+        py_space = self.interp.py_space
+        w_py_str = py_space.str(self.w_py_exn)
+        return py_space.str_w(w_py_str)
 
 from hippy.builtin_klass import k_Exception
 k_PyExceptionAdapter = def_class('PyException',
@@ -665,6 +694,12 @@ class W_PyClassAdapter(W_InstanceObject):
 
     def to_py(self, interp, w_php_ref=None):
         return self.w_py_kls
+
+
+    def str(self, space, quiet=False):
+        py_space = self.interp.py_space
+        w_py_str = py_space.str(self.w_py_kls)
+        return py_space.str_w(w_py_str)
 
 k_PyClassAdapter = def_class('PyClassAdapter',
                              [], [],
