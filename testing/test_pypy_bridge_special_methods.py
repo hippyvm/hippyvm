@@ -158,3 +158,82 @@ class TestPyPyBridgeSpecialMethods(BaseTestInterpreter):
         expect = "<class 'C'>"
         assert php_space.str_w(output[0]) == expect
         assert php_space.str_w(output[1]) == expect
+
+    def test_str_of_php_inst_in_py(self, php_space):
+        output = self.run(r'''
+        $pysrc = "def f(x): return str(x)";
+        $f = compile_py_func($pysrc);
+
+        class A {};
+        try {
+            $f(new A());
+            echo "nope";
+        } catch(PyException $e) {
+            echo $e->getMessage();
+        }
+        ''')
+        # You can't stringify a PHP instance in PHP, so we preserve this.
+        err_s = "BridgeError: Wrapped PHP instance has no __toString method"
+        assert php_space.str_w(output[0]) == err_s
+
+    def test_str_of_php_class_in_py(self, php_space):
+        output = self.run(r'''
+        class A {};
+        $pysrc = "def f(): return str(A)";
+        $f = compile_py_func($pysrc);
+
+        echo $f();
+        ''')
+        # Free to do whatever we want here really. In pure PHP you can't
+        # get a handle on a class. They are instead passed around as strings.
+        # This seems a reasonable behaviour.
+        assert php_space.str_w(output[0]) == "A"
+
+    def test_str_of_php_exn_in_py(self, php_space):
+        output = self.run(r'''
+        $pysrc = "def f(x): return str(x)";
+        $f = compile_py_func($pysrc);
+
+        echo $f(new LogicException("illogical"));
+        ''')
+        assert php_space.str_w(output[0]) == "illogical"
+
+    def test_str_of_php_builtin_func_in_py(self, php_space):
+        output = self.run(r'''
+        $pysrc = "def f(): return str(array_shift)";
+        $f = compile_py_func($pysrc);
+
+        echo $f();
+        ''')
+        assert php_space.str_w(output[0]) == "array_shift"
+
+    def test_str_of_php_user_func_in_py(self, php_space):
+        output = self.run(r'''
+        function ggg() {};
+        $pysrc = "def f(): return str(ggg);";
+        $f = compile_py_func($pysrc);
+
+        echo $f();
+        ''')
+        assert php_space.str_w(output[0]) == "ggg"
+
+
+    def test_str_of_php_unbound_meth_in_py(self, php_space):
+        output = self.run(r'''
+        class G { function w(){}};
+        $pysrc = "def f(): return str(G.w)";
+        $f = compile_py_func($pysrc);
+
+        echo $f();
+        ''')
+        assert php_space.str_w(output[0]) == "w"
+
+
+    def test_str_of_php_ref_in_py(self, php_space):
+        output = self.run(r'''
+        $pysrc = "def f(): return str(PHPRef(666))";
+        $f = compile_py_func($pysrc);
+
+        echo $f();
+        ''')
+        assert php_space.str_w(output[0]) == "<PHPRef>"
