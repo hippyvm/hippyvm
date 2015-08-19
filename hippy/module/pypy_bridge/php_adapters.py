@@ -15,6 +15,7 @@ from hippy.klass import def_class
 from hippy.builtin import wrap_method
 from hippy.error import Throw, VisibilityError
 from hippy.module.pypy_bridge.util import _raise_py_bridgeerror
+from hippy.builtin import wrap_method, ThisUnwrapper
 
 from rpython.rlib import jit, rerased, unroll
 
@@ -162,6 +163,7 @@ class W_PHPGenericAdapter(W_Root):
     def descr_ne(self, space, w_other):
         return space.not_(self.descr_eq(space, w_other))
 
+
 W_PHPGenericAdapter.typedef = TypeDef("PHPGenericAdapter",
     __call__ = interp2app(W_PHPGenericAdapter.descr_call),
     __getattr__ = interp2app(W_PHPGenericAdapter.descr_get),
@@ -240,10 +242,14 @@ class W_PHPClassAdapter(W_Root):
             _raise_py_bridgeerror(py_space,
                 "Wrapped PHP class has no assignable attribute '%s'" % name)
 
+    def descr_str(self):
+        return self.interp.py_space.wrap(self.w_php_cls.name)
+
 W_PHPClassAdapter.typedef = TypeDef("PHPClassAdapter",
     __call__ = interp2app(W_PHPClassAdapter.descr_call),
     __getattr__ = interp2app(W_PHPClassAdapter.descr_getattr),
     __setattr__ = interp2app(W_PHPClassAdapter.descr_setattr),
+    __str__ = interp2app(W_PHPClassAdapter.descr_str),
 )
 
 from pypy.module.exceptions.interp_exceptions import W_BaseException
@@ -352,8 +358,12 @@ class W_PHPFuncAdapter(W_Root):
         from hippy.objects.closureobject import new_closure
         return new_closure(interp.space, self.w_php_func, None)
 
+    def descr_str(self):
+        return self.space.wrap(self.w_php_func.name)
+
 W_PHPFuncAdapter.typedef = TypeDef("PHPFunc",
     __call__ = interp2app(W_PHPFuncAdapter.descr_call),
+    __str__ = interp2app(W_PHPFuncAdapter.descr_str),
 )
 
 class W_PHPUnboundMethAdapter(W_Root):
@@ -373,7 +383,7 @@ class W_PHPUnboundMethAdapter(W_Root):
         self.w_php_meth = w_php_meth
 
     def get_wrapped_php_obj(self):
-        assert False
+        return self.w_php_meth
 
     def get_php_interp(self):
         return self.space.get_php_interp()
@@ -438,8 +448,14 @@ class W_PHPUnboundMethAdapter(W_Root):
         from hippy.objects.closureobject import new_closure
         _raise_py_bridgeerror(self.space, "Cannot unwrap unbound PHP method.")
 
+
+    def descr_str(self):
+        return self.space.wrap(self.w_php_meth.method_func.name)
+
+
 W_PHPUnboundMethAdapter.typedef = TypeDef("PHPUnboundMeth",
     __call__ = interp2app(W_PHPUnboundMethAdapter.descr_call),
+    __str__ = interp2app(W_PHPUnboundMethAdapter.descr_str),
 )
 
 class W_PHPRefAdapter(W_Root):
@@ -479,10 +495,14 @@ class W_PHPRefAdapter(W_Root):
     def to_php(self, interp):
         return self.w_php_ref
 
+    def descr_str(self):
+        return self.interp.py_space.wrap("<PHPRef>")
+
 w_phprefadapter_typedef = {
     "__new__": interp2app(W_PHPRefAdapter.descr_new),
     "store": interp2app(W_PHPRefAdapter.store),
     "deref": interp2app(W_PHPRefAdapter.deref),
+    "__str__": interp2app(W_PHPRefAdapter.descr_str),
 }
 
 W_PHPRefAdapter.typedef = TypeDef("PHPRef", **w_phprefadapter_typedef)
