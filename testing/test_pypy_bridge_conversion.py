@@ -285,15 +285,17 @@ class TestPyPyBridgeConversions(BaseTestInterpreter):
 
     def test_php_builtin_func_to_py_to_php(self, php_space):
         output = self.run(r'''
-        $pysrc = "def f(): return array_shift";
+        $pysrc = "def f(): return array_keys";
         $f = compile_py_func($pysrc);
 
-        try {
-            $f();
-            echo "nope!";
-        } catch(BridgeException $e) {
-            echo $e->getMessage();
-        }
+        $ar_k = $f();
+        $ar = array("a" => 1, "t" => 666);
+        $ar2 = $ar_k($ar);
+
+        echo count($ar2);
+        echo $ar2[0];
+        echo $ar2[1];
         ''')
-        err_s = "Can't pass PHP builtin's from Python to PHP"
-        assert php_space.str_w(output[0]) == err_s
+        assert php_space.int_w(output[0]) == 2
+        assert php_space.str_w(output[1]) == "a"
+        assert php_space.str_w(output[2]) == "t"

@@ -59,7 +59,11 @@ class AbstractFunction(W_Root):
     name = "??"
 
     _immutable_fields_ = ['name']
-    _attrs_ = ('name',)
+    _attrs_ = ('name', 'closuredecls')
+
+    def __init__(self):
+        # Only used for non-builtins
+        self.closuredecls = None
 
     def get_identifier(self):
         return self.name.lower()
