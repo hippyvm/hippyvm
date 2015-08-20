@@ -384,7 +384,12 @@ class W_PHPUnboundMethAdapter(W_Root):
         self.w_php_meth = w_php_meth
 
     def get_wrapped_php_obj(self):
-        return self.w_php_meth
+        # This is awkward since a Python Method is not derived from PHP's
+        # W_Root. This means we would have to special case everywhere this
+        # needs to be called. Since this is such a rare use-case, we
+        # block it for now.
+        _raise_py_bridgeerror(
+            self.space, "Illegal operation on wrapped unbound PHP method")
 
     def get_php_interp(self):
         return self.space.get_php_interp()
