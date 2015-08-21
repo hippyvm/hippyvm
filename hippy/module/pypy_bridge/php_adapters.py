@@ -5,18 +5,13 @@ wrap PHP objects for use within Python programs.
 
 from pypy.interpreter.baseobjspace import W_Root
 from pypy.interpreter.typedef import TypeDef
-from pypy.interpreter.gateway import interp2app, unwrap_spec
-from pypy.interpreter.function import Function as Py_Function
-from pypy.interpreter.argument import Arguments
-from pypy.interpreter.error import OperationError
+from pypy.interpreter.gateway import interp2app
 
 from hippy.objects.reference import W_Reference
-from hippy.klass import def_class
-from hippy.builtin import wrap_method
 from hippy.error import Throw, VisibilityError
 from hippy.module.pypy_bridge.util import _raise_py_bridgeerror
 
-from rpython.rlib import jit, rerased, unroll
+from rpython.rlib import jit
 
 
 class W_PHPGenericAdapter(W_Root):
@@ -162,6 +157,7 @@ class W_PHPGenericAdapter(W_Root):
     def descr_ne(self, space, w_other):
         return space.not_(self.descr_eq(space, w_other))
 
+
 W_PHPGenericAdapter.typedef = TypeDef("PHPGenericAdapter",
     __call__ = interp2app(W_PHPGenericAdapter.descr_call),
     __getattr__ = interp2app(W_PHPGenericAdapter.descr_get),
@@ -240,10 +236,14 @@ class W_PHPClassAdapter(W_Root):
             _raise_py_bridgeerror(py_space,
                 "Wrapped PHP class has no assignable attribute '%s'" % name)
 
+    def descr_str(self):
+        return self.interp.py_space.wrap(self.w_php_cls.name)
+
 W_PHPClassAdapter.typedef = TypeDef("PHPClassAdapter",
     __call__ = interp2app(W_PHPClassAdapter.descr_call),
     __getattr__ = interp2app(W_PHPClassAdapter.descr_getattr),
     __setattr__ = interp2app(W_PHPClassAdapter.descr_setattr),
+    __str__ = interp2app(W_PHPClassAdapter.descr_str),
 )
 
 from pypy.module.exceptions.interp_exceptions import W_BaseException
@@ -350,10 +350,15 @@ class W_PHPFuncAdapter(W_Root):
         # we can't just unwrap the function, since PHP funcs are
         # not first class.The best we can do is a closure.
         from hippy.objects.closureobject import new_closure
+        from hippy.builtin import BuiltinFunction
         return new_closure(interp.space, self.w_php_func, None)
+
+    def descr_str(self):
+        return self.space.wrap(self.w_php_func.name)
 
 W_PHPFuncAdapter.typedef = TypeDef("PHPFunc",
     __call__ = interp2app(W_PHPFuncAdapter.descr_call),
+    __str__ = interp2app(W_PHPFuncAdapter.descr_str),
 )
 
 class W_PHPUnboundMethAdapter(W_Root):
@@ -373,7 +378,12 @@ class W_PHPUnboundMethAdapter(W_Root):
         self.w_php_meth = w_php_meth
 
     def get_wrapped_php_obj(self):
-        assert False
+        # This is awkward since a Python Method is not derived from PHP's
+        # W_Root. This means we would have to special case everywhere this
+        # needs to be called. Since this is such a rare use-case, we
+        # block it for now.
+        _raise_py_bridgeerror(
+            self.space, "Illegal operation on wrapped unbound PHP method")
 
     def get_php_interp(self):
         return self.space.get_php_interp()
@@ -435,11 +445,16 @@ class W_PHPUnboundMethAdapter(W_Root):
 
     def to_php(self, interp):
         # This doesn't really make sense, so just raise an exception.
-        from hippy.objects.closureobject import new_closure
         _raise_py_bridgeerror(self.space, "Cannot unwrap unbound PHP method.")
+
+
+    def descr_str(self):
+        return self.space.wrap(self.w_php_meth.method_func.name)
+
 
 W_PHPUnboundMethAdapter.typedef = TypeDef("PHPUnboundMeth",
     __call__ = interp2app(W_PHPUnboundMethAdapter.descr_call),
+    __str__ = interp2app(W_PHPUnboundMethAdapter.descr_str),
 )
 
 class W_PHPRefAdapter(W_Root):
@@ -479,10 +494,14 @@ class W_PHPRefAdapter(W_Root):
     def to_php(self, interp):
         return self.w_php_ref
 
+    def descr_str(self):
+        return self.interp.py_space.wrap("<PHPRef>")
+
 w_phprefadapter_typedef = {
     "__new__": interp2app(W_PHPRefAdapter.descr_new),
     "store": interp2app(W_PHPRefAdapter.store),
     "deref": interp2app(W_PHPRefAdapter.deref),
+    "__str__": interp2app(W_PHPRefAdapter.descr_str),
 }
 
 W_PHPRefAdapter.typedef = TypeDef("PHPRef", **w_phprefadapter_typedef)

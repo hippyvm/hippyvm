@@ -1,7 +1,7 @@
 from hippy.objects.instanceobject import W_InstanceObject
 from hippy.klass import W_InvokeCall, def_class
-from hippy.builtin import wrap_method, ThisUnwrapper
-from hippy.function import Function
+from hippy.builtin import wrap_method, ThisUnwrapper, BuiltinFunction
+from hippy.function import Function, AbstractFunction
 
 class W_CallClosure(W_InvokeCall):
     def __init__(self, klass, call_func, w_obj, closure):
@@ -17,9 +17,12 @@ class W_CallClosure(W_InvokeCall):
 
 class W_ClosureObject(W_InstanceObject):
     def __init__(self, func, klass, storage_w, w_this=None, static=False):
-        assert isinstance(func, Function)
+        assert isinstance(func, AbstractFunction)
         self._func = func
-        self.closure_args = [None] * len(func.closuredecls)
+        if isinstance(func, Function):
+            self.closure_args = [None] * len(func.closuredecls)
+        else:
+            self.closure_args = []
         W_InstanceObject.__init__(self, klass, storage_w)
         self.w_this = w_this
         self.static = static

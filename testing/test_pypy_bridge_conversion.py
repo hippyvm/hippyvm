@@ -282,3 +282,20 @@ class TestPyPyBridgeConversions(BaseTestInterpreter):
         echo $g(2);
         ''')
         assert php_space.int_w(output[0]) == 5
+
+    def test_php_builtin_func_to_py_to_php(self, php_space):
+        output = self.run(r'''
+        $pysrc = "def f(): return array_keys";
+        $f = compile_py_func($pysrc);
+
+        $ar_k = $f();
+        $ar = array("a" => 1, "t" => 666);
+        $ar2 = $ar_k($ar);
+
+        echo count($ar2);
+        echo $ar2[0];
+        echo $ar2[1];
+        ''')
+        assert php_space.int_w(output[0]) == 2
+        assert php_space.str_w(output[1]) == "a"
+        assert php_space.str_w(output[2]) == "t"

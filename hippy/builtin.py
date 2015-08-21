@@ -854,6 +854,7 @@ class BuiltinFunction(AbstractFunction):
     _immutable_fields_ = ['runner']
 
     def __init__(self, funcname, runner):
+        AbstractFunction.__init__(self)
         self.name = funcname.split('::')[-1]
         self._fullname = funcname
         self.runner = runner
