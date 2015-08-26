@@ -1847,6 +1847,50 @@ class TestPyPyBridge(BaseTestInterpreter):
         assert php_space.is_true(output[0])
 
 
+    def test_equality_on_phrpef001(self, php_space):
+        output = self.run(r'''
+        $pysrc = <<<EOD
+        def f():
+            x = PHPRef(666)
+            y = x
+            return x == y
+        EOD;
+
+        $f = compile_py_func($pysrc);
+        echo $f();
+        ''')
+        assert php_space.is_true(output[0])
+
+
+    def test_equality_on_phrpef002(self, php_space):
+        output = self.run(r'''
+        $pysrc = <<<EOD
+        def f():
+            x = PHPRef(666)
+            y = PHPRef(666)
+            return x == y
+        EOD;
+
+        $f = compile_py_func($pysrc);
+        echo $f();
+        ''')
+        assert not php_space.is_true(output[0])
+
+
+    def test_equality_on_phrpef003(self, php_space):
+        output = self.run(r'''
+        $pysrc = <<<EOD
+        def f():
+            x = PHPRef(666)
+            y = PHPRef(999)
+            return x == y
+        EOD;
+
+        $f = compile_py_func($pysrc);
+        echo $f();
+        ''')
+        assert not php_space.is_true(output[0])
+
 class TestPyPyBridgeInterp(object):
 
     def test_php_code_cache(self):
