@@ -251,3 +251,17 @@ class TestPyPyBridgeSpecialMethods(BaseTestInterpreter):
         }
         ''')
         assert php_space.str_w(output[0]) == "BridgeError: Illegal operation on wrapped unbound PHP method"
+
+
+    def test_isinstance_on_phrpef(self, php_space):
+        output = self.run(r'''
+        $pysrc = <<<EOD
+        def f():
+            x = PHPRef(666)
+            return isinstance(x, PHPRef)
+        EOD;
+
+        $f = compile_py_func($pysrc);
+        echo $f();
+        ''')
+        assert php_space.is_true(output[0])
