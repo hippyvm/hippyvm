@@ -97,6 +97,35 @@ class PHPArrayListStrategy(ListStrategy):
 
         return w_php_val.to_py(interp)
 
+    def getslice(self, w_list, start, stop, step, length):
+        """Adapted from the PyPy implementation"""
+
+        interp = self.space.get_php_interp()
+        w_php_arry_ref = self.unerase(w_list.lstorage)
+        w_php_arry = w_php_arry_ref.deref_temp()
+
+        assert isinstance(w_php_arry, W_ListArrayObject)
+        l = w_php_arry.lst_w
+
+        if step == 1 and 0 <= start <= stop:
+            assert start >= 0
+            assert stop >= 0
+            sublist = l[start:stop]
+        else:
+            sublist = [self._none_value] * length
+            for i in range(length):
+                try:
+                    sublist[i] = l[start]
+                    start += step
+                except IndexError:
+                    raise
+
+        # The resulting structure remains an adapted PHP array.
+        # It is guaraunteed to have only integer keys, so we can directly
+        # instantiate the correct interp-level array type.
+        return W_ListArrayObject(self.space, sublist).to_py(
+            interp).descr_as_list(interp.py_space)
+
 def make_wrapped_int_key_php_array(interp, w_php_arry_ref):
     assert isinstance(w_php_arry_ref, W_Reference)
 
