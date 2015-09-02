@@ -1093,3 +1093,22 @@ EOD;
         }
         ''')
         assert php_space.str_w(output[0]) == "oops"
+
+    def test_bad_access_php_decor(self, php_space):
+        output = self.run(r'''
+        class A {};
+
+        $pysrc = <<<EOD
+        @php_decor(access="kangaroo")
+        def f(self):
+            pass
+        EOD;
+        try {
+            compile_py_meth("A", $pysrc);
+            echo "failed";
+        } catch (PyException $e) {
+                echo $e->getMessage();
+        }
+        ''')
+        err_s = "BridgeError: 'kangaroo' is not a valid access modifier"
+        assert php_space.str_w(output[0]) == err_s
