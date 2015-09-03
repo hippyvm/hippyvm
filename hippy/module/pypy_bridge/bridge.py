@@ -99,7 +99,12 @@ def _compile_py_func_from_string(
 
     # Eval it into a dict
     w_py_fake_locals = py_space.newdict()
-    py_compiling.eval(py_space, w_py_code, py_space.newdict(), w_py_fake_locals)
+
+    try:
+        py_compiling.eval(py_space, w_py_code, py_space.newdict(), w_py_fake_locals)
+    except OperationError as e:
+        e.normalize_exception(py_space)
+        raise e.to_php(interp)
 
     # Extract the users function from the dict
     w_py_keys = w_py_fake_locals.descr_keys(py_space)
