@@ -126,6 +126,56 @@ class PHPArrayListStrategy(ListStrategy):
         return W_ListArrayObject(self.space, sublist).to_py(
             interp).descr_as_list(interp.py_space)
 
+    def clone(self, w_list):
+        w_php_arry_ref = self.unerase(w_list.lstorage)
+        w_php_arry = w_php_arry_ref.deref_temp()
+        w_php_arry_ref_cpy = W_Reference(w_php_arry.copy())
+
+        interp = self.space.get_php_interp()
+        return make_wrapped_int_key_php_array(interp, w_php_arry_ref_cpy)
+
+    def _get_raw_php_elems(self, w_list):
+        w_php_arry_ref = self.unerase(w_list.lstorage)
+        w_php_arry = w_php_arry_ref.deref_temp()
+        assert isinstance(w_php_arry, W_ListArrayObject)
+        return w_php_arry.lst_w
+
+    def _extend_from_list(self, w_list, w_other):
+        interp = self.space.get_php_interp()
+
+        if isinstance(w_other.strategy, PHPArrayListStrategy):
+            # other list is another wrapped PHP array
+            l2_php_elems = self._get_raw_php_elems(w_other)
+        else:
+            # other list is a native Python list
+            l2_py_elems = w_other.getitems()
+            l2_php_elems = [x.to_php(interp) for x in l2_py_elems]
+
+        w_php_arry_ref = self.unerase(w_list.lstorage)
+        w_php_arry = w_php_arry_ref.deref_unique()
+        assert isinstance(w_php_arry, W_ListArrayObject)
+        w_php_arry.lst_w.extend(l2_php_elems)
+
+    def inplace_mul(self, w_list, times):
+        interp = self.space.get_php_interp()
+        php_elems = self._get_raw_php_elems(w_list)
+
+        w_php_arry_ref = self.unerase(w_list.lstorage)
+        w_php_arry = w_php_arry_ref.deref_unique()
+        assert isinstance(w_php_arry, W_ListArrayObject)
+
+        if times >= 1:
+            w_php_arry.lst_w.extend(php_elems * (times - 1))
+        else:
+            # Oddly, in Python a -ve operand should clear the list.
+            del w_php_arry.lst_w[:]
+
+    def getitems_copy(self, w_list):
+        interp = self.space.get_php_interp()
+        php_elems = self._get_raw_php_elems(w_list)
+        return [x.to_py(interp) for x in php_elems]
+
+
 def make_wrapped_int_key_php_array(interp, w_php_arry_ref):
     assert isinstance(w_php_arry_ref, W_Reference)
 
