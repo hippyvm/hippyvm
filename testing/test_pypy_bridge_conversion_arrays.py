@@ -1,4 +1,4 @@
-from testing.test_interpreter import MockInterpreter, BaseTestInterpreter
+from testing.test_interpreter import BaseTestInterpreter, SeqAssert
 
 import pytest
 
@@ -1322,3 +1322,797 @@ class TestPyPyBridgeArrayConversionsInterp(BaseTestInterpreter):
         echo f(array("a" => "zzz", 0 => 666));
         ''')
         assert php_space.str_w(output[0]) == "zzz"
+
+    def test_binary_add_on_php_array_in_python001(self, php_space):
+        output = self.run('''
+        $src = "def f(a): return a.as_list() + ['hi']";
+        compile_py_func_global($src);
+
+        $a = [56, 57];
+        $b = f($a);
+
+        echo count($a);
+        echo count($b);
+        for ($i = 0; $i < count($b); $i++) {
+            echo $b[$i];
+        }
+        ''')
+        sa = SeqAssert(php_space, output)
+        sa.asrt(int, 2)
+        sa.asrt(int, 3)
+        sa.asrt(int, 56)
+        sa.asrt(int, 57)
+        sa.asrt(str, "hi")
+
+    def test_binary_add_on_php_array_in_python002(self, php_space):
+        output = self.run('''
+        $src = "def f(a, b): return a.as_list() + b.as_list()";
+        compile_py_func_global($src);
+
+        $a1 = [56, 57];
+        $a2 = ["g", "l"];
+        $b = f($a1, $a2);
+
+        echo count($a1);
+        echo count($a2);
+        echo count($b);
+        for ($i = 0; $i < count($b); $i++) {
+            echo $b[$i];
+        }
+        ''')
+        sa = SeqAssert(php_space, output)
+        sa.asrt(int, 2)
+        sa.asrt(int, 2)
+        sa.asrt(int, 4)
+        sa.asrt(int, 56)
+        sa.asrt(int, 57)
+        sa.asrt(str, "g")
+        sa.asrt(str, "l")
+
+    def test_binary_add_on_php_array_in_python003(self, php_space):
+        output = self.run('''
+        $src = "def f(a): return ['hi'] + a.as_list()";
+        compile_py_func_global($src);
+
+        $a = [56, 57];
+        $b = f($a);
+
+        echo count($a);
+        echo count($b);
+        for ($i = 0; $i < count($b); $i++) {
+            echo $b[$i];
+        }
+        ''')
+        sa = SeqAssert(php_space, output)
+        sa.asrt(int, 2)
+        sa.asrt(int, 3)
+        sa.asrt(str, "hi")
+        sa.asrt(int, 56)
+        sa.asrt(int, 57)
+
+    def test_binary_sub_on_php_array_in_python001(self, php_space):
+        output = self.run('''
+        $src = "def f(a): return a.as_list() - ['hi']";
+        compile_py_func_global($src);
+
+        $a = [56, 57];
+
+        try {
+            $b = f($a);
+            echo "fail";
+        } catch (PyException $e) {
+            echo $e->getMessage();
+        }
+        ''')
+        err_s = "TypeError: unsupported operand type(s) for -: 'list' and 'list'"
+        assert php_space.str_w(output[0]) == err_s
+
+    def test_binary_sub_on_php_array_in_python002(self, php_space):
+        output = self.run('''
+        $src = "def f(a, b): return a.as_list() - b.as_list()";
+        compile_py_func_global($src);
+
+        $a1 = [56, 57];
+        $a2 = ["g", "l"];
+        try {
+            $b = f($a1, $a2);
+            echo "fail";
+        } catch (PyException $e) {
+            echo $e->getMessage();
+        }
+        ''')
+        err_s = "TypeError: unsupported operand type(s) for -: 'list' and 'list'"
+        assert php_space.str_w(output[0]) == err_s
+
+    def test_binary_div_on_php_array_in_python001(self, php_space):
+        output = self.run('''
+        $src = "def f(a): return a.as_list() / ['hi']";
+        compile_py_func_global($src);
+
+        $a = [56, 57];
+
+        try {
+            $b = f($a);
+            echo "fail";
+        } catch (PyException $e) {
+            echo $e->getMessage();
+        }
+        ''')
+        err_s = "TypeError: unsupported operand type(s) for div: 'list' and 'list'"
+        assert php_space.str_w(output[0]) == err_s
+
+    def test_binary_div_on_php_array_in_python002(self, php_space):
+        output = self.run('''
+        $src = "def f(a, b): return a.as_list() / b.as_list()";
+        compile_py_func_global($src);
+
+        $a1 = [56, 57];
+        $a2 = ["g", "l"];
+        try {
+            $b = f($a1, $a2);
+            echo "fail";
+        } catch (PyException $e) {
+            echo $e->getMessage();
+        }
+        ''')
+        err_s = "TypeError: unsupported operand type(s) for div: 'list' and 'list'"
+        assert php_space.str_w(output[0]) == err_s
+
+    def test_binary_mul_on_php_array_in_python001(self, php_space):
+        output = self.run('''
+        $src = "def f(a): return a.as_list() * ['hi']";
+        compile_py_func_global($src);
+
+        $a = [56, 57];
+
+        try {
+            $b = f($a);
+            echo "fail";
+        } catch (PyException $e) {
+            echo $e->getMessage();
+        }
+        ''')
+        err_s = "TypeError: unsupported operand type(s) for *: 'list' and 'list'"
+        assert php_space.str_w(output[0]) == err_s
+
+    def test_binary_mul_on_php_array_in_python002(self, php_space):
+        output = self.run('''
+        $src = "def f(a, b): return a.as_list() * b.as_list()";
+        compile_py_func_global($src);
+
+        $a1 = [56, 57];
+        $a2 = ["g", "l"];
+        try {
+            $b = f($a1, $a2);
+            echo "fail";
+        } catch (PyException $e) {
+            echo $e->getMessage();
+        }
+        ''')
+        err_s = "TypeError: unsupported operand type(s) for *: 'list' and 'list'"
+        assert php_space.str_w(output[0]) == err_s
+
+    def test_binary_mul_on_php_array_in_python003(self, php_space):
+        output = self.run('''
+        $src = "def f(a): return a.as_list() * 3";
+        compile_py_func_global($src);
+
+        $a = [1, 2];
+        $b = f($a);
+
+        echo count($a);
+        echo count($b);
+        for ($i = 0; $i < count($b); $i++) {
+            echo $b[$i];
+        }
+        ''')
+        sa = SeqAssert(php_space, output)
+        sa.asrt(int, 2)
+        sa.asrt(int, 6)
+
+        for i in xrange(3):
+            sa.asrt(int, 1)
+            sa.asrt(int, 2)
+
+    def test_binary_mul_on_php_array_in_python004(self, php_space):
+        output = self.run('''
+        $src = "def f(a): return 3 * a.as_list()";
+        compile_py_func_global($src);
+
+        $a = [1, 2];
+        $b = f($a);
+
+        echo count($a);
+        echo count($b);
+        for ($i = 0; $i < count($b); $i++) {
+            echo $b[$i];
+        }
+        ''')
+        sa = SeqAssert(php_space, output)
+        sa.asrt(int, 2)
+        sa.asrt(int, 6)
+
+        for i in xrange(3):
+            sa.asrt(int, 1)
+            sa.asrt(int, 2)
+
+    def test_py_extend_on_php_array_in_python001(self, php_space):
+        output = self.run('''
+        $src = <<<EOD
+        def f(a):
+            a.as_list().extend(['x', 'y', 'z'])
+            return a
+        EOD;
+        compile_py_func_global($src);
+
+        $a = [1, 2];
+        $b = f($a);
+
+        echo count($a);
+        echo count($b);
+
+        // both lists should mutate
+        for ($i = 0; $i < count($b); $i++) {
+            echo $b[$i];
+        }
+
+        for ($i = 0; $i < count($b); $i++) {
+            echo $b[$i];
+        }
+        ''')
+        sa = SeqAssert(php_space, output)
+        sa.asrt(int, 5)
+        sa.asrt(int, 5)
+
+        for i in xrange(2):
+            sa.asrt(int, 1)
+            sa.asrt(int, 2)
+            sa.asrt(str, "x")
+            sa.asrt(str, "y")
+            sa.asrt(str, "z")
+
+    def test_inplace_add_on_php_array_in_python001(self, php_space):
+        output = self.run('''
+        $src = <<<EOD
+        def f(a):
+            l = a.as_list()
+            l += ['x', 'y', 'z']
+            return l
+        EOD;
+        compile_py_func_global($src);
+
+        $a = [1, 2];
+        $b = f($a);
+
+        echo count($a);
+        echo count($b);
+
+        // both lists should mutate
+        for ($i = 0; $i < count($b); $i++) {
+            echo $b[$i];
+        }
+
+        for ($i = 0; $i < count($b); $i++) {
+            echo $b[$i];
+        }
+        ''')
+        sa = SeqAssert(php_space, output)
+        sa.asrt(int, 5)
+        sa.asrt(int, 5)
+
+        for i in xrange(2):
+            sa.asrt(int, 1)
+            sa.asrt(int, 2)
+            sa.asrt(str, "x")
+            sa.asrt(str, "y")
+            sa.asrt(str, "z")
+
+    def test_inplace_mul_on_php_array_in_python001(self, php_space):
+        output = self.run('''
+        $src = <<<EOD
+        def f(a):
+            l = a.as_list()
+            l *= 3
+            return l
+        EOD;
+        compile_py_func_global($src);
+
+        $a = [1, 2];
+        $b = f($a);
+
+        echo count($a);
+        echo count($b);
+
+        for ($i = 0; $i < count($b); $i++) {
+            echo $b[$i];
+        }
+
+        for ($i = 0; $i < count($b); $i++) {
+            echo $b[$i];
+        }
+        ''')
+        sa = SeqAssert(php_space, output)
+        sa.asrt(int, 6)
+        sa.asrt(int, 6)
+
+        for i in xrange(2):
+            for j in xrange(3):
+                sa.asrt(int, 1)
+                sa.asrt(int, 2)
+
+    def test_inplace_mul_on_php_array_in_python002(self, php_space):
+        output = self.run('''
+        $src = <<<EOD
+        def f(a):
+            l = a.as_list()
+            l *= 1
+            return l
+        EOD;
+        compile_py_func_global($src);
+
+        $a = [1, 2];
+        $b = f($a);
+
+        echo count($a);
+        echo count($b);
+
+        for ($i = 0; $i < count($b); $i++) {
+            echo $b[$i];
+        }
+
+        for ($i = 0; $i < count($b); $i++) {
+            echo $b[$i];
+        }
+        ''')
+        sa = SeqAssert(php_space, output)
+        sa.asrt(int, 2)
+        sa.asrt(int, 2)
+
+        for i in xrange(2):
+            sa.asrt(int, 1)
+            sa.asrt(int, 2)
+
+    def test_inplace_mul_on_php_array_in_python003(self, php_space):
+        output = self.run('''
+        $src = <<<EOD
+        def f(a):
+            l = a.as_list()
+            l *= 0
+            return l
+        EOD;
+        compile_py_func_global($src);
+
+        $a = [1, 2];
+        $b = f($a);
+
+        echo count($a);
+        echo count($b);
+        ''')
+        sa = SeqAssert(php_space, output)
+        sa.asrt(int, 0)
+        sa.asrt(int, 0)
+
+    def test_inplace_mul_on_php_array_in_python004(self, php_space):
+        output = self.run('''
+        $src = <<<EOD
+        def f(a):
+            l = a.as_list()
+            l *= - 666
+            return l
+        EOD;
+        compile_py_func_global($src);
+
+        $a = [1, 2];
+        $b = f($a);
+
+        echo count($a);
+        echo count($b);
+        ''')
+        sa = SeqAssert(php_space, output)
+        sa.asrt(int, 0)
+        sa.asrt(int, 0)
+
+    def test_mutate_elsewhere_refd_php_array_in_python001(self, php_space):
+        output = self.run('''
+
+        class A {
+                public $v;
+                function __construct($v) {
+                    // $v has been passed by value, so $this->v should
+                    // be immune from any mutations outside.
+                    $this->v = $v;
+                }
+        }
+
+        $src = <<<EOD
+        def f(a):
+            a.as_list()[0] = 777
+        EOD;
+        compile_py_func_global($src);
+
+        $ar = [666];
+        $a = new A($ar);
+
+        f($ar);
+
+        echo $a->v[0];
+        echo $ar[0];
+        ''')
+        sa = SeqAssert(php_space, output)
+        sa.asrt(int, 666)
+        sa.asrt(int, 777)
+
+    def test_mutate_elsewhere_refd_php_array_in_python002(self, php_space):
+        output = self.run('''
+
+        class A {
+                public $v;
+                function __construct($v) {
+                    // $v has been passed by value, so $this->v should
+                    // be immune from any mutations outside.
+                    $this->v = $v;
+                }
+        }
+
+        $src = <<<EOD
+        def f(a):
+            a.as_list().extend([777])
+        EOD;
+        compile_py_func_global($src);
+
+        $ar = [666];
+        $a = new A($ar);
+
+        f($ar);
+
+        echo count($a->v);
+        echo count($ar);
+        ''')
+        sa = SeqAssert(php_space, output)
+        sa.asrt(int, 1)
+        sa.asrt(int, 2)
+
+    def test_mutate_elsewhere_refd_php_array_in_python003(self, php_space):
+        output = self.run('''
+
+        class A {
+                public $v;
+                function __construct($v) {
+                    // $v has been passed by value, so $this->v should
+                    // be immune from any mutations outside.
+                    $this->v = $v;
+                }
+        }
+
+        $src = <<<EOD
+        def f(a):
+            l = a.as_list()
+            l *= 3
+        EOD;
+        compile_py_func_global($src);
+
+        $ar = ["ping", "pong"];
+        $a = new A($ar);
+
+        f($ar);
+
+        echo count($a->v);
+        echo count($ar);
+        ''')
+        sa = SeqAssert(php_space, output)
+        sa.asrt(int, 2)
+        sa.asrt(int, 6)
+
+    def test_mutate_elsewhere_refd_php_array_in_python004(self, php_space):
+        output = self.run('''
+
+        class A {
+                public $v;
+                function __construct($v) {
+                    // $v has been passed by value, so $this->v should
+                    // be immune from any mutations outside.
+                    $this->v = $v;
+                }
+        }
+
+        $src = <<<EOD
+        def f(a):
+            l = a.as_list()
+            l *= 3
+        EOD;
+        compile_py_func_global($src);
+
+        $ar = ["ping", "pong"];
+        $a = new A($ar);
+
+        f($ar);
+
+        echo count($a->v);
+        echo count($ar);
+        ''')
+        sa = SeqAssert(php_space, output)
+        sa.asrt(int, 2)
+        sa.asrt(int, 6)
+
+    def test_mutate_elsewhere_refd_php_array_in_python005(self, php_space):
+        output = self.run('''
+
+        class A {
+                public $v;
+                function __construct($v) {
+                    // $v has been passed by value, so $this->v should
+                    // be immune from any mutations outside.
+                    $this->v = $v;
+                }
+        }
+
+        $src = <<<EOD
+        def f(a):
+            l = a.as_list()
+            l += [3]
+        EOD;
+        compile_py_func_global($src);
+
+        $ar = ["ping", "pong"];
+        $a = new A($ar);
+
+        f($ar);
+
+        echo count($a->v);
+        echo count($ar);
+        ''')
+        sa = SeqAssert(php_space, output)
+        sa.asrt(int, 2)
+        sa.asrt(int, 3)
+
+    def test_mutate_elsewhere_refd_php_array_in_python006(self, php_space):
+        output = self.run('''
+
+        class A {
+                public $v;
+                function __construct(&$v) {
+                    $this->v = &$v; // passed and assigned by ref, should mutate
+                }
+        }
+
+        $src = <<<EOD
+        def f(a):
+            l = a.as_list()
+            l += [3]
+        EOD;
+        compile_py_func_global($src);
+
+        $ar = ["ping", "pong"];
+        $a = new A($ar);
+
+        f($ar);
+
+        echo count($a->v);
+        echo count($ar);
+        ''')
+        sa = SeqAssert(php_space, output)
+        sa.asrt(int, 3)
+        sa.asrt(int, 3)
+
+    def test_pop_on_php_array_strategy2(self, php_space):
+        output = self.run('''
+        $src = "def f(a): return a.pop('a')";
+        compile_py_func_global($src);
+
+        echo f(array("a" => "zzz", 0 => 666));
+        ''')
+        assert php_space.str_w(output[0]) == "zzz"
+
+    def test_py_update_on_adapted_php_array001(self, php_space):
+        output = self.run('''
+        $src = "def f(a): a.update({2:3})";
+        compile_py_func_global($src);
+
+        $a = [1 => 2];
+        f($a);
+        echo count($a);
+        echo $a[1];
+        echo $a[2];
+        ''')
+        sa = SeqAssert(php_space, output)
+        sa.asrt(int, 2);
+
+        sa.asrt(int, 2);
+        sa.asrt(int, 3);
+
+    def test_py_update_on_adapted_php_array002(self, php_space):
+        output = self.run('''
+        $src = "def f(a): a.update({'a': 'wibble'})";
+        compile_py_func_global($src);
+
+        $a = [1 => 2];
+        f($a);
+        echo count($a);
+        echo $a[1];
+        echo $a["a"];
+        ''')
+        sa = SeqAssert(php_space, output)
+        sa.asrt(int, 2)
+
+        sa.asrt(int, 2)
+        sa.asrt(str, "wibble")
+
+    def test_py_update_on_adapted_php_array003(self, php_space):
+        output = self.run('''
+        $src = "def f(a): a.update({'b': 'wibble'})";
+        compile_py_func_global($src);
+
+        $a = ["a" => "b", "b" => "c"];
+        f($a);
+        echo count($a);
+        echo $a["a"];
+        echo $a["b"];
+        ''')
+        sa = SeqAssert(php_space, output)
+        sa.asrt(int, 2)
+
+        sa.asrt(str, "b")
+        sa.asrt(str, "wibble")
+
+    def test_py_in_php_array001(self, php_space):
+        output = self.run('''
+        $src = "def f(a): return 'a' in a";
+        compile_py_func_global($src);
+
+        $a = ["a" => "b", "b" => "c"];
+        echo f($a);
+        ''')
+        assert php_space.is_true(output[0])
+
+    def test_py_keys_php_array001(self, php_space):
+        output = self.run('''
+        $src = "def f(a): return a.keys()";
+        compile_py_func_global($src);
+
+        $a = ["a" => "b", "b" => "c"];
+        $ks =  f($a);
+
+        echo count($ks);
+        echo $ks[0];
+        echo $ks[1];
+        ''')
+        sa = SeqAssert(php_space, output)
+        sa.asrt(int, 2)
+
+        sa.asrt(str, "a")
+        sa.asrt(str, "b")
+
+    def test_py_vals_php_array001(self, php_space):
+        output = self.run('''
+        $src = "def f(a): return a.values()";
+        compile_py_func_global($src);
+
+        $a = ["a" => "b", "b" => "c"];
+        $vs =  f($a);
+
+        echo count($vs);
+        echo $vs[0];
+        echo $vs[1];
+        ''')
+        sa = SeqAssert(php_space, output)
+        sa.asrt(int, 2)
+
+        sa.asrt(str, "b")
+        sa.asrt(str, "c")
+
+    def test_py_binary_add_php_mixed_array001(self, php_space):
+        output = self.run('''
+        $src = "def f(a): a + {}";
+        compile_py_func_global($src);
+
+        $a = ["a" => "b", "b" => "c"];
+        try {
+            f($a);
+            echo "fail";
+        } catch (PyException $e) {
+            echo $e-> getMessage();
+        }
+
+        ''')
+        err_s = "TypeError: unsupported operand type(s) for +: 'dict' and 'dict'"
+        assert php_space.str_w(output[0]) == err_s
+
+    def test_py_binary_add_php_mixed_array002(self, php_space):
+        output = self.run('''
+        $src = "def f(a, b): a + {}";
+        compile_py_func_global($src);
+
+        $a = ["a" => "b", "b" => "c"];
+        $b = ["a" => "b", "x" => "R"];
+        try {
+            f($a, $b);
+            echo "fail";
+        } catch (PyException $e) {
+            echo $e-> getMessage();
+        }
+
+        ''')
+        err_s = "TypeError: unsupported operand type(s) for +: 'dict' and 'dict'"
+        assert php_space.str_w(output[0]) == err_s
+
+    def test_py_inplace_add_php_mixed_array001(self, php_space):
+        output = self.run('''
+        $src = "def f(a): a += {}";
+        compile_py_func_global($src);
+
+        $a = ["a" => "b", "b" => "c"];
+        try {
+            f($a);
+            echo "fail";
+        } catch (PyException $e) {
+            echo $e-> getMessage();
+        }
+
+        ''')
+        err_s = "TypeError: unsupported operand type(s) for +: 'dict' and 'dict'"
+        assert php_space.str_w(output[0]) == err_s
+
+    def test_py_del_php_mixed_array001(self, php_space):
+        output = self.run('''
+        $src = "def f(a): del(a['a'])";
+        compile_py_func_global($src);
+
+        $a = ["a" => "d", "k" => "l"];
+        f($a);
+        echo count($a);
+        echo $a["k"];
+        ''')
+        sa = SeqAssert(php_space, output)
+        sa.asrt(int, 1)
+        sa.asrt(str, "l")
+
+    @pytest.mark.xfail
+    def test_py_del_php_mixed_array002(self, php_space):
+        output = self.run('''
+        $src = "def f(a): del(a['a'])";
+        compile_py_func_global($src);
+
+        $a = [];
+        try {
+            f($a);
+            echo "fail";
+        } catch (PyException $e) {
+            echo $e->getMessage();
+        }
+        ''')
+        err_s = "KeyError: 'a'"
+        assert php_space.str_w(output[0]) == err_s
+
+    @pytest.mark.xfail
+    def test_py_del_php_intkey_array001(self, php_space):
+        output = self.run('''
+        $src = "def f(a): del(a[1])";
+        compile_py_func_global($src);
+
+        $a = [1, 2, 3];
+        f($a);
+        echo count($a);
+        echo $a[0];
+        echo $a[2];
+        ''')
+        sa = SeqAssert(php_space, output)
+        sa.asrt(int, 2)
+        sa.asrt(int, 1)
+        sa.asrt(int, 3)
+
+    @pytest.mark.xfail
+    def test_py_del_php_intkey_array002(self, php_space):
+        output = self.run('''
+        $src = "def f(a): del(a[1])";
+        compile_py_func_global($src);
+
+        $a = [];
+        try {
+            f($a);
+            echo "fail";
+        } catch (PyException $e) {
+            echo $e->getMessage();
+        }
+        ''')
+        err_s = "KeyError: 1"
+        assert php_space.str_w(output[0]) == err_s
