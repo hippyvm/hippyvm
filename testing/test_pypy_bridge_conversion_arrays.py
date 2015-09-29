@@ -105,7 +105,7 @@ class TestPyPyBridgeArrayConversions(BaseTestInterpreter):
         err_s = "Cannot set string keys of wrapped Python list"
         assert php_space.str_w(output[0]) == err_s
 
-    def test_iter_vals_py_list_in_php(self, php_space):
+    def test_iter_vals_py_list_in_php001(self, php_space):
         output = self.run('''
             $src = <<<EOD
             def f(): return [3, 2, 1]
@@ -121,7 +121,25 @@ class TestPyPyBridgeArrayConversions(BaseTestInterpreter):
         for i in range(3):
             assert php_space.int_w(output[i]) == 3 - i
 
-    def test_iter_keys_vals_py_list_in_php(self, php_space):
+    def test_iter_vals_py_list_in_php002(self, php_space):
+        output = self.run('''
+            $src = <<<EOD
+            def f(): return [3, 2, 1]
+            EOD;
+
+            $f = compile_py_func($src);
+            $ar = $f();
+
+            foreach ($ar as $i) {
+                echo($i);
+                $ar[2] = 1337;     // iterator should not see this mutation
+                $ar[] = 666;       // nor this one
+            }
+        ''')
+        for i in range(3):
+            assert php_space.int_w(output[i]) == 3 - i
+
+    def test_iter_keys_vals_py_list_in_php001(self, php_space):
         output = self.run('''
             $src = <<<EOD
             def f(): return ["zero", "one", "two"]
@@ -138,6 +156,24 @@ class TestPyPyBridgeArrayConversions(BaseTestInterpreter):
         assert php_space.str_w(output[1]) == "1:one"
         assert php_space.str_w(output[2]) == "2:two"
 
+    def test_iter_keys_vals_py_list_in_php002(self, php_space):
+        output = self.run('''
+            $src = <<<EOD
+            def f(): return ["zero", "one", "two"]
+            EOD;
+
+            $f = compile_py_func($src);
+            $ar = $f();
+
+            foreach ($ar as $k => $v) {
+                $ar[2] = "mut";    // iterator should not see this mutation
+                $ar[] = 666;       // nor this one
+                echo("$k:$v");
+            }
+        ''')
+        assert php_space.str_w(output[0]) == "0:zero"
+        assert php_space.str_w(output[1]) == "1:one"
+        assert php_space.str_w(output[2]) == "2:two"
 
     def test_py_list_setitem_in_php(self, php_space):
         output = self.run('''
