@@ -354,7 +354,15 @@ class W_PyListAdapterIterator(BaseIterator):
         self.py_space = py_space
         self.storage_w = py_space.listview(w_py_list)
         self.index = 0
-        self.finished = len(self.storage_w) == 0
+
+        # By PHP semantics, the elements the iterator see cannot change.  It is
+        # therefore safe to count the elements once as the iterator is built.
+        self.num_elems = len(self.storage_w)
+
+        self._compute_finished_flag()
+
+    def _compute_finished_flag(self):
+        self.finished = self.index == self.num_elems
 
     def get_wrapped_py_obj(self):
         # Iterators can reasonably be considered opaque from a wrapping
@@ -365,14 +373,14 @@ class W_PyListAdapterIterator(BaseIterator):
         index = self.index
         w_py_value = self.storage_w[index]
         self.index = index + 1
-        self.finished = self.index == len(self.storage_w)
+        self._compute_finished_flag()
         return w_py_value.to_php(self.py_space.get_php_interp())
 
     def next_item(self, space):
         index = self.index
         w_py_value = self.storage_w[index]
         self.index = index + 1
-        self.finished = self.index == len(self.storage_w)
+        self._compute_finished_flag()
         return space.wrap(index), \
                 w_py_value.to_php(self.py_space.get_php_interp())
 
