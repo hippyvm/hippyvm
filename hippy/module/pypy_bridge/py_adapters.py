@@ -348,16 +348,16 @@ class W_PyModAdapter(WPh_Object):
         return self.py_space.str_w(w_py_str)
 
 class W_PyListAdapterIterator(BaseIterator):
-    _immutable_fields_ = ["py_space", "storage_w"]
+    _immutable_fields_ = ["py_space", "storage_w", "num_elems"]
 
     def __init__(self, py_space, w_py_list):
         self.py_space = py_space
-        self.storage_w = py_space.listview(w_py_list)
+        self.w_py_list = w_py_list
         self.index = 0
 
         # By PHP semantics, the elements the iterator see cannot change.  It is
         # therefore safe to count the elements once as the iterator is built.
-        self.num_elems = len(self.storage_w)
+        self.num_elems = py_space.int_w(py_space.len(w_py_list))
 
         self._compute_finished_flag()
 
@@ -371,14 +371,14 @@ class W_PyListAdapterIterator(BaseIterator):
 
     def next(self, space):
         index = self.index
-        w_py_value = self.storage_w[index]
+        w_py_value = self.py_space.getitem(self.w_py_list, self.py_space.wrap(self.index))
         self.index = index + 1
         self._compute_finished_flag()
         return w_py_value.to_php(self.py_space.get_php_interp())
 
     def next_item(self, space):
         index = self.index
-        w_py_value = self.storage_w[index]
+        w_py_value = self.py_space.getitem(self.w_py_list, self.py_space.wrap(self.index))
         self.index = index + 1
         self._compute_finished_flag()
         return space.wrap(index), \
