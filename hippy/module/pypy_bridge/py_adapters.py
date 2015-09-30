@@ -15,6 +15,7 @@ from hippy.builtin_klass import W_ExceptionObject, k_Exception
 from hippy import consts
 
 from pypy.objspace.std.intobject import W_IntObject
+from pypy.objspace.std.iterobject import W_FastListIterObject
 from pypy.interpreter.error import OperationError
 from pypy.interpreter.pycode import PyCode
 from pypy.interpreter.function import Function as PyFunction
@@ -348,21 +349,43 @@ class W_PyModAdapter(WPh_Object):
         return self.py_space.str_w(w_py_str)
 
 class W_PyListAdapterIterator(BaseIterator):
-    _immutable_fields_ = ["py_space", "storage_w", "num_elems"]
+    _immutable_fields_ = ["py_space", "w_py_iter"]
 
     def __init__(self, py_space, w_py_list):
+        # Hippy iterators need to know if they are exhausted ahead of time.
+        # I.e. We cannot lazily indicate we are done in self.next*().
+        # Therefore we pump the Python iterator *before* the user has
+        # asked for it, observing if the iterator is exhausted. If not,
+        # the next item is cached, ready for when the user asks for it.
+        self.w_py_next_elem = None
+
         self.py_space = py_space
-        self.w_py_list = w_py_list
-        self.index = 0
+        self.index = -1  # Used only for next_item()
 
-        # By PHP semantics, the elements the iterator see cannot change.  It is
-        # therefore safe to count the elements once as the iterator is built.
-        self.num_elems = py_space.int_w(py_space.len(w_py_list))
+        # We are certain that w_py_list is a list, so we can
+        # instantiate the correct iterator directly without going
+        # via py_space.iter().
+        self.w_py_iter = W_FastListIterObject(w_py_list)
 
-        self._compute_finished_flag()
+        self.finished = False
+        self.preload_next()
 
-    def _compute_finished_flag(self):
-        self.finished = self.index == self.num_elems
+    def preload_next(self):
+        py_space = self.py_space
+        try:
+            self.w_py_next_elem = py_space.next(self.w_py_iter)
+        except OperationError as oe:
+            if not oe.match(py_space, py_space.w_StopIteration):
+                # some other exception
+                raise oe
+            else:
+                # iterattor is exhausted
+                self.finished = True
+                self.w_py_next_elem = None
+
+        if self.w_py_next_elem is not None:
+            # i.e. the iterator is not yet exhausted
+            self.index += 1
 
     def get_wrapped_py_obj(self):
         # Iterators can reasonably be considered opaque from a wrapping
@@ -370,19 +393,12 @@ class W_PyListAdapterIterator(BaseIterator):
         return None
 
     def next(self, space):
-        index = self.index
-        w_py_value = self.py_space.getitem(self.w_py_list, self.py_space.wrap(self.index))
-        self.index = index + 1
-        self._compute_finished_flag()
-        return w_py_value.to_php(self.py_space.get_php_interp())
+        w_py_elem = self.w_py_next_elem
+        self.preload_next()
+        return w_py_elem.to_php(self.py_space.get_php_interp())
 
     def next_item(self, space):
-        index = self.index
-        w_py_value = self.py_space.getitem(self.w_py_list, self.py_space.wrap(self.index))
-        self.index = index + 1
-        self._compute_finished_flag()
-        return space.wrap(index), \
-                w_py_value.to_php(self.py_space.get_php_interp())
+        return space.wrap(self.index), self.next(space)
 
 class W_PyListAdapter(W_ArrayObject):
     """Wraps a Python list as PHP array."""
