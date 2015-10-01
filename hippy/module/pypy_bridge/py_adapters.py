@@ -348,33 +348,38 @@ class W_PyModAdapter(WPh_Object):
         return self.py_space.str_w(w_py_str)
 
 class W_PyListAdapterIterator(BaseIterator):
-    _immutable_fields_ = ["py_space", "storage_w"]
+    _immutable_fields_ = ["py_space", "w_py_list", "num_elems", "php_interp"]
 
     def __init__(self, py_space, w_py_list):
         self.py_space = py_space
-        self.storage_w = py_space.listview(w_py_list)
+        self.w_py_list = w_py_list
         self.index = 0
-        self.finished = len(self.storage_w) == 0
+        self.php_interp = py_space.get_php_interp()
+
+        # By PHP semantics, the elements the iterator see cannot change. It is
+        # therefore safe to count the elements once as the iterator is built.
+        self.num_elems = py_space.int_w(py_space.len(w_py_list))
+        self.finished = self.index == self.num_elems
 
     def get_wrapped_py_obj(self):
         # Iterators can reasonably be considered opaque from a wrapping
         # perspective.
         return None
 
-    def next(self, space):
+    def _next(self, php_space):
         index = self.index
-        w_py_value = self.storage_w[index]
+        w_py_value = self.py_space.getitem(self.w_py_list,
+                                           self.py_space.wrap(self.index))
         self.index = index + 1
-        self.finished = self.index == len(self.storage_w)
-        return w_py_value.to_php(self.py_space.get_php_interp())
+        self.finished = self.index == self.num_elems
+        return php_space.wrap(index), w_py_value.to_php(self.php_interp)
+
+    def next(self, space):
+        w_php_index, w_php_value = self._next(space)  # w_php_index unused
+        return w_php_value
 
     def next_item(self, space):
-        index = self.index
-        w_py_value = self.storage_w[index]
-        self.index = index + 1
-        self.finished = self.index == len(self.storage_w)
-        return space.wrap(index), \
-                w_py_value.to_php(self.py_space.get_php_interp())
+        return self._next(space)
 
 class W_PyListAdapter(W_ArrayObject):
     """Wraps a Python list as PHP array."""
