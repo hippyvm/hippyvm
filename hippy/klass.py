@@ -72,7 +72,7 @@ class ClassBase(AbstractFunction, AccessMixin):
     _all_nonstatic_special_properties = None    # lazy
 
     _immutable_fields_ = ['custom_instance_class', 'constructor_method',
-                          'parentclass']
+                          'parentclass', 'initial_storage_w[*]']
 
     def __init__(self, name):
         self.name = name
