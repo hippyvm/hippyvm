@@ -10,6 +10,7 @@ from hippy.function import ClosureArgDesc
 from hippy.objects.base import W_Root, W_Object
 from hippy.objects.reference import W_Reference
 from hippy.objects.strobject import W_ConstStringObject
+from rpython.rlib import jit
 
 
 class ParseError(ParsingError):
@@ -34,6 +35,8 @@ class DelayedObject(W_Root):
 
 
 class W_Constant(DelayedObject):
+    _immutable_fields_ = ["name"]
+
     def __init__(self, name):
         self.name = name
 
@@ -45,9 +48,12 @@ class W_Constant(DelayedObject):
 
 
 class DelayedArray(DelayedObject):
+    _immutable_fields_ = ["values[*]"]
+
     def __init__(self, values):
         self.values = values
 
+    @jit.unroll_safe
     def eval_static(self, space):
         vals = [value.eval_static(space) for value in self.values]
         return space.new_array_from_list(vals)
@@ -63,9 +69,12 @@ class DelayedArray(DelayedObject):
 
 
 class DelayedHash(DelayedObject):
+    _immutable_fields_ = ["pairs"]
+
     def __init__(self, pairs):
         self.pairs = pairs
 
+    @jit.unroll_safe
     def eval_static(self, space):
         pairs_ww = []
         for key, value in self.pairs:
