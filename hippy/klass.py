@@ -50,6 +50,7 @@ def normalize_access(access_flags):
         consts.ACC_PRIVATE)
     return access_flags
 
+UNINITIALISED_INITIAL_STORAGE = []
 
 class ClassBase(AbstractFunction, AccessMixin):
     access_flags = 0
@@ -72,7 +73,7 @@ class ClassBase(AbstractFunction, AccessMixin):
     _all_nonstatic_special_properties = None    # lazy
 
     _immutable_fields_ = ['custom_instance_class', 'constructor_method',
-                          'parentclass', 'initial_storage_w[*]']
+                          'parentclass', 'initial_storage_w?[*]']
 
     def __init__(self, name):
         self.name = name
@@ -81,7 +82,7 @@ class ClassBase(AbstractFunction, AccessMixin):
         self.methods = OrderedDict()
         self.all_parents = {self.get_identifier(): None}  # classes and intfs
         self.base_map = Terminator(self)
-        self.initial_storage_w = None
+        self.initial_storage_w = UNINITIALISED_INITIAL_STORAGE
         self.is_subclassed = False # for pypy bridge
 
     def __repr__(self):
@@ -239,8 +240,7 @@ class ClassBase(AbstractFunction, AccessMixin):
         self.base_map = base_map
         if self.parentclass is not None:
             parent = self.parentclass
-            if parent.initial_storage_w is None:
-                parent._create_initial_storage(space)
+            parent.get_initial_storage_w(space)
             allattrs = parent.base_map.get_all_attrs()
             allmykeys = self.base_map.get_all_keys()
             d = {}
@@ -517,7 +517,7 @@ class ClassBase(AbstractFunction, AccessMixin):
         return self.get_initial_storage_w(space)[:]
 
     def get_initial_storage_w(self, space):
-        if self.initial_storage_w is None:
+        if self.initial_storage_w is UNINITIALISED_INITIAL_STORAGE:
             self._create_initial_storage(space)
         return self.initial_storage_w
 
