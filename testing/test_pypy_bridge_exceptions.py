@@ -7,7 +7,7 @@ class TestPyPyBridgeExceptions(BaseTestInterpreter):
     def php_space(self):
         return self.space
 
-    def test_py_exn_is_passed_up_to_phpc(self, php_space):
+    def test_py_exn_is_passed_up_to_php0001(self, php_space):
         output = self.run('''
             $src = "def raise_ex(): raise ValueError('my error')";
             $raise_ex = compile_py_func($src);
@@ -15,6 +15,19 @@ class TestPyPyBridgeExceptions(BaseTestInterpreter):
                 $raise_ex();
                 echo "no";
             } catch (PyException $e) {
+                echo "yes";
+            }
+        ''')
+        assert php_space.str_w(output[0]) == "yes"
+
+    def test_py_exn_is_passed_up_to_php0002(self, php_space):
+        output = self.run('''
+            $src = "def raise_ex(): raise ValueError('my error')";
+            $raise_ex = compile_py_func($src);
+            try {
+                $raise_ex();
+                echo "no";
+            } catch (ValueError $e) {
                 echo "yes";
             }
         ''')

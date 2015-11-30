@@ -165,7 +165,7 @@ class Interpreter(object):
     """ Interpreter keeps the state of the current run. There will be a new
     interpreter instance per run of script
     """
-    _immutable_fields_ = ['debugger?', 'globals', 'py_space']
+    _immutable_fields_ = ['debugger?', 'globals', 'py_space', 'py_exception_kls']
     cgi = 0
     web_config = None
     debugger = None
@@ -235,6 +235,9 @@ class Interpreter(object):
         self.shutdown_functions = []
         self.shutdown_arguments = []
         self.open_fd = {}
+
+        # Used for quick PyException comparisons.
+        self.py_exception_kls = self.lookup_class_or_intf("PyException")
 
     def register_fd(self, w_fd):
         self.open_fd[w_fd.res_id] = w_fd
@@ -940,6 +943,7 @@ class Interpreter(object):
                 try:
                     pc = bc_impl(bytecode, frame, space, arg, pc)
                 except Throw as e:
+                    import pdb; pdb.set_trace()
                     pc = self.handle_exception(frame, e)
 
     def enter(self, frame):

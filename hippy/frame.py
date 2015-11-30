@@ -6,6 +6,8 @@ from hippy.objects.base import W_Root
 from hippy.objects.reference import W_Reference
 from hippy.objects.arrayobject import new_rdict
 from hippy.builtin_klass import W_ExceptionObject
+from hippy.module.pypy_bridge.py_adapters import W_PyExceptionAdapter
+from hippy.module.pypy_bridge.scopes import PHPScope
 
 
 class ExceptionHandler(object):
@@ -22,10 +24,26 @@ class CatchBlock(ExceptionHandler):
     def match(self, interp, w_exc):
         assert isinstance(w_exc, W_ExceptionObject)
         k_exc = w_exc.getclass()
+        if k_exc is interp.py_exception_kls:
+            # handling a foreign exception
+            return self._match_py_exn(interp, w_exc)
+        else:
+            return self._match_php_exn(interp, k_exc)
+
+    def _match_php_exn(self, interp, k_exc):
+        # XXX if checking against foreign exception, return false
         k_catch = interp.lookup_class_or_intf(self.exc_class, autoload=False)
         if k_catch is None:
             return False
         return k_exc.is_subclass_of_class_or_intf_name(k_catch.name)
+
+    def _match_py_exn(self, interp, w_exc):
+        # XXX if checking agains tnative exception, return false
+        py_space = interp.py_space
+        w_py_exn_kls = w_exc.w_py_exn.getclass(py_space)
+        # XXX get frame
+        scope = PHPScope(interp, frame)
+        #interp.py_space.issubtype(arg1 of arg2)
 
     @jit.unroll_safe
     def handle(self, w_exc, frame):
