@@ -1,4 +1,8 @@
-prettytable
-rply
-pytest
-pexpect
+appdirs==1.4.0
+pexpect==4.0.1
+prettytable==0.7.2
+ptyprocess==0.5
+py==1.4.31
+pytest==2.8.5
+rply==0.7.4
+wheel==0.24.0
