@@ -6,7 +6,10 @@ from hippy.objects.base import W_Root
 from hippy.objects.reference import W_Reference
 from hippy.objects.arrayobject import new_rdict
 from hippy.builtin_klass import W_ExceptionObject
+from hippy.module.pypy_bridge.scopes import PHPScope
+from hippy.module.pypy_bridge.py_adapters import W_PyExceptionAdapter
 
+from pypy.interpreter.error import OperationError
 
 class ExceptionHandler(object):
     def handle(self, w_exc, frame):
@@ -27,9 +30,33 @@ class CatchBlock(ExceptionHandler):
             return False
         return k_exc.is_subclass_of_class_or_intf_name(k_catch.name)
 
+    def py_match(self, frame, w_exc):
+        'Try to match w_exc to a Python exception.'
+        if not isinstance(w_exc, W_PyExceptionAdapter):
+            return False
+
+        interp = frame.interp
+        # try python builtin if there is no py parent
+        if frame.bytecode.py_scope is None:
+            try:
+                w_py_cls = interp.py_space.builtin.get(self.exc_class)
+            except OperationError:
+                return False
+        else:
+            ph_scope = PHPScope(interp, frame)
+            # w_py_cls = ph_scope.py_lookup_local_recurse(self.exc_class)
+            w_py_cls = frame.bytecode.py_scope.py_lookup_local(self.exc_class)
+            if w_py_cls is None:
+                w_py_cls = frame.bytecode.py_scope.py_lookup_global(self.exc_class)
+                if w_py_cls is None:
+                    return False
+
+        return interp.py_space.isinstance_w(w_exc.w_py_exn, w_py_cls)
+
+
     @jit.unroll_safe
     def handle(self, w_exc, frame):
-        if self.match(frame.interp, w_exc):
+        if self.match(frame.interp, w_exc) or self.py_match(frame, w_exc):
             frame.pop_n(frame.stackpos - self.stackdepth)
             frame.push(w_exc)
             while frame.ptrs:

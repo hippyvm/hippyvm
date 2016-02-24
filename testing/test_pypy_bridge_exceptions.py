@@ -14,7 +14,20 @@ class TestPyPyBridgeExceptions(BaseTestInterpreter):
             try {
                 $raise_ex();
                 echo "no";
-            } catch (PyException $e) {
+            } catch (ValueError $e) {
+                echo "yes";
+            }
+        ''')
+        assert php_space.str_w(output[0]) == "yes"
+
+    def test_py_exn_is_passed_up_to_phpc_catch_superclass(self, php_space):
+        output = self.run('''
+            $src = "def raise_ex(): raise ValueError('my error')";
+            $raise_ex = compile_py_func($src);
+            try {
+                $raise_ex();
+                echo "no";
+            } catch (BaseException $e) {
                 echo "yes";
             }
         ''')
@@ -27,7 +40,7 @@ class TestPyPyBridgeExceptions(BaseTestInterpreter):
             try {
                 $raise_ex();
                 echo "no";
-            } catch (PyException $e) {
+            } catch (ValueError $e) {
                 echo $e->getMessage();
             }
         ''')
@@ -105,6 +118,69 @@ class TestPyPyBridgeExceptions(BaseTestInterpreter):
 
         # XXX more tests that check line number, trace, filename etc.
 
+    @pytest.mark.xfail
+    def test_custom_py_exn_is_passed_up_to_phpc(self, php_space):
+        # could this ever work
+        output = self.run('''
+            $src = <<<EOD
+            def make_exception():
+                class MyException(BaseException): pass
+                return MyException
+            EOD;
+            $my_exception_maker = compile_py_func($src);
+            $my_exception = $my_exception_maker();
+
+            $src = <<<EOD
+            def custom_exception(x):
+                raise x
+            EOD;
+
+            $raise_ex = compile_py_func($src);
+            try {
+                $raise_ex($my_exception);
+                echo "no";
+            } catch (my_exception $e) {
+                echo "yes";
+            }
+        ''')
+        assert php_space.str_w(output[0]) == "yes"
+
+    def test_local_py_exn_can_be_used_in_php(self, php_space):
+        output = self.run('''
+            $src = <<<EOD
+            def make_nested():
+                class MyException(BaseException): pass
+                php_src = """function g() {
+                    try { throw new MyException(); }
+                    catch (MyException \$e) { echo "yes"; }
+                }"""
+
+                compile_php_func(php_src)()
+            EOD;
+
+            $make_nested = compile_py_func($src);
+            $make_nested();
+        ''')
+        assert php_space.str_w(output[0]) == "yes"
+
+    def test_local_py_exn_inherited_catch_in_php(self, php_space):
+        output = self.run('''
+            $src = <<<EOD
+            def make_nested():
+                class MyException(BaseException): pass
+                php_src = """function g() {
+                    try { throw new MyException(); }
+                    catch (BaseException \$e) { echo "yes"; }
+                }"""
+
+                compile_php_func(php_src)()
+            EOD;
+
+            $make_nested = compile_py_func($src);
+            $make_nested();
+        ''')
+        assert php_space.str_w(output[0]) == "yes"
+
     def test_exns_can_pass_pass_thru_multiple_langs(self, php_space):
         output = self.run('''
             $src = "def py_f1(): php_f()";
@@ -121,7 +197,7 @@ class TestPyPyBridgeExceptions(BaseTestInterpreter):
             try {
                 $py_f1();
                 echo "fail";
-            } catch (PyException $e) {
+            } catch (ValueError $e) {
                 echo $e->getMessage();
             }
         ''')
@@ -378,7 +454,7 @@ class TestPyPyBridgeExceptions(BaseTestInterpreter):
             try {
                 $a->f(1, 2, 3);
                 echo "fail";
-            } catch (PyException $e) {
+            } catch (TypeError $e) {
                 echo $e->getMessage();
             }
         ''')
@@ -683,7 +759,7 @@ class TestPyPyBridgeExceptions(BaseTestInterpreter):
             try {
                 $inst = new Sub(6);
                 echo "fail";
-            } catch (PyException $e) {
+            } catch (BridgeError $e) {
                 echo $e->getMessage();
             }
         }
@@ -711,7 +787,7 @@ class TestPyPyBridgeExceptions(BaseTestInterpreter):
             try {
                 $inst = new Sub(6);
                 echo "fail";
-            } catch (PyException $e) {
+            } catch (BridgeError $e) {
                 echo $e->getMessage();
             }
         }
@@ -739,7 +815,7 @@ class TestPyPyBridgeExceptions(BaseTestInterpreter):
             try {
                 $inst = new Sub(6);
                 echo "fail";
-            } catch (PyException $e) {
+            } catch (BridgeError $e) {
                 echo $e->getMessage();
             }
         }
@@ -764,7 +840,7 @@ class TestPyPyBridgeExceptions(BaseTestInterpreter):
             try {
                 f();
                 echo "fail";
-            } catch (PyException $e) {
+            } catch (BridgeError $e) {
                 echo $e->getMessage();
             }
         }
@@ -780,7 +856,7 @@ class TestPyPyBridgeExceptions(BaseTestInterpreter):
         try {
             f(array());
             echo "fail";
-        } catch(PyException $e) {
+        } catch(IndexError $e) {
             echo $e->getMessage();
         }
         ''')
@@ -832,7 +908,7 @@ class TestPyPyBridgeExceptions(BaseTestInterpreter):
         try {
             $f();
             echo 'fail';
-        } catch (PyException $e) {
+        } catch (BridgeError $e) {
             echo $e->getMessage();
         }
         ''')
@@ -850,7 +926,7 @@ class TestPyPyBridgeExceptions(BaseTestInterpreter):
         try {
             $f();
             echo 'fail';
-        } catch (PyException $e) {
+        } catch (BridgeError $e) {
             echo $e->getMessage();
         }
         ''')
@@ -873,7 +949,7 @@ EOD;
             try {
                 $f();
                 echo 'fail';
-            } catch (PyException $e) {
+            } catch (BridgeError $e) {
                 echo $e->getMessage();
             }
         }
@@ -913,7 +989,7 @@ EOD;
             try {
                 $comp();
                 echo "fail";
-            } catch (PyException $e) {
+            } catch (BridgeError $e) {
                 echo $e->getMessage();
             }
         ''')
@@ -974,7 +1050,7 @@ EOD;
         try {
             $b->get_secret();
             echo "failed";
-        } catch (PyException $e) {
+        } catch (BridgeError $e) {
             echo $e->getMessage();
         }
         }
@@ -999,7 +1075,7 @@ EOD;
         try {
             $s = get_secret();
             echo $s;
-        } catch (PyException $e) {
+        } catch (BridgeError $e) {
             echo $e->getMessage();
         }
         }
@@ -1025,7 +1101,7 @@ EOD;
         $b = new B();
         try {
             echo $b->get_secret();
-        } catch(PyException $e) {
+        } catch(BridgeError $e) {
             echo $e->getMessage();
         }
         }
@@ -1106,7 +1182,7 @@ EOD;
         try {
             compile_py_meth("A", $pysrc);
             echo "failed";
-        } catch (PyException $e) {
+        } catch (BridgeError $e) {
                 echo $e->getMessage();
         }
         ''')
