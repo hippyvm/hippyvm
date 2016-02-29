@@ -116,6 +116,31 @@ class TestPyPyBridgeExceptions(BaseTestInterpreter):
         ''')
         assert php_space.str_w(output[0]) == "oh no!"
 
+    def test_php_exn_named_catch_in_py(self, php_space):
+        output = self.run('''
+            $src = <<<EOD
+            def catch_php_exn():
+                #x = PHPException # forces PHPException to exist
+                try:
+                    raise_php_exn();
+                    return "bad"
+                except LogicException as e:
+                    return e.message
+            EOD;
+
+            $catch_php_exn = compile_py_func($src);
+
+            function raise_php_exn() {
+                throw new LogicException("oh no!");
+            }
+
+            $r = $catch_php_exn();
+            echo $r;
+
+        ''')
+
+        assert php_space.str_w(output[0]) == "oh no!"
+
         # XXX more tests that check line number, trace, filename etc.
 
     @pytest.mark.xfail
