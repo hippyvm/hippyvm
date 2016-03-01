@@ -41,7 +41,7 @@ class CatchBlock(ExceptionHandler):
             try:
                 w_py_cls = interp.py_space.builtin.get(self.exc_class)
             except OperationError as e:
-                if not e.match(space, space.w_KeyError):
+                if not e.match(interp.py_space, interp.py_space.w_AttributeError):
                     raise
                 return False
         else:
