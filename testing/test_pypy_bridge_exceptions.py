@@ -187,6 +187,21 @@ class TestPyPyBridgeExceptions(BaseTestInterpreter):
 
         assert php_space.str_w(output[0]) == "oh no!"
 
+    def test_php_ignore_nonexisting_exception_type(self, php_space):
+        output = self.run('''
+            $src = "def raise_ex(): raise ValueError('my error')";
+            $raise_ex = compile_py_func($src);
+            try {
+                $raise_ex();
+            } catch (DoesNotExistsException $e) {
+                echo "bad";
+            } catch (ValueError $e) {
+                echo "oh no!";
+            }
+        ''')
+
+        assert php_space.str_w(output[0]) == "oh no!"
+
         # XXX more tests that check line number, trace, filename etc.
 
     @pytest.mark.xfail
