@@ -571,7 +571,7 @@ void SHA256Final(unsigned char digest[32], PHP_SHA256_CTX * context)
 }
 /* }}} */
 
-/* sha384/sha512 */
+/* sha384/sha384 */
 
 /* Ch */
 #define SHA512_F0(x,y,z)		(((x) & (y)) ^ ((~(x)) & (z)))
@@ -796,7 +796,7 @@ void SHA384Final(unsigned char digest[48], SHA384_CTX * context)
 /* }}} */
 
 
-/* {{{ SHA512Init
+/* {{{ SHA512
  * SHA512 initialization. Begins an SHA512 operation, writing a new context.
  */
 void SHA512Init(PHP_SHA512_CTX * context)
@@ -814,6 +814,44 @@ void SHA512Init(PHP_SHA512_CTX * context)
 	context->state[7] = L64(0x5be0cd19137e2179);
 }
 /* }}} */
+
+
+/* {{{ PHP_SHA512_256Init
+ * SHA512/245 initialization. Identical algorithm to SHA512, using alternate initval and truncation
+ */
+void SHA512_256Init(PHP_SHA512_CTX * context)
+{
+	context->count[0] = context->count[1] = 0;
+
+	context->state[0] = L64(0x22312194FC2BF72C);
+	context->state[1] = L64(0x9F555FA3C84C64C2);
+	context->state[2] = L64(0x2393B86B6F53B151);
+	context->state[3] = L64(0x963877195940EABD);
+	context->state[4] = L64(0x96283EE2A88EFFE3);
+	context->state[5] = L64(0xBE5E1E2553863992);
+	context->state[6] = L64(0x2B0199FC2C85B8AA);
+	context->state[7] = L64(0x0EB72DDC81C52CA2);
+}
+/* }}} */
+
+/* {{{ PHP_SHA512_224Init
+ * SHA512/224 initialization. Identical algorithm to SHA512, using alternate initval and truncation
+ */
+void SHA512_224Init(PHP_SHA512_CTX * context)
+{
+        context->count[0] = context->count[1] = 0;
+
+	context->state[0] = L64(0x8C3D37C819544DA2);
+	context->state[1] = L64(0x73E1996689DCD4D6);
+	context->state[2] = L64(0x1DFAB7AE32FF9C82);
+	context->state[3] = L64(0x679DD514582F9FCF);
+	context->state[4] = L64(0x0F6D2B697BD44DA8);
+	context->state[5] = L64(0x77E36F7304C48942);
+	context->state[6] = L64(0x3F9D85A86A1D36C8);
+	context->state[7] = L64(0x1112E6AD91D692A1);
+}
+/* }}} */
+
 
 /* {{{ SHA512Update
    SHA512 block update operation. Continues an SHA512 message-digest
@@ -855,7 +893,7 @@ void SHA512Update(PHP_SHA512_CTX * context, const unsigned char *input, unsigned
 }
 /* }}} */
 
-/* {{{ SHA512Final
+/* {{{ SHA512
    SHA512 finalization. Ends an SHA512 message-digest operation, writing the
    the message digest and zeroizing the context.
  */
@@ -899,3 +937,27 @@ void SHA512Final(unsigned char digest[64], PHP_SHA512_CTX * context)
 	memset((unsigned char*) context, 0, sizeof(*context));
 }
 /* }}} */
+
+/* {{{ PHP_SHA512_256Final
+   SHA512/256 finalization. Identical to SHA512Final, but with truncation
+ */
+void SHA512_256Final(unsigned char digest[32], PHP_SHA512_CTX * context)
+{
+	unsigned char full_digest[64];
+	SHA512Final(full_digest, context);
+	memcpy(digest, full_digest, 32);
+}
+/* }}} */
+
+/* {{{ PHP_SHA512_224Final
+   SHA512/224 finalization. Identical to SHA512Final, but with truncation
+ */
+void SHA512_224Final(unsigned char digest[28], PHP_SHA512_CTX * context)
+{
+	unsigned char full_digest[64];
+	SHA512Final(full_digest, context);
+	memcpy(digest, full_digest, 28);
+}
+/* }}} */
+
+
