@@ -79,3 +79,13 @@ typedef struct {
 void SHA512Init(PHP_SHA512_CTX *);
 void SHA512Update(PHP_SHA512_CTX *, const unsigned char *, unsigned int);
 void SHA512Final(unsigned char[64], PHP_SHA512_CTX *);
+
+
+void SHA512_256Init(PHP_SHA512_CTX *);
+#define SHA512_256Update SHA512Update
+void SHA512_256Final(unsigned char[32], PHP_SHA512_CTX *);
+
+void SHA512_224Init(PHP_SHA512_CTX *);
+#define SHA512_224Update SHA512Update
+void SHA512_224Final(unsigned char[28], PHP_SHA512_CTX *);
+
