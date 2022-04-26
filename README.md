@@ -85,7 +85,7 @@ def strstr(space, haystack, w_needle, before_needle=False):
 
 Doesn't look that scary, right?
 
-The reasons why HippyVM uses RPython go beyond this README. If you are interested, you can read more [here](http://pypy.readthedocs.org/en/latest/getting-started-dev.html)
+The reasons why HippyVM uses RPython go beyond this README. If you are interested, you can read more [here](https://rpython.readthedocs.io/en/latest/)
 
 
 ### HippyVM's tests 
